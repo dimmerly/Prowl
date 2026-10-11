@@ -11,7 +11,7 @@ namespace Prowl.Editor.Core.Tasks;
 /// <summary> Base class for editor tasks that provides a utility to asynchronously wait until a condition is met. </summary>
 public class EditorTask
 {
-    private static readonly List<IdleAwaitable> s_waiting = new();
+    private static readonly List<IdleAwaitable> s_waiting = [];
 
     /// <summary>
     /// Resumes on the main thread once the condition holds, checked every editor frame. Unlike awaiting a task,

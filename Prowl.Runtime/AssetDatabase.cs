@@ -626,8 +626,8 @@ public static class AssetDatabase
 
     #region Holding
 
-    private static readonly ConditionalWeakTable<object, HashSet<Asset>> s_holds = new();
-    private static readonly List<WeakReference<object>> s_roots = new();
+    private static readonly ConditionalWeakTable<object, HashSet<Asset>> s_holds = [];
+    private static readonly List<WeakReference<object>> s_roots = [];
     private static readonly object s_holdLock = new();
 
     /// <summary>Keeps an asset loaded while <paramref name="owner"/> is alive, or until released. Holding twice is one hold.</summary>
@@ -1084,7 +1084,7 @@ public sealed class AssetWalker
         public string Name { get; } = name;
     }
 
-    private static readonly ConditionalWeakTable<Assembly, FieldInfo[]> s_heldStatics = new();
+    private static readonly ConditionalWeakTable<Assembly, FieldInfo[]> s_heldStatics = [];
 
     /// <summary>Marks what every static field with <see cref="HeldStaticAttribute"/> reaches.</summary>
     internal void VisitHeldStatics()

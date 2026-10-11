@@ -18,14 +18,14 @@ namespace Prowl.Runtime;
 [CreateAssetMenu("Animation Graph", Extension = ".animgraph", Order = 1150)]
 public sealed class AnimationGraph : Asset
 {
-    public List<GraphNodeRecord> Nodes = new();
-    public List<GraphParameterRecord> Parameters = new();
+    public List<GraphNodeRecord> Nodes = [];
+    public List<GraphParameterRecord> Parameters = [];
 
     public string RootNode = string.Empty;
 
     /// <summary>Boxes and notes for keeping a large graph readable. The compiler ignores both.</summary>
-    public List<GraphGroupRecord> Groups = new();
-    public List<GraphNoteRecord> Notes = new();
+    public List<GraphGroupRecord> Groups = [];
+    public List<GraphNoteRecord> Notes = [];
 
     /// <summary>One rig's compile: the Motion graph, where each record landed in it, and what it was built from.</summary>
     private sealed class RigCompile
@@ -59,10 +59,10 @@ public sealed class AnimationGraph : Asset
     public int Version => _version;
 
     /// <summary>This graph's version combined with every sub graph it runs.</summary>
-    public int DeepVersion => unchecked(DeepVersionOf(new HashSet<AnimationGraph>()) * 31 + s_nodeTypes);
+    public int DeepVersion => unchecked(DeepVersionOf([]) * 31 + s_nodeTypes);
 
     /// <summary>Milliseconds since the last edit to this graph or any sub graph it runs, for letting a drag settle.</summary>
-    public long SinceChanged => Environment.TickCount64 - LatestChange(new HashSet<AnimationGraph>());
+    public long SinceChanged => Environment.TickCount64 - LatestChange([]);
 
     public AnimationGraph() : base("Animation Graph") { }
 
@@ -84,7 +84,7 @@ public sealed class AnimationGraph : Asset
     }
 
     /// <summary>Loads every asset the graph reads, its clips, masks, avatars and sub graphs, blocking until each is in.</summary>
-    public void LoadDependencies() => LoadDependencies(new HashSet<AnimationGraph>());
+    public void LoadDependencies() => LoadDependencies([]);
 
     private void LoadDependencies(HashSet<AnimationGraph> visiting)
     {
@@ -131,7 +131,7 @@ public sealed class AnimationGraph : Asset
     }
 
     /// <summary>Whether this graph runs another anywhere inside it, through sub graphs and state assets.</summary>
-    public bool Runs(AnimationGraph other) => Runs(other, new HashSet<AnimationGraph>());
+    public bool Runs(AnimationGraph other) => Runs(other, []);
 
     private bool Runs(AnimationGraph other, HashSet<AnimationGraph> visiting)
     {
@@ -159,7 +159,7 @@ public sealed class AnimationGraph : Asset
 
     /// <summary>Builds the Motion graph for one rig, cached until it or a sub graph changes. Null without a root.</summary>
     public MotionGraph? Compile(MotionSkeleton skeleton, MotionAvatar? avatar = null)
-        => Compile(skeleton, avatar, new HashSet<AnimationGraph>());
+        => Compile(skeleton, avatar, []);
 
     /// <summary>Compiles with the graphs already being compiled, so a cycle of sub graphs is caught.</summary>
     internal MotionGraph? Compile(MotionSkeleton skeleton, MotionAvatar? avatar, HashSet<AnimationGraph> visiting)
@@ -168,7 +168,7 @@ public sealed class AnimationGraph : Asset
         EnsureLoaded();
 
         int deepVersion = DeepVersion;
-        _compiles ??= new Dictionary<MotionSkeleton, RigCompile>();
+        _compiles ??= [];
         if (_compiles.TryGetValue(skeleton, out RigCompile? cached) && cached.DeepVersion == deepVersion)
             return cached.Graph;
 

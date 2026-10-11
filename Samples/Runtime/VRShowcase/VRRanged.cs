@@ -45,7 +45,7 @@ public sealed class MagazineWell : Component
     private Rigidbody3D? _gun;
     private bool _pendingSeat;
     private bool _latchArmed;
-    private readonly Dictionary<Grabbable, Float3> _lastTops = new();
+    private readonly Dictionary<Grabbable, Float3> _lastTops = [];
 
     private Rigidbody3D Gun
     {
@@ -318,7 +318,7 @@ public sealed class Gun : Component
     private float _flashTime;
     private LineRenderer _tracer = null!;
     private float _tracerTime;
-    private readonly HashSet<Rigidbody3D> _ignore = new();
+    private readonly HashSet<Rigidbody3D> _ignore = [];
     private static Material? s_brass;
 
     public Rigidbody3D Body => GetComponent<Rigidbody3D>()!;
@@ -777,7 +777,7 @@ public sealed class Arrow : Component
     private Bow? _leftBow;
     private float _sinceLoosed;
     private bool _flying;
-    private readonly HashSet<Rigidbody3D> _ignore = new();
+    private readonly HashSet<Rigidbody3D> _ignore = [];
 
     public Rigidbody3D Body => GetComponent<Rigidbody3D>()!;
     public Float3 NotchPoint => Body.Position + Body.Rotation * Notch;

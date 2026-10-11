@@ -40,7 +40,7 @@ public static unsafe class Graphics
         : GraphicsTarget.OpenGL;
 
     /// <summary>What the context the engine is running on allows. Valid once the window has opened.</summary>
-    public static GraphicsCapabilities Capabilities { get; internal set; } = new(GraphicsTarget.OpenGL, 4, 1, new());
+    public static GraphicsCapabilities Capabilities { get; internal set; } = new(GraphicsTarget.OpenGL, 4, 1, []);
 
     /// <summary>
     /// True when there is no graphics device (no window / render thread) - a dedicated server or a
@@ -506,7 +506,7 @@ public static unsafe class Graphics
     // disposed immediately because earlier encoded CBs still reference the old
     // handle. DeferDispose queues them FlushDeferredDisposes runs once per frame
     // after all CBs have executed.
-    private static readonly System.Collections.Generic.List<System.IDisposable> s_deferredDisposes = new();
+    private static readonly System.Collections.Generic.List<System.IDisposable> s_deferredDisposes = [];
 
     public static void DeferDispose(System.IDisposable resource)
     {

@@ -25,7 +25,7 @@ public class MaterialAssetEditor : AssetImporterEditor
 
     // Materials with edits not yet written to disk, keyed by asset GUID. Static rather than
     // per-instance to have a behaviour more coherent with user expectations
-    private static readonly Dictionary<Guid, (Material Material, AssetEntry Entry)> _pending = new();
+    private static readonly Dictionary<Guid, (Material Material, AssetEntry Entry)> _pending = [];
 
     /// <summary>Used only to reach the instance members from the global save hook.</summary>
     private static readonly MaterialAssetEditor s_saveHook = new();

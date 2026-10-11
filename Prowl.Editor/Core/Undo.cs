@@ -66,7 +66,7 @@ public static class Undo
         {
             if (ComponentIdentifier != Guid.Empty)
                 return FindComponentByIdentifier(ComponentIdentifier);
-            if (FallbackRef != null && FallbackRef.TryGetTarget(out var fallback))
+            if (FallbackRef != null && FallbackRef.TryGetTarget(out object? fallback))
             {
                 if (fallback is EngineObject eo && eo.IsDisposed) return null;
                 return fallback;
@@ -77,7 +77,7 @@ public static class Undo
         private void RestoreState(MemoryCopy copy)
         {
             EchoObject state = copy.Data;
-            var target = ResolveTarget();
+            object? target = ResolveTarget();
             if (target == null) return;
 
             // An asset is refilled whole, so everything derived from it sees the change.
@@ -142,21 +142,21 @@ public static class Undo
     //  State
     // ================================================================
 
-    private static readonly List<UndoStep> _undoStack = new();
-    private static readonly List<UndoStep> _redoStack = new();
+    private static readonly List<UndoStep> _undoStack = [];
+    private static readonly List<UndoStep> _redoStack = [];
 
     // Per-frame pending snapshots: target -> beforeState (captured at start of draw, before any mutations)
-    private static readonly Dictionary<object, MemoryCopy> _pendingSnapshots = new();
+    private static readonly Dictionary<object, MemoryCopy> _pendingSnapshots = [];
 
     // Immediate action records accumulated this frame (RegisterAction calls)
-    private static readonly List<(string description, UndoRecord record)> _pendingActions = new();
+    private static readonly List<(string description, UndoRecord record)> _pendingActions = [];
 
     // Pre-grouped action steps accumulated this frame (RegisterActionGroup calls). Each is ONE undo step
     // holding many records, so editing N selected objects collapses into a single user-visible step.
-    private static readonly List<(UndoStep step, bool coalesce)> _pendingActionGroups = new();
+    private static readonly List<(UndoStep step, bool coalesce)> _pendingActionGroups = [];
 
     // Deferred created/destroy objects serialized at FlushFrame so components added after registration are captured
-    private static readonly List<(GameObject go, string description, bool isCreate)> _pendingStructural = new();
+    private static readonly List<(GameObject go, string description, bool isCreate)> _pendingStructural = [];
 
     // Continuous operation state (gizmo drag) tracks by Identifier, not reference
     private static bool _isContinuous;
@@ -239,8 +239,8 @@ public static class Undo
     public static void RecordGameObjectChange<T>(GameObject go, string description, T oldValue, T newValue, Action<GameObject, T> apply, bool coalesce = false)
     {
         Guid id = go.Identifier;
-        Action undo = () => { GameObject? g = FindGO(id); if (g != null) apply(g, oldValue); };
-        Action redo = () => { GameObject? g = FindGO(id); if (g != null) apply(g, newValue); };
+        void undo() { GameObject? g = FindGO(id); if (g != null) apply(g, oldValue); }
+        void redo() { GameObject? g = FindGO(id); if (g != null) apply(g, newValue); }
         if (coalesce) RegisterCoalescableAction(description, undo, redo);
         else RegisterAction(description, undo, redo);
     }
@@ -359,7 +359,7 @@ public static class Undo
         MemoryCopy copy = SceneReferenceResolver.WriteMemoryCopy(go);
         Guid goId = go.Identifier;
         Guid parentId = go.Parent.IsValid() ? go.Parent.Identifier : Guid.Empty;
-        var siblingIndex = go.Parent != null ? go.Parent.Children.IndexOf(go) : -1;
+        int siblingIndex = go.Parent != null ? go.Parent.Children.IndexOf(go) : -1;
 
         return (
             undo: () =>
@@ -416,7 +416,7 @@ public static class Undo
         // Linked, not copied: see CaptureCreatedObject.
         MemoryCopy copy = SceneReferenceResolver.WriteMemoryCopy(go);
         Guid parentId = go.Parent.IsValid() ? go.Parent.Identifier : Guid.Empty;
-        var siblingIndex = go.Parent != null ? go.Parent.Children.IndexOf(go) : -1;
+        int siblingIndex = go.Parent != null ? go.Parent.Children.IndexOf(go) : -1;
         Guid goId = go.Identifier;
 
         RegisterAction(description,
@@ -476,7 +476,7 @@ public static class Undo
 
         _isContinuous = true;
         _continuousDescription = description;
-        _continuousStartState = new List<(Guid, Float3, Quaternion, Float3)>();
+        _continuousStartState = [];
 
         foreach (GameObject go in targets)
         {
@@ -822,8 +822,8 @@ public static class Undo
             }
             else
             {
-                var prevTarget = prevPR.ResolveTarget();
-                var newTarget = newPR.ResolveTarget();
+                object? prevTarget = prevPR.ResolveTarget();
+                object? newTarget = newPR.ResolveTarget();
                 if (prevTarget == null || newTarget == null || !ReferenceEquals(prevTarget, newTarget)) return false;
             }
 
@@ -879,8 +879,8 @@ public static class Undo
     }
 
     // Fields that must never be overwritten by undo they are identity/internal state
-    private static readonly HashSet<string> _undoSkipFields = new()
-    {
+    private static readonly HashSet<string> _undoSkipFields =
+    [
         "_identifier",        // Component identity must be preserved
         "_instanceID",        // EngineObject instance ID
         "_enabledInHierarchy",// Derived state, not user-settable
@@ -889,7 +889,7 @@ public static class Undo
         "_hasBeenEnabled",
         "_executeAlwaysCached",
         "<IsDisposed>k__BackingField", // Disposed state
-    };
+    ];
 
     /// <summary>
     /// Copy serializable fields from an EchoObject onto a live object.
@@ -900,7 +900,7 @@ public static class Undo
     {
         try
         {
-            var temp = Serializer.Deserialize(echo, type);
+            object? temp = Serializer.Deserialize(echo, type);
             if (temp == null) return;
 
             // Walk up the hierarchy to get all serializable fields (matching Echo's behavior)
@@ -923,7 +923,7 @@ public static class Undo
 
                     try
                     {
-                        var value = field.GetValue(temp);
+                        object? value = field.GetValue(temp);
                         field.SetValue(target, value);
                     }
                     catch

@@ -109,11 +109,11 @@ public static class RecentProjects
             if (File.Exists(_filePath))
             {
                 string json = File.ReadAllText(_filePath);
-                return JsonSerializer.Deserialize<List<RecentProjectEntry>>(json) ?? new();
+                return JsonSerializer.Deserialize<List<RecentProjectEntry>>(json) ?? [];
             }
         }
         catch { }
-        return new();
+        return [];
     }
 
     private static void Save()

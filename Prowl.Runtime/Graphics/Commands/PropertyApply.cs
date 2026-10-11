@@ -32,7 +32,7 @@ internal static class PropertyApply
     public static void SetFloatCached(GraphicsProgram p, string name, float v)
     {
         GraphicsProgram.UniformCache cache = p.uniformCache;
-        if (cache.floats.TryGetValue(name, out var cv) && cv == v) { Touch(name); return; }
+        if (cache.floats.TryGetValue(name, out float cv) && cv == v) { Touch(name); return; }
         int loc = LocationOf(p, name);
         if (loc < 0) return;
         Touch(name);
@@ -43,7 +43,7 @@ internal static class PropertyApply
     public static void SetIntCached(GraphicsProgram p, string name, int v)
     {
         GraphicsProgram.UniformCache cache = p.uniformCache;
-        if (cache.ints.TryGetValue(name, out var cv) && cv == v) { Touch(name); return; }
+        if (cache.ints.TryGetValue(name, out int cv) && cv == v) { Touch(name); return; }
         int loc = LocationOf(p, name);
         if (loc < 0) return;
         Touch(name);

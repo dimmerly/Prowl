@@ -295,7 +295,7 @@ public class SceneManagementTests : RuntimeTestBase
     {
         Scene scene = CreateScene();
         bool fired = false;
-        Action handler = () => fired = true;
+        void handler() => fired = true;
         Scene.OnSceneLoaded += handler;
         try
         {

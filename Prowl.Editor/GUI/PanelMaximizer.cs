@@ -34,7 +34,7 @@ internal sealed class PanelMaximizer
     private DockNode? _view;
 
     // Where this frame's leaves were drawn, for finding the tab under a double-click.
-    private readonly List<(DockNode Leaf, float X, float Y, float W)> _leaves = new();
+    private readonly List<(DockNode Leaf, float X, float Y, float W)> _leaves = [];
     private float _tabBarHeight;
 
     // The panel whose tab was double-clicked and the leaf it was in, acted on once the mouse button is up.
@@ -297,7 +297,7 @@ internal sealed class PanelMaximizer
         public StandIn(DockNode leaf, DockPanel panel)
         {
             _hash = leaf.GetHashCode();
-            Tabs = new List<DockPanel> { panel };
+            Tabs = [panel];
         }
 
         public override int GetHashCode() => _hash;

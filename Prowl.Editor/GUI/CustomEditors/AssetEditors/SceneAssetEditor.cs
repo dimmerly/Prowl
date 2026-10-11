@@ -25,7 +25,7 @@ public class SceneAssetEditor : AssetImporterEditor
 {
     // Resolved, de-duplicated list of true top-level asset references (cached per scene).
     private Guid _cachedSceneGuid;
-    private readonly System.Collections.Generic.List<Guid> _refs = new();
+    private readonly System.Collections.Generic.List<Guid> _refs = [];
 
     public override void OnGUI(Paper paper, string id, AssetEntry entry, EngineObject? asset)
     {

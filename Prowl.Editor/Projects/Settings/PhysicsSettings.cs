@@ -116,7 +116,7 @@ public class PhysicsSettings : ProjectSettingsBase
 
     private static uint[] CreateDefaultCollisionMatrix()
     {
-        var rows = new uint[32];
+        uint[] rows = new uint[32];
         for (int i = 0; i < 32; i++) rows[i] = uint.MaxValue; // all collide
         return rows;
     }

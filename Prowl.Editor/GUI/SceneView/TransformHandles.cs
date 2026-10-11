@@ -26,9 +26,9 @@ namespace Prowl.Editor.GUI.SceneView;
 /// </summary>
 public static class TransformHandles
 {
-    private static readonly Dictionary<string, Gizmo.TransformGizmo> _gizmos = new();
-    private static readonly Dictionary<string, Gizmo.TransformGizmoMode> _modes = new();
-    private static readonly List<Gizmo.TransformGizmo> _pending = new();
+    private static readonly Dictionary<string, Gizmo.TransformGizmo> _gizmos = [];
+    private static readonly Dictionary<string, Gizmo.TransformGizmoMode> _modes = [];
+    private static readonly List<Gizmo.TransformGizmo> _pending = [];
 
     /// <summary>A 3-axis translation handle at <paramref name="position"/>. Returns true if it moved the
     /// point this frame; <paramref name="hot"/> is true while the handle is hovered or being dragged

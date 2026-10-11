@@ -10,7 +10,7 @@ namespace Prowl.Editor.Core;
 /// </summary>
 public static class Selection
 {
-    private static readonly List<object> _selected = new();
+    private static readonly List<object> _selected = [];
     private static object? _activeObject;
     private static int _lastClickedIndex = -1;
 

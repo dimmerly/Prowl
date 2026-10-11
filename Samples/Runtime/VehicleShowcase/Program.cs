@@ -60,7 +60,7 @@ public sealed class Vehicle
     public Float3? Hitch;
 
     /// <summary>Bodies coupled behind it for good, and where each was parked, so a reset puts the whole rig back.</summary>
-    public readonly List<(Rigidbody3D Body, Float3 Position)> Towed = new();
+    public readonly List<(Rigidbody3D Body, Float3 Position)> Towed = [];
 
     /// <summary>Loading ramps that lie down while another vehicle is driven, so it can drive aboard.</summary>
     public GameObject? Ramps;
@@ -95,7 +95,7 @@ public sealed partial class VehicleShowcaseGame : StationGame
     private Material _dark = null!;
     private Material _stone = null!;
     private ChaseCamera _chase = null!;
-    private readonly List<Vehicle> _vehicles = new();
+    private readonly List<Vehicle> _vehicles = [];
     private Vehicle _current = null!;
     private Skidmarks _skidmarks = null!;
 

@@ -83,9 +83,7 @@ public sealed class FolderAssetSource : AssetFileSource
     public override IReadOnlyList<string> ListFiles()
     {
         if (!Directory.Exists(Root)) return [];
-        return Directory.EnumerateFiles(Root, "*", SearchOption.AllDirectories)
-            .Select(file => Path.GetRelativePath(Root, file).Replace('\\', '/'))
-            .ToList();
+        return [.. Directory.EnumerateFiles(Root, "*", SearchOption.AllDirectories).Select(file => Path.GetRelativePath(Root, file).Replace('\\', '/'))];
     }
 
     public override Stream Open(string path) => File.OpenRead(LocalPath(path));
@@ -115,7 +113,7 @@ public sealed class ZipAssetSource : AssetFileSource, IDisposable
     public override IReadOnlyList<string> ListFiles()
     {
         lock (_lock)
-            return _archive.Entries.Where(entry => entry.Name.Length > 0).Select(entry => entry.FullName.Replace('\\', '/')).ToList();
+            return [.. _archive.Entries.Where(entry => entry.Name.Length > 0).Select(entry => entry.FullName.Replace('\\', '/'))];
     }
 
     // An archive reads one entry at a time, so each file is copied out whole.
@@ -157,10 +155,9 @@ public sealed class HttpAssetSource : AssetFileSource
     public override IReadOnlyList<string> ListFiles()
     {
         string index = _client.GetStringAsync(new Uri(_root, _index)).GetAwaiter().GetResult();
-        return index.Split('\n')
+        return [.. index.Split('\n')
             .Select(line => line.Trim())
-            .Where(line => line.Length > 0 && !line.StartsWith('#'))
-            .ToList();
+            .Where(line => line.Length > 0 && !line.StartsWith('#'))];
     }
 
     public override Stream Open(string path)
@@ -427,7 +424,7 @@ public sealed class SourceAssetBackend : AssetBackend
     private readonly object _importLock = new();
 
     // Assets a file's import made besides the one asked for, waiting for the database to ask for them in turn.
-    private readonly Dictionary<string, Dictionary<Guid, Asset>> _waiting = new();
+    private readonly Dictionary<string, Dictionary<Guid, Asset>> _waiting = [];
 
     private IReadOnlyList<ResourceEntry> _resources = [];
 

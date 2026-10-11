@@ -180,7 +180,7 @@ public class CliTests : EditorTestHarness
         await stream.WriteAsync(head);
 
         using var reader = new StreamReader(stream);
-        var line = await reader.ReadLineAsync().WaitAsync(TimeSpan.FromSeconds(5));
+        string? line = await reader.ReadLineAsync().WaitAsync(TimeSpan.FromSeconds(5));
         Assert.StartsWith("HTTP/1.1 401", line);
     }
 

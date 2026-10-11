@@ -374,7 +374,7 @@ public sealed class RenderingShowcaseGame : StationGame
     //  5  Many lights
     // ----------------------------------------------------------------
 
-    private readonly List<Wanderer> _wanderers = new();
+    private readonly List<Wanderer> _wanderers = [];
 
     private void BuildManyLights(Float3 c)
     {
@@ -727,7 +727,7 @@ public sealed class InstancedWave : Component
 /// <summary>Moves a field of cubes up and down in rings spreading from the center.</summary>
 public sealed class Wave : Component
 {
-    public List<Transform> Cubes = new();
+    public List<Transform> Cubes = [];
     public Float3 Center;
 
     public override void Update()

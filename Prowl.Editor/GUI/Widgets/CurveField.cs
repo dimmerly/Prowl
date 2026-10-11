@@ -68,7 +68,7 @@ public sealed class CurveFieldBuilder
         {
             AnimationCurve curve = _value;
             Action<AnimationCurve> setter = _setter;
-            var id = _id;
+            string id = _id;
             swatch.OnClick(e =>
             {
                 float anchorX = (float)e.ScreenRect.Min.X;

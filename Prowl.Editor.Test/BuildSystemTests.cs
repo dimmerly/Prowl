@@ -1009,7 +1009,7 @@ public class BuildSystemTests : IDisposable
         source.DependsOn(sceneA, onlyA);
         source.DependsOn(sceneB, onlyB);
 
-        IReadOnlyList<AssetChunk> chunks = Plan(source, [sceneA, sceneB], [], new HashSet<Guid> { sceneA, sceneB, onlyA, onlyB });
+        IReadOnlyList<AssetChunk> chunks = Plan(source, [sceneA, sceneB], [], [sceneA, sceneB, onlyA, onlyB]);
 
         Assert.Contains(onlyA, Chunk(chunks, ChunkPlanner.SceneChunkName(sceneA)).Assets);
         Assert.Contains(onlyB, Chunk(chunks, ChunkPlanner.SceneChunkName(sceneB)).Assets);
@@ -1024,7 +1024,7 @@ public class BuildSystemTests : IDisposable
         source.DependsOn(sceneA, shared);
         source.DependsOn(sceneB, shared);
 
-        IReadOnlyList<AssetChunk> chunks = Plan(source, [sceneA, sceneB], [], new HashSet<Guid> { sceneA, sceneB, shared });
+        IReadOnlyList<AssetChunk> chunks = Plan(source, [sceneA, sceneB], [], [sceneA, sceneB, shared]);
 
         Assert.Contains(shared, Chunk(chunks, ChunkPlanner.SharedChunk).Assets);
         Assert.DoesNotContain(shared, Chunk(chunks, ChunkPlanner.SceneChunkName(sceneA)).Assets);
@@ -1038,7 +1038,7 @@ public class BuildSystemTests : IDisposable
         source.DependsOn(resource, resourceDependency);
 
         IReadOnlyList<AssetChunk> chunks = Plan(source, [scene], [resource],
-            new HashSet<Guid> { scene, resource, resourceDependency });
+            [scene, resource, resourceDependency]);
 
         AssetChunk resources = Chunk(chunks, ChunkPlanner.ResourcesChunk);
         Assert.Contains(resource, resources.Assets);
@@ -1055,7 +1055,7 @@ public class BuildSystemTests : IDisposable
         source.DependsOn(resource, both);
 
         IReadOnlyList<AssetChunk> chunks = Plan(source, [scene], [resource],
-            new HashSet<Guid> { scene, resource, both });
+            [scene, resource, both]);
 
         Assert.Contains(both, Chunk(chunks, ChunkPlanner.SharedChunk).Assets);
     }
@@ -1069,7 +1069,7 @@ public class BuildSystemTests : IDisposable
         Guid scene = G(1), texture = G(40), sprite = G(41);
         source.DependsOn(scene, texture);
 
-        IReadOnlyList<AssetChunk> chunks = Plan(source, [scene], [], new HashSet<Guid> { scene, texture, sprite },
+        IReadOnlyList<AssetChunk> chunks = Plan(source, [scene], [], [scene, texture, sprite],
             new Dictionary<Guid, IReadOnlyList<Guid>> { [texture] = [sprite] });
 
         Assert.Contains(sprite, Chunk(chunks, ChunkPlanner.SceneChunkName(scene)).Assets);
@@ -1084,7 +1084,7 @@ public class BuildSystemTests : IDisposable
         source.DependsOn(scene, texture);
         source.DependsOn(sprite, material);
 
-        IReadOnlyList<AssetChunk> chunks = Plan(source, [scene], [], new HashSet<Guid> { scene, texture, sprite, material },
+        IReadOnlyList<AssetChunk> chunks = Plan(source, [scene], [], [scene, texture, sprite, material],
             new Dictionary<Guid, IReadOnlyList<Guid>> { [texture] = [sprite] });
 
         Assert.Contains(material, Chunk(chunks, ChunkPlanner.SceneChunkName(scene)).Assets);
@@ -1097,7 +1097,7 @@ public class BuildSystemTests : IDisposable
         var source = new Graph();
         Guid scene = G(1), orphan = G(99);
 
-        IReadOnlyList<AssetChunk> chunks = Plan(source, [scene], [], new HashSet<Guid> { scene, orphan });
+        IReadOnlyList<AssetChunk> chunks = Plan(source, [scene], [], [scene, orphan]);
 
         Assert.Contains(orphan, Chunk(chunks, ChunkPlanner.CommonChunk).Assets);
     }
@@ -1110,7 +1110,7 @@ public class BuildSystemTests : IDisposable
         Guid scene = G(1), editorOnly = G(70);
         source.DependsOn(scene, editorOnly);
 
-        IReadOnlyList<AssetChunk> chunks = Plan(source, [scene], [], new HashSet<Guid> { scene });
+        IReadOnlyList<AssetChunk> chunks = Plan(source, [scene], [], [scene]);
 
         Assert.DoesNotContain(editorOnly, chunks.SelectMany(c => c.Assets));
     }
@@ -1202,7 +1202,7 @@ public class BuildSystemTests : IDisposable
 
         // Both aged deliberately rather than by waiting, so the only thing separating them is the read
         // below and the test does not depend on how coarse the filesystem's timestamps are.
-        foreach (var file in Directory.GetFiles(root, "*", SearchOption.AllDirectories))
+        foreach (string file in Directory.GetFiles(root, "*", SearchOption.AllDirectories))
             File.SetLastWriteTimeUtc(file, DateTime.UtcNow.AddMinutes(-10));
 
         Assert.True(await cache.ExistsAsync(Key("keep")));

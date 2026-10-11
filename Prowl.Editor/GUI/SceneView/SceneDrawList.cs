@@ -41,8 +41,8 @@ public sealed class SceneDrawList
         public int PointStart, PointCount;
     }
 
-    private readonly List<Command> _commands = new();
-    private readonly List<Float3> _points = new();
+    private readonly List<Command> _commands = [];
+    private readonly List<Float3> _points = [];
     private readonly GizmoDraw3D _draw = new();
 
     private HandleContext _ctx = null!;

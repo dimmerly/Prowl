@@ -27,7 +27,7 @@ public class AssetWatcher : IDisposable
 {
     private FileSystemWatcher? _watcher;
     private readonly object _lock = new();
-    private readonly List<FileEvent> _pendingEvents = new();
+    private readonly List<FileEvent> _pendingEvents = [];
     private DateTime _lastEventTime = DateTime.MinValue;
     private const double DebounceMs = 300;
 
@@ -91,11 +91,11 @@ public class AssetWatcher : IDisposable
     {
         lock (_lock)
         {
-            if (_pendingEvents.Count == 0) return new List<FileEvent>();
+            if (_pendingEvents.Count == 0) return [];
 
             // Wait for debounce period
             if (!force && (DateTime.UtcNow - _lastEventTime).TotalMilliseconds < DebounceMs)
-                return new List<FileEvent>();
+                return [];
 
             // Coalesce: for each path, determine the net effect.
             // Renames are special they track OldPath.

@@ -1191,7 +1191,7 @@ public class PrefabTests : EditorTestHarness
         var root = new GameObject("Root");
         OverrideComp comp = root.AddComponent<OverrideComp>();
         comp.A = 1;
-        Guid g = CreatePrefabAsset(root, "MadeRevert.prefab");
+        _ = CreatePrefabAsset(root, "MadeRevert.prefab");
 
         comp.A = 42;
         PrefabUtility.RecordComponentOverrides(root, comp);
@@ -1227,7 +1227,7 @@ public class PrefabTests : EditorTestHarness
         var root = new GameObject("Root");
         OverrideComp comp = root.AddComponent<OverrideComp>();
         comp.A = 1;
-        Guid g = CreatePrefabAsset(root, "MadeUnpack.prefab");
+        _ = CreatePrefabAsset(root, "MadeUnpack.prefab");
         Guid stampedSource = root.SourceIdentifier;
 
         PrefabUtility.UnpackPrefabInstance(root);

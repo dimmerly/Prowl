@@ -70,10 +70,10 @@ public class WheelTests : RuntimeTestBase
 
         var wheels = new WheelCollider[4];
         Float3[] mounts =
-        {
+        [
             new(0.7f, 0, 1.2f), new(-0.7f, 0, 1.2f),
             new(0.7f, 0, -1.2f), new(-0.7f, 0, -1.2f),
-        };
+        ];
         for (int i = 0; i < 4; i++)
         {
             GameObject w = CreateGameObject("Wheel" + i);
@@ -266,7 +266,7 @@ public class WheelTests : RuntimeTestBase
         Rigidbody3D rb = chassis.AddComponent<Rigidbody3D>();
         chassis.AddComponent<BoxCollider>().Size = new Float3(2, 0.5f, 4);
         var wheels = new WheelCollider[4];
-        Float3[] mounts = { new(-1f, -0.25f, 1.5f), new(1f, -0.25f, 1.5f), new(-1f, -0.25f, -1.5f), new(1f, -0.25f, -1.5f) };
+        Float3[] mounts = [new(-1f, -0.25f, 1.5f), new(1f, -0.25f, 1.5f), new(-1f, -0.25f, -1.5f), new(1f, -0.25f, -1.5f)];
         for (int i = 0; i < 4; i++)
         {
             GameObject w = CreateGameObject("W" + i);
@@ -308,7 +308,7 @@ public class WheelTests : RuntimeTestBase
         Rigidbody3D rb = chassis.AddComponent<Rigidbody3D>();
         chassis.AddComponent<BoxCollider>().Size = new Float3(2, 0.5f, 4);
         var wheels = new WheelCollider[4];
-        Float3[] mounts = { new(-1f, -0.25f, 1.5f), new(1f, -0.25f, 1.5f), new(-1f, -0.25f, -1.5f), new(1f, -0.25f, -1.5f) };
+        Float3[] mounts = [new(-1f, -0.25f, 1.5f), new(1f, -0.25f, 1.5f), new(-1f, -0.25f, -1.5f), new(1f, -0.25f, -1.5f)];
         for (int i = 0; i < 4; i++)
         {
             GameObject w = CreateGameObject("W" + i);
@@ -432,7 +432,7 @@ public class WheelTests : RuntimeTestBase
 
         var bottom = new WheelCollider[4];
         var top = new WheelCollider[4];
-        Float3[] corners = { new(0.7f, 0, 1.2f), new(-0.7f, 0, 1.2f), new(0.7f, 0, -1.2f), new(-0.7f, 0, -1.2f) };
+        Float3[] corners = [new(0.7f, 0, 1.2f), new(-0.7f, 0, 1.2f), new(0.7f, 0, -1.2f), new(-0.7f, 0, -1.2f)];
         WheelCollider MakeWheel(string name, Float3 localPos, Quaternion localRot)
         {
             GameObject w = CreateGameObject(name);

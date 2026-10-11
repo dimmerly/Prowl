@@ -115,7 +115,7 @@ public static class CliCommands
         if (!s_commands.TryGetValue(request.Command, out Command? command))
             throw new CliException($"Unknown command '{request.Command}'. Run 'prowl command' to list them.");
 
-        var values = Bind(command, request);
+        object?[] values = Bind(command, request);
         try { return command.Method.Invoke(null, values); }
         catch (TargetInvocationException ex) when (ex.InnerException != null)
         {
@@ -133,7 +133,7 @@ public static class CliCommands
             AddNamed(command, named, key, value);
         ParseArgv(command, request.Argv, named, positional);
 
-        var values = new object?[command.Args.Length];
+        object?[] values = new object?[command.Args.Length];
         int next = 0;
 
         for (int i = 0; i < command.Args.Length; i++)
@@ -356,8 +356,8 @@ public static class CliEval
         "Prowl.Vector", "Prowl.Runtime", "Prowl.Runtime.Resources", "Prowl.Editor", "Prowl.Editor.Core",
     ];
 
-    private static readonly ConditionalWeakTable<Assembly, MetadataReference> s_fileReferences = new();
-    private static readonly ConditionalWeakTable<byte[], MetadataReference> s_imageReferences = new();
+    private static readonly ConditionalWeakTable<Assembly, MetadataReference> s_fileReferences = [];
+    private static readonly ConditionalWeakTable<byte[], MetadataReference> s_imageReferences = [];
     private static readonly CSharpParseOptions s_scriptParse = new(LanguageVersion.Latest, kind: SourceCodeKind.Script);
     private static readonly CSharpParseOptions s_parse = new(LanguageVersion.Latest);
     private static int s_counter;

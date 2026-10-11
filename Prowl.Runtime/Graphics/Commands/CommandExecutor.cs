@@ -94,7 +94,7 @@ internal sealed class CommandExecutor
 
     private static bool[] BuildKeepsPrefix()
     {
-        var keeps = new bool[Enum.GetValues<CommandOpcode>().Length + 1];
+        bool[] keeps = new bool[Enum.GetValues<CommandOpcode>().Length + 1];
         foreach (CommandOpcode op in (ReadOnlySpan<CommandOpcode>)[
             CommandOpcode.SetRenderTarget, CommandOpcode.SetRenderTargets, CommandOpcode.SetViewport,
             CommandOpcode.SetScissor, CommandOpcode.DisableScissor, CommandOpcode.ClearRenderTarget,
@@ -711,7 +711,7 @@ internal sealed class CommandExecutor
                 {
                     var tex = (GraphicsTexture)objects[ReadI32(stream, ref pos)]!;
                     int mip = ReadI32(stream, ref pos);
-                    var destination = (byte[])objects[ReadI32(stream, ref pos)]!;
+                        byte[] destination = (byte[])objects[ReadI32(stream, ref pos)]!;
                     unsafe
                     {
                         fixed (byte* p = destination)
@@ -724,7 +724,7 @@ internal sealed class CommandExecutor
                     var tex = (GraphicsTexture)objects[ReadI32(stream, ref pos)]!;
                     int face = ReadI32(stream, ref pos);
                     int mip = ReadI32(stream, ref pos);
-                    var destination = (byte[])objects[ReadI32(stream, ref pos)]!;
+                        byte[] destination = (byte[])objects[ReadI32(stream, ref pos)]!;
                     unsafe
                     {
                         fixed (byte* p = destination)
@@ -1111,7 +1111,7 @@ internal sealed class CommandExecutor
         // A sampler nothing bound this draw still holds the unit it had last time, and that unit now
         // holds whatever an earlier draw left there. Point it at an empty unit so it reads nothing.
         (int Location, int EmptyUnit)[] samplers = _boundProgram.samplers;
-        var boundDraw = _boundProgram.samplerBoundDraw;
+        int[] boundDraw = _boundProgram.samplerBoundDraw;
         for (int i = 0; i < samplers.Length; i++)
             if (boundDraw[i] != DrawNumber && boundDraw[i] != _prefixDraw)
                 PropertyApply.SetSamplerUnit(_boundProgram, i, samplers[i].EmptyUnit);
@@ -1175,13 +1175,13 @@ internal sealed class CommandExecutor
     private static byte ReadU8(ReadOnlySpan<byte> s, ref int pos) { byte v = s[pos]; pos += 1; return v; }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private static int ReadI32(ReadOnlySpan<byte> s, ref int pos) { var v = MemoryMarshal.Read<int>(s.Slice(pos)); pos += sizeof(int); return v; }
+    private static int ReadI32(ReadOnlySpan<byte> s, ref int pos) { int v = MemoryMarshal.Read<int>(s.Slice(pos)); pos += sizeof(int); return v; }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private static uint ReadU32(ReadOnlySpan<byte> s, ref int pos) { var v = MemoryMarshal.Read<uint>(s.Slice(pos)); pos += sizeof(uint); return v; }
+    private static uint ReadU32(ReadOnlySpan<byte> s, ref int pos) { uint v = MemoryMarshal.Read<uint>(s.Slice(pos)); pos += sizeof(uint); return v; }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private static float ReadF32(ReadOnlySpan<byte> s, ref int pos) { var v = MemoryMarshal.Read<float>(s.Slice(pos)); pos += sizeof(float); return v; }
+    private static float ReadF32(ReadOnlySpan<byte> s, ref int pos) { float v = MemoryMarshal.Read<float>(s.Slice(pos)); pos += sizeof(float); return v; }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static T ReadStruct<T>(ReadOnlySpan<byte> s, ref int pos) where T : unmanaged

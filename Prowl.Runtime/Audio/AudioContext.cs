@@ -20,10 +20,10 @@ public static class AudioContext
 {
     private static IntPtr audioContext;
     private static unsafe delegate* unmanaged[Cdecl]<ma_device_ptr, IntPtr, IntPtr, uint, void> deviceDataProc;
-    private static Dictionary<UInt64, IntPtr> audioClipHandles = new Dictionary<UInt64, IntPtr>();
+    private static Dictionary<UInt64, IntPtr> audioClipHandles = [];
     // Ref-count per shared handle: clips with identical data share one native allocation, so it must
     // only be freed once the last clip using it is disposed (otherwise: double-free / use-after-free).
-    private static Dictionary<UInt64, int> audioClipRefCounts = new Dictionary<UInt64, int>();
+    private static Dictionary<UInt64, int> audioClipRefCounts = [];
     // Guards the two dictionaries above. Add/AddRef/Remove are called from the main thread during
     // normal loading, but AudioClip getting a GC finalizer means Remove can now also run on the
     // dedicated finalizer thread concurrently - a plain Dictionary would corrupt under that race.

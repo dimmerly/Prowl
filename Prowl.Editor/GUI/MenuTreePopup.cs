@@ -196,9 +196,9 @@ public static class MenuTreePopup
             paper.Box($"{id}_back_sep").Height(1).Margin(8, 3, 8, 3).BackgroundColor(EditorTheme.BorderSoft);
         }
 
-        foreach (var folder in subfolders)
+        foreach (string folder in subfolders)
         {
-            var captured = folder;
+            string captured = folder;
             using (paper.Row($"{id}_folder_{folder}")
                 .Height(EditorTheme.RowHeight)
                 .Hovered.BackgroundColor(EditorTheme.Hover).End()

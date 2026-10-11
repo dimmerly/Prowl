@@ -30,7 +30,7 @@ public sealed class Cubemap : Texture, ISerializable
     public int Layers { get; private set; }
 
     // Render-target framebuffers are created lazily per (face, mip) and reused.
-    private readonly Dictionary<int, GraphicsFrameBuffer> _faceTargets = new();
+    private readonly Dictionary<int, GraphicsFrameBuffer> _faceTargets = [];
     // Shared depth buffer for capture (scene rendering into a face needs a depth test).
     private Texture2D? _captureDepth;
 

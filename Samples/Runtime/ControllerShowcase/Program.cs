@@ -56,7 +56,7 @@ public sealed class ControllerShowcaseGame : StationGame
     private CharacterController _character = null!;
     private CharacterInput _input = null!;
 
-    private readonly List<Landmark> _landmarks = new();
+    private readonly List<Landmark> _landmarks = [];
 
     protected override string MoveKeys => "WASD  run    Space  jump    C  crouch    Right Mouse  orbit";
 
@@ -415,7 +415,7 @@ public sealed class CharacterInput : Component
 /// </summary>
 public sealed class GravityZone : Component
 {
-    public static readonly List<GravityZone> All = new();
+    public static readonly List<GravityZone> All = [];
 
     /// <summary>True pulls toward the zone's middle across a sphere of <see cref="Radius"/>, false pulls along <see cref="Direction"/> across a box of <see cref="Size"/>.</summary>
     public bool TowardCenter;
@@ -461,7 +461,7 @@ public sealed class GravityZone : Component
 /// <summary>A pad that throws whatever stands on it at <see cref="Launch"/>.</summary>
 public sealed class JumpPad : Component
 {
-    public static readonly List<JumpPad> All = new();
+    public static readonly List<JumpPad> All = [];
 
     public Float3 Launch;
     public float Radius = 1.2f;
@@ -480,7 +480,7 @@ public sealed class JumpPad : Component
 /// <summary>One end of a teleporter: stepping onto it puts the walker on <see cref="Exit"/>.</summary>
 public sealed class Teleporter : Component
 {
-    public static readonly List<Teleporter> All = new();
+    public static readonly List<Teleporter> All = [];
 
     public Teleporter? Exit;
     public float Radius = 1f;

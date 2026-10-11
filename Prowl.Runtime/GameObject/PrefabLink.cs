@@ -30,7 +30,7 @@ internal sealed class PrefabLink
     public Guid SourceIdentifier;
 
     /// <summary>Per-instance changes, stored on the instance root with root-relative paths.</summary>
-    public List<PropertyOverride> Overrides = new();
+    public List<PropertyOverride> Overrides = [];
 
     /// <summary>
     /// Drop what makes this an instance, keeping what says where the objects came from. Writing a

@@ -36,10 +36,10 @@ public static class ScriptAssemblyManager
     // Raw IL bytes of each loaded user assembly, kept so hot reload can read a swapped assembly's IL with
     // Cecil (for lambda/closure migration). Keyed weakly so an unloaded assembly's bytes can be collected.
     [Prowl.Ember.ReloadIgnore]
-    private static readonly System.Runtime.CompilerServices.ConditionalWeakTable<Assembly, byte[]> s_assemblyBytes = new();
+    private static readonly System.Runtime.CompilerServices.ConditionalWeakTable<Assembly, byte[]> s_assemblyBytes = [];
 
     /// <summary>The raw IL bytes an assembly was loaded from, or null if it wasn't loaded through here.</summary>
-    internal static byte[]? GetAssemblyBytes(Assembly asm) => s_assemblyBytes.TryGetValue(asm, out var bytes) ? bytes : null;
+    internal static byte[]? GetAssemblyBytes(Assembly asm) => s_assemblyBytes.TryGetValue(asm, out byte[]? bytes) ? bytes : null;
 
     // Plugin resolution state, refreshed each time assemblies are (re)loaded.
     private static readonly Dictionary<string, string> s_managedPlugins = new(StringComparer.OrdinalIgnoreCase);
@@ -295,7 +295,7 @@ public static class ScriptAssemblyManager
         }
 
         // Load every produced user assembly in dependency order.
-        foreach (var dll in ScriptCompiler.GetEditorAssemblyPaths(project))
+        foreach (string dll in ScriptCompiler.GetEditorAssemblyPaths(project))
             LoadAssembly(dll, Path.GetFileNameWithoutExtension(dll));
     }
 
@@ -312,7 +312,7 @@ public static class ScriptAssemblyManager
         try
         {
             if (Directory.Exists(s_pluginLoadDir))
-                foreach (var f in Directory.EnumerateFiles(s_pluginLoadDir))
+                foreach (string f in Directory.EnumerateFiles(s_pluginLoadDir))
                     try { File.Delete(f); } catch { }
         }
         catch { }
@@ -330,7 +330,7 @@ public static class ScriptAssemblyManager
 
     private static Assembly? ResolveManagedPlugin(AssemblyLoadContext context, AssemblyName name)
     {
-        if (name.Name == null || !s_managedPlugins.TryGetValue(name.Name, out var path) || !File.Exists(path))
+        if (name.Name == null || !s_managedPlugins.TryGetValue(name.Name, out string? path) || !File.Exists(path))
             return null;
 
         try
@@ -374,7 +374,7 @@ public static class ScriptAssemblyManager
     private static List<Assembly> LoadAssembliesInto(Project project, AssemblyLoadContext context)
     {
         var loaded = new List<Assembly>();
-        foreach (var dll in ScriptCompiler.GetEditorAssemblyPaths(project))
+        foreach (string dll in ScriptCompiler.GetEditorAssemblyPaths(project))
         {
             if (!File.Exists(dll)) continue;
 

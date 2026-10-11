@@ -28,7 +28,7 @@ public class Animator : Component
     public AnimationGraph? Graph;
 
     /// <summary>Clips this animator can play by name, and the first of which it plays on enable.</summary>
-    public List<AnimationClip> Clips = new();
+    public List<AnimationClip> Clips = [];
 
     public bool PlayAutomatically = true;
 
@@ -49,9 +49,9 @@ public class Animator : Component
     internal AnimatorRagdoll? Ragdoll => _ragdoll;
     [NonSerialized] private AnimationClip? _pending;
     [NonSerialized] private bool _autoPlayPending;
-    [NonSerialized] private readonly Dictionary<string, ParameterValue> _pendingParameters = new();
-    [NonSerialized] private readonly Dictionary<string, PluggedGraph> _slots = new();
-    [NonSerialized] private readonly Dictionary<string, Pose> _externalPoses = new();
+    [NonSerialized] private readonly Dictionary<string, ParameterValue> _pendingParameters = [];
+    [NonSerialized] private readonly Dictionary<string, PluggedGraph> _slots = [];
+    [NonSerialized] private readonly Dictionary<string, Pose> _externalPoses = [];
     [NonSerialized] private AnimationGraph? _boundGraph;
     [NonSerialized] private int _boundVersion;
     [NonSerialized] private int _seenEdits = -1;

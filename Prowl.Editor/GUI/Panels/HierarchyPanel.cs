@@ -52,18 +52,18 @@ public class HierarchyPanel : DockPanel
 
     // Ping state which GOs in the hierarchy match the pinged GUID
     private static Guid _lastHierarchyPingGuid;
-    private static readonly HashSet<GameObject> _pingedGameObjects = new();
+    private static readonly HashSet<GameObject> _pingedGameObjects = [];
 
     // IDs of nodes that need force-expanding (parents of pinged GOs)
-    private readonly HashSet<string> _forceExpandedIds = new();
+    private readonly HashSet<string> _forceExpandedIds = [];
     // Filled by the tree each frame with each node's resolved expanded state, so drag-drop can turn a
     // "below" drop on an expanded node into a "first child" drop (where its first child visually sits).
-    private readonly Dictionary<string, bool> _expandState = new();
+    private readonly Dictionary<string, bool> _expandState = [];
 
     // Rebuilt every frame from the scene. Nodes are kept per GameObject so their id string is only made once.
-    private readonly List<TreeNode> _treeNodes = new();
-    private readonly List<object> _flatObjects = new();
-    private readonly ConditionalWeakTable<GameObject, TreeNode> _nodeCache = new();
+    private readonly List<TreeNode> _treeNodes = [];
+    private readonly List<object> _flatObjects = [];
+    private readonly ConditionalWeakTable<GameObject, TreeNode> _nodeCache = [];
 
     public override void OnGUI(Paper paper, float width, float height)
     {
@@ -225,17 +225,17 @@ public class HierarchyPanel : DockPanel
                 {
                     if (ShortcutManager.IsPressed("Hierarchy/Delete"))
                     {
-                        foreach (GameObject go in ExcludeNestedSelections(Selection.GetSelected<GameObject>().ToList()))
+                        foreach (GameObject go in ExcludeNestedSelections([.. Selection.GetSelected<GameObject>()]))
                             DeleteGameObject(go);
                     }
                     else if (ShortcutManager.IsPressed("Hierarchy/Duplicate"))
                     {
-                        List<GameObject> dupes = GameObjectClipboard.Duplicate(Selection.GetSelected<GameObject>().ToList());
+                        List<GameObject> dupes = GameObjectClipboard.Duplicate([.. Selection.GetSelected<GameObject>()]);
                         foreach (GameObject d in dupes) Undo.RegisterCreatedObject(d, "Duplicate");
                     }
                     else if (ShortcutManager.IsPressed("Hierarchy/Copy"))
                     {
-                        GameObjectClipboard.Copy(Selection.GetSelected<GameObject>().ToList());
+                        GameObjectClipboard.Copy([.. Selection.GetSelected<GameObject>()]);
                     }
                     else if (ShortcutManager.IsPressed("Hierarchy/Paste"))
                     {
@@ -481,7 +481,7 @@ public class HierarchyPanel : DockPanel
                             if (dragged.Parent != null && dragged.Parent.IsValid())
                             {
                                 Guid oldParentId = dragged.Parent.Identifier;
-                                var oldSibIdx = dragged.GetSiblingIndex() ?? -1;
+                                int oldSibIdx = dragged.GetSiblingIndex() ?? -1;
                                 Guid dId = dragged.Identifier;
                                 Undo.RegisterAction("Unparent",
                                     undo: () => { Scene s = Scene.Current; if (s == null) return; GameObject? d = FindGOById(s, dId); GameObject? p = FindGOById(s, oldParentId); if (d != null && p != null) { d.SetParent(p); if (oldSibIdx >= 0) d.SetSiblingIndex(oldSibIdx); } },
@@ -563,7 +563,7 @@ public class HierarchyPanel : DockPanel
 
     // True when the target node is expanded and actually has children (its first-child slot is visible).
     private bool IsTargetExpanded(GameObject target, string targetId)
-        => target.Children.Count > 0 && _expandState.TryGetValue(targetId, out var e) && e;
+        => target.Children.Count > 0 && _expandState.TryGetValue(targetId, out bool e) && e;
 
     private void ProcessGODrop(GameObjectDragPayload goDrop, GameObject target, string targetId, DropPosition dropPos, int insertIndex = -1)
     {
@@ -594,8 +594,8 @@ public class HierarchyPanel : DockPanel
 
             // Capture state for undo (BEFORE the move)
             Guid oldParentId = dragged.Parent.IsValid() ? dragged.Parent.Identifier : Guid.Empty;
-            var oldSiblingIdx = dragged.GetSiblingIndex() ?? -1;
-            var oldRootIdx = oldParentId == Guid.Empty ? (Scene.Current.IsValid() ? Scene.Current.GetRootIndex(dragged) : -1) : -1;
+            int oldSiblingIdx = dragged.GetSiblingIndex() ?? -1;
+            int oldRootIdx = oldParentId == Guid.Empty ? (Scene.Current.IsValid() ? Scene.Current.GetRootIndex(dragged) : -1) : -1;
             Guid draggedId = dragged.Identifier;
 
             switch (dropPos)
@@ -643,8 +643,8 @@ public class HierarchyPanel : DockPanel
 
             // Register undo for reparent/reorder
             Guid newParentId = dragged.Parent.IsValid() ? dragged.Parent.Identifier : Guid.Empty;
-            var newSiblingIdx = dragged.GetSiblingIndex() ?? -1;
-            var newRootIdx = newParentId == Guid.Empty ? (Scene.Current.IsValid() ? Scene.Current.GetRootIndex(dragged) : -1) : -1;
+            int newSiblingIdx = dragged.GetSiblingIndex() ?? -1;
+            int newRootIdx = newParentId == Guid.Empty ? (Scene.Current.IsValid() ? Scene.Current.GetRootIndex(dragged) : -1) : -1;
 
             bool changed = oldParentId != newParentId || oldSiblingIdx != newSiblingIdx
                 || (oldParentId == Guid.Empty && newParentId == Guid.Empty && oldRootIdx != newRootIdx);
@@ -775,7 +775,7 @@ public class HierarchyPanel : DockPanel
 
                 builder.Item($"{Loc.Get("hierarchy.delete")} ({selectedGOs.Count})", () =>
                 {
-                    DeleteGameObjects(ExcludeNestedSelections(selectedGOs).ToList());
+                    DeleteGameObjects([.. ExcludeNestedSelections(selectedGOs)]);
                 }, icon: EditorIcons.Trash);
 
                 builder.Separator();
@@ -906,7 +906,7 @@ public class HierarchyPanel : DockPanel
             {
                 builder.Item($"{Loc.Get("hierarchy.delete")} ({selectedGOs.Count})", () =>
                 {
-                    DeleteGameObjects(ExcludeNestedSelections(selectedGOs).ToList());
+                    DeleteGameObjects([.. ExcludeNestedSelections(selectedGOs)]);
                 }, icon: EditorIcons.Trash, danger: true);
             }
             else
@@ -975,7 +975,7 @@ public class HierarchyPanel : DockPanel
         Guid goGuid = go.Identifier;
         RenameOverlay.Begin(goIdStr, go.Name, newName =>
         {
-            var oldName = go.Name;
+            string oldName = go.Name;
             Undo.RegisterAction("Rename",
                 () => { GameObject? r = Undo.FindGO(goGuid); if (r != null) r.Name = oldName; },
                 () => { GameObject? r = Undo.FindGO(goGuid); if (r != null) r.Name = newName; });
@@ -997,7 +997,7 @@ public class HierarchyPanel : DockPanel
 
         // Only the top-level selection moves: an object whose ancestor is also selected already
         // travels with that ancestor, and reparenting it too would flatten it out of its own parent.
-        List<GameObject> targets = ExcludeNestedSelections(Selection.GetSelected<GameObject>().ToList());
+        List<GameObject> targets = ExcludeNestedSelections([.. Selection.GetSelected<GameObject>()]);
         if (targets.Count == 0) return;
 
         if (PrefabUtility.NeedsBreaking(targets))

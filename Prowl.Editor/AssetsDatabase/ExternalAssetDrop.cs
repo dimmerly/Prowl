@@ -26,7 +26,7 @@ public static class ExternalAssetDrop
     private static DateTime _forceProcessUntil = DateTime.MinValue;
     private static string[]? _resolving;
     private static int _resolveFrames;
-    private static readonly List<(EditorAssetBackend Db, Action<string[]> Handler, DateTime Deadline)> _reveals = new();
+    private static readonly List<(EditorAssetBackend Db, Action<string[]> Handler, DateTime Deadline)> _reveals = [];
 
     /// <summary>
     /// True briefly after a drop, so the import pump runs even when ReimportOnFocusOnly
@@ -170,9 +170,9 @@ public static class ExternalAssetDrop
 
     internal sealed class CopyPlan
     {
-        public readonly List<(string SourceAbs, string DestAbs, string DestRel)> Files = new();
-        public readonly List<string> Directories = new();      // absolute, parents first
-        public readonly List<string> AlreadyInProject = new(); // assets-relative
+        public readonly List<(string SourceAbs, string DestAbs, string DestRel)> Files = [];
+        public readonly List<string> Directories = [];      // absolute, parents first
+        public readonly List<string> AlreadyInProject = []; // assets-relative
     }
 
     /// <summary>Resolve dropped paths to copy operations. Reads the filesystem, never writes it.</summary>

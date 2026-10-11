@@ -36,7 +36,7 @@ public class ConsolePanel : DockPanel
     private const int MaxPending = 5000;
     private static float RowHeight => EditorTheme.RowHeight + 2f;
 
-    private static readonly List<LogEntry> _messages = new();
+    private static readonly List<LogEntry> _messages = [];
     private static bool _subscribed;
 
     // Every log waits here until a reader drains it into _messages, so logging from any thread never touches the list.
@@ -60,7 +60,7 @@ public class ConsolePanel : DockPanel
     private int _lastMessageCount;
     private int _lastFilterHash;
     private bool _lastCollapseState;
-    private readonly List<int> _filteredIndices = new();
+    private readonly List<int> _filteredIndices = [];
     private int _selectedFilteredIndex = -1;
     private TextLayout? _ellipsis;
 

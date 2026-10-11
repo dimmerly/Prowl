@@ -23,7 +23,7 @@ public sealed class NavMeshInstance
 {
     // Recursive, so a query made while holding a lease on the same thread does not throw.
     internal readonly ReaderWriterLockSlim Lock = new(LockRecursionPolicy.SupportsRecursion);
-    internal readonly ConcurrentBag<DtNavMeshQuery> QueryPool = new();
+    internal readonly ConcurrentBag<DtNavMeshQuery> QueryPool = [];
 
     // Set when work is queued into the cache (an obstacle request, a tile swap), cleared once
     // the pump drains it. Only flagged instances are pumped, so a freshly registered instance

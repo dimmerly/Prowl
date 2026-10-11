@@ -63,15 +63,15 @@ public class EditorSettings
 
     // Shortcuts only user-overridden bindings are stored
     /// <summary> Gets or sets the dictionary of user-overridden shortcut bindings, keyed by action name. Only overridden bindings are stored. </summary>
-    public Dictionary<string, ShortcutBinding> ShortcutOverrides { get; set; } = new();
+    public Dictionary<string, ShortcutBinding> ShortcutOverrides { get; set; } = [];
 
     // IDs of interactive guides/tutorials the user has already completed or skipped.
     /// <summary> Gets or sets the list of interactive guide IDs the user has completed or skipped. </summary>
-    public List<string> SeenGuides { get; set; } = new();
+    public List<string> SeenGuides { get; set; } = [];
 
     /// <summary>Serialized per-scene-tool settings, keyed by settings type name. Per-user rather
     /// than per-project: a brush size follows the user, it is not committed with the scene.</summary>
-    public Dictionary<string, string> SceneToolSettings { get; set; } = new();
+    public Dictionary<string, string> SceneToolSettings { get; set; } = [];
 
     // Theme
     /// <summary> Gets or sets the current editor theme data. Defaults to the built-in theme. </summary>
@@ -138,7 +138,7 @@ public class EditorSettings
         {
             string dir = Path.GetDirectoryName(_filePath)!;
             Directory.CreateDirectory(dir);
-            var json = JsonSerializer.Serialize(this, new JsonSerializerOptions { WriteIndented = true });
+            string json = JsonSerializer.Serialize(this, new JsonSerializerOptions { WriteIndented = true });
             File.WriteAllText(_filePath, json);
         }
         catch (Exception ex)
@@ -153,7 +153,7 @@ public class EditorSettings
         {
             if (File.Exists(_filePath))
             {
-                var json = File.ReadAllText(_filePath);
+                string json = File.ReadAllText(_filePath);
                 EditorSettings? settings = JsonSerializer.Deserialize<EditorSettings>(json);
                 if (settings != null)
                 {

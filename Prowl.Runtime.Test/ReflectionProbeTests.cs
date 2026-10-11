@@ -17,7 +17,7 @@ public class ReflectionProbeTests : RuntimeTestBase
         ReflectionProbe probe = go.AddComponent<ReflectionProbe>();
         probe.BoxSize = new Float3(4, 5, 6);
         probe.Importance = 3;
-        var faces = new byte[6 * 2][];
+        byte[][] faces = new byte[6 * 2][];
         for (int i = 0; i < faces.Length; i++)
             faces[i] = [(byte)i, (byte)(i * 3), 7];
         probe.SetBaked(new ReflectionProbe.BakedCubemap { Size = 8, Mips = 2, Faces = faces });

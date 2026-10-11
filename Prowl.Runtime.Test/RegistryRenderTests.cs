@@ -38,7 +38,7 @@ public class RegistryRenderTests : RuntimeTestBase
         RenderCollectProbe probe = go.AddComponent<RenderCollectProbe>();
         scene.Add(go);
 
-        scene.CollectRenderables(null!, new List<IRenderable>(), new List<IRenderableLight>());
+        scene.CollectRenderables(null!, [], []);
 
         Assert.Equal(1, probe.Calls);
     }
@@ -52,7 +52,7 @@ public class RegistryRenderTests : RuntimeTestBase
         scene.Add(go);
         probe.Enabled = false;
 
-        scene.CollectRenderables(null!, new List<IRenderable>(), new List<IRenderableLight>());
+        scene.CollectRenderables(null!, [], []);
 
         Assert.Equal(0, probe.Calls);
     }
@@ -66,7 +66,7 @@ public class RegistryRenderTests : RuntimeTestBase
         RenderCollectProbe probe = go.AddComponent<RenderCollectProbe>();
         scene.Add(go);
 
-        scene.CollectRenderables(null!, new List<IRenderable>(), new List<IRenderableLight>());
+        scene.CollectRenderables(null!, [], []);
 
         Assert.Equal(1, probe.Calls);
     }

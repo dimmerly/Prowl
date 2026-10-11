@@ -423,7 +423,7 @@ public sealed class TerrainData : Asset, ISerializable
 
     private static byte[] ResampleNearest(byte[] source, int oldRes, int newRes)
     {
-        var result = new byte[newRes * newRes];
+        byte[] result = new byte[newRes * newRes];
         float scale = (float)oldRes / newRes;
         for (int z = 0; z < newRes; z++)
         {
@@ -469,7 +469,7 @@ public sealed class TerrainData : Asset, ISerializable
         // Rebuild splats removing the channel at index
         int res = SplatmapResolution;
         int pixelCount = res * res;
-        var newSplats = new float[pixelCount * newCount];
+        float[] newSplats = new float[pixelCount * newCount];
         for (int p = 0; p < pixelCount; p++)
         {
             int dst = 0;
@@ -489,7 +489,7 @@ public sealed class TerrainData : Asset, ISerializable
         if (oldSplats == null) return;
         int res = SplatmapResolution;
         int pixelCount = res * res;
-        var newSplats = new float[pixelCount * newCount];
+        float[] newSplats = new float[pixelCount * newCount];
         int copyChannels = Math.Min(oldCount, newCount);
         for (int p = 0; p < pixelCount; p++)
         {
@@ -563,7 +563,7 @@ public sealed class TerrainData : Asset, ISerializable
     {
         EnsureLoaded();
         if (layerIndex < 0 || layerIndex >= DetailLayers.Count) return 0f;
-        var layer = DetailLayers[layerIndex];
+        byte[] layer = DetailLayers[layerIndex];
         if (layer == null || x < 0 || x >= DetailResolution || z < 0 || z >= DetailResolution) return 0f;
         return layer[z * DetailResolution + x] * (1f / 255f);
     }
@@ -572,7 +572,7 @@ public sealed class TerrainData : Asset, ISerializable
     {
         EnsureLoaded();
         if (layerIndex < 0 || layerIndex >= DetailLayers.Count) return;
-        var layer = DetailLayers[layerIndex];
+        byte[] layer = DetailLayers[layerIndex];
         if (layer == null || x < 0 || x >= DetailResolution || z < 0 || z >= DetailResolution) return;
         layer[z * DetailResolution + x] = (byte)MathF.Round(Maths.Clamp(value, 0f, 1f) * 255f);
         _detailsVersion++;
@@ -592,7 +592,7 @@ public sealed class TerrainData : Asset, ISerializable
 
         for (int i = 0; i < DetailLayers.Count; i++)
         {
-            var source = DetailLayers[i];
+            byte[] source = DetailLayers[i];
             DetailLayers[i] = resample && source != null && source.Length == oldRes * oldRes
                 ? Resample(source, oldRes, newRes)
                 : new byte[newRes * newRes];
@@ -604,7 +604,7 @@ public sealed class TerrainData : Asset, ISerializable
     /// <summary>Bilinear resample of a square cell grid, sampling on cell centres.</summary>
     private static byte[] Resample(byte[] source, int oldRes, int newRes)
     {
-        var result = new byte[newRes * newRes];
+        byte[] result = new byte[newRes * newRes];
         if (oldRes == newRes)
         {
             Array.Copy(source, result, result.Length);
@@ -750,7 +750,7 @@ public sealed class TerrainData : Asset, ISerializable
                 foreach (Texture2D t in _splatmapTextures) if (t.IsValid()) t.Dispose();
 
             _splatmapTextures = new List<Texture2D>(texCount);
-            var buffer = new float[pixelCount * 4];
+            float[] buffer = new float[pixelCount * 4];
 
             for (int ti = 0; ti < texCount; ti++)
             {
@@ -819,7 +819,7 @@ public sealed class TerrainData : Asset, ISerializable
             for (int c = 0; c < channels; c++)
             {
                 int layerIndex = baseLayer + c;
-                var layer = DetailLayers[layerIndex];
+                byte[] layer = DetailLayers[layerIndex];
 
                 // Empty until proven otherwise, so a missing layer reads as unpainted rather than
                 // as a stale rect left over from whatever occupied the slot before.
@@ -1005,7 +1005,7 @@ public sealed class TerrainData : Asset, ISerializable
         value.Add("DetailPrototypes", detailProtoList);
 
         var detailLayersList = EchoObject.NewList();
-        foreach (var dl in DetailLayers)
+        foreach (byte[] dl in DetailLayers)
             detailLayersList.ListAdd(new EchoObject(Convert.ToBase64String(dl ?? [])));
         value.Add("DetailLayers", detailLayersList);
 
@@ -1105,7 +1105,7 @@ public sealed class TerrainData : Asset, ISerializable
         Splats = splats ?? CreateDefaultSplats();
 
         // Holes
-        var holesB64 = value.Get("Holes")?.StringValue;
+        string? holesB64 = value.Get("Holes")?.StringValue;
         byte[]? holes = holesB64 != null ? Convert.FromBase64String(holesB64) : null;
         if (holes != null && holes.Length != SplatmapResolution * SplatmapResolution)
         {
@@ -1267,7 +1267,7 @@ public sealed class TerrainData : Asset, ISerializable
     private float[] CreateDefaultSplats()
     {
         int lc = LayerCount;
-        var s = new float[SplatmapResolution * SplatmapResolution * lc];
+        float[] s = new float[SplatmapResolution * SplatmapResolution * lc];
         for (int i = 0; i < s.Length; i += lc) s[i] = 1f;
         return s;
     }

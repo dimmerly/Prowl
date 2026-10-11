@@ -233,7 +233,7 @@ public class EditorApplication : Game
 
             Type? currentType = currentValue?.GetType();
             int selectedIndex = currentType != null ? Array.IndexOf(types, currentType) + 1 : 0;
-            var names = types.Select(t => t.Name).Prepend("(null)").ToArray();
+            string[] names = [.. types.Select(t => t.Name).Prepend("(null)")];
 
             OrigamiUI.Origami.Dropdown(paper, $"{id}_dd", selectedIndex,
                 idx =>
@@ -1069,7 +1069,7 @@ public class EditorApplication : Game
     {
         var assembly = Assembly.GetExecutingAssembly();
 
-        var resourceName = "Prowl.Editor.Resources." + resource;
+        string resourceName = "Prowl.Editor.Resources." + resource;
 
         Stream? stream = assembly.GetManifestResourceStream(resourceName);
         return stream;
@@ -1080,9 +1080,9 @@ public class EditorApplication : Game
     {
         var assembly = Assembly.GetExecutingAssembly();
 
-        var resourceName = "Prowl.Editor.Resources." + resource;
+        string resourceName = "Prowl.Editor.Resources." + resource;
 
-        var pathToFile = Path.GetDirectoryName(AppDomain.CurrentDomain.BaseDirectory) +
+        string pathToFile = Path.GetDirectoryName(AppDomain.CurrentDomain.BaseDirectory) +
                           resourceName;
 
         using (Stream? stream = assembly.GetManifestResourceStream(resourceName))
@@ -1292,7 +1292,7 @@ public class EditorApplication : Game
         Scribe.FontFile[] systemFonts = [.. PaperInstance.EnumerateSystemFonts()];
         int loaded = 0;
 
-        foreach (var family in fallbackFamilies)
+        foreach (string family in fallbackFamilies)
         {
             Scribe.FontFile? font = systemFonts.FirstOrDefault(f =>
                 f.FamilyName.Equals(family, StringComparison.OrdinalIgnoreCase)
@@ -1415,7 +1415,7 @@ public class EditorApplication : Game
                 onSaved?.Invoke();
             }
         }, Project.Current.AssetsPath,
-           new[] { "*.scene" }, new[] { Loc.Get("editor.filter_scene") });
+           ["*.scene"], [Loc.Get("editor.filter_scene")]);
     }
 
     // ================================================================
@@ -1438,7 +1438,7 @@ public class EditorApplication : Game
                     System.IO.Path.GetRelativePath(Project.Current.AssetsPath, path));
                 EditorSceneManager.OpenScene(rel);
             }, Project.Current?.AssetsPath,
-               new[] { "*.scene" }, new[] { Loc.Get("editor.filter_scene") });
+               ["*.scene"], [Loc.Get("editor.filter_scene")]);
         });
         MenuRegistry.RegisterSeparator(file);
         MenuRegistry.Register($"{file}/{Loc.Get("menu.file.save_scene")}", () =>
@@ -1497,8 +1497,8 @@ public class EditorApplication : Game
                     GUI.Popups.PackageImportDialog.Open(path);
             },
             startPath: Project.Current?.PackagesPath,
-            filters: new[] { "*.prowlpackage" },
-            filterLabels: new[] { Loc.Get("editor.filter_package") });
+            filters: ["*.prowlpackage"],
+            filterLabels: [Loc.Get("editor.filter_package")]);
         });
     }
 
@@ -2072,7 +2072,7 @@ public class EditorApplication : Game
         }
     }
 
-    private static readonly HashSet<GameObject> s_selectedGizmoObjects = new();
+    private static readonly HashSet<GameObject> s_selectedGizmoObjects = [];
 
     private static void CollectSelectedGizmoObjects(GameObject go)
     {

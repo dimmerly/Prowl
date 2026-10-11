@@ -1043,7 +1043,7 @@ public class AnimationGraphTests : RuntimeTestBase
     private static (MotionSkeleton Skeleton, Avatar Avatar, int Spine) HumanoidRig()
     {
         (string Name, string Parent, HumanBodyBone Bone, Float3 Offset)[] layout =
-        {
+        [
             ("b_root", "", HumanBodyBone.Hips, new Float3(0f, 1f, 0f)),
             ("b_belly", "b_root", HumanBodyBone.Spine, new Float3(0f, 0.2f, 0f)),
             ("b_skull", "b_belly", HumanBodyBone.Head, new Float3(0f, 0.5f, 0f)),
@@ -1059,10 +1059,10 @@ public class AnimationGraphTests : RuntimeTestBase
             ("b_legR", "b_root", HumanBodyBone.RightUpperLeg, new Float3(-0.1f, -0.1f, 0f)),
             ("b_kneeR", "b_legR", HumanBodyBone.RightLowerLeg, new Float3(0f, -0.45f, 0f)),
             ("b_footR", "b_kneeR", HumanBodyBone.RightFoot, new Float3(0f, -0.45f, 0.05f)),
-        };
+        ];
 
         var ids = new StringID[layout.Length];
-        var parents = new int[layout.Length];
+        int[] parents = new int[layout.Length];
         var pose = new Transform3D[layout.Length];
         var description = new HumanDescription();
 

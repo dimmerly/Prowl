@@ -70,7 +70,7 @@ public class ShortcutDefinition
 /// </summary>
 public static class ShortcutManager
 {
-    private static readonly Dictionary<string, ShortcutDefinition> _shortcuts = new();
+    private static readonly Dictionary<string, ShortcutDefinition> _shortcuts = [];
     private static bool _overridesLoaded;
 
     /// <summary>

@@ -129,7 +129,7 @@ public sealed class Spinner : Component
 /// <summary>Drops physics cubes on C, clears them on X, quits on Escape and draws the key help.</summary>
 public sealed class CubeSpawner : Component
 {
-    private readonly List<GameObject> _spawned = new();
+    private readonly List<GameObject> _spawned = [];
 
     public override void Update()
     {

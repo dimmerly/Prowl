@@ -17,7 +17,7 @@ public sealed class CarController : Component
 {
     public sealed class Axle
     {
-        public readonly List<WheelCollider> Wheels = new();
+        public readonly List<WheelCollider> Wheels = [];
 
         /// <summary>How much of the steering this axle takes: 1 for a front axle, 0 for a fixed one, negative to steer against the front.</summary>
         public float Steer;
@@ -33,7 +33,7 @@ public sealed class CarController : Component
         public bool Towed;
     }
 
-    public readonly List<Axle> Axles = new();
+    public readonly List<Axle> Axles = [];
 
     /// <summary>Total drive torque in N m, shared between the driven wheels.</summary>
     public float Torque = 2800f;
@@ -77,13 +77,13 @@ public sealed class CarController : Component
     public bool Controlled;
     public bool LightsOn = true;
     public Material? BrakeLights;
-    public readonly List<Light> Headlights = new();
+    public readonly List<Light> Headlights = [];
 
     private Rigidbody3D _body = null!;
     private float _steer;
     private float _traction = 1f;
     private float _wheelbase = 1f;
-    private readonly Dictionary<WheelCollider, float> _antiLock = new();
+    private readonly Dictionary<WheelCollider, float> _antiLock = [];
     private bool _handbrakeHeld;
 
     public IEnumerable<WheelCollider> Wheels => Axles.SelectMany(axle => axle.Wheels);

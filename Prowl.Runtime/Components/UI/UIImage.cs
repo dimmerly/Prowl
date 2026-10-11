@@ -59,7 +59,7 @@ public class UIImage : Graphic
             if (_defaultTexture != null) return _defaultTexture;
             //Texture2D.LoadDefault(DefaultTexture.White)
             var tex = new Texture2D(1, 1);
-            tex.SetData(new System.Memory<byte>(new byte[] { 255, 255, 255, 255 }), 0,0,1,1);
+            tex.SetData(new System.Memory<byte>([255, 255, 255, 255]), 0,0,1,1);
             _defaultTexture = tex;
             return _defaultTexture;
         }

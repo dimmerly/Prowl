@@ -302,7 +302,7 @@ public sealed partial class VehicleShowcaseGame
     }
 
     // Axles of the trailers being built, handed to the truck that brakes them once the rig is complete.
-    private readonly List<CarController.Axle> _towedAxles = new();
+    private readonly List<CarController.Axle> _towedAxles = [];
 
     private Rigidbody3D SemiTrailer(Vehicle vehicle, string model, Float3 position, Material paint, Material taillight, bool headboard)
     {

@@ -206,9 +206,9 @@ public class Camera : Component
     // camera. Compared against the current list each frame to fire OnDisable() on
     // anything that's been disabled, removed, or hot-swapped out.
     [SerializeIgnore]
-    private readonly HashSet<ImageEffect> _lastActiveEffects = new();
+    private readonly HashSet<ImageEffect> _lastActiveEffects = [];
 
-    [NonSerialized, NotHeld] private readonly Dictionary<Type, object> _renderData = new();
+    [NonSerialized, NotHeld] private readonly Dictionary<Type, object> _renderData = [];
 
     /// <summary>Size of this camera's shadow atlas, 0 for <see cref="Rendering.ShadowAtlas.RequestedSize"/>.</summary>
     public int ShadowAtlasSize = 0;

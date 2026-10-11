@@ -32,7 +32,7 @@ internal static class ModelRigBuilder
         /// <summary>Bone index per Clay node index. Bones are one per node, in node order.</summary>
         public string[] BonePaths = Array.Empty<string>();
         /// <summary>Channel index per (mesh index, blend shape index).</summary>
-        public Dictionary<(int Mesh, int Shape), int> Channels = new();
+        public Dictionary<(int Mesh, int Shape), int> Channels = [];
     }
 
     /// <summary>
@@ -51,9 +51,9 @@ internal static class ModelRigBuilder
         }
 
         var ids = new StringID[count];
-        var parents = new int[count];
+        int[] parents = new int[count];
         var reference = new Transform3D[count];
-        var paths = new string[count];
+        string[] paths = new string[count];
 
         for (int i = 0; i < count; i++)
         {

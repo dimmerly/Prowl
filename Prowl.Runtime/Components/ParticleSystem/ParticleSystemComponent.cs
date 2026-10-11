@@ -240,9 +240,9 @@ public class ParticleSystemComponent : Component
     private ParticleSystemComponent? _driver;
     private long _emitSpacesFrame = long.MinValue;
 
-    private readonly List<ParticleCollisionEvent> _collisionEvents = new();
-    private readonly List<SubEmitRequest> _subEmitQueue = new();
-    private readonly List<ParticleSystemComponent> _subEmitTargets = new();
+    private readonly List<ParticleCollisionEvent> _collisionEvents = [];
+    private readonly List<SubEmitRequest> _subEmitQueue = [];
+    private readonly List<ParticleSystemComponent> _subEmitTargets = [];
     private bool _hasBirthSubEmitters;
     private bool _hasCollisionSubEmitters;
     private bool _hasDeathSubEmitters;

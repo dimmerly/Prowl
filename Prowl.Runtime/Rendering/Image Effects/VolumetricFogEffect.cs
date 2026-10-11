@@ -211,12 +211,12 @@ public sealed class VolumetricFogEffect : ImageEffect
 
     private static string[] SlotNames(string uniform)
     {
-        var names = new string[MaxFogVolumes];
+        string[] names = new string[MaxFogVolumes];
         for (int i = 0; i < MaxFogVolumes; i++) names[i] = $"{uniform}[{i}]";
         return names;
     }
 
-    private readonly List<(FogVolume vol, float distSq)> _collected = new();
+    private readonly List<(FogVolume vol, float distSq)> _collected = [];
 
     private void UploadFogVolumes(RenderContext context)
     {

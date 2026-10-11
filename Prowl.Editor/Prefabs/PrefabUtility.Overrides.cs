@@ -67,7 +67,7 @@ public static partial class PrefabUtility
             var member = Member.Find(parent, parts[i]);
             if (!member.IsValid) return false;
 
-            var next = member.GetValue(parent);
+            object? next = member.GetValue(parent);
             if (next == null) return false;
 
             parent = next;
@@ -78,7 +78,7 @@ public static partial class PrefabUtility
     private static Member GetMemberByPath(object target, string memberPath)
     {
         string[] parts = memberPath.Split('.');
-        if (!TraverseToParent(target, parts, out var parent)) return default;
+        if (!TraverseToParent(target, parts, out object? parent)) return default;
         return Member.Find(parent, parts[^1]);
     }
 
@@ -139,7 +139,7 @@ public static partial class PrefabUtility
     private static void ApplyFieldValue(object target, string memberPath, EchoObject value, Scene? resolveIn)
     {
         string[] parts = memberPath.Split('.');
-        if (!TraverseToParent(target, parts, out var parent)) return;
+        if (!TraverseToParent(target, parts, out object? parent)) return;
 
         var member = Member.Find(parent, parts[^1]);
         if (!member.IsValid) return;

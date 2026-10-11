@@ -95,10 +95,10 @@ public enum SocketSize
 /// <summary>A dynamic body the physics hands can pick up, hold in one or both hands, throw and put in sockets.</summary>
 public sealed class Grabbable : Component
 {
-    public static readonly List<Grabbable> All = new();
+    public static readonly List<Grabbable> All = [];
 
     /// <summary>Where the item may be held. Without any, the hand holds it wherever it touched.</summary>
-    public List<GrabPoint> Points = new();
+    public List<GrabPoint> Points = [];
 
     /// <summary>How far from its centre a hand can take hold of an item without grab points, roughly its size.</summary>
     public float Reach = 0.15f;
@@ -127,7 +127,7 @@ public sealed class Grabbable : Component
     public Float3 SocketPosition;
     public Quaternion SocketRotation = Quaternion.Identity;
 
-    public readonly List<PhysicsHand> Holders = new();
+    public readonly List<PhysicsHand> Holders = [];
     public Socket? InSocket { get; internal set; }
 
     /// <summary>Whether the item pressed into something solid on the last step, which lets a hand lean on it.</summary>
@@ -317,7 +317,7 @@ public sealed class Grabbable : Component
 /// </summary>
 public abstract class HandTarget : Component
 {
-    public static readonly List<HandTarget> All = new();
+    public static readonly List<HandTarget> All = [];
 
     public PhysicsHand? User { get; private set; }
 
@@ -360,7 +360,7 @@ public abstract class HandTarget : Component
 /// </summary>
 public sealed class Socket : Component
 {
-    public static readonly List<Socket> All = new();
+    public static readonly List<Socket> All = [];
 
     public SocketSize Accepts = SocketSize.Any;
     public float Radius = 0.15f;

@@ -106,7 +106,7 @@ public static class ProbeTetrahedralizer
         }
 
         int m = finalTets.Count;
-        var tetra = new int[m * 4];
+        int[] tetra = new int[m * 4];
         for (int i = 0; i < m; i++)
         {
             tetra[i * 4 + 0] = finalTets[i].A;
@@ -152,7 +152,7 @@ public static class ProbeTetrahedralizer
 
     private static int[] BuildNeighbours(List<Tet> tets, int m)
     {
-        var neighbours = new int[m * 4];
+        int[] neighbours = new int[m * 4];
         for (int i = 0; i < neighbours.Length; i++) neighbours[i] = -1;
 
         // Map a sorted face -> (tet, faceIndex). Face opposite vertex i is the other three.

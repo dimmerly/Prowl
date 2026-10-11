@@ -318,7 +318,7 @@ public static class CliServer
         if (length > MaxBodyBytes)
             return (413, Error($"Bodies are limited to {MaxBodyBytes} bytes."));
 
-        var body = new byte[length];
+        byte[] body = new byte[length];
         int have = Math.Min(length, buffered.Length);
         Array.Copy(buffered, body, have);
         while (have < length)
@@ -433,7 +433,7 @@ public static class CliServer
             return;
         }
 
-        var gate = new object();
+        object gate = new object();
         bool started = false, abandoned = false;
         var dispatch = Task.Run(() => GameTask.Run(() =>
         {
@@ -545,7 +545,7 @@ public static class CliServer
     private static async Task<(string Method, string Path, Dictionary<string, string> Headers, byte[] Buffered)?> ReadHeadAsync(NetworkStream stream, CancellationToken ct)
     {
         var buffer = new MemoryStream();
-        var chunk = new byte[8192];
+        byte[] chunk = new byte[8192];
         int headerEnd = -1;
 
         while (headerEnd < 0)

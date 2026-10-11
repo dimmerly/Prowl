@@ -153,7 +153,7 @@ public sealed class MenuItemAttribute : Attribute
 
         var items = new List<(int Priority, Entry? Leaf, string? Branch)>();
         foreach (Entry leaf in leaves) items.Add((leaf.Priority, leaf, null));
-        foreach (var key in branchOrder) items.Add((branches[key].Min(e => e.Priority), null, key));
+        foreach (string key in branchOrder) items.Add((branches[key].Min(e => e.Priority), null, key));
         items.Sort((a, b) => a.Priority.CompareTo(b.Priority));
 
         for (int i = 0; i < items.Count; i++)
@@ -221,7 +221,7 @@ public sealed class MenuItemAttribute : Attribute
 
         var items = new List<(int Priority, Entry? Leaf, string? Branch)>();
         foreach (Entry leaf in leaves) items.Add((leaf.Priority, leaf, null));
-        foreach (var key in branchOrder) items.Add((branches[key].Min(e => e.Priority), null, key));
+        foreach (string key in branchOrder) items.Add((branches[key].Min(e => e.Priority), null, key));
         items.Sort((a, b) => a.Priority.CompareTo(b.Priority));
 
         for (int i = 0; i < items.Count; i++)

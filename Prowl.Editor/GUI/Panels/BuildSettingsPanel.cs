@@ -182,7 +182,7 @@ public class BuildSettingsPanel : DockPanel
         rowB.OnPostLayout(idx, (rowIndex, _, r) =>
         {
             List<float> cys = paper.GetElementStorage<List<float>>(listEl, "rowCys", null!);
-            if (cys == null) { cys = new List<float>(); paper.SetElementStorage(listEl, "rowCys", cys); }
+            if (cys == null) { cys = []; paper.SetElementStorage(listEl, "rowCys", cys); }
             while (cys.Count <= rowIndex) cys.Add(0f);
             cys[rowIndex] = (float)(r.Min.Y + r.Size.Y * 0.5f);
         });

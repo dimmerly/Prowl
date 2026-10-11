@@ -9,8 +9,8 @@ namespace Prowl.Runtime;
 /// <summary>Every animator in a scene, advanced in one pass between the Update and LateUpdate phases.</summary>
 public sealed class SceneAnimation
 {
-    private readonly List<Animator> _animators = new();
-    private readonly List<Animator> _scratch = new();
+    private readonly List<Animator> _animators = [];
+    private readonly List<Animator> _scratch = [];
 
     /// <summary>The enabled animators the scene is driving.</summary>
     public IReadOnlyList<Animator> Animators => _animators;

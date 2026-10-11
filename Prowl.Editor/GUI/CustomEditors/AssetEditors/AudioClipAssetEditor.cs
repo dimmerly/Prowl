@@ -94,7 +94,7 @@ public class AudioClipAssetEditor : ImportSettingsEditor
     /// that had not been assigned one, which is every clip until it is imported, missed the cache
     /// entirely and decoded on every frame the inspector drew.
     /// </remarks>
-    private static readonly ConditionalWeakTable<AudioClip, float[]> s_waveforms = new();
+    private static readonly ConditionalWeakTable<AudioClip, float[]> s_waveforms = [];
 
     private const int WaveformColumns = 160;
     private const float WaveformHeight = 64.0f;

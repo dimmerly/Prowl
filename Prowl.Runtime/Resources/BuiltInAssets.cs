@@ -24,7 +24,7 @@ public static class BuiltInAssets
         public Func<Asset> Loader;
     }
 
-    private static readonly Dictionary<Guid, BuiltInEntry> _entries = new();
+    private static readonly Dictionary<Guid, BuiltInEntry> _entries = [];
     private static readonly object _initLock = new();
     private static volatile bool _initialized;
 

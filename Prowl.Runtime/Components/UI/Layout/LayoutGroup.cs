@@ -46,7 +46,7 @@ public abstract class LayoutGroup : UIBehaviour, ILayoutElement
     // Refilled in place rather than reallocated: a group's children are queried several times per
     // layout pass (once per reported dimension, once to arrange). Never enumerated across a nested
     // query - a child's sizes come from components on the child, never back from this group.
-    [SerializeIgnore] private readonly List<GameObject> _layoutChildren = new();
+    [SerializeIgnore] private readonly List<GameObject> _layoutChildren = [];
 
     protected List<GameObject> GetLayoutChildren()
     {

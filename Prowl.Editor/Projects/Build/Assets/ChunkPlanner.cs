@@ -91,11 +91,10 @@ public static class ChunkPlanner
         foreach (Guid guid in shipped)
             owners.TryAdd(guid, CommonChunk);
 
-        return owners
+        return [.. owners
             .GroupBy(pair => pair.Value, pair => pair.Key)
-            .Select(group => new AssetChunk(group.Key, group.OrderBy(g => g).ToList()))
-            .OrderBy(chunk => chunk.Name, StringComparer.Ordinal)
-            .ToList();
+            .Select(group => new AssetChunk(group.Key, [.. group.OrderBy(g => g)]))
+            .OrderBy(chunk => chunk.Name, StringComparer.Ordinal)];
     }
 
     /// <summary>

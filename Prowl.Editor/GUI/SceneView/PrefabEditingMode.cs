@@ -41,7 +41,7 @@ public static class PrefabEditingMode
 
     // Every scene a session has built, so one can still be recognized after the session that made it
     // ended. A prefab and its editor-only rig is not a scene anyone means to save over their own.
-    private static readonly ConditionalWeakTable<Scene, object> _editScenes = new();
+    private static readonly ConditionalWeakTable<Scene, object> _editScenes = [];
 
     /// <summary>Whether <paramref name="scene"/> was built to edit a prefab in, rather than opened as a scene.</summary>
     public static bool IsPrefabEditScene(Scene? scene) => scene != null && _editScenes.TryGetValue(scene, out _);
@@ -86,12 +86,12 @@ public static class PrefabEditingMode
     {
         if (Scene.IsLoadPending)
         {
-            Action? onLoaded = null;
-            onLoaded = () =>
+            void onLoaded()
             {
                 Scene.OnSceneLoaded -= onLoaded;
                 EnterInternal(prefabGuid);
-            };
+            }
+
             Scene.OnSceneLoaded += onLoaded;
             return;
         }
@@ -299,12 +299,12 @@ public static class PrefabEditingMode
         bool restored = RestoreScene();
 
         // The restore only queues the swap, so refresh instances once that scene is actually current.
-        Action? onLoaded = null;
-        onLoaded = () =>
+        void onLoaded()
         {
             Scene.OnSceneLoaded -= onLoaded;
             PrefabUtility.RefreshAllInstances(prefabGuid);
-        };
+        }
+
         Scene.OnSceneLoaded += onLoaded;
 
         Cleanup(restored);

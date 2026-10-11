@@ -33,7 +33,7 @@ public class PreviewRenderer : IDisposable
     private AnimatorBinding? _binding;
     private MotionPose? _pose;
     private MotionAvatar? _avatar;
-    private readonly List<AnimationClip> _clips = new();
+    private readonly List<AnimationClip> _clips = [];
 
     /// <summary>Whether to draw a grid plane in the preview.</summary>
     public bool ShowGrid { get; set; }
@@ -404,7 +404,7 @@ public class PreviewRenderer : IDisposable
     private void EnsureRT()
     {
         if (_rt.IsValid()) _rt.Dispose();
-        _rt = new RenderTexture(Width, Height, true, new[] { TextureImageFormat.Color4b });
+        _rt = new RenderTexture(Width, Height, true, [TextureImageFormat.Color4b]);
     }
 
     /// <summary>

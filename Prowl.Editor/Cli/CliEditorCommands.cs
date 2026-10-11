@@ -164,7 +164,7 @@ public static class CliEditorCommands
     public static async Task<object> Compile([CliArg("wait", "Wait for the compile to finish")] bool wait = true)
     {
         var finished = new TaskCompletionSource<ScriptAssemblyManager.CompileReport>(TaskCreationOptions.RunContinuationsAsynchronously);
-        Action<ScriptAssemblyManager.CompileReport> onFinished = r => finished.TrySetResult(r);
+        void onFinished(ScriptAssemblyManager.CompileReport r) => finished.TrySetResult(r);
         ScriptAssemblyManager.CompileFinished += onFinished;
         try
         {
@@ -1719,7 +1719,7 @@ internal static class CliApi
 {
     private const BindingFlags Members = BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static | BindingFlags.DeclaredOnly;
     private static readonly string[] s_skippedPrefixes = ["System", "Microsoft", "netstandard", "mscorlib", "WindowsBase", "Mono.", "xunit", "testhost", "ProwlEval"];
-    private static readonly Dictionary<Assembly, Dictionary<string, XElement>?> s_docs = new();
+    private static readonly Dictionary<Assembly, Dictionary<string, XElement>?> s_docs = [];
 
     public static IEnumerable<Assembly> Assemblies() => ScriptAssemblyManager.LiveAssemblies()
         .Where(a => !a.IsDynamic && !s_skippedPrefixes.Any(p => (a.GetName().Name ?? "").StartsWith(p, StringComparison.Ordinal)));

@@ -142,7 +142,7 @@ public static class AssetCollector
     /// </summary>
     public static bool IsEditorOnly(AssetEntry entry, Dictionary<string, bool> importerCache)
     {
-        var segments = entry.Path.Split('/', '\\');
+        string[] segments = entry.Path.Split('/', '\\');
         if (segments.Any(s => s.Equals("Editor", StringComparison.OrdinalIgnoreCase)))
             return true;
 

@@ -183,8 +183,8 @@ public static class SimulatedInput
         public bool Released;
     }
 
-    private static readonly Dictionary<KeyCode, Hold> s_keys = new();
-    private static readonly Dictionary<int, Hold> s_buttons = new();
+    private static readonly Dictionary<KeyCode, Hold> s_keys = [];
+    private static readonly Dictionary<int, Hold> s_buttons = [];
     private static readonly Stopwatch s_clock = Stopwatch.StartNew();
     private static readonly object s_lock = new();
     private static Float2 s_look;

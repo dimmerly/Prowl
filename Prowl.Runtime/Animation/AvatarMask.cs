@@ -30,10 +30,10 @@ public sealed class AvatarMask : Asset
     /// <summary>The weight every bone starts at, before the entries below are applied.</summary>
     public float DefaultWeight;
 
-    public List<BoneWeight> Bones = new();
+    public List<BoneWeight> Bones = [];
 
     /// <summary>Per body part weights, used when the layer blends in muscle space.</summary>
-    public List<HumanBodyPart> HumanBodyParts = new();
+    public List<HumanBodyPart> HumanBodyParts = [];
 
     /// <summary>One float channel, such as a blend shape, and how much of the layer reaches it.</summary>
     [Serializable]
@@ -46,7 +46,7 @@ public sealed class AvatarMask : Asset
     /// <summary>The weight every float channel starts at, before the entries below are applied.</summary>
     public float DefaultChannelWeight = 1f;
 
-    public List<ChannelWeight> Channels = new();
+    public List<ChannelWeight> Channels = [];
 
     [NonSerialized] private MotionSkeleton? _cachedFor;
     [NonSerialized] private BoneMask? _cached;

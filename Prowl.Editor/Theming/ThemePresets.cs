@@ -40,7 +40,7 @@ public static class ThemePresets
 {
     /// <summary>Every built-in theme, in the order the Preferences panel shows them.</summary>
     public static readonly ThemePreset[] All =
-    {
+    [
         new("Dark",     "#3B82F6", "#0EA5E9", "#111113", "#1F1F23", "#E4E4E7", Solid: true,
             NeutralStops: ["#0C0C0E", "#A0A0AA", "#18181B", "#141417", "#1F1F23", "#27272B", "#34343A"],
             InkStops: ["#4A4A50", "#6B6B72", "#8E8E96", "#B8B8BF", "#E4E4E7", "#FFFFFF", "#FFFFFF"]),
@@ -58,7 +58,7 @@ public static class ThemePresets
         new("Solar",    "#FBBF24", "#60A5FA", "#161009", "#221A0C", "#F7F1E4"),
         new("Cyan",     "#06B6D4", "#14B8A6", "#0A1416", "#122528", "#E4F5F7"),
         new("Crimson",  "#F43F5E", "#FB923C", "#160A0D", "#2A161B", "#F7E8EB"),
-    };
+    ];
 
     /// <summary>The theme a fresh install and Reset use.</summary>
     public static ThemePreset Default => All[0];

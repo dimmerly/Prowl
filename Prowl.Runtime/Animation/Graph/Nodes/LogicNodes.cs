@@ -53,8 +53,8 @@ public sealed class RandomSelectorNode : AnimationGraphNode
         List<PinGroup> options = ctx.Groups(r);
         if (options.Count == 0) return ctx.Graph.AddReferencePose();
 
-        var poses = new int[options.Count];
-        var weights = new float[options.Count];
+        int[] poses = new int[options.Count];
+        float[] weights = new float[options.Count];
         for (int i = 0; i < options.Count; i++)
         {
             poses[i] = ctx.Input(options[i], _children);
@@ -164,7 +164,7 @@ public sealed class StateMachineNode : AnimationGraphNode
         if (r.States.Count == 0) return machine;
 
         var indexByName = new Dictionary<string, int>(r.States.Count);
-        var stateIndices = new int[r.States.Count];
+        int[] stateIndices = new int[r.States.Count];
         var ends = new StateEnds[r.States.Count];
         for (int i = 0; i < r.States.Count; i++)
         {

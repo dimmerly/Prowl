@@ -60,7 +60,7 @@ public sealed class StaticGeometry : ISerializable
         public uint MeshVersion;
         public int VisualVersion;
         public Material?[] Materials = [];
-        public readonly List<Cluster> Clusters = new();
+        public readonly List<Cluster> Clusters = [];
 
         public bool Covers(int subMesh) => subMesh < Groups.Length && Groups[subMesh] != null;
     }
@@ -78,7 +78,7 @@ public sealed class StaticGeometry : ISerializable
         public int LightmapIndex;
         public Material? Material;
         public Mesh Mesh = null!;
-        public readonly List<Cluster> Clusters = new();
+        public readonly List<Cluster> Clusters = [];
         public readonly PropertyState Properties = new();
         public bool? LightmapLoaded;
     }
@@ -141,9 +141,9 @@ public sealed class StaticGeometry : ISerializable
         }
     }
 
-    private readonly List<Source> _sources = new();
-    private readonly List<Buffer> _buffers = new();
-    private readonly List<Group> _groups = new();
+    private readonly List<Source> _sources = [];
+    private readonly List<Buffer> _buffers = [];
+    private readonly List<Group> _groups = [];
     private bool _bound;
     private LightProbeVolume? _probes;
     private bool _probesFilled;
@@ -416,7 +416,7 @@ public sealed class StaticGeometry : ISerializable
 
     // ---------------------------------------------------------------- eligibility
 
-    private static readonly Dictionary<Shader, bool> s_transparent = new();
+    private static readonly Dictionary<Shader, bool> s_transparent = [];
 
     private static bool IsEligible(MeshRenderer renderer, out Mesh? mesh)
     {
@@ -520,7 +520,7 @@ public sealed class StaticGeometry : ISerializable
                         groupIndex = _groups.Count;
                         groupLookup[key] = groupIndex;
                         _groups.Add(new Group { Layer = go.LayerIndex, LightmapIndex = lightmap, Material = material, Buffer = BufferFor(attributes) });
-                        pending.Add(new List<Pending>());
+                        pending.Add([]);
                     }
 
                     source.Groups[s] = _groups[groupIndex];
@@ -671,14 +671,14 @@ public sealed class StaticGeometry : ISerializable
     private sealed class BufferWriter(Attributes attributes)
     {
         public readonly Attributes Attributes = attributes;
-        public readonly List<Float3> Positions = new();
-        public readonly List<Float2> UV = new();
-        public readonly List<Float2> UV2 = new();
-        public readonly List<Float3> Normals = new();
-        public readonly List<Color> Colors = new();
-        public readonly List<Float4> Tangents = new();
-        public readonly List<uint> Indices = new();
-        private readonly Dictionary<Source, uint> _bases = new();
+        public readonly List<Float3> Positions = [];
+        public readonly List<Float2> UV = [];
+        public readonly List<Float2> UV2 = [];
+        public readonly List<Float3> Normals = [];
+        public readonly List<Color> Colors = [];
+        public readonly List<Float4> Tangents = [];
+        public readonly List<uint> Indices = [];
+        private readonly Dictionary<Source, uint> _bases = [];
 
         public void AddTriangles(Source source, SourceData data, int subMesh)
         {

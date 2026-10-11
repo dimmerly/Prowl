@@ -36,7 +36,7 @@ public static class LightmapUVGenerator
         for (int i = 0; i < verts.Length; i++)
             positions[i] = new Double3(verts[i].X, verts[i].Y, verts[i].Z);
 
-        var tris = new int[indices.Length];
+        int[] tris = new int[indices.Length];
         for (int i = 0; i < indices.Length; i++)
             tris[i] = (int)indices[i];
 
@@ -99,7 +99,7 @@ public static class LightmapUVGenerator
         List<Color32>? newColors32 = colors32 != null ? new List<Color32>(verts.Length) : null;
         List<Float4>? newBoneIdx = boneIdx != null ? new List<Float4>(verts.Length) : null;
         List<Float4>? newBoneW = boneW != null ? new List<Float4>(verts.Length) : null;
-        var newIndices = new uint[indices.Length];
+        uint[] newIndices = new uint[indices.Length];
 
         const double Q = 65536.0;
 

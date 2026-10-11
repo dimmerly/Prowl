@@ -93,7 +93,7 @@ public sealed class ProwlCall
         if (method != null)
         {
             method.Invoke(_target, BindingFlags.DoNotWrapExceptions, null,
-                _argType == ProwlActionArgType.None ? null : new[] { arg }, null);
+                _argType == ProwlActionArgType.None ? null : [arg], null);
             return;
         }
 
@@ -155,7 +155,7 @@ public sealed class ProwlCall
 /// </summary>
 public sealed class ProwlAction
 {
-    [SerializeField] private List<ProwlCall> _calls = new();
+    [SerializeField] private List<ProwlCall> _calls = [];
 
     /// <summary>The configured calls. Mutated in place by the inspector.</summary>
     public List<ProwlCall> Calls => _calls;

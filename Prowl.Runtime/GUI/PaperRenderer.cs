@@ -90,7 +90,7 @@ public class PaperRenderer : ICanvasRenderer
         _vertexArrayObject = Graphics.CreateVertexArray(vertexFormat, _vertexBuffer, _elementBuffer);
 
         _defaultTexture = new Texture2D(1, 1);
-        _defaultTexture.SetData(new Memory<byte>(new byte[] { 255, 255, 255, 255 }), 0, 0, 1, 1);
+        _defaultTexture.SetData(new Memory<byte>([255, 255, 255, 255]), 0, 0, 1, 1);
 
         UpdateProjection(width, height);
     }

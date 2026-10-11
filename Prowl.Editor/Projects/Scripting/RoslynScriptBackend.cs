@@ -57,7 +57,7 @@ internal static class RoslynScriptBackend
     }
 
     private static readonly Dictionary<string, MetadataReference> s_refCache = new(StringComparer.OrdinalIgnoreCase);
-    private static readonly Dictionary<string, UnitState> s_states = new();
+    private static readonly Dictionary<string, UnitState> s_states = [];
     private static readonly object s_lock = new();
 
     private static readonly CSharpParseOptions s_parseOptions = new CSharpParseOptions(LanguageVersion.Latest)
@@ -85,7 +85,7 @@ internal static class RoslynScriptBackend
             // 1. Read + hash every source file.
             var currentHashes = new Dictionary<string, ulong>(StringComparer.OrdinalIgnoreCase);
             var fileBytes = new Dictionary<string, byte[]>(StringComparer.OrdinalIgnoreCase);
-            foreach (var file in unit.Scripts)
+            foreach (string file in unit.Scripts)
             {
                 byte[] bytes;
                 try { bytes = File.ReadAllBytes(file); }
@@ -114,7 +114,7 @@ internal static class RoslynScriptBackend
 
             // 3. Build the current tree set, reusing unchanged trees by content hash.
             var newTrees = new Dictionary<string, (ulong Hash, SyntaxTree Tree)>(StringComparer.OrdinalIgnoreCase);
-            foreach (var file in unit.Scripts)
+            foreach (string file in unit.Scripts)
             {
                 ulong hash = currentHashes[file];
                 if (state != null && state.Trees.TryGetValue(file, out (ulong Hash, SyntaxTree Tree) prev) && prev.Hash == hash)
@@ -247,7 +247,7 @@ internal static class RoslynScriptBackend
         // except the shared framework: a self-contained editor publish drops the whole .NET runtime
         // there too, and dropping it would leave the compile without System.Object (CS0518).
         string tpa = AppContext.GetData("TRUSTED_PLATFORM_ASSEMBLIES") as string ?? "";
-        foreach (var path in tpa.Split(Path.PathSeparator, StringSplitOptions.RemoveEmptyEntries))
+        foreach (string path in tpa.Split(Path.PathSeparator, StringSplitOptions.RemoveEmptyEntries))
         {
             string name = Path.GetFileNameWithoutExtension(path);
             if (unit.NoEngineReferences && !ScriptCompiler.IsFrameworkAssembly(name) && IsUnderDirectory(path, engineDir))
@@ -272,16 +272,16 @@ internal static class RoslynScriptBackend
         }
 
         // Managed plugins.
-        foreach (var pluginPath in unit.ManagedPluginPaths)
+        foreach (string pluginPath in unit.ManagedPluginPaths)
             AddFileReference(refs, seen, Path.GetFileNameWithoutExtension(pluginPath), pluginPath);
 
         // Peer user assemblies compiled earlier this run (in dependency order), referenced in memory.
-        foreach (var refName in unit.AssemblyReferences)
+        foreach (string refName in unit.AssemblyReferences)
             if (peerRefs.TryGetValue(refName, out MetadataReference? mref) && seen.Add(refName))
                 refs.Add(mref);
 
         // NuGet package assemblies.
-        foreach (var dll in nugetDllPaths)
+        foreach (string dll in nugetDllPaths)
             AddFileReference(refs, seen, Path.GetFileNameWithoutExtension(dll), dll);
 
         return refs;
@@ -305,7 +305,7 @@ internal static class RoslynScriptBackend
     {
         if (a.Count != b.Count) return false;
         foreach ((string? key, ulong hash) in b)
-            if (!a.TryGetValue(key, out var h) || h != hash) return false;
+            if (!a.TryGetValue(key, out ulong h) || h != hash) return false;
         return true;
     }
 
@@ -374,7 +374,7 @@ internal static class NuGetReferenceResolver
             {
                 Runtime.Debug.LogError($"[ScriptCompiler] Package restore failed for {unit.Name}.");
                 ScriptCompiler.LogBuildOutput(stdout, stderr);
-                result[unit.Name] = new();
+                result[unit.Name] = [];
                 continue;
             }
             result[unit.Name] = ParseAssetsFile(assetsPath);
@@ -420,7 +420,7 @@ internal static class NuGetReferenceResolver
                         if (rel.EndsWith("_._", StringComparison.Ordinal)) continue; // empty placeholder
 
                         string relNative = rel.Replace('/', Path.DirectorySeparatorChar);
-                        foreach (var folder in folders)
+                        foreach (string folder in folders)
                         {
                             string abs = Path.Combine(folder, id.ToLowerInvariant(), version, relNative);
                             if (File.Exists(abs)) { result.Add(abs); break; }

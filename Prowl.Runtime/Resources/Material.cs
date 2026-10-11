@@ -87,7 +87,7 @@ public sealed class Material : Asset, ISerializationCallbackReceiver
     /// entries get refreshed user customizations are preserved. Without this,
     /// stale defaults stick around forever.</summary>
     [SerializeField]
-    public HashSet<string> _overrides = new();
+    public HashSet<string> _overrides = [];
 
     [SerializeIgnore]
     internal Dictionary<string, bool> _localKeywords;
@@ -345,10 +345,10 @@ public sealed class Material : Asset, ISerializationCallbackReceiver
         // A reimport reads into this same instance, so the cached batch hash is stale.
         MarkDirty();
 
-        if (_overrides == null) _overrides = new HashSet<string>();
+        if (_overrides == null) _overrides = [];
         if (_overrides.Count == 0 && _properties != null)
         {
-            foreach (var name in _properties.EnumerateNames())
+            foreach (string name in _properties.EnumerateNames())
                 _overrides.Add(name);
         }
         // No SyncShaderDefaults defaults are read live from the shader at access

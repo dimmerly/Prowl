@@ -303,7 +303,7 @@ public class ShadowTests : RuntimeTestBase
     public void ShadowTileAllocator_LargestFirst_FillsTheAtlasExactly()
     {
         var allocator = new ShadowTileAllocator(1024);
-        var cells = new bool[64, 64];
+        bool[,] cells = new bool[64, 64];
         // 3 x 512 + 3 x 256 + 3 x 128 + 4 x 64 adds up to exactly 1024 x 1024
         int[] sizes = [512, 512, 512, 256, 256, 256, 128, 128, 128, 64, 64, 64, 64];
 
@@ -354,7 +354,7 @@ public class ShadowTests : RuntimeTestBase
             }
         }
 
-        var cells = new bool[32, 32];
+        bool[,] cells = new bool[32, 32];
         long used = 0;
         foreach (ShadowTile tile in live)
         {
@@ -382,8 +382,8 @@ public class ShadowTests : RuntimeTestBase
     {
         public readonly DefaultRenderPipeline Pipeline = new();
         public readonly ShadowRenderer Renderer = new();
-        public readonly List<IRenderable> Renderables = new();
-        public readonly List<Light> Lights = new();
+        public readonly List<IRenderable> Renderables = [];
+        public readonly List<Light> Lights = [];
         public readonly Mesh Cube = Mesh.CreateCube(Float3.One);
         public readonly Material Material = new(Shader.LoadDefault(DefaultShader.Standard));
         public DirectionalLight? Sun;

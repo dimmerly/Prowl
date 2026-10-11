@@ -22,7 +22,7 @@ public static class ThumbnailGenerator
     public static int ThumbnailSize => EditorSettings.Instance.ThumbnailSize;
 
     private static readonly Queue<ThumbnailJob> _queue = new();
-    private static readonly HashSet<Guid> _queued = new();
+    private static readonly HashSet<Guid> _queued = [];
 
     private sealed class ThumbnailJob
     {
@@ -198,7 +198,7 @@ public static class ThumbnailGenerator
 
         try
         {
-            foreach (var file in Directory.GetFiles(project.ThumbnailsPath, "*.thumb"))
+            foreach (string file in Directory.GetFiles(project.ThumbnailsPath, "*.thumb"))
                 File.Delete(file);
         }
         catch { }
@@ -281,7 +281,7 @@ public static class ThumbnailGenerator
             int rw = Math.Clamp(sprite.Rect.Width, 1, tw - rx), rh = Math.Clamp(sprite.Rect.Height, 1, th - ry);
 
             int size = ThumbnailSize;
-            var dst = new byte[size * size * 4]; // transparent by default
+            byte[] dst = new byte[size * size * 4]; // transparent by default
 
             // Letterbox the rect's aspect into the square.
             float aspect = rw / (float)rh;
@@ -313,14 +313,14 @@ public static class ThumbnailGenerator
     private static byte[]? ReadTextureRgba(Texture2D tex, int tw, int th)
     {
         int count = tw * th;
-        var outp = new byte[count * 4];
+        byte[] outp = new byte[count * 4];
         if (tex.ImageFormat == TextureImageFormat.Color4b)
         {
             tex.GetData<byte>(outp.AsMemory());
         }
         else if (tex.ImageFormat == TextureImageFormat.UnsignedShort4)
         {
-            var s = new ushort[count * 4];
+            ushort[] s = new ushort[count * 4];
             tex.GetData<ushort>(s.AsMemory());
             for (int i = 0; i < count * 4; i++) outp[i] = (byte)(s[i] >> 8);
         }

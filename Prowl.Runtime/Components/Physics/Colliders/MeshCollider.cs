@@ -136,7 +136,7 @@ public sealed class MeshCollider : Collider
         bool mirrored = Float4x4.Determinant(transform) < 0.0f;
 
         ReadOnlySpan<TriangleMesh.Triangle> sourceTriangles = source.Indices;
-        var indices = new int[sourceTriangles.Length * 3];
+        int[] indices = new int[sourceTriangles.Length * 3];
         for (int i = 0; i < sourceTriangles.Length; i++)
         {
             indices[i * 3 + 0] = sourceTriangles[i].IndexA;

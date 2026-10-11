@@ -79,7 +79,7 @@ public class SpriteRenderer : Component, IMaterialRenderer, IColorTint
         // Bind any secondary maps (e.g. "_NormalMap", "_MaskMap") so custom sprite materials can sample them.
         if (sprite.SecondaryTextures.Count > 0)
         {
-            foreach (var key in sprite.SecondaryTextures.Keys)
+            foreach (string key in sprite.SecondaryTextures.Keys)
             {
                 Texture2D? secondary = sprite.SecondaryTextures[key];
                 if (secondary != null)
@@ -127,7 +127,7 @@ public class SpriteRenderer : Component, IMaterialRenderer, IColorTint
             colors[i] = tint;
         }
 
-        var idx = new uint[srcIdx.Length];
+        uint[] idx = new uint[srcIdx.Length];
         for (int i = 0; i < srcIdx.Length; i++) idx[i] = srcIdx[i];
 
         // Mirroring exactly one axis reverses the winding. The built-in sprite shader is Cull Off, but

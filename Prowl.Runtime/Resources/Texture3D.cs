@@ -21,7 +21,7 @@ public sealed class Texture3D : Texture, ISerializable
             if (_white == null || !_white.IsValid())
             {
                 _white = new Texture3D(1, 1, 1, false, TextureImageFormat.Color4b);
-                byte[] data = new byte[4] { 255, 255, 255, 255 }; // RGBA white
+                byte[] data = [255, 255, 255, 255]; // RGBA white
                 _white.SetData(new Memory<byte>(data));
             }
             return _white;
@@ -280,8 +280,8 @@ public sealed class Texture3D : Texture, ISerializable
         var MagFilter = (TextureMag)value["MagFilter"].IntValue;
         var Wrap = (TextureWrap)value["Wrap"].IntValue;
 
-        Type[] param = new[] { typeof(uint), typeof(uint), typeof(uint), typeof(bool), typeof(TextureImageFormat) };
-        object[] values = new object[] { Width, Height, Depth, false, imageFormat };
+        Type[] param = [typeof(uint), typeof(uint), typeof(uint), typeof(bool), typeof(TextureImageFormat)];
+        object[] values = [Width, Height, Depth, false, imageFormat];
         typeof(Texture3D).GetConstructor(param).Invoke(this, values);
 
         DeserializeHeader(value);

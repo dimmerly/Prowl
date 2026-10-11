@@ -39,7 +39,7 @@ public interface IBuildContext
 public sealed class BuildContext : IBuildContext
 {
     private readonly ConcurrentDictionary<Type, object> _outputs = new();
-    private readonly ConcurrentBag<BuildIssue> _issues = new();
+    private readonly ConcurrentBag<BuildIssue> _issues = [];
     private readonly Action<string, BuildSeverity>? _log;
 
     /// <summary> Initialises a new BuildContext with the given build request and an optional log callback. </summary>
@@ -65,7 +65,7 @@ public sealed class BuildContext : IBuildContext
 
     /// <summary> The output published by an earlier stage. Throws when nothing published it. </summary>
     public T GetOutput<T>() where T : class
-        => _outputs.TryGetValue(typeof(T), out var value)
+        => _outputs.TryGetValue(typeof(T), out object? value)
             ? (T)value
             : throw new InvalidOperationException(
                 $"No stage published a {typeof(T).Name}. Declare a dependency on the stage that produces it.");
@@ -73,7 +73,7 @@ public sealed class BuildContext : IBuildContext
     /// <summary> Attempts to retrieve the output published by an earlier stage, returning false when nothing published it. </summary>
     public bool TryGetOutput<T>(out T? value) where T : class
     {
-        if (_outputs.TryGetValue(typeof(T), out var stored))
+        if (_outputs.TryGetValue(typeof(T), out object? stored))
         {
             value = (T)stored;
             return true;

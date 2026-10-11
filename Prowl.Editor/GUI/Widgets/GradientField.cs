@@ -66,7 +66,7 @@ public sealed class GradientFieldBuilder
         {
             Gradient gradient = _value;
             Action<Gradient> setter = _setter;
-            var id = _id;
+            string id = _id;
             swatch.OnClick(e =>
             {
                 float anchorX = (float)e.ElementRect.Min.X;
@@ -204,7 +204,7 @@ internal sealed class GradientEditorModal : IModal
     {
         float totalH = MarkerH + BarHeight + MarkerH;
         Gradient gradient = _gradient;
-        var id = _id;
+        string id = _id;
         int selKey = _selectedKey;
         bool selIsColor = _selectedIsColor;
 

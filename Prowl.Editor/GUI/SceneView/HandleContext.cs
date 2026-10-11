@@ -40,7 +40,7 @@ public sealed class HandleContext
     /// </summary>
     public const float DepthTieBandPixels = 4f;
 
-    private readonly Dictionary<ControlID, Float2> _dragOrigin = new();
+    private readonly Dictionary<ControlID, Float2> _dragOrigin = [];
 
     private ControlID _nearest;
     private ControlID _pendingNearest;

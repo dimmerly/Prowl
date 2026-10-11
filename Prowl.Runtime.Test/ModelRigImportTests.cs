@@ -29,7 +29,7 @@ public class ModelRigImportTests
     // over one second. Everything lives in a base64 buffer so the test carries its own asset.
     private static string RiggedGltf(float lastKeyTime = 1f, float endZ = 0f)
     {
-        var bytes = new byte[8 * sizeof(float)];
+        byte[] bytes = new byte[8 * sizeof(float)];
         Span<byte> span = bytes.AsSpan();
         Write(span, 0, 0f); Write(span, 1, lastKeyTime);              // key times
         Write(span, 2, 0f); Write(span, 3, 1f); Write(span, 4, 0f);   // key 0: (0, 1, 0)
@@ -257,7 +257,7 @@ public class ModelRigImportTests
         {
             Name = "Walk",
             EndTime = 1f,
-            Bindings = new[] { Track(0, Float3.Zero, Float3.Zero), Track(1, Float3.Zero, new Float3(0f, 0f, 2f)) },
+            Bindings = [Track(0, Float3.Zero, Float3.Zero), Track(1, Float3.Zero, new Float3(0f, 0f, 2f))],
         };
 
         Assert.Equal(1, ModelRigBuilder.AnimatedRootBone(take, skeleton));
@@ -311,7 +311,7 @@ public class ModelRigImportTests
     // One triangle with one named material, which is all an extraction test needs.
     private static string MaterialGltf()
     {
-        var bytes = new byte[9 * sizeof(float) + 3 * sizeof(ushort)];
+        byte[] bytes = new byte[9 * sizeof(float) + 3 * sizeof(ushort)];
         Span<byte> span = bytes.AsSpan();
         for (int i = 0; i < 9; i++) BitConverter.TryWriteBytes(span[(i * sizeof(float))..], i % 3 == 0 ? 0f : 1f);
         for (ushort i = 0; i < 3; i++) BitConverter.TryWriteBytes(span[(36 + i * sizeof(ushort))..], i);
@@ -435,12 +435,12 @@ public class ModelRigImportTests
             {
                 TrimStart = 0.25f,
                 TrimEnd = 0.75f,
-                Events = new List<ClipEvent>
-                {
+                Events =
+                [
                     new() { Kind = ClipEventKind.Named, Time = 0.1f, Name = "Before" },
                     new() { Kind = ClipEventKind.Named, Time = 0.5f, Name = "Middle" },
                     new() { Kind = ClipEventKind.TransitionWindow, Time = 0.6f, Length = 0.4f },
-                },
+                ],
             },
         };
 

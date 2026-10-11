@@ -46,7 +46,7 @@ public class PackageManifest
     public bool ContainsProjectSettings { get; set; }
 
     [JsonPropertyName("assets")]
-    public List<PackageAssetEntry> Assets { get; set; } = new();
+    public List<PackageAssetEntry> Assets { get; set; } = [];
 }
 
 public enum ImportAction
@@ -138,7 +138,7 @@ public static class ProwlPackage
                 archive.CreateEntryFromFile(metaPath, zipRelPath + ".meta");
 
             // Add companion files (.bin for .gltf, .mtl for .obj, etc.)
-            foreach (var companion in GetCompanionFiles(absPath))
+            foreach (string companion in GetCompanionFiles(absPath))
             {
                 if (!File.Exists(companion)) continue;
                 string companionRel = Path.GetRelativePath(project.AssetsPath, companion).Replace('\\', '/');
@@ -170,7 +170,7 @@ public static class ProwlPackage
         // Project settings
         if (includeProjectSettings && Directory.Exists(project.ProjectSettingsPath))
         {
-            foreach (var settingsFile in Directory.EnumerateFiles(project.ProjectSettingsPath, "*.yaml"))
+            foreach (string settingsFile in Directory.EnumerateFiles(project.ProjectSettingsPath, "*.yaml"))
             {
                 string settingsRelPath = Path.GetFileName(settingsFile);
                 archive.CreateEntryFromFile(settingsFile, "ProjectSettings/" + settingsRelPath);
@@ -384,7 +384,7 @@ public static class ProwlPackage
                 // Scan the .obj for mtllib directive
                 try
                 {
-                    foreach (var line in File.ReadLines(absAssetPath))
+                    foreach (string line in File.ReadLines(absAssetPath))
                     {
                         if (line.StartsWith("mtllib ", StringComparison.OrdinalIgnoreCase))
                         {
@@ -418,9 +418,9 @@ public static class ProwlPackage
     public static List<string> CollectFolderAssets(string folderRelativePath)
     {
         Project? project = Project.Current;
-        if (project == null) return new List<string>();
+        if (project == null) return [];
         EditorAssetBackend? db = EditorAssetBackend.Instance;
-        if (db == null) return new List<string>();
+        if (db == null) return [];
 
         string prefix = string.IsNullOrEmpty(folderRelativePath) ? "" : folderRelativePath.Replace('\\', '/') + "/";
 

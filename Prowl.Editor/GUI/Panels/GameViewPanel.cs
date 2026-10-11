@@ -48,7 +48,7 @@ public class GameViewPanel : DockPanel
     private bool _lockContextPushed;
 
     private static readonly (string name, int w, int h)[] Resolutions =
-    {
+    [
         ("Free", 0, 0),
         ("16:9", -16, -9),
         ("16:10", -16, -10),
@@ -61,7 +61,7 @@ public class GameViewPanel : DockPanel
         ("960x540", 960, 540),
         ("640x480", 640, 480),
         ("800x600", 800, 600),
-    };
+    ];
 
     public override void OnGUI(Paper paper, float width, float height)
     {
@@ -470,7 +470,7 @@ public class GameViewPanel : DockPanel
     {
         float x = (float)r.Min.X, y = (float)r.Min.Y;
         float w = (float)r.Size.X, h = (float)r.Size.Y;
-        var history = RenderStats.FrameTimeHistory;
+        float[] history = RenderStats.FrameTimeHistory;
         int head = RenderStats.FrameTimeIndex;
         int len = history.Length;
 
@@ -583,7 +583,7 @@ public class GameViewPanel : DockPanel
     {
         if (_rt != null && _rt.Width == w && _rt.Height == h) return;
         if (_rt.IsValid()) _rt.Dispose();
-        _rt = new RenderTexture(w, h, true, new[] { TextureImageFormat.Color4b });
+        _rt = new RenderTexture(w, h, true, [TextureImageFormat.Color4b]);
     }
 
     private void InvalidateRT()

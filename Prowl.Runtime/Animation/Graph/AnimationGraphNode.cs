@@ -9,9 +9,9 @@ namespace Prowl.Runtime;
 /// <summary>A kind of graph node, found by the registry. Declare pins and settings in the constructor, in saved order.</summary>
 public abstract class AnimationGraphNode
 {
-    private readonly List<InputPin> _pins = new();
-    private readonly List<NodeSetting> _settings = new();
-    private readonly Dictionary<string, NodeSetting> _settingsByKey = new();
+    private readonly List<InputPin> _pins = [];
+    private readonly List<NodeSetting> _settings = [];
+    private readonly Dictionary<string, NodeSetting> _settingsByKey = [];
     private int _variadicStart = -1;
 
     /// <summary>What graphs save the node as. Never changes once graphs use it.</summary>

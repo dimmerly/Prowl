@@ -572,7 +572,7 @@ internal static class CloudRenderer
                 }
             }
 
-        var indices = new uint[count * 6];
+        uint[] indices = new uint[count * 6];
         for (int i = 0; i < count; i++)
         {
             uint b = (uint)(i * 4);

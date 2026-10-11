@@ -25,7 +25,7 @@ public class MeshRenderer : Component, IMaterialRenderer
     public Mesh? Mesh;
 
     /// <summary>Materials array one per submesh. Legacy single-material meshes use index 0.</summary>
-    public List<Material> Materials = new();
+    public List<Material> Materials = [];
 
     /// <summary>Legacy single-material accessor. Gets/sets Materials[0].</summary>
     public Material? Material

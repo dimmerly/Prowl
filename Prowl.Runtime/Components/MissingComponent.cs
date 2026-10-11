@@ -22,7 +22,7 @@ public class MissingComponent : Component, ISerializable
 
     // Live objects the $id and $extern nodes in ComponentData resolved to, keyed by $id, or by the
     // negative walk index of a $extern node.
-    private Dictionary<int, object> _references = new();
+    private Dictionary<int, object> _references = [];
 
     public void Serialize(ref EchoObject compound, SerializationContext ctx)
     {

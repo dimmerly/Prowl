@@ -35,7 +35,7 @@ public class ModelAssetEditor : ImportSettingsEditor
         public readonly ClipEventTrack Events = new();
     }
 
-    private static readonly Dictionary<Guid, ViewState> s_views = new();
+    private static readonly Dictionary<Guid, ViewState> s_views = [];
 
     private static ViewState View(Guid guid)
     {

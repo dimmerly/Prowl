@@ -79,7 +79,7 @@ public abstract class BuildPipeline
 
         EditorAssetBackend? source = EditorAssetBackend.Instance;
         if (source == null)
-            return new AssetCollector.CollectionResult { AllAssets = new(), ResourcesMap = new() };
+            return new AssetCollector.CollectionResult { AllAssets = [], ResourcesMap = [] };
 
         return AssetCollector.Collect(source, sceneGuids, depsOnly);
     }
@@ -240,7 +240,7 @@ public abstract class BuildPipeline
             // Scoped to the prefab block rather than matched by name anywhere, so a component field
             // that happens to be called Overrides is not caught by this.
             if (echo.TryGet("Prefab", out EchoObject? link) && link.TagType == EchoType.Compound)
-                foreach (var key in EditorOnlyPrefabKeys)
+                foreach (string key in EditorOnlyPrefabKeys)
                     removed |= link.Remove(key);
 
             removed |= echo.Remove(EditorOnlyComponentKey);

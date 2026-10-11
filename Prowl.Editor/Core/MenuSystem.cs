@@ -24,7 +24,7 @@ public sealed class AppMenuItem
     /// <summary> Whether this item is a visual separator rather than a clickable menu item. </summary>
     public bool IsSeparator;
     /// <summary> The child menu items nested under this item. </summary>
-    public readonly List<AppMenuItem> SubItems = new();
+    public readonly List<AppMenuItem> SubItems = [];
 
     /// <summary> Initializes a new instance of AppMenuItem with the given label and click action. </summary>
     public AppMenuItem(string label = "", Action? onClick = null)
@@ -43,7 +43,7 @@ public sealed class AppMenuItem
 /// <summary> Provides methods to register, organize, and clear a hierarchical menu system built from AppMenuItem nodes. </summary>
 public static class MenuRegistry
 {
-    private static readonly List<AppMenuItem> _rootMenus = new();
+    private static readonly List<AppMenuItem> _rootMenus = [];
 
     /// <summary> The top-level menu items registered in the system. </summary>
     public static IReadOnlyList<AppMenuItem> RootMenus => _rootMenus;
@@ -52,7 +52,7 @@ public static class MenuRegistry
     public static void Register(string path, Action onClick, bool enabled = true, Func<bool>? isChecked = null,
         Func<bool>? isEnabled = null, Func<string>? dynamicLabel = null, string icon = "")
     {
-        var segments = path.Split('/');
+        string[] segments = path.Split('/');
         List<AppMenuItem> current = _rootMenus;
 
         for (int i = 0; i < segments.Length; i++)
@@ -100,10 +100,10 @@ public static class MenuRegistry
     /// <summary> Adds a visual separator to the sub-menu at the specified parent path. Does nothing if the parent path does not exist. </summary>
     public static void RegisterSeparator(string parentPath)
     {
-        var segments = parentPath.Split('/');
+        string[] segments = parentPath.Split('/');
         List<AppMenuItem> current = _rootMenus;
 
-        foreach (var seg in segments)
+        foreach (string seg in segments)
         {
             AppMenuItem? existing = current.FirstOrDefault(m => m.Label == seg && !m.IsSeparator);
             if (existing == null) return;
@@ -117,7 +117,7 @@ public static class MenuRegistry
     public static void RegisterBranchIcon(string path, string icon)
     {
         if (string.IsNullOrEmpty(icon)) return;
-        var segments = path.Split('/');
+        string[] segments = path.Split('/');
         List<AppMenuItem> current = _rootMenus;
 
         for (int i = 0; i < segments.Length - 1; i++)

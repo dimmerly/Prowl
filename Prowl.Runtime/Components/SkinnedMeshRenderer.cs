@@ -32,7 +32,7 @@ public class SkinnedMeshRenderer : Component, IMaterialRenderer, IColorTint
     public Mesh? SharedMesh;
 
     /// <summary>Materials array one per submesh. If fewer materials than submeshes, last material is reused.</summary>
-    public List<Material> Materials = new();
+    public List<Material> Materials = [];
 
     /// <summary>Path to the root bone, relative to this GO's hierarchy root.</summary>
     [SerializeField]
@@ -63,7 +63,7 @@ public class SkinnedMeshRenderer : Component, IMaterialRenderer, IColorTint
     [System.NonSerialized] private AABB _cachedBounds;
     // Reused per-recompute memo so bones sharing ancestors don't re-walk the chain to root each:
     // O(bones + depth) world-matrix builds instead of O(bones * depth).
-    [System.NonSerialized] private readonly Dictionary<Transform, Float4x4> _worldMemo = new();
+    [System.NonSerialized] private readonly Dictionary<Transform, Float4x4> _worldMemo = [];
 
     // Skin matrices for the vertex shader, four columns a bone
     [System.NonSerialized] private ShaderDataTable? _boneTable;
@@ -77,7 +77,7 @@ public class SkinnedMeshRenderer : Component, IMaterialRenderer, IColorTint
 
     // Active morph layers, rebuilt each frame from the current weights: (layerIndex, weight, 0, 0) each
     [System.NonSerialized] private ShaderDataTable? _morphWeightTable;
-    [System.NonSerialized] private readonly List<Float4> _activeMorphLayers = new();
+    [System.NonSerialized] private readonly List<Float4> _activeMorphLayers = [];
 
     /// <summary>Number of blend shapes on the shared mesh (0 if none).</summary>
     public int BlendShapeCount
@@ -125,7 +125,7 @@ public class SkinnedMeshRenderer : Component, IMaterialRenderer, IColorTint
     private void EnsureWeightsArray(int count)
     {
         if (_blendShapeWeights != null && _blendShapeWeights.Length == count) return;
-        var resized = new float[count];
+        float[] resized = new float[count];
         if (_blendShapeWeights != null)
             Array.Copy(_blendShapeWeights, resized, Math.Min(_blendShapeWeights.Length, count));
         _blendShapeWeights = resized;

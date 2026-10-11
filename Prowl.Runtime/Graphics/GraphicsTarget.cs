@@ -59,7 +59,7 @@ public enum GraphicsFeature
 /// </summary>
 public sealed class GraphicsCapabilities
 {
-    private readonly HashSet<GraphicsFeature> _features = new();
+    private readonly HashSet<GraphicsFeature> _features = [];
     private readonly HashSet<string> _extensions;
 
     public GraphicsTarget Target { get; }

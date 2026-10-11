@@ -36,7 +36,7 @@ internal sealed class AnimatorBinding
         byPath.TryAdd(string.Empty, root);
         Collect(root, byName, byPath);
 
-        var bound = new bool[_bones.Length];
+        bool[] bound = new bool[_bones.Length];
         int unbound = 0;
         for (int b = 0; b < _bones.Length; b++)
             if (Bind(skeleton, b, bound, byName, byPath) == null) unbound++;
@@ -104,7 +104,7 @@ internal sealed class AnimatorBinding
             {
                 int shape = renderer.GetBlendShapeIndex(name);
                 if (shape < 0) continue;
-                (_channels[c] ??= new List<(SkinnedMeshRenderer, int)>()).Add((renderer, shape));
+                (_channels[c] ??= []).Add((renderer, shape));
             }
         }
     }

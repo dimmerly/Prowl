@@ -89,11 +89,11 @@ public sealed class VRBody : Component
     private const float HoldStiffness = 6f;
     private const float HoldRange = 0.3f;
 
-    private readonly HashSet<Rigidbody3D> _parts = new();
+    private readonly HashSet<Rigidbody3D> _parts = [];
     private bool _groundIsFixed;
     private bool _holding;
     private Float3 _holdPoint;
-    private readonly HashSet<Rigidbody3D> _ignored = new();
+    private readonly HashSet<Rigidbody3D> _ignored = [];
     private CapsuleCollider _torsoShape = null!;
     private float _torsoLength;
     private bool _jumpRequested;

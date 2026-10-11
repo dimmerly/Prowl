@@ -29,12 +29,12 @@ public static class PackageImportDialog
     private static ZipArchive? _archive;
     private static FileStream? _archiveStream; // kept alive while dialog is open
 
-    private static HashSet<string> _enabledPaths = new();
-    private static Dictionary<string, ImportAction> _assetActions = new();
+    private static HashSet<string> _enabledPaths = [];
+    private static Dictionary<string, ImportAction> _assetActions = [];
     private static string? _selectedAssetPath;
 
     // Thumbnail cache for the detail panel
-    private static Dictionary<string, Texture2D?> _thumbCache = new();
+    private static Dictionary<string, Texture2D?> _thumbCache = [];
 
     // Whether to also import project settings
     private static bool _importProjectSettings;
@@ -140,7 +140,7 @@ public static class PackageImportDialog
     private static List<TreeNode> BuildFlatNodes()
     {
         if (_manifest == null)
-            return new List<TreeNode>();
+            return [];
 
         // First, build a temporary hierarchy so we can sort folders-first, then flatten.
         var folderChildren = new Dictionary<string, List<(string name, string fullPath, bool isFolder)>>(StringComparer.OrdinalIgnoreCase);
@@ -155,11 +155,11 @@ public static class PackageImportDialog
             EnsureFolder(parent);
 
             if (!folderChildren.ContainsKey(parent))
-                folderChildren[parent] = new();
+                folderChildren[parent] = [];
             folderChildren[parent].Add((Path.GetFileName(folderPath), folderPath, true));
 
             if (!folderChildren.ContainsKey(folderPath))
-                folderChildren[folderPath] = new();
+                folderChildren[folderPath] = [];
         }
 
         foreach (PackageAssetEntry asset in _manifest.Assets)
@@ -168,7 +168,7 @@ public static class PackageImportDialog
             EnsureFolder(dir);
 
             if (!folderChildren.ContainsKey(dir))
-                folderChildren[dir] = new();
+                folderChildren[dir] = [];
             folderChildren[dir].Add((Path.GetFileName(asset.Path), asset.Path, false));
         }
 

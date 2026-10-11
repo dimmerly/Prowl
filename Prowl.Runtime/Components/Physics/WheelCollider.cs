@@ -204,7 +204,7 @@ public sealed class WheelCollider : Component
     // a moment meets the ground again within the step instead of falling for the whole of it.
     private const float ContactMargin = 0.03f;
 
-    private static readonly Dictionary<Rigidbody3D, List<WheelCollider>> s_wheelsOnBody = new();
+    private static readonly Dictionary<Rigidbody3D, List<WheelCollider>> s_wheelsOnBody = [];
 
     // Runtime state
     private Rigidbody3D? rb;
@@ -446,7 +446,7 @@ public sealed class WheelCollider : Component
         Unbind();
         rb = found;
         if (rb.IsNotValid()) return;
-        if (!s_wheelsOnBody.TryGetValue(rb!, out List<WheelCollider>? wheels)) s_wheelsOnBody[rb!] = wheels = new List<WheelCollider>();
+        if (!s_wheelsOnBody.TryGetValue(rb!, out List<WheelCollider>? wheels)) s_wheelsOnBody[rb!] = wheels = [];
         wheels.Add(this);
         _bound = true;
     }

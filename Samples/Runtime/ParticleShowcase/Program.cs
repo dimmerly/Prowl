@@ -50,8 +50,8 @@ public sealed class ParticleShowcaseGame : StationGame
 {
     private const float StationSpacing = 24f;
 
-    private readonly List<GameObject> _roots = new();
-    private readonly List<ParticleSystemComponent> _systems = new();
+    private readonly List<GameObject> _roots = [];
+    private readonly List<ParticleSystemComponent> _systems = [];
 
     private Material _dotAlpha = null!;
     private Material _dotAdditive = null!;

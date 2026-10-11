@@ -106,7 +106,7 @@ public class MeshAssetEditor : AssetImporterEditor
 
         ValueRow(paper, id, "_idx", "Index Format", mesh.IndexFormat.ToString(), font, m);
 
-        var attrs = "";
+        string attrs = "";
         if (mesh.HasNormals) attrs += "Normals ";
         if (mesh.HasTangents) attrs += "Tangents ";
         if (mesh.HasUV) attrs += "UV ";

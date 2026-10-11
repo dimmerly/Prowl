@@ -36,14 +36,14 @@ public class AvatarEditorWindow : DockPanel
 
     /// <summary>The humanoid bones, grouped the way a person looks for them.</summary>
     private static readonly (string Name, HumanBodyBone[] Bones)[] s_groups =
-    {
+    [
         ("Body", new[] { HumanBodyBone.Hips, HumanBodyBone.Spine, HumanBodyBone.Chest, HumanBodyBone.UpperChest }),
         ("Head", new[] { HumanBodyBone.Neck, HumanBodyBone.Head, HumanBodyBone.LeftEye, HumanBodyBone.RightEye, HumanBodyBone.Jaw }),
         ("Left Arm", new[] { HumanBodyBone.LeftShoulder, HumanBodyBone.LeftUpperArm, HumanBodyBone.LeftLowerArm, HumanBodyBone.LeftHand }),
         ("Right Arm", new[] { HumanBodyBone.RightShoulder, HumanBodyBone.RightUpperArm, HumanBodyBone.RightLowerArm, HumanBodyBone.RightHand }),
         ("Left Leg", new[] { HumanBodyBone.LeftUpperLeg, HumanBodyBone.LeftLowerLeg, HumanBodyBone.LeftFoot, HumanBodyBone.LeftToes }),
         ("Right Leg", new[] { HumanBodyBone.RightUpperLeg, HumanBodyBone.RightLowerLeg, HumanBodyBone.RightFoot, HumanBodyBone.RightToes }),
-    };
+    ];
 
     private Guid _modelGuid;
     private string _modelName = "";
@@ -51,7 +51,7 @@ public class AvatarEditorWindow : DockPanel
     private MotionSkeleton? _skeleton;
 
     /// <summary>Humanoid bone to skeleton bone name. This is what gets written back.</summary>
-    private readonly Dictionary<HumanBodyBone, string> _map = new();
+    private readonly Dictionary<HumanBodyBone, string> _map = [];
 
     /// <summary>Which skeleton bones are worth looking at, for a rig with more of them than fit.</summary>
     private enum BoneView { All, Unmapped, Mapped }

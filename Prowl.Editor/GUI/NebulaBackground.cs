@@ -55,9 +55,9 @@ public sealed class NebulaBackground
     {
         _paper = paper;
 
-        var cr = new[] { 0.42f, 0.40f, 0.40f, 0.30f };
-        var sx = new[] { 0.43f, 0.67f, 0.52f, 0.14f };
-        var sy = new[] { 0.37f, 0.55f, 0.92f, 0.60f };
+        float[] cr = new[] { 0.42f, 0.40f, 0.40f, 0.30f };
+        float[] sx = new[] { 0.43f, 0.67f, 0.52f, 0.14f };
+        float[] sy = new[] { 0.37f, 0.55f, 0.92f, 0.60f };
         for (int i = 0; i < 4; i++)
             _clouds[i] = new Cloud { cx = sx[i], cy = sy[i], ang = (float)(_rng.NextDouble() * MathF.Tau), rf = cr[i], phase = (float)(_rng.NextDouble() * 6.28f), timer = 0f };
 
@@ -181,7 +181,7 @@ public sealed class NebulaBackground
     private void BuildStarTexture()
     {
         const int T = StarTexSize;
-        var data = new byte[T * T * 4];
+        byte[] data = new byte[T * T * 4];
         for (int s = 0; s < 170; s++)
         {
             float sx = (float)(_rng.NextDouble() * T), sy = (float)(_rng.NextDouble() * T);

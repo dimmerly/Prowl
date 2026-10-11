@@ -101,7 +101,7 @@ public class DesktopBuildPipeline : BuildPipeline
             AssetCachePath = project.CachePath,
             TempPath = project.BuildTempPath,
             OutputDirectory = settings.OutputDirectory,
-            Scenes = settings.Scenes.Where(s => s.Enabled && s.SceneGuid != Guid.Empty).Select(s => s.SceneGuid).ToList(),
+            Scenes = [.. settings.Scenes.Where(s => s.Enabled && s.SceneGuid != Guid.Empty).Select(s => s.SceneGuid)],
             Configuration = settings.Config,
             Packaging = settings.PackagingMode,
             DependenciesOnly = settings.AssetMode == AssetExportMode.DependenciesOnly,
@@ -431,7 +431,7 @@ public class DesktopBuildPipeline : BuildPipeline
     /// Processors registered for this pipeline. Empty by default, so every asset ships in its imported
     /// form, which is what desktop does today.
     /// </summary>
-    public IList<IAssetVariantProcessor> AssetProcessors { get; } = new List<IAssetVariantProcessor>();
+    public IList<IAssetVariantProcessor> AssetProcessors { get; } = [];
 
     // What each asset ships as, for the ones a processor claimed. Read by OpenShippedAsset during
     // packaging, which is what puts the processed bytes in the build rather than the imported ones.
@@ -705,15 +705,15 @@ public class DesktopBuildPipeline : BuildPipeline
     {
         EditorAssetBackend? source = EditorAssetBackend.Instance;
         if (source == null)
-            return [new AssetChunk(ChunkPlanner.CommonChunk, collected.Collection.AllAssets.OrderBy(g => g).ToList())];
+            return [new AssetChunk(ChunkPlanner.CommonChunk, [.. collected.Collection.AllAssets.OrderBy(g => g)])];
 
         var subAssets = new Dictionary<Guid, IReadOnlyList<Guid>>();
         foreach (AssetEntry entry in source.GetAllEntries())
             if (entry.SubAssets.Length > 0)
-                subAssets[entry.Guid] = entry.SubAssets.Select(s => s.Guid).ToList();
+                subAssets[entry.Guid] = [.. entry.SubAssets.Select(s => s.Guid)];
 
         return ChunkPlanner.Plan(source.Dependencies, request.Scenes,
-            collected.Collection.ResourcesMap.Select(r => r.Guid).ToList(), collected.Collection.AllAssets, subAssets);
+            [.. collected.Collection.ResourcesMap.Select(r => r.Guid)], collected.Collection.AllAssets, subAssets);
     }
 
     private Task ExportSettingsStage(IBuildContext context, CancellationToken ct)
@@ -777,7 +777,7 @@ public class DesktopBuildPipeline : BuildPipeline
 
         void Copy(IEnumerable<string> files, string relativeTo)
         {
-            foreach (var file in files.OrderBy(f => f, StringComparer.Ordinal))
+            foreach (string? file in files.OrderBy(f => f, StringComparer.Ordinal))
             {
                 ct.ThrowIfCancellationRequested();
 
@@ -893,7 +893,7 @@ public class DesktopBuildPipeline : BuildPipeline
                 new AssemblyRef("Prowl.Runtime", Path.Combine(engineDir, "Prowl.Runtime.dll")),
                 new AssemblyRef(PlayerAssembly, Path.Combine(engineDir, PlayerAssembly + ".dll")),
             ],
-            Packages = GetRuntimePackageReferences().Select(p => new PackageRef(p.Name, p.Version)).ToList(),
+            Packages = [.. GetRuntimePackageReferences().Select(p => new PackageRef(p.Name, p.Version))],
             TrimmerRootAssemblies = trimmerRoots,
 
             // Only the generated entry program: user scripts are separate, precompiled assemblies.
@@ -1142,10 +1142,10 @@ public class DesktopBuildPipeline : BuildPipeline
             $"{PlayerAssembly}.dll",
             $"{PlayerAssembly}.pdb",
         };
-        foreach (var name in userAssemblies)
+        foreach (string name in userAssemblies)
             keepInRoot.Add(name);
 
-        foreach (var file in Directory.GetFiles(outputDir, "*.dll"))
+        foreach (string file in Directory.GetFiles(outputDir, "*.dll"))
         {
             string fileName = Path.GetFileName(file);
             if (keepInRoot.Contains(fileName) || IsFrameworkAssembly(fileName)) continue;
@@ -1201,7 +1201,7 @@ public class DesktopBuildPipeline : BuildPipeline
         string macOsDir = Path.Combine(appDir, "Contents", "MacOS");
         Directory.CreateDirectory(macOsDir);
 
-        foreach (var entry in existingEntries)
+        foreach (string entry in existingEntries)
         {
             string dest = Path.Combine(macOsDir, Path.GetFileName(entry));
             if (Directory.Exists(entry))

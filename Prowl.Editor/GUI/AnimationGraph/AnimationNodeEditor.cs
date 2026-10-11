@@ -285,7 +285,7 @@ public sealed class AnimationNodeCard
 
     internal readonly record struct Row(float Height, Action<Paper, string> Draw);
 
-    internal readonly List<Row> Rows = new();
+    internal readonly List<Row> Rows = [];
 
     internal AnimationNodeCard(GraphNode widget, GraphNodeRecord record, AnimationNodeEditor editor, AnimationGraphEditing editing)
     {
@@ -521,7 +521,7 @@ public sealed class AnimationNodeCard
     private static string[] BuildBoneChoices()
     {
         HumanBodyBone[] bones = Enum.GetValues<HumanBodyBone>();
-        var choices = new string[bones.Length + 1];
+        string[] choices = new string[bones.Length + 1];
         for (int i = 0; i < bones.Length; i++)
             choices[i] = System.Text.RegularExpressions.Regex.Replace(bones[i].ToString(), "(?<=[a-z])(?=[A-Z])", " ");
         choices[^1] = "Custom";

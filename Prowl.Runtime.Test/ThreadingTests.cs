@@ -573,7 +573,7 @@ public class ThreadingTests : RuntimeTestBase
     {
         using var loop = new LoopScope();
         var errors = new List<string>();
-        OnLog capture = (message, _, severity) => { if (severity == LogSeverity.Error) lock (errors) errors.Add(message); };
+        void capture(string message, DebugStackTrace? _, LogSeverity severity) { if (severity == LogSeverity.Error) lock (errors) errors.Add(message); }
         Debug.OnLog += capture;
         try
         {
@@ -665,7 +665,7 @@ public class ThreadingTests : RuntimeTestBase
         using var loop = new LoopScope();
         var slow = new TaskCompletionSource();
         string? logged = null;
-        OnLog capture = (message, _, severity) => { if (severity == LogSeverity.Error && message.Contains("late failure")) logged = message; };
+        void capture(string message, DebugStackTrace? _, LogSeverity severity) { if (severity == LogSeverity.Error && message.Contains("late failure")) logged = message; }
         Debug.OnLog += capture;
         try
         {
@@ -977,7 +977,7 @@ public class ThreadingTests : RuntimeTestBase
 
         Assert.Throws<InvalidOperationException>(() => OffThread(() => scene.Physics.RaycastAll(Float3.Zero, Float3.UnitY, 10, hits)));
         Assert.Throws<InvalidOperationException>(() => OffThread(() => scene.Physics.Raycast(Float3.Zero, Float3.UnitY, 10)));
-        Assert.Throws<InvalidOperationException>(() => OffThread(() => scene.Physics.OverlapSphere(Float3.Zero, 1, new List<ShapeCastHit>())));
+        Assert.Throws<InvalidOperationException>(() => OffThread(() => scene.Physics.OverlapSphere(Float3.Zero, 1, [])));
         Assert.Equal(0, scene.Physics.RaycastAll(Float3.Zero, Float3.UnitY, 10, hits));
     }
 

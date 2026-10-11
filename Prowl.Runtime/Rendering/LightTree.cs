@@ -408,7 +408,7 @@ internal sealed class LightTreeBuilder
         int chunk = (count + workers - 1) / workers;
         var bounds = new LightBounds[Bins];
         var centroids = new LightBounds[Bins];
-        var counts = new int[Bins];
+        int[] counts = new int[Bins];
         for (int b = 0; b < Bins; b++)
         {
             bounds[b] = LightBounds.Empty;
@@ -472,7 +472,7 @@ internal sealed class LightTreeBuilder
         int axis = split.Axis, bin = split.Bin;
         float min = split.Min, scale = split.Scale;
 
-        var leftCounts = new int[workers];
+        int[] leftCounts = new int[workers];
         Parallel.For(0, workers, w =>
         {
             int start = first + w * chunk;
@@ -483,8 +483,8 @@ internal sealed class LightTreeBuilder
             leftCounts[w] = left;
         });
 
-        var leftOffset = new int[workers];
-        var rightOffset = new int[workers];
+        int[] leftOffset = new int[workers];
+        int[] rightOffset = new int[workers];
         int total = 0;
         for (int w = 0; w < workers; w++)
         {
@@ -808,10 +808,10 @@ internal sealed class ForwardLightTrees : IDisposable
     }
 
     private readonly Dictionary<IRenderableLight, Entry> _entries = new(ReferenceEqualityComparer.Instance);
-    private readonly List<Entry> _static = new();
-    private readonly List<Entry> _dynamic = new();
-    private readonly List<Entry> _culled = new();
-    private readonly List<Entry> _gone = new();
+    private readonly List<Entry> _static = [];
+    private readonly List<Entry> _dynamic = [];
+    private readonly List<Entry> _culled = [];
+    private readonly List<Entry> _gone = [];
     private readonly LightTreeBuilder _staticTree = new();
     private readonly LightTreeBuilder _dynamicTree = new();
     private readonly Float4[] _record = new Float4[TexelsPerLight];

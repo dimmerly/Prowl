@@ -78,7 +78,7 @@ public static class LayoutUtility
         }
     }
 
-    private static readonly Dictionary<GameObject, Sizes> s_cache = new();
+    private static readonly Dictionary<GameObject, Sizes> s_cache = [];
 
     /// <summary>Bumped by <see cref="InvalidateCache"/>. Layout groups stamp their own cached
     /// aggregates with it so they expire together with this cache.</summary>

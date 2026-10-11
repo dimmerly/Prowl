@@ -31,7 +31,7 @@ public sealed class RenderContext : IDisposable
 
     public RenderStage CurrentStage { get; set; }
 
-    private readonly List<RenderTexture> _replacedRTs = new();
+    private readonly List<RenderTexture> _replacedRTs = [];
 
     /// <summary>
     /// Replaces the scene color buffer with a new one (e.g., for HDR to LDR conversion).

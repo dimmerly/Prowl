@@ -129,7 +129,7 @@ internal sealed class ShadowRenderer : IDisposable
         public float Fade;
         public bool NeedsDraw;
         public bool Split;
-        public readonly List<int> Casters = new();
+        public readonly List<int> Casters = [];
 
         public int Layers => Split ? 2 : 1;
     }
@@ -148,16 +148,16 @@ internal sealed class ShadowRenderer : IDisposable
     }
 
     private readonly Dictionary<Light, LocalEntry> _local = new(ReferenceEqualityComparer.Instance);
-    private readonly List<LocalEntry> _visible = new();
-    private readonly Dictionary<object, CascadeSet> _cascades = new();
+    private readonly List<LocalEntry> _visible = [];
+    private readonly Dictionary<object, CascadeSet> _cascades = [];
     private readonly ShadowDataBlocks _data = new();
     private readonly ShadowAtlasTexture _atlas = new();
     private readonly CasterGrid _grid = new();
-    private readonly Dictionary<Shader, byte> _shaderKinds = new();
-    private readonly List<int> _staticCasters = new();
-    private readonly List<int> _dynamicCasters = new();
-    private readonly List<LocalEntry> _toForget = new();
-    private readonly List<object> _cascadesToForget = new();
+    private readonly Dictionary<Shader, byte> _shaderKinds = [];
+    private readonly List<int> _staticCasters = [];
+    private readonly List<int> _dynamicCasters = [];
+    private readonly List<LocalEntry> _toForget = [];
+    private readonly List<object> _cascadesToForget = [];
 
     private ulong[] _hash = [];
     private int[] _hashStamp = [];
@@ -1024,7 +1024,7 @@ internal sealed class ShadowRenderer : IDisposable
     {
         public Mesh Mesh = null!;
         public Material Material = null!;
-        public readonly List<IndexRange> Ranges = new();
+        public readonly List<IndexRange> Ranges = [];
 
         public Material GetMaterial() => Material;
         public int GetLayer() => 0;
@@ -1058,15 +1058,15 @@ internal sealed class ShadowRenderer : IDisposable
     private const byte BatchedOneSided = 1;
     private const byte BatchedTwoSided = 2;
 
-    private readonly Dictionary<(Mesh, int, bool), ShadowBatch> _batchLookup = new();
-    private readonly List<ShadowBatch> _batchPool = new();
-    private readonly List<ShadowBatch> _batches = new();
-    private readonly List<ShadowSingle> _singlePool = new();
-    private readonly Dictionary<(Mesh, bool), ShadowRanges> _rangesLookup = new();
-    private readonly List<ShadowRanges> _rangesPool = new();
-    private readonly List<ShadowRanges> _ranges = new();
-    private readonly List<IRenderable> _depthDraws = new();
-    private readonly Dictionary<Shader, byte> _batchKinds = new();
+    private readonly Dictionary<(Mesh, int, bool), ShadowBatch> _batchLookup = [];
+    private readonly List<ShadowBatch> _batchPool = [];
+    private readonly List<ShadowBatch> _batches = [];
+    private readonly List<ShadowSingle> _singlePool = [];
+    private readonly Dictionary<(Mesh, bool), ShadowRanges> _rangesLookup = [];
+    private readonly List<ShadowRanges> _rangesPool = [];
+    private readonly List<ShadowRanges> _ranges = [];
+    private readonly List<IRenderable> _depthDraws = [];
+    private readonly Dictionary<Shader, byte> _batchKinds = [];
     private Material? _depthMaterial;
     private Material? _depthMaterialTwoSided;
 
@@ -1289,9 +1289,9 @@ internal sealed class ShadowRenderer : IDisposable
         private const float CellSize = 16f;
         private const int MaxCellsPerObject = 64;
 
-        private readonly Dictionary<long, List<int>> _cells = new();
-        private readonly List<List<int>> _pool = new();
-        private readonly List<int> _large = new();
+        private readonly Dictionary<long, List<int>> _cells = [];
+        private readonly List<List<int>> _pool = [];
+        private readonly List<int> _large = [];
         private int _poolUsed;
         private int[] _visit = [];
         private int _visitStamp;
@@ -1367,7 +1367,7 @@ internal sealed class ShadowRenderer : IDisposable
         private List<int> CellList(long key)
         {
             if (_cells.TryGetValue(key, out List<int>? list)) return list;
-            if (_poolUsed == _pool.Count) _pool.Add(new List<int>());
+            if (_poolUsed == _pool.Count) _pool.Add([]);
             list = _pool[_poolUsed++];
             _cells[key] = list;
             return list;

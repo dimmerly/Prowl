@@ -40,7 +40,7 @@ public enum PhysicsThreadModel
 public class PhysicsWorld
 {
     /// <summary>Enabled character controllers in this world. They have no body, so trigger volumes test them directly.</summary>
-    internal readonly List<CharacterController> Characters = new();
+    internal readonly List<CharacterController> Characters = [];
 
     /// <summary>
     /// Stops two rigidbodies colliding with each other, on top of whatever the layer matrix says. The
@@ -112,7 +112,7 @@ public class PhysicsWorld
     /// Static rigidbodies indexed by layer. Each layer has its own static rigidbody to ensure collision filtering works correctly.
     /// Orphan colliders (colliders without a Rigidbody3D component) will attach to the static rigidbody for their layer.
     /// </summary>
-    private Dictionary<int, Jitter2.Dynamics.RigidBody> _staticRigidbodiesByLayer = new();
+    private Dictionary<int, Jitter2.Dynamics.RigidBody> _staticRigidbodiesByLayer = [];
 
     /// <summary>
     /// Composite filter that chains multiple broad phase filters together.
@@ -187,7 +187,7 @@ public class PhysicsWorld
     // which GameObject was struck. This maps every shape back to the Collider that created it. The key
     // is weak, so an entry that no Detach reached (a shape bulk-removed during a rebuild, say) dies
     // with the shape instead of pinning it and its collider for the lifetime of the world.
-    private readonly ConditionalWeakTable<RigidBodyShape, Collider> _shapeOwners = new();
+    private readonly ConditionalWeakTable<RigidBodyShape, Collider> _shapeOwners = [];
 
     // Collision events name their shapes by id rather than by reference (the contact data is freed
     // before the event is raised), so the same mapping is kept by ShapeId. Written and cleared in

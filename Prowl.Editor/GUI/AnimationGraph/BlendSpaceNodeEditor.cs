@@ -25,7 +25,7 @@ namespace Prowl.Editor.Inspector;
 [AnimationNodeEditor(typeof(Blend2DNode))]
 internal sealed class BlendSpaceNodeEditor : AnimationNodeEditor
 {
-    private readonly Dictionary<string, BlendChart> _charts = new();
+    private readonly Dictionary<string, BlendChart> _charts = [];
 
     private bool TwoD => Node.Id == AnimationNodeIds.Blend2D;
 

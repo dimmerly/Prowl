@@ -41,20 +41,20 @@ public class PreferencesPanel : DockPanel
 
     // label holds a localization key, resolved via Loc.Get where the tabs are rendered.
     private static readonly (string id, string label, string icon)[] Cats =
-    {
+    [
         ("general",   "pref.general",   EditorIcons.Gear),
         ("theme",     "pref.theme",     EditorIcons.Palette),
         ("shortcuts", "pref.shortcuts", EditorIcons.Keyboard),
-    };
+    ];
 
     private static readonly (string id, string label, string icon)[] ThemeCats =
-    {
+    [
         ("presets", "pref.cat_presets", EditorIcons.Swatchbook),
         ("colors",  "pref.cat_colors",  EditorIcons.Droplet),
         ("type",    "pref.cat_type",    EditorIcons.Font),
         ("layout",  "pref.cat_layout",  EditorIcons.TableCells),
         ("effects", "pref.cat_effects", EditorIcons.Bolt),
-    };
+    ];
 
     /// <summary>Switch this Preferences window to the Theme tab (used by the header quick-access button).</summary>
     public void ShowTheme() => _tab = Tab.Theme;
@@ -272,7 +272,7 @@ public class PreferencesPanel : DockPanel
                     if (path == null) return;
                     var imported = EditorThemeData.ImportFromFile(path);
                     if (imported != null) { s.Theme = imported; s.ApplyTheme(); s.Save(); Toasts.Info(Loc.Get("pref.toast_theme"), Loc.Get("pref.toast_imported", new { name = imported.Name })); }
-                }, filters: new[] { "*.prowltheme" }, filterLabels: new[] { Loc.Get("pref.theme_filter") }));
+                }, filters: ["*.prowltheme"], filterLabels: [Loc.Get("pref.theme_filter")]));
 
             EditorGUI.Chip(paper, "pref_ft_export", $"{EditorIcons.Download}  {Loc.Get("pref.export")}", () =>
                 EditorApplication.OpenFileDialog(FileDialogMode.Save, path =>
@@ -281,7 +281,7 @@ public class PreferencesPanel : DockPanel
                     if (!path.EndsWith(".prowltheme")) path += ".prowltheme";
                     theme.ExportToFile(path);
                     Toasts.Info(Loc.Get("pref.toast_theme"), Loc.Get("pref.toast_exported", new { file = System.IO.Path.GetFileName(path) }));
-                }, filters: new[] { "*.prowltheme" }, filterLabels: new[] { Loc.Get("pref.theme_filter") }), leftGap: 8f);
+                }, filters: ["*.prowltheme"], filterLabels: [Loc.Get("pref.theme_filter")]), leftGap: 8f);
 
             paper.Box("pref_ft_apply").Width(UnitValue.Auto).Height(30).Margin(8, 0, UnitValue.StretchOne, UnitValue.StretchOne).Rounded(EditorTheme.Roundness).Padding(16, 16, 0, 0)
                 .BackgroundLinearGradient(0, 0, 1, 1, EditorTheme.Accent, EditorTheme.AccentBright)
@@ -319,11 +319,11 @@ public class PreferencesPanel : DockPanel
 
     // "Default" matches the EditorThemeData defaults.
     private static readonly LayoutPreset[] _layouts =
-    {
+    [
         new("Default",  Roundness: 6f,  Spacing: 2f, Padding: 6f, RowHeight: 24f, FontSize: 17f, LabelWidth: 150f, TabBarHeight: 32f, TabPadding: 12f, MenuBarHeight: 40f, StatusBarHeight: 26f, DockSpacing: 6f),
         new("Compact",  Roundness: 0f,  Spacing: 1f, Padding: 4f, RowHeight: 20f, FontSize: 15f, LabelWidth: 130f, TabBarHeight: 26f, TabPadding: 8f,  MenuBarHeight: 32f, StatusBarHeight: 22f, DockSpacing: 3f),
         new("Spacious", Roundness: 10f, Spacing: 4f, Padding: 9f, RowHeight: 28f, FontSize: 18f, LabelWidth: 170f, TabBarHeight: 36f, TabPadding: 14f, MenuBarHeight: 44f, StatusBarHeight: 28f, DockSpacing: 8f),
-    };
+    ];
 
     private const int PresetColumns = 4;
 

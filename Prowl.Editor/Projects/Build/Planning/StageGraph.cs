@@ -32,7 +32,7 @@ public sealed class StageGraph
     /// <summary> Validates that no stage is declared twice, all dependencies exist in the graph, and there are no cycles. Throws ArgumentException when any of those conditions is violated. </summary>
     public StageGraph(IEnumerable<StageNode> nodes)
     {
-        _nodes = new Dictionary<BuildStage, StageNode>();
+        _nodes = [];
         foreach (StageNode node in nodes)
         {
             if (!_nodes.TryAdd(node.Stage, node))

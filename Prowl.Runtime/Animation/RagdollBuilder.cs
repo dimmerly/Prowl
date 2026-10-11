@@ -38,7 +38,7 @@ public static class RagdollBuilder
 
     // Parents come before their children, and every animated bone between two parts is a part of its own.
     private static readonly PartSpec[] s_parts =
-    {
+    [
         new(HumanBodyBone.Hips, null, Shape.Box, Swing: 0f, Twist: 0f, Mass: 0.14f),
         new(HumanBodyBone.Spine, HumanBodyBone.Hips, Shape.Box, Swing: 20f, Twist: 15f, Mass: 0.08f, Need: Need.Optional),
         new(HumanBodyBone.Chest, HumanBodyBone.Spine, Shape.Box, Swing: 20f, Twist: 15f, Mass: 0.1f),
@@ -59,7 +59,7 @@ public static class RagdollBuilder
         new(HumanBodyBone.RightHand, HumanBodyBone.RightLowerArm, Shape.Box, Swing: 40f, Twist: 10f, Mass: 0.008f, Need: Need.HandsAndFeet),
         new(HumanBodyBone.LeftFoot, HumanBodyBone.LeftLowerLeg, Shape.Box, Swing: 30f, Twist: 10f, Mass: 0.015f, Need: Need.HandsAndFeet),
         new(HumanBodyBone.RightFoot, HumanBodyBone.RightLowerLeg, Shape.Box, Swing: 30f, Twist: 10f, Mass: 0.015f, Need: Need.HandsAndFeet),
-    };
+    ];
 
     /// <summary>
     /// The humanoid bones of an animator's rig, found in its hierarchy. Null with a reason when the rig

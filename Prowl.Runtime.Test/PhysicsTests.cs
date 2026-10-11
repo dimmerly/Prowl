@@ -519,16 +519,16 @@ public class PhysicsTests : RuntimeTestBase
     // Records the trigger callbacks now delivered as Component overrides. Lives on the trigger's GameObject.
     private sealed class TriggerRecorder : Component
     {
-        public readonly List<Rigidbody3D> Entered = new();
-        public readonly List<Rigidbody3D> Exited = new();
+        public readonly List<Rigidbody3D> Entered = [];
+        public readonly List<Rigidbody3D> Exited = [];
         public int StayCount;
 
         public override void OnTriggerEnter(Rigidbody3D other) => Entered.Add(other);
         public override void OnTriggerStay(Rigidbody3D other) => StayCount++;
         public override void OnTriggerExit(Rigidbody3D other) => Exited.Add(other);
 
-        public readonly List<CharacterController> CharactersEntered = new();
-        public readonly List<CharacterController> CharactersExited = new();
+        public readonly List<CharacterController> CharactersEntered = [];
+        public readonly List<CharacterController> CharactersExited = [];
         public int CharacterStayCount;
 
         public override void OnCharacterEnter(CharacterController character) => CharactersEntered.Add(character);

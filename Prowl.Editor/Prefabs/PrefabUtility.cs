@@ -524,7 +524,7 @@ public static partial class PrefabUtility
         // copied, when the source is written back below.
         foreach (PropertyOverride ov in applied)
         {
-            ParseOverridePath(source, ov.Path, out var target, out string fieldPath);
+            ParseOverridePath(source, ov.Path, out object? target, out string fieldPath);
             if (target != null && !string.IsNullOrEmpty(fieldPath))
                 ApplyFieldValue(target, fieldPath, ov.Value, source.Scene);
         }
@@ -594,7 +594,7 @@ public static partial class PrefabUtility
         if (source == null) return;
 
         // Find the source value via the path
-        ParseOverridePath(source, overridePath, out var sourceTarget, out string sourceFieldPath);
+        ParseOverridePath(source, overridePath, out object? sourceTarget, out string sourceFieldPath);
         if (sourceTarget == null || string.IsNullOrEmpty(sourceFieldPath)) return;
 
         // Read the source value
@@ -607,19 +607,19 @@ public static partial class PrefabUtility
         GameObject root = prefabRoot.IsValid() ? prefabRoot : instanceGO;
 
         // Find the instance target
-        ParseOverridePath(root, overridePath, out var instanceTarget, out string instanceFieldPath);
+        ParseOverridePath(root, overridePath, out object? instanceTarget, out string instanceFieldPath);
         if (instanceTarget == null) return;
 
         // Capture old instance value for undo
-        var oldInstanceValue = GetMemberValue(instanceTarget, instanceFieldPath);
+        object? oldInstanceValue = GetMemberValue(instanceTarget, instanceFieldPath);
         EchoObject oldInstanceEcho = Serializer.Serialize(sourceMember.MemberType, oldInstanceValue, InstanceValueContext());
         var removedOverrides = root.PrefabOverrides.Where(o => o.Path == overridePath).ToList();
         // A later refresh replaces the instance, so address it by identifier rather than holding it.
         Guid rootId = root!.Identifier;
-        var path = overridePath;
+        string path = overridePath;
 
         // Copy source value to instance
-        var sourceValue = GetMemberValue(sourceTarget, sourceFieldPath);
+        object? sourceValue = GetMemberValue(sourceTarget, sourceFieldPath);
         SetMemberValue(instanceTarget, instanceFieldPath, CopyFromSource(sourceValue, source, root!));
         if (instanceTarget is Component reverted)
         {
@@ -639,7 +639,7 @@ public static partial class PrefabUtility
                     if (live.IsNotValid()) return;
 
                     // Restore old instance value
-                    ParseOverridePath(live!, path, out var undoTarget, out string undoFieldPath);
+                    ParseOverridePath(live!, path, out object? undoTarget, out string undoFieldPath);
                     if (undoTarget != null && oldInstanceEcho != null)
                         ApplyFieldValue(undoTarget, undoFieldPath, oldInstanceEcho, live!.Scene);
                     // Re-add removed overrides
@@ -770,7 +770,7 @@ public static partial class PrefabUtility
     private static object? GetMemberValue(object target, string memberPath)
     {
         string[] parts = memberPath.Split('.');
-        if (!TraverseToParent(target, parts, out var parent)) return null;
+        if (!TraverseToParent(target, parts, out object? parent)) return null;
         var member = Member.Find(parent, parts[^1]);
         return member.IsValid ? member.GetValue(parent) : null;
     }
@@ -778,7 +778,7 @@ public static partial class PrefabUtility
     private static void SetMemberValue(object target, string memberPath, object? value)
     {
         string[] parts = memberPath.Split('.');
-        if (!TraverseToParent(target, parts, out var parent)) return;
+        if (!TraverseToParent(target, parts, out object? parent)) return;
         Member.Find(parent, parts[^1]).SetValue(parent, value);
     }
 
@@ -1312,7 +1312,7 @@ public static partial class PrefabUtility
         GameObject? prefabRoot = GetPrefabInstanceRoot(instanceGO);
         GameObject root = prefabRoot.IsValid() ? prefabRoot! : instanceGO;
 
-        ParseOverridePath(root, overridePath, out var target, out string fieldPath);
+        ParseOverridePath(root, overridePath, out object? target, out string fieldPath);
         if (target == null || string.IsNullOrEmpty(fieldPath)) return false;
 
         return GetMemberByPath(target, fieldPath).IsValid;
@@ -1982,7 +1982,7 @@ public static partial class PrefabUtility
         // The component this one came from, found by identity rather than by position, so adding or
         // reordering components on either side does not change which one it is compared against.
         string path = GetOverridePath(instanceGO, instanceComp, "");
-        ParseOverridePath(source, path, out var sourceTarget, out _);
+        ParseOverridePath(source, path, out object? sourceTarget, out _);
         if (sourceTarget is not Component sourceComp) return;
 
         if (sourceComp.GetType() != instanceComp.GetType())
@@ -2088,7 +2088,7 @@ public static partial class PrefabUtility
         if (source == null) return;
 
         string pathPrefix = GetOverridePath(instanceGO, "");
-        ParseOverridePath(source, pathPrefix, out var sourceTarget, out _);
+        ParseOverridePath(source, pathPrefix, out object? sourceTarget, out _);
         if (sourceTarget is not GameObject sourceGO) return;
 
         // Stored on the instance root so refresh/apply, which operate on the root, find child overrides.
@@ -2118,18 +2118,18 @@ public static partial class PrefabUtility
     // This list is load-bearing: the field set below is Echo's, so anything Echo persists and that is
     // not named here is comparable. _identifier especially - identifiers are regenerated on every
     // deserialization, so instance and source always differ and every component would record one.
-    private static readonly HashSet<string> _skipFields = new()
-    {
+    private static readonly HashSet<string> _skipFields =
+    [
         "_identifier",          // regenerated per load; never per-instance state
         "_enabledInHierarchy",  // derived from _enabled and the parent chain
         "_go",                  // back-reference to the owning GameObject
         "_hasStarted", "_hasBeenEnabled", "_executeAlwaysCached", // runtime lifecycle bookkeeping
         "HideFlags",            // editor presentation, not content
         "AssetID", "AssetPath"  // asset identity, meaningless on a scene component
-    };
+    ];
 
     // Keyed by concrete type; the field set never changes for a type within a session.
-    private static readonly Dictionary<Type, FieldInfo[]> _overridableFields = new();
+    private static readonly Dictionary<Type, FieldInfo[]> _overridableFields = [];
 
     /// <summary>
     /// The fields an override may address: exactly what Echo persists, minus engine bookkeeping.
@@ -2162,8 +2162,8 @@ public static partial class PrefabUtility
     {
         foreach (FieldInfo field in GetOverridableFields(instance))
         {
-            var instanceVal = field.GetValue(instance);
-            var sourceVal = field.GetValue(source);
+            object? instanceVal = field.GetValue(instance);
+            object? sourceVal = field.GetValue(source);
             string path = pathPrefix + field.Name;
 
             // Looked up by hand: a lambda over `path` allocates a closure per field, and this runs for
@@ -2241,7 +2241,7 @@ public static partial class PrefabUtility
     // compared against, on every frame the inspector drew one. Nothing about a prefab changes without
     // going through a write here or an import, and both drop what they invalidate, so the frame
     // counter was buying nothing the invalidation was not already buying.
-    private static readonly Dictionary<Guid, GameObject> _sourceCache = new();
+    private static readonly Dictionary<Guid, GameObject> _sourceCache = [];
 
     private static GameObject? GetCachedPrefabSource(Guid prefabGuid)
     {

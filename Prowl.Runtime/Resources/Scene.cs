@@ -327,7 +327,7 @@ public class Scene : EngineObject, ISerializationCallbackReceiver
     private GameObject[] serializeObj = null;
 
     [SerializeIgnore]
-    private List<GameObject> _allObj = new();
+    private List<GameObject> _allObj = [];
     [SerializeIgnore]
     private HashSet<GameObject> _allObjSet = new(ReferenceEqualityComparer.Instance);
 
@@ -357,11 +357,11 @@ public class Scene : EngineObject, ISerializationCallbackReceiver
 
     /// <summary>The enabled canvases in this scene, each added by its own OnEnable and removed by its OnDisable.</summary>
     [SerializeIgnore, NotHeld]
-    internal readonly List<GameCanvas> Canvases = new();
+    internal readonly List<GameCanvas> Canvases = [];
 
     /// <summary>The enabled volumetric clouds in this scene. The first one is drawn.</summary>
     [SerializeIgnore, NotHeld]
-    internal readonly List<VolumetricClouds> Clouds = new();
+    internal readonly List<VolumetricClouds> Clouds = [];
 
     /// <summary>This scene's reflection probes, and the sky probe surfaces outside them reflect.</summary>
     [SerializeIgnore, NotHeld]
@@ -493,14 +493,14 @@ public class Scene : EngineObject, ISerializationCallbackReceiver
     public sealed class BakedLightingData
     {
         /// <summary>Baked lightmap atlas pages (RGBM-encoded). A placement below selects one.</summary>
-        public List<Texture2D> Lightmaps = new();
+        public List<Texture2D> Lightmaps = [];
 
         /// <summary>
         /// Where each baked renderer landed in the atlas, keyed by the identifier of the object it is on.
         /// Here rather than on the renderer because it belongs to this scene's bake and to nothing else,
         /// which is also what stops a prefab instance reading as modified the moment it is baked.
         /// </summary>
-        public Dictionary<Guid, LightmapPlacement> Placements = new();
+        public Dictionary<Guid, LightmapPlacement> Placements = [];
         /// <summary>World-space light-probe positions.</summary>
         public Float3[] ProbePositions = [];
         /// <summary>Baked SH per probe, indexed with <see cref="ProbePositions"/>.</summary>

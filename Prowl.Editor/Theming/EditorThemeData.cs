@@ -244,7 +244,7 @@ public class EditorThemeData
     /// <summary> Creates a deep clone of this theme data. </summary>
     public EditorThemeData Clone()
     {
-        var json = JsonSerializer.Serialize(this);
+        string json = JsonSerializer.Serialize(this);
         EditorThemeData clone = JsonSerializer.Deserialize<EditorThemeData>(json)!;
         clone.InitRamps();
         return clone;
@@ -253,7 +253,7 @@ public class EditorThemeData
     /// <summary> Serializes this theme to a JSON file at the given path. </summary>
     public void ExportToFile(string path)
     {
-        var json = JsonSerializer.Serialize(this, new JsonSerializerOptions { WriteIndented = true });
+        string json = JsonSerializer.Serialize(this, new JsonSerializerOptions { WriteIndented = true });
         File.WriteAllText(path, json);
     }
 
@@ -262,7 +262,7 @@ public class EditorThemeData
     {
         try
         {
-            var json = File.ReadAllText(path);
+            string json = File.ReadAllText(path);
             EditorThemeData? data = JsonSerializer.Deserialize<EditorThemeData>(json);
             data?.InitRamps();
             return data;

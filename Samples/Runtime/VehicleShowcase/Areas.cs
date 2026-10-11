@@ -17,7 +17,7 @@ namespace VehicleShowcase;
 /// </summary>
 public sealed partial class VehicleShowcaseGame
 {
-    private readonly List<LapTimer> _lapTimers = new();
+    private readonly List<LapTimer> _lapTimers = [];
 
     private void BuildWorld()
     {

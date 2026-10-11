@@ -41,7 +41,7 @@ internal sealed class ReflectionProbeSystem : IDisposable
         public readonly Float4[] Record = new Float4[TexelsPerProbe];
     }
 
-    private readonly List<Slot> _slots = new();
+    private readonly List<Slot> _slots = [];
     private readonly Dictionary<ReflectionProbe, Slot> _bySlot = new(ReferenceEqualityComparer.Instance);
     private readonly Stack<int> _freeLayers = new();
     private int _nextLayer = SkyLayer + 1;
@@ -454,7 +454,7 @@ internal static class ReflectionProbeCapture
         using var target = new Cubemap((uint)resolution, mipChain: true);
         Prefilter(target, 0, mips);
 
-        var faces = new byte[6 * mips][];
+        byte[][] faces = new byte[6 * mips][];
         for (int face = 0; face < 6; face++)
             for (int mip = 0; mip < mips; mip++)
             {

@@ -222,7 +222,7 @@ public class Project
 
     private void WriteProwlFile()
     {
-        JsonObject data = (File.Exists(ProwlFilePath) ? TryParse(File.ReadAllText(ProwlFilePath)) : null) ?? new JsonObject();
+        JsonObject data = (File.Exists(ProwlFilePath) ? TryParse(File.ReadAllText(ProwlFilePath)) : null) ?? [];
         data["name"] = Name;
         data["engine"] = "Prowl";
         data["version"] = Version.ToString();

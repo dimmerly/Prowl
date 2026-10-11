@@ -16,7 +16,7 @@ public class MeshTests
     [Fact]
     public void RecalculateBounds_HandlesVerticesBeyond99999()
     {
-        var m = new Mesh { Vertices = new[] { new Float3(200000, 200000, 200000), new Float3(200001, 200002, 200003) } };
+        var m = new Mesh { Vertices = [new Float3(200000, 200000, 200000), new Float3(200001, 200002, 200003)] };
         m.RecalculateBounds();
 
         Assert.Equal(200000f, m.bounds.Min.X, 1);

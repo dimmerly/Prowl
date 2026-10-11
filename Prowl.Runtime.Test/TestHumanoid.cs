@@ -51,7 +51,7 @@ internal static class TestHumanoid
         var root = new GameObject("Character");
         var objects = new Dictionary<string, GameObject>();
         var ids = new StringID[defs.Length];
-        var parents = new int[defs.Length];
+        int[] parents = new int[defs.Length];
         var rest = new Transform3D[defs.Length];
         for (int i = 0; i < defs.Length; i++)
         {

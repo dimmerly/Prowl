@@ -98,8 +98,8 @@ public sealed class MemoryAssetBackend : AssetBackend
 /// </summary>
 internal sealed class DependencySerializationContext : SerializationContext
 {
-    public HashSet<Guid> Dependencies = new();
-    public HashSet<Guid> SoftDependencies = new();
+    public HashSet<Guid> Dependencies = [];
+    public HashSet<Guid> SoftDependencies = [];
 
     /// <summary>Database assets written in full here anyway, such as the sub assets a source file carries inside it.</summary>
     public HashSet<Asset>? Inline;

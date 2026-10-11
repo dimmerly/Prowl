@@ -33,7 +33,7 @@ public class CloudTests
                 Assert.Equal(centre, vertices[indices[quad * 6 + k]]);
 
             // Two triangles over all four corners
-            var corners = new bool[4];
+            bool[] corners = new bool[4];
             for (int k = 0; k < 6; k++)
             {
                 Float2 c = uv[indices[quad * 6 + k]];

@@ -32,7 +32,7 @@ public class EditorAssetBackend : AssetBackend
     private readonly ConcurrentDictionary<Guid, (Guid parentGuid, int index)> _subAssetIndex = new();
     // GPU-uploaded thumbnail cache. Main-thread-only (texture creation isn't thread-safe), same
     // as _pathToGuid every UI that shows asset thumbnails shares this instead of keeping its own.
-    private readonly Dictionary<Guid, Runtime.Resources.Texture2D?> _thumbnailTextures = new();
+    private readonly Dictionary<Guid, Runtime.Resources.Texture2D?> _thumbnailTextures = [];
     // Held only around reading or replacing a cache file, so the loader never reads one mid-replace.
     private readonly object _cacheFileLock = new();
     private IReadOnlyList<ResourceEntry> _resources = [];
@@ -46,8 +46,8 @@ public class EditorAssetBackend : AssetBackend
     // Main-thread-only (the panel and ProcessFileChanges both run there), so no locking is needed.
     private sealed class FolderContents
     {
-        public readonly List<FolderRecord> SubFolders = new();
-        public readonly List<FileRecord> Files = new();
+        public readonly List<FolderRecord> SubFolders = [];
+        public readonly List<FileRecord> Files = [];
     }
     private readonly Dictionary<string, FolderContents> _folderIndex = new(StringComparer.OrdinalIgnoreCase);
     private bool _folderIndexDirty = true;
@@ -195,11 +195,11 @@ public class EditorAssetBackend : AssetBackend
     /// </summary>
     private void CleanupOrphanedMetaTempFiles()
     {
-        var assetsPath = _project.AssetsPath;
+        string assetsPath = _project.AssetsPath;
         if (!Directory.Exists(assetsPath)) return;
 
         foreach (string pattern in new[] { "*.meta.tmp", "*.prefab.tmp" })
-            foreach (var tmp in Directory.EnumerateFiles(assetsPath, pattern, SearchOption.AllDirectories))
+            foreach (string tmp in Directory.EnumerateFiles(assetsPath, pattern, SearchOption.AllDirectories))
             {
                 try { File.Delete(tmp); }
                 catch (Exception ex) { Runtime.Debug.LogWarning($"Failed to delete orphaned temp file '{tmp}': {ex.Message}"); }
@@ -352,13 +352,13 @@ public class EditorAssetBackend : AssetBackend
 
     private void ScanAssets()
     {
-        var assetsPath = _project.AssetsPath;
+        string assetsPath = _project.AssetsPath;
         if (!Directory.Exists(assetsPath)) return;
 
         // Track which paths we find on disk
         var foundPaths = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
-        foreach (var file in Directory.EnumerateFiles(assetsPath, "*", SearchOption.AllDirectories))
+        foreach (string file in Directory.EnumerateFiles(assetsPath, "*", SearchOption.AllDirectories))
         {
             // Skip .meta files and hidden files
             if (file.EndsWith(".meta", StringComparison.OrdinalIgnoreCase)) continue;
@@ -381,7 +381,7 @@ public class EditorAssetBackend : AssetBackend
         }
 
         // Also scan for directories (they need .meta files too for folder GUIDs)
-        foreach (var dir in Directory.EnumerateDirectories(assetsPath, "*", SearchOption.AllDirectories))
+        foreach (string dir in Directory.EnumerateDirectories(assetsPath, "*", SearchOption.AllDirectories))
         {
             string dirName = Path.GetFileName(dir);
             if (dirName.StartsWith('.')) continue;
@@ -752,7 +752,7 @@ public class EditorAssetBackend : AssetBackend
 
             // Process sub-assets IDs already assigned by ctx.AddSubAsset. Remember the previous set so
             // sub-assets that disappear this import (renamed/removed) can be cleaned up below.
-            HashSet<Guid> previousSubGuids = entry.SubAssets?.Select(s => s.Guid).ToHashSet() ?? new HashSet<Guid>();
+            HashSet<Guid> previousSubGuids = entry.SubAssets?.Select(s => s.Guid).ToHashSet() ?? [];
             var newSubGuids = new HashSet<Guid>();
             bool cachesWritten = true;
 
@@ -1029,10 +1029,10 @@ public class EditorAssetBackend : AssetBackend
     // Kept apart from the project cache below: these are compiled into the runtime assembly, so
     // they are read once and never invalidated, and crucially they are never subject to the
     // liveness check (they have no asset entry to be live against).
-    private readonly Dictionary<Guid, string> _builtInShaderPaths = new();
+    private readonly Dictionary<Guid, string> _builtInShaderPaths = [];
 
     // Written from the import path and read from the inspector, so this carries its own lock.
-    private readonly Dictionary<Guid, string> _projectShaderPaths = new();
+    private readonly Dictionary<Guid, string> _projectShaderPaths = [];
     private readonly object _shaderMenuLock = new();
 
     /// <summary>One assignable shader and the menu path it declares.</summary>
@@ -1252,7 +1252,7 @@ public class EditorAssetBackend : AssetBackend
         _folderIndex.Clear();
         _folderIndexDirty = false;
 
-        var assetsPath = _project.AssetsPath;
+        string assetsPath = _project.AssetsPath;
         if (!Directory.Exists(assetsPath)) return;
         BuildFolderIndex(assetsPath, "");
     }
@@ -1262,7 +1262,7 @@ public class EditorAssetBackend : AssetBackend
         var contents = new FolderContents();
         try
         {
-            foreach (var dir in Directory.EnumerateDirectories(absolutePath))
+            foreach (string dir in Directory.EnumerateDirectories(absolutePath))
             {
                 string name = Path.GetFileName(dir);
                 string childRel = relativePath.Length == 0 ? name : relativePath + "/" + name;
@@ -1275,7 +1275,7 @@ public class EditorAssetBackend : AssetBackend
                     BuildFolderIndex(dir, childRel);
             }
 
-            foreach (var file in Directory.EnumerateFiles(absolutePath))
+            foreach (string file in Directory.EnumerateFiles(absolutePath))
             {
                 string name = Path.GetFileName(file);
                 if (name.EndsWith(".meta", StringComparison.OrdinalIgnoreCase)) continue;
@@ -1594,7 +1594,7 @@ public class EditorAssetBackend : AssetBackend
         }
 
         MetadataCache.Save(_project.MetadataDbPath, _guidToEntry.Values);
-        OnAssetsDeleted?.Invoke(new[] { relativePath });
+        OnAssetsDeleted?.Invoke([relativePath]);
         InvalidateFolderIndex();
 
         if (AffectsCompilation(relativePath))
@@ -1791,7 +1791,7 @@ public class EditorAssetBackend : AssetBackend
             finally { _refillReason = ReloadReason.Reimport; }
             MetadataCache.Save(_project.MetadataDbPath, _guidToEntry.Values);
             IndexVersion++;
-            OnAssetsImported?.Invoke(new[] { entry.Path });
+            OnAssetsImported?.Invoke([entry.Path]);
 
             // Sub-asset thumbnails regenerate from their objects. One not loaded now is queued when it next loads.
             foreach (SubAssetEntry sub in entry.SubAssets)

@@ -58,7 +58,7 @@ public static class GameObjectInspector
     }
 
     // Sections (Transform + each component) remember their collapsed state here; absent = expanded.
-    private static readonly HashSet<string> _collapsedSections = new();
+    private static readonly HashSet<string> _collapsedSections = [];
     private static bool IsExpanded(string id) => !_collapsedSections.Contains(id);
     private static void ToggleSection(string id) { if (!_collapsedSections.Add(id)) _collapsedSections.Remove(id); }
 
@@ -174,7 +174,7 @@ public static class GameObjectInspector
 
         using (paper.Row("gim_tag_layer").Height(22).Gap(6).Enter())
         {
-            var tagNames = TagLayerManager.tags.ToArray();
+            string[] tagNames = [.. TagLayerManager.tags];
             bool tagMixed = gos.Select(g => g.Tag).Distinct().Count() > 1;
             int tagIdx = tagMixed ? -1 : Math.Max(0, TagLayerManager.tags.IndexOf(gos[0].Tag));
 
@@ -186,7 +186,7 @@ public static class GameObjectInspector
                             Undo.ApplyGameObjectChanges(gos, "Change Tag", g => g.Tag, (g, x) => g.Tag = x, tagNames[v]);
                     }, tagNames).Show());
 
-            var allLayers = TagLayerManager.layers;
+            string[] allLayers = TagLayerManager.layers;
             var layerNames = new List<string>();
             var layerIndices = new List<int>();
             for (int i = 0; i < allLayers.Length; i++)
@@ -270,7 +270,7 @@ public static class GameObjectInspector
                     v =>
                     {
                         var actions = new List<(Action, Action)>(instances.Count);
-                        foreach (var o in instances)
+                        foreach (object o in instances)
                         {
                             var c = (Component)o;
                             Guid cid = c.Identifier;
@@ -331,7 +331,7 @@ public static class GameObjectInspector
 
             SelDropdown(paper, font, "gi_static", null,
                 go.IsStatic ? "Static" : "Dynamic",
-                new[] { "Dynamic", "Static" }, go.IsStatic ? 1 : 0,
+                ["Dynamic", "Static"], go.IsStatic ? 1 : 0,
                 idx =>
                 {
                     bool v = idx == 1;
@@ -354,7 +354,7 @@ public static class GameObjectInspector
             .Gap(7)
             .Enter())
         {
-            var tagNames = TagLayerManager.tags.ToArray();
+            string[] tagNames = [.. TagLayerManager.tags];
             int tagIdx = TagLayerManager.tags.IndexOf(go.Tag);
             if (tagIdx < 0) tagIdx = 0;
             SelDropdown(paper, font, "gi_tag", Loc.Get("inspector.tag"), go.Tag, tagNames, tagIdx,
@@ -362,13 +362,13 @@ public static class GameObjectInspector
                 {
                     if (v >= 0 && v < tagNames.Length)
                     {
-                        var newTag = tagNames[v];
+                        string newTag = tagNames[v];
                         Undo.RecordGameObjectChange(go, "Change Tag", go.Tag, newTag, (g, x) => g.Tag = x);
                         go.Tag = newTag;
                     }
                 }, chevron: false, width: UnitValue.Stretch());
 
-            var allLayers = TagLayerManager.layers;
+            string[] allLayers = TagLayerManager.layers;
             var layerNames = new List<string>();
             var layerIndices = new List<int>();
             for (int i = 0; i < allLayers.Length; i++)
@@ -382,7 +382,7 @@ public static class GameObjectInspector
                 {
                     if (v >= 0 && v < layerIndices.Count)
                     {
-                        var newIdx = layerIndices[v];
+                        int newIdx = layerIndices[v];
                         Undo.RecordGameObjectChange(go, "Change Layer", go.LayerIndex, newIdx, (g, x) => g.LayerIndex = x);
                         go.LayerIndex = newIdx;
                     }
@@ -871,7 +871,7 @@ public static class GameObjectInspector
                     using (paper.Box($"{compId}_en_wrap").Width(UnitValue.Auto).Height(UnitValue.Auto)
                         .Margin(0, 0, UnitValue.StretchOne, UnitValue.StretchOne).Enter())
                         Origami.Checkbox(paper, $"{compId}_en", comp.Enabled,
-                            v => { var old = comp.Enabled; Guid cId = comp.Identifier; Undo.RegisterAction("Toggle Component", () => { Component? c = Undo.FindComponent(cId); if (c != null) { c.Enabled = old; c.OnValidate(); } }, () => { Component? c = Undo.FindComponent(cId); if (c != null) { c.Enabled = v; c.OnValidate(); } }); comp.Enabled = v; comp.OnValidate(); })
+                            v => { bool old = comp.Enabled; Guid cId = comp.Identifier; Undo.RegisterAction("Toggle Component", () => { Component? c = Undo.FindComponent(cId); if (c != null) { c.Enabled = old; c.OnValidate(); } }, () => { Component? c = Undo.FindComponent(cId); if (c != null) { c.Enabled = v; c.OnValidate(); } }); comp.Enabled = v; comp.OnValidate(); })
                             .NoLabel().Show();
                     EditorGUI.HeaderIconButton(paper, $"{compId}_gear", EditorIcons.EllipsisVertical, () =>
                         Origami.ContextMenu((float)paper.PointerPos.X, (float)paper.PointerPos.Y, b =>
@@ -1029,7 +1029,7 @@ public static class GameObjectInspector
         {
             if (index > 0)
             {
-                var oldIdx = index; var newIdx = index - 1;
+                int oldIdx = index; int newIdx = index - 1;
                 Undo.RegisterAction("Move Component Up",
                     () => { Component? c = Undo.FindComponent(moveCompId); if (c.IsValid()) c.SetSiblingIndex(oldIdx); },
                     () => { Component? c = Undo.FindComponent(moveCompId); if (c.IsValid()) c.SetSiblingIndex(newIdx); });
@@ -1039,7 +1039,7 @@ public static class GameObjectInspector
 
         builder.Item(Loc.Get("inspector.move_down"), () =>
         {
-            var oldIdx = index; var newIdx = index + 1;
+            int oldIdx = index; int newIdx = index + 1;
             Undo.RegisterAction("Move Component Down",
                 () => { Component? c = Undo.FindComponent(moveCompId); if (c.IsValid()) c.SetSiblingIndex(oldIdx); },
                 () => { Component? c = Undo.FindComponent(moveCompId); if (c.IsValid()) c.SetSiblingIndex(newIdx); });

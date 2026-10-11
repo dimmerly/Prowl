@@ -224,7 +224,7 @@ public class EditorCamera
             if (_renderTarget.IsValid()) _renderTarget.Dispose();
             _renderTarget = new RenderTexture(
                 (int)width, (int)height, true,
-                new[] { TextureImageFormat.Color4b });
+                [TextureImageFormat.Color4b]);
         }
     }
 
@@ -275,7 +275,7 @@ public class EditorCamera
 
     // Cached cloned effects for the editor camera. Persistent across frames so
     // temporal effects (TAA, motion blur) keep their history buffers intact.
-    private readonly List<ImageEffect> _clonedEffects = new();
+    private readonly List<ImageEffect> _clonedEffects = [];
     private Camera? _lastSceneCamera;
 
     /// <summary>

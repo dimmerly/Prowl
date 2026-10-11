@@ -145,7 +145,7 @@ public sealed class AeroSurface : Component
 /// <summary>A cable from a high end to a low one. Anything with a <see cref="ZipHook"/> touching it hooks on and slides down.</summary>
 public sealed class ZipLine : Component
 {
-    public static readonly List<ZipLine> All = new();
+    public static readonly List<ZipLine> All = [];
 
     public Float3 Top, Bottom;
 
@@ -379,7 +379,7 @@ public sealed class Bomb : Component
     private Float3 _home;
     private bool _armed, _gone;
     private float _clock, _blastTime = 10f;
-    private readonly List<ShapeCastHit> _hits = new();
+    private readonly List<ShapeCastHit> _hits = [];
 
     public override void OnEnable()
     {

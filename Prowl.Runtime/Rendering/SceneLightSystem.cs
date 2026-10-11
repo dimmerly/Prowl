@@ -36,15 +36,15 @@ public sealed class SceneLightSystem : IDisposable
 
     // Per-frame results.
     private IRenderableLight _directional;
-    private readonly List<IRenderableLight> _extraDirectionals = new();
-    private readonly List<Light> _shadowLights = new();
+    private readonly List<IRenderableLight> _extraDirectionals = [];
+    private readonly List<Light> _shadowLights = [];
     private readonly HashSet<Light> _shadowLightSet = new(ReferenceEqualityComparer.Instance);
 
     // Every shadow casting point and spot light holds a block id for as long as it casts, the same for every camera,
     // so the light's record can point at it while each camera fills the block with its own shadow data
     private readonly Dictionary<Light, int> _shadowIds = new(ReferenceEqualityComparer.Instance);
     private readonly Stack<int> _freeShadowIds = new();
-    private readonly List<Light> _releasedShadowIds = new();
+    private readonly List<Light> _releasedShadowIds = [];
     private readonly Func<Light, int> _shadowIdOf;
     private int _nextShadowId;
 

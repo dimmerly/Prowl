@@ -311,7 +311,7 @@ internal sealed unsafe partial class OpenXRSession : IDisposable
 
         uint count = 0;
         Check(_xr.EnumerateSwapchainFormats(_session, 0, &count, (long*)null), "xrEnumerateSwapchainFormats");
-        var formats = new long[count];
+        long[] formats = new long[count];
         fixed (long* ptr = formats)
             Check(_xr.EnumerateSwapchainFormats(_session, count, &count, ptr), "xrEnumerateSwapchainFormats");
 
@@ -354,7 +354,7 @@ internal sealed unsafe partial class OpenXRSession : IDisposable
         fixed (SwapchainImageOpenGLKHR* ptr = images)
             Check(_xr.EnumerateSwapchainImages(swapchain, imageCount, &imageCount, (SwapchainImageBaseHeader*)ptr), "xrEnumerateSwapchainImages");
 
-        var handles = new uint[imageCount];
+        uint[] handles = new uint[imageCount];
         for (int i = 0; i < imageCount; i++)
             handles[i] = images[i].Image;
         return (swapchain, handles);

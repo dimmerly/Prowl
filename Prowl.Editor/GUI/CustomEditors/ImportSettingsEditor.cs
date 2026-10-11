@@ -23,7 +23,7 @@ public abstract class ImportSettingsEditor : AssetImporterEditor
     /// Live settings per asset. Static because the inspector reuses one editor instance per asset type,
     /// so per-instance state would be a single slot the next selection overwrites.
     /// </summary>
-    private static readonly Dictionary<Guid, EchoObject> s_settings = new();
+    private static readonly Dictionary<Guid, EchoObject> s_settings = [];
 
     /// <summary>
     /// This asset's import settings, read from the <c>.meta</c> on first use and topped up with the

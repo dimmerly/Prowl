@@ -31,10 +31,10 @@ public class PlayerAssetBackend : AssetBackend, IDisposable
 
     private readonly AssetPackagingMode _mode;
     private readonly string _basePath;
-    private readonly Dictionary<Guid, Entry> _entries = new();
-    private readonly List<ZipArchive> _pakArchives = new();
+    private readonly Dictionary<Guid, Entry> _entries = [];
+    private readonly List<ZipArchive> _pakArchives = [];
     private readonly object _pakLock = new();
-    private readonly List<ResourceEntry> _resources = new();
+    private readonly List<ResourceEntry> _resources = [];
 
     public Guid DefaultSceneGuid { get; private set; }
 
@@ -147,7 +147,7 @@ public class PlayerAssetBackend : AssetBackend, IDisposable
     {
         if (!Directory.Exists(_basePath)) return;
 
-        foreach (var pakFile in Directory.GetFiles(_basePath, "*.prowlpak"))
+        foreach (string pakFile in Directory.GetFiles(_basePath, "*.prowlpak"))
         {
             try { _pakArchives.Add(ZipFile.OpenRead(pakFile)); }
             catch (Exception ex) { Debug.LogError($"[PlayerAssetBackend] Failed to open pak {pakFile}: {ex.Message}"); }

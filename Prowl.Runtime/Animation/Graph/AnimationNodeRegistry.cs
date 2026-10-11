@@ -34,8 +34,8 @@ public enum NodePinKind : byte
 /// <summary>Every <see cref="AnimationGraphNode"/> in the loaded assemblies, built in or a project's own.</summary>
 public static class AnimationNodeRegistry
 {
-    private static readonly Dictionary<string, AnimationGraphNode> s_nodes = new();
-    private static readonly List<AnimationGraphNode> s_ordered = new();
+    private static readonly Dictionary<string, AnimationGraphNode> s_nodes = [];
+    private static readonly List<AnimationGraphNode> s_ordered = [];
     private static bool s_scanned;
 
     /// <summary>Every node type, by category then name.</summary>
@@ -99,16 +99,16 @@ public static class AnimationNodeRegistry
 /// <summary>One graph compile: the Motion graph being filled in, and the lookups node builders use.</summary>
 public sealed class GraphCompileContext
 {
-    private static readonly char[] s_listSeparators = { ',', ';' };
+    private static readonly char[] s_listSeparators = [',', ';'];
 
     private readonly AnimationGraph _asset;
     private readonly Dictionary<string, GraphNodeRecord> _records;
-    private readonly Dictionary<string, int> _compiled = new();
-    private readonly HashSet<string> _compiling = new();
+    private readonly Dictionary<string, int> _compiled = [];
+    private readonly HashSet<string> _compiling = [];
     private readonly HashSet<AnimationGraph> _visiting;
 
     // Names slots and virtual parameters are found by, which a node's own name never takes.
-    private readonly HashSet<string> _lookupNames = new();
+    private readonly HashSet<string> _lookupNames = [];
 
     internal GraphCompileContext(AnimationGraph asset, MotionGraph graph, MotionSkeleton skeleton, MotionAvatar? avatar, HashSet<AnimationGraph> visiting)
     {
@@ -156,7 +156,7 @@ public sealed class GraphCompileContext
     public MotionAvatar? Avatar { get; }
 
     /// <summary>Parameter node index per declared parameter name.</summary>
-    public Dictionary<string, int> Parameters { get; } = new();
+    public Dictionary<string, int> Parameters { get; } = [];
 
     private readonly Stack<int> _machines = new();
 
@@ -262,7 +262,7 @@ public sealed class GraphCompileContext
     internal Dictionary<string, int> Compiled => _compiled;
 
     /// <summary>The Motion state index of each of a machine's states, in the record's own order.</summary>
-    internal Dictionary<string, int[]> States { get; } = new();
+    internal Dictionary<string, int[]> States { get; } = [];
 
     /// <summary>Makes a node findable while it is still being built, so its own children can refer to it.</summary>
     public void Publish(GraphNodeRecord record, int index) => _compiled[record.Id] = index;
@@ -361,7 +361,7 @@ public sealed class GraphCompileContext
     public int[] Inputs(GraphNodeRecord record, InputPin first)
     {
         int count = Math.Max(0, record.Inputs.Count - first.Index);
-        var indices = new int[count];
+        int[] indices = new int[count];
         for (int i = 0; i < count; i++)
             indices[i] = InputAt(record, first.Index + i);
         return indices;
@@ -444,7 +444,7 @@ public sealed class GraphCompileContext
     public float[] Numbers(GraphNodeRecord record, TextSetting setting)
     {
         string[] parts = Split(record.Get(setting));
-        var values = new float[parts.Length];
+        float[] values = new float[parts.Length];
         for (int i = 0; i < parts.Length; i++)
             float.TryParse(parts[i], System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out values[i]);
         return values;

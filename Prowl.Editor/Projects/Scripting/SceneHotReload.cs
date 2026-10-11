@@ -40,10 +40,10 @@ public static class SceneHotReload
             options.Migrators.Add(new EchoCacheMigrator()); // the engine handles System.Text.Json itself
 
             // Keep the walk out of native and heavy third-party internals; they hold no user references.
-            foreach (var prefix in s_excludedAssemblyPrefixes)
+            foreach (string prefix in s_excludedAssemblyPrefixes)
                 options.Scope.ExcludePrefix(prefix);
 
-            foreach (var name in s_excludedAssemblies)
+            foreach (string name in s_excludedAssemblies)
                 options.Scope.Exclude(name);
 
             // The engine and the editor: their statics and delegates hold user references, including the editor's
@@ -105,15 +105,15 @@ public static class SceneHotReload
 
     // Native and heavy third-party assembly families the walk must not cascade into.
     private static readonly string[] s_excludedAssemblyPrefixes =
-    {
+    [
         "Silk.NET", "Jitter2", "Microsoft.CodeAnalysis",
-    };
+    ];
 
     // Immediate mode UI: elements and their handlers are rebuilt from scratch every frame, so migrating them is
     // work the next frame throws away. Matched exactly rather than by prefix, so a game assembly whose name
     // merely begins with one of these keeps migrating.
     private static readonly string[] s_excludedAssemblies =
-    {
+    [
         "Paper", "Origami",
-    };
+    ];
 }

@@ -112,7 +112,7 @@ public static class PlayerSettingsLoader
             if (settings.TryGet("CollisionMatrixRows", out EchoObject? cmProp) && cmProp!.TryGet("array", out EchoObject? rows)
                 && rows!.TagType == EchoType.List)
             {
-                var packed = new uint[CollisionMatrix.LayerCount];
+                uint[] packed = new uint[CollisionMatrix.LayerCount];
                 int i = 0;
                 foreach (EchoObject row in rows.List)
                 {

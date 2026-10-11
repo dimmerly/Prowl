@@ -36,7 +36,7 @@ public class AudioAssetTests : EditorTestHarness
     /// </summary>
     private static byte[] StereoWav(int frames = 512, int sampleRate = SourceRate)
     {
-        var samples = new float[frames * 2];
+        float[] samples = new float[frames * 2];
 
         for (int i = 0; i < frames; i++)
         {

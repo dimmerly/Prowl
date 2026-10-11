@@ -373,7 +373,7 @@ public abstract class RenderPipeline : EngineObject
     {
         // Sized from the last collect, so a big scene does not regrow its list from empty every frame.
         var renderables = new List<IRenderable>(s_lastCollectCount);
-        List<IRenderableLight> lights = s_lightLists.Count > 0 ? s_lightLists.Pop() : new();
+        List<IRenderableLight> lights = s_lightLists.Count > 0 ? s_lightLists.Pop() : [];
         scene.CollectRenderables(camera, renderables, lights);
         s_lastCollectCount = renderables.Count;
         return (renderables, lights);
@@ -490,14 +490,14 @@ public abstract class RenderPipeline : EngineObject
         (a, b) => b.distSq.CompareTo(a.distSq);
 
     // Reused across frames; only one sort is in flight at a time (sequential encode).
-    private readonly List<(IRenderable renderable, float distSq)> _sortPairs = new();
-    private readonly List<IRenderable> _sortResult = new();
+    private readonly List<(IRenderable renderable, float distSq)> _sortPairs = [];
+    private readonly List<IRenderable> _sortResult = [];
 
     // DrawRenderables scratch, reused across passes (encode is sequential, never re-entrant).
-    private readonly List<RenderBatch> _batches = new();
-    private readonly Dictionary<(ulong, int, Mesh), int> _batchLookup = new();
-    private readonly List<List<int>> _indexListPool = new();
-    private readonly List<int> _lastBatches = new();
+    private readonly List<RenderBatch> _batches = [];
+    private readonly Dictionary<(ulong, int, Mesh), int> _batchLookup = [];
+    private readonly List<List<int>> _indexListPool = [];
+    private readonly List<int> _lastBatches = [];
     private int _indexListRented;
 
     // Per-frame world-space AABB cache shared by the main cull and every shadow cascade cull, so each
@@ -551,7 +551,7 @@ public abstract class RenderPipeline : EngineObject
         }
         else
         {
-            list = new List<int>();
+            list = [];
             _indexListPool.Add(list);
         }
         _indexListRented++;
@@ -1042,7 +1042,7 @@ public abstract class RenderPipeline : EngineObject
         }
     }
 
-    private readonly List<IndexRange> _ranges = new();
+    private readonly List<IndexRange> _ranges = [];
 
     // Draws the run of index range renderables from members[first] that share its properties as one draw, and
     // returns the position of the last one drawn

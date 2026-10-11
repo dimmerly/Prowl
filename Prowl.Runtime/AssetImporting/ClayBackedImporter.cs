@@ -197,7 +197,7 @@ internal static class ClayBackedImporter
         // Bind poses and bone names live on the Mesh, but a model may point one mesh at two
         // different skins. Writing both onto the shared mesh would leave whichever node came last
         // deciding the skinning for all of them, so a second skin gets its own copy of the mesh.
-        var meshSkin = new int[clayModel.Meshes.Count];
+        int[] meshSkin = new int[clayModel.Meshes.Count];
         Array.Fill(meshSkin, UnclaimedMesh);
 
         for (int i = 0; i < clayModel.Nodes.Count; i++)
@@ -398,7 +398,7 @@ internal static class ClayBackedImporter
 
         dst.Indices = src.Indices;
 
-        var submeshMatIndices = new int[src.SubMeshes.Length];
+        int[] submeshMatIndices = new int[src.SubMeshes.Length];
         if (src.SubMeshes.Length > 1)
         {
             dst.SetSubMeshCount(src.SubMeshes.Length);

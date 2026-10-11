@@ -75,7 +75,7 @@ public class EditorModelImporter : AssetImporter
 
             // 2. Register sub-assets assigns deterministic GUIDs immediately
             // Order: the model file has no stable per-mesh key of its own, and it is read front to back.
-            var meshIdentities = new string[data.Meshes.Count];
+            string[] meshIdentities = new string[data.Meshes.Count];
             for (int i = 0; i < data.Meshes.Count; i++)
                 meshIdentities[i] = ctx.AddSubAsset(data.Meshes[i].Name ?? $"Mesh_{i}", data.Meshes[i], SubAssetIdentity.Order);
 

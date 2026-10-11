@@ -119,12 +119,12 @@ public class CharacterController : Component
 
     private Rigidbody3D _selfBody;
     private bool _selfBodyResolved;
-    private readonly HashSet<Rigidbody3D> _ignoredBodies = new();
+    private readonly HashSet<Rigidbody3D> _ignoredBodies = [];
     private QueryFilter _filter;
 
-    private readonly List<ShapeCastHit> _hits = new();
-    private readonly List<ShapeCastHit> _overlaps = new();
-    private readonly List<ShapeCastHit> _groundHits = new();
+    private readonly List<ShapeCastHit> _hits = [];
+    private readonly List<ShapeCastHit> _overlaps = [];
+    private readonly List<ShapeCastHit> _groundHits = [];
     private readonly Float3[] _planes = new Float3[MaxPlanes];
     private CollisionFlags _flags;
     private Float3 _achievedVelocity;

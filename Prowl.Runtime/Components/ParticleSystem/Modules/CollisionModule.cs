@@ -60,7 +60,7 @@ public class CollisionModule : ParticleSystemModule
     public ParticleCollisionType Type = ParticleCollisionType.World;
 
     [ShowIf(nameof(IsPlanes))]
-    public List<GameObject> Planes = new();
+    public List<GameObject> Planes = [];
 
     [Range(0f, 1f), Tooltip("Share of speed lost on every hit.")]
     public float Dampen = 0f;
@@ -116,7 +116,7 @@ public class CollisionModule : ParticleSystemModule
 
     // Surfaces are cached per cell and per direction of travel, so a miss found by a particle moving one
     // way is never reused for a particle moving another way through the same cell.
-    private readonly Dictionary<(int, int, int, int), CachedSurface> _cache = new();
+    private readonly Dictionary<(int, int, int, int), CachedSurface> _cache = [];
     private long _queryFrame = -1;
     private int _queriesLeft;
 
@@ -126,7 +126,7 @@ public class CollisionModule : ParticleSystemModule
     /// <summary>Reads where the collision planes are. Called before particles step.</summary>
     internal void BeginStep()
     {
-        _planes ??= new();
+        _planes ??= [];
         _planes.Clear();
         if (!IsPlanes) return;
         foreach (GameObject plane in Planes)

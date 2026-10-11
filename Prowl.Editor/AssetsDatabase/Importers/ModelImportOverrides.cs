@@ -40,7 +40,7 @@ public static class ModelImportKeys
 /// </summary>
 public sealed class ExtractedMaterialResolver : IModelMaterialResolver
 {
-    private readonly Dictionary<string, Guid> _remap = new();
+    private readonly Dictionary<string, Guid> _remap = [];
 
     public ExtractedMaterialResolver(EchoObject settings)
     {

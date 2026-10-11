@@ -59,12 +59,12 @@ public sealed class TriggerVolume : Component
 
     public TriggerShape Shape { get => shape; set => shape = value; }
 
-    private readonly List<ShapeCastHit> _hits = new();
-    private HashSet<Rigidbody3D> _current = new();
-    private HashSet<Rigidbody3D> _previous = new();
+    private readonly List<ShapeCastHit> _hits = [];
+    private HashSet<Rigidbody3D> _current = [];
+    private HashSet<Rigidbody3D> _previous = [];
 
-    private HashSet<CharacterController> _currentCharacters = new();
-    private HashSet<CharacterController> _previousCharacters = new();
+    private HashSet<CharacterController> _currentCharacters = [];
+    private HashSet<CharacterController> _previousCharacters = [];
 
     /// <summary>The rigidbodies currently inside the volume.</summary>
     public IReadOnlyCollection<Rigidbody3D> Overlapping => _current;

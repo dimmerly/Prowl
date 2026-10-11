@@ -37,12 +37,12 @@ public class EnvironmentPanel : DockPanel
 
     // label holds a localization key, resolved via Loc.Get at render (see the Sidebar call).
     private static readonly (string id, string label, string icon)[] Cats =
-    {
+    [
         ("sky",      "env.tab_sky",      EditorIcons.Sun),
         ("fog",      "env.tab_fog",      EditorIcons.Cloud),
         ("ambient",  "env.tab_ambient",  EditorIcons.Lightbulb),
         ("lightmap", "env.tab_lightmap", EditorIcons.TableCellsLarge),
-    };
+    ];
 
     private static VColor ToColor(Float4 f) => new((float)f.X, (float)f.Y, (float)f.Z, (float)f.W);
     private static Float4 ToF4(VColor c) => new(c.R, c.G, c.B, c.A);

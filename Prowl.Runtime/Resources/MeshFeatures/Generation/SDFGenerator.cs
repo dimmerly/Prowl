@@ -76,7 +76,7 @@ public static class SDFGenerator
         // Stored as signed normalized shorts over the longest distance the volume can hold
         float maxDistance = Float3.Length(bounds.Max - bounds.Min);
         float scale = short.MaxValue / maxDistance;
-        var packed = new short[distances.Length];
+        short[] packed = new short[distances.Length];
         Parallel.For(0, distances.Length, i => packed[i] = (short)MathF.Round(Math.Clamp(distances[i] * scale, -short.MaxValue, short.MaxValue)));
 
         var volume = new Texture3D((uint)resolution.X, (uint)resolution.Y, (uint)resolution.Z, false, TextureImageFormat.Short);
@@ -142,7 +142,7 @@ public static class SDFGenerator
 
         // Lines worth walking again along each axis, those with a voxel that changed since they were last walked, and
         // changedAt holds the sweep each voxel last changed in, so a neighbour's triangle is only measured again once new
-        var dirty = new byte[3][];
+        byte[][] dirty = new byte[3][];
         for (int axis = 0; axis < 3; axis++)
         {
             CrossAxes(axis, out int ua, out int va);
@@ -161,7 +161,7 @@ public static class SDFGenerator
         for (int axis = 0; axis < 3; axis++)
             CountCrossings(surface, votes, grid, axis);
 
-        var distances = new float[count];
+        float[] distances = new float[count];
         Parallel.For(0, count, i =>
         {
             long packed = best[i];
@@ -205,7 +205,7 @@ public static class SDFGenerator
         float cell = grid.Cell;
 
         // Triangles binned by the columns their shadow on the cross plane covers, as one flat array
-        var counts = new int[nu * nv + 1];
+        int[] counts = new int[nu * nv + 1];
         var ranges = new (int U0, int U1, int V0, int V1)[surface.TriangleCount];
         Parallel.For(0, surface.TriangleCount, t =>
         {
@@ -220,8 +220,8 @@ public static class SDFGenerator
                     Interlocked.Increment(ref counts[v * nu + u + 1]);
         });
         for (int i = 1; i < counts.Length; i++) counts[i] += counts[i - 1];
-        var binned = new int[counts[^1]];
-        var fill = (int[])counts.Clone();
+        int[] binned = new int[counts[^1]];
+        int[] fill = (int[])counts.Clone();
         for (int t = 0; t < surface.TriangleCount; t++)
         {
             (int u0, int u1, int v0, int v1) = ranges[t];

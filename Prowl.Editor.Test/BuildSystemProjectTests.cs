@@ -781,7 +781,7 @@ public class BuildSystemProjectTests : EditorTestHarness
         {
             string output = RunBuildWith(pipeline, sceneGuid, out _);
 
-            var shipped = Directory.GetFiles(Path.Combine(output, "Content"), "*.asset");
+            string[] shipped = Directory.GetFiles(Path.Combine(output, "Content"), "*.asset");
             Assert.NotEmpty(shipped);
             Assert.All(shipped, f => Assert.Equal(RewritingProcessor.Marker, File.ReadAllText(f)));
         }
@@ -807,7 +807,7 @@ public class BuildSystemProjectTests : EditorTestHarness
             pipeline.AssetProcessors.Clear();
             string output = RunBuildWith(pipeline, sceneGuid, out _);
 
-            var shipped = Directory.GetFiles(Path.Combine(output, "Content"), "*.asset");
+            string[] shipped = Directory.GetFiles(Path.Combine(output, "Content"), "*.asset");
             Assert.NotEmpty(shipped);
             Assert.All(shipped, f => Assert.NotEqual(RewritingProcessor.Marker, File.ReadAllText(f)));
         }

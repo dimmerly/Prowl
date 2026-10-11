@@ -44,8 +44,8 @@ public sealed class ManyLightsGame : StationGame
     // Big enough for every light at the same density, so more lights fill more plaza rather than crowding it
     private static readonly float PlazaSize = MathF.Ceiling(MathF.Sqrt(MaxLights * AreaPerLight) / ColumnSpacing) * ColumnSpacing;
 
-    private readonly List<GameObject> _lights = new();
-    private readonly List<(Float3 Position, int Color)> _slots = new();
+    private readonly List<GameObject> _lights = [];
+    private readonly List<(Float3 Position, int Color)> _slots = [];
     private readonly Random _random = new(1234);
     private Material[] _bulbMaterials = null!;
     private Mesh _bulb = null!;

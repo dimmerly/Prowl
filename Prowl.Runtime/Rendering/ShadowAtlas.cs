@@ -136,7 +136,7 @@ public sealed class ShadowTileAllocator
     public const int SmallestTile = 16;
 
     // Free blocks of each size, lowest position first so allocations pack toward one corner
-    private readonly Dictionary<int, SortedSet<long>> _free = new();
+    private readonly Dictionary<int, SortedSet<long>> _free = [];
 
     public int Size { get; private set; }
     public long UsedTexels { get; private set; }
@@ -225,7 +225,7 @@ public sealed class ShadowTileAllocator
     private SortedSet<long> FreeSet(int size)
     {
         if (!_free.TryGetValue(size, out SortedSet<long>? set))
-            _free[size] = set = new SortedSet<long>();
+            _free[size] = set = [];
         return set;
     }
 

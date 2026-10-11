@@ -174,9 +174,9 @@ public abstract class EditorTestHarness : IDisposable
         return CompileGameAssembly();
     }
 
-    private readonly Dictionary<Assembly, byte[]> _compiledBytes = new();
+    private readonly Dictionary<Assembly, byte[]> _compiledBytes = [];
 
-    protected Func<Assembly, byte[]?> AssemblyBytesResolver => asm => _compiledBytes.TryGetValue(asm, out var bytes) ? bytes : null;
+    protected Func<Assembly, byte[]?> AssemblyBytesResolver => asm => _compiledBytes.TryGetValue(asm, out byte[]? bytes) ? bytes : null;
 
     /// <summary>Compile whatever scripts are on disk, assert success, and load the fresh game assembly.</summary>
     protected Assembly CompileGameAssembly()

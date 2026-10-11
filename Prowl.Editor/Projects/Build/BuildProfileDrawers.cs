@@ -23,7 +23,7 @@ public interface IBuildProfileDrawer
 /// <summary>Maps a profile type to the drawer that renders it.</summary>
 public static class BuildProfileDrawers
 {
-    private static readonly Dictionary<Type, IBuildProfileDrawer> s_drawers = new();
+    private static readonly Dictionary<Type, IBuildProfileDrawer> s_drawers = [];
 
     static BuildProfileDrawers()
     {

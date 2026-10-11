@@ -82,7 +82,7 @@ public class TrailModule : ParticleSystemModule
     private TrailPoint[] _points = Array.Empty<TrailPoint>();
     private TrailState[] _states = Array.Empty<TrailState>();
     private readonly Stack<int> _free = new();
-    private readonly List<int> _orphans = new();
+    private readonly List<int> _orphans = [];
     private int _capacity;
     private int _slots;
 

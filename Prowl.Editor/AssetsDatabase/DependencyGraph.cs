@@ -10,8 +10,8 @@ namespace Prowl.Editor;
 /// </summary>
 public class DependencyGraph
 {
-    private readonly Dictionary<Guid, HashSet<Guid>> _forward = new();
-    private readonly Dictionary<Guid, HashSet<Guid>> _reverse = new();
+    private readonly Dictionary<Guid, HashSet<Guid>> _forward = [];
+    private readonly Dictionary<Guid, HashSet<Guid>> _reverse = [];
     private readonly object _lock = new();
 
     /// <summary> Sets the dependencies for the specified asset, replacing any existing dependencies. </summary>
@@ -38,7 +38,7 @@ public class DependencyGraph
         {
             if (!_reverse.TryGetValue(dep, out HashSet<Guid>? dependents))
             {
-                dependents = new HashSet<Guid>();
+                dependents = [];
                 _reverse[dep] = dependents;
             }
             dependents.Add(asset);
@@ -74,13 +74,13 @@ public class DependencyGraph
     /// <summary> Returns the set of assets that the given asset directly depends on. </summary>
     public IReadOnlySet<Guid> GetDependencies(Guid asset)
     {
-        lock (_lock) return _forward.TryGetValue(asset, out HashSet<Guid>? deps) ? new HashSet<Guid>(deps) : new HashSet<Guid>();
+        lock (_lock) return _forward.TryGetValue(asset, out HashSet<Guid>? deps) ? new HashSet<Guid>(deps) : [];
     }
 
     /// <summary> Returns the set of assets that directly depend on the given asset. </summary>
     public IReadOnlySet<Guid> GetDependents(Guid asset)
     {
-        lock (_lock) return _reverse.TryGetValue(asset, out HashSet<Guid>? dependents) ? new HashSet<Guid>(dependents) : new HashSet<Guid>();
+        lock (_lock) return _reverse.TryGetValue(asset, out HashSet<Guid>? dependents) ? new HashSet<Guid>(dependents) : [];
     }
 
     /// <summary>Get all assets that transitively depend on the given roots.</summary>

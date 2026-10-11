@@ -53,7 +53,7 @@ public static class ProjectLauncher
 
     // Cycled tip strip drawn at the bottom of the launcher background.
     private static readonly string[] _tipKeys =
-    {
+    [
         "launcher.tip.orbit",
         "launcher.tip.dolly",
         "launcher.tip.pan",
@@ -79,14 +79,14 @@ public static class ProjectLauncher
         "launcher.tip.component_menu",
         "launcher.tip.escape_unlock",
         "launcher.tip.nuget",
-    };
+    ];
 
     private const float _tipDuration = 8f;
     private const float _tipFadeTime = 0.45f;
     private static int _tipIndex;
     private static float _tipTimer;
 
-    private static readonly Dictionary<string, string> _versions = new();
+    private static readonly Dictionary<string, string> _versions = [];
 
     /// <summary> Sets the default new-project path and resets the launcher to its initial state. </summary>
     public static void Initialize()
@@ -189,7 +189,7 @@ public static class ProjectLauncher
         int cur = LocaleHelper.GetIndex(EditorSettings.Instance.Locale);
         var globe = new FontIcon(font, EditorIcons.Globe);
 
-        var items = new int[LocaleHelper.Codes.Length];
+        int[] items = new int[LocaleHelper.Codes.Length];
         for (int i = 0; i < items.Length; i++) items[i] = i;
 
         Origami.Dropdown<int>(P, "pl_lang", cur, LocaleHelper.SetLocale, items)

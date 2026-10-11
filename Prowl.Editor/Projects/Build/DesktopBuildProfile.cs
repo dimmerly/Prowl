@@ -104,7 +104,7 @@ public sealed class DesktopBuildProfileDrawer : IBuildProfileDrawer
 
         // Every registered desktop target, not the three value enum, which cannot name arm64 at all.
         IReadOnlyList<PlatformTarget> targets = TargetRegistry.Shared.ByFamily(BuiltInTargets.DesktopFamily);
-        var names = targets.Select(t => t.DisplayName).ToArray();
+        string[] names = [.. targets.Select(t => t.DisplayName)];
         int current = Math.Max(0, targets.ToList().FindIndex(t => t.Id == desktop.TargetId));
 
         EditorGUI.SettingsRow(paper, "bld_platform", "Platform", () =>

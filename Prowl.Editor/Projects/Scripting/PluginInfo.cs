@@ -118,7 +118,7 @@ public static class PluginScanner
         if (!Directory.Exists(project.AssetsPath))
             return result;
 
-        foreach (var file in Directory.EnumerateFiles(project.AssetsPath, "*.*", SearchOption.AllDirectories))
+        foreach (string file in Directory.EnumerateFiles(project.AssetsPath, "*.*", SearchOption.AllDirectories))
         {
             string ext = Path.GetExtension(file);
             if (!s_extensions.Contains(ext, StringComparer.OrdinalIgnoreCase))

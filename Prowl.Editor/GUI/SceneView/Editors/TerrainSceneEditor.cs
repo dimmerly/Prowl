@@ -306,8 +306,8 @@ public class TerrainSceneEditor : SceneTool
 
             if (minX <= maxX)
             {
-                var preRect = CopyRect(_preStrokeHeights, res, minX, minZ, maxX, maxZ);
-                var postRect = CopyRect(data.Heights, res, minX, minZ, maxX, maxZ);
+                short[] preRect = CopyRect(_preStrokeHeights, res, minX, minZ, maxX, maxZ);
+                short[] postRect = CopyRect(data.Heights, res, minX, minZ, maxX, maxZ);
                 int cx = minX, cz = minZ, cxe = maxX, cze = maxZ, cres = res;
                 TerrainData capturedData = data;
                 Undo.RegisterAction("Terrain Height",
@@ -325,8 +325,8 @@ public class TerrainSceneEditor : SceneTool
 
             if (minX <= maxX)
             {
-                var preRect = CopyRectStride(_preStrokeSplats, res, stride, minX, minZ, maxX, maxZ);
-                var postRect = CopyRectStride(data.Splats, res, stride, minX, minZ, maxX, maxZ);
+                float[] preRect = CopyRectStride(_preStrokeSplats, res, stride, minX, minZ, maxX, maxZ);
+                float[] postRect = CopyRectStride(data.Splats, res, stride, minX, minZ, maxX, maxZ);
                 int cx = minX, cz = minZ, cxe = maxX, cze = maxZ, cres = res;
                 TerrainData capturedData = data;
 
@@ -345,8 +345,8 @@ public class TerrainSceneEditor : SceneTool
         else if (_preStrokeHoles != null && data.Holes != null)
         {
             // Simple full-array undo for holes (byte array is small)
-            var pre = _preStrokeHoles;
-            var post = (byte[])data.Holes.Clone();
+            byte[] pre = _preStrokeHoles;
+            byte[] post = (byte[])data.Holes.Clone();
             TerrainData capturedData = data;
             Undo.RegisterAction("Terrain Holes",
                 () => { capturedData.Holes = (byte[])pre.Clone(); capturedData.SetHolesDirty(); },
@@ -358,16 +358,16 @@ public class TerrainSceneEditor : SceneTool
             int idx = TerrainEditor.ActiveDetailIndex;
             if (idx >= 0 && idx < data.DetailLayers.Count && _preStrokeDetails.Count > 0)
             {
-                var preArr = _preStrokeDetails[0];
-                var postArr = data.DetailLayers[idx];
+                byte[] preArr = _preStrokeDetails[0];
+                byte[] postArr = data.DetailLayers[idx];
                 int res = data.DetailResolution;
                 FindChangedRect(preArr, postArr, res, res,
                     out int minX, out int minZ, out int maxX, out int maxZ);
 
                 if (minX <= maxX)
                 {
-                    var preRect = CopyRect(preArr, res, minX, minZ, maxX, maxZ);
-                    var postRect = CopyRect(postArr, res, minX, minZ, maxX, maxZ);
+                    byte[] preRect = CopyRect(preArr, res, minX, minZ, maxX, maxZ);
+                    byte[] postRect = CopyRect(postArr, res, minX, minZ, maxX, maxZ);
                     int cx = minX, cz = minZ, cxe = maxX, cze = maxZ, cres = res, cidx = idx;
                     TerrainData capturedData = data;
                     Undo.RegisterAction("Terrain Detail",
@@ -400,7 +400,7 @@ public class TerrainSceneEditor : SceneTool
     private static byte[] CopyRect(byte[] src, int res, int minX, int minZ, int maxX, int maxZ)
     {
         int w = maxX - minX + 1, h = maxZ - minZ + 1;
-        var rect = new byte[w * h];
+        byte[] rect = new byte[w * h];
         for (int z = 0; z < h; z++)
             Array.Copy(src, (minZ + z) * res + minX, rect, z * w, w);
         return rect;
@@ -434,7 +434,7 @@ public class TerrainSceneEditor : SceneTool
     private static short[] CopyRect(short[] src, int res, int minX, int minZ, int maxX, int maxZ)
     {
         int w = maxX - minX + 1, h = maxZ - minZ + 1;
-        var rect = new short[w * h];
+        short[] rect = new short[w * h];
         for (int z = 0; z < h; z++)
             Array.Copy(src, (minZ + z) * res + minX, rect, z * w, w);
         return rect;
@@ -482,7 +482,7 @@ public class TerrainSceneEditor : SceneTool
     {
         int w = maxX - minX + 1;
         int h = maxZ - minZ + 1;
-        var rect = new float[w * h];
+        float[] rect = new float[w * h];
         for (int z = 0; z < h; z++)
             Array.Copy(src, (minZ + z) * res + minX, rect, z * w, w);
         return rect;
@@ -500,7 +500,7 @@ public class TerrainSceneEditor : SceneTool
     {
         int w = maxX - minX + 1;
         int h = maxZ - minZ + 1;
-        var rect = new float[w * h * stride];
+        float[] rect = new float[w * h * stride];
         for (int z = 0; z < h; z++)
             Array.Copy(src, ((minZ + z) * res + minX) * stride, rect, z * w * stride, w * stride);
         return rect;

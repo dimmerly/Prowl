@@ -263,8 +263,8 @@ public class DefaultInputHandler : IInputHandler, IDisposable
 
     // TryGetValue (not the indexer) so an unmapped key/button - e.g. KeyCode.Unknown, which isn't in
     // the dictionaries - returns false instead of throwing KeyNotFoundException.
-    private static bool Down(Dictionary<KeyCode, bool> map, KeyCode key) => map.TryGetValue(key, out var v) && v;
-    private static bool Down(Dictionary<MouseButton, bool> map, MouseButton btn) => map.TryGetValue(btn, out var v) && v;
+    private static bool Down(Dictionary<KeyCode, bool> map, KeyCode key) => map.TryGetValue(key, out bool v) && v;
+    private static bool Down(Dictionary<MouseButton, bool> map, MouseButton btn) => map.TryGetValue(btn, out bool v) && v;
 
     public bool GetKey(KeyCode key) => Down(isKeyPressed, key);
 

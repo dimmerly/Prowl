@@ -15,7 +15,7 @@ public class TerrainQuadtree
     public TerrainChunk Root;
     public int MaxLODLevel;
     public float ChunkSize;
-    public List<TerrainChunk> VisibleChunks = new();
+    public List<TerrainChunk> VisibleChunks = [];
 
     public TerrainQuadtree(Float3 origin, float terrainSize, int maxLOD)
     {

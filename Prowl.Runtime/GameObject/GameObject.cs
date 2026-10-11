@@ -915,12 +915,12 @@ public partial class GameObject : EngineObject, ISerializable
         // it triggers) can add or remove components while walking the result. Component counts are
         // small enough that the copy costs less than the crash it prevents.
         if (type == typeof(Component))
-            return _components.ToArray();
+            return [.. _components];
 
         if (_componentCache.TryGetValue(type, out IReadOnlyCollection<Component>? components))
-            return components.ToArray();
+            return [.. components];
 
-        return _components.Where(comp => comp.GetType().IsAssignableTo(type)).ToArray();
+        return [.. _components.Where(comp => comp.GetType().IsAssignableTo(type))];
     }
 
     /// <summary>

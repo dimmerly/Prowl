@@ -70,7 +70,7 @@ public class AnimatorTests : RuntimeTestBase
 
         Animator animator = root.AddComponent<Animator>();
         animator.Avatar = avatar;
-        animator.Clips = new List<AnimationClip> { SlideClip(skeleton, avatar, distance, rootMotionEnd) };
+        animator.Clips = [SlideClip(skeleton, avatar, distance, rootMotionEnd)];
 
         scene.Enable();
         return (scene, animator, root);

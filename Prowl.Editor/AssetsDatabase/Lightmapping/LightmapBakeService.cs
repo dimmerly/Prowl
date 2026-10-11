@@ -29,10 +29,10 @@ public sealed class LightmapBakeService
     private LightmapBaker? _baker;
     private Job? _job;
     private AutoAtlasResult? _atlas;
-    private readonly List<object> _renderers = new();    // MeshRenderer / SkinnedMeshRenderer, parallel to _atlas placements
-    private readonly Dictionary<Guid, BakeTexture?> _texCache = new(); // diffuse albedo, deduped per texture asset
+    private readonly List<object> _renderers = [];    // MeshRenderer / SkinnedMeshRenderer, parallel to _atlas placements
+    private readonly Dictionary<Guid, BakeTexture?> _texCache = []; // diffuse albedo, deduped per texture asset
     private int _bakeTexCounter;                                       // unique names for Photonic textures (its registry is name-keyed)
-    private List<Float3> _probePositions = new();
+    private List<Float3> _probePositions = [];
     private Scene? _scene;
     private Scene.LightmapBakeSettings _settings = new();
     private int _targetIterations;
@@ -60,7 +60,7 @@ public sealed class LightmapBakeService
         _renderers.Clear();
         _texCache.Clear();
         _bakeTexCounter = 0;
-        _probePositions = new();
+        _probePositions = [];
 
         var baker = new LightmapBaker();
         baker.Options.Bounces = settings.Bounces;
@@ -377,7 +377,7 @@ public sealed class LightmapBakeService
             SubMeshDescriptor sub = mesh.GetSubMesh(s);
             int start = sub.IndexStart, count = sub.IndexCount;
             if (count <= 0) continue;
-            var groupIdx = new int[count];
+            int[] groupIdx = new int[count];
             for (int k = 0; k < count; k++) groupIdx[k] = (int)indices[start + k];
 
             // One BakeMaterial per (renderer, submesh) with the Prowl material's base colour.
@@ -452,7 +452,7 @@ public sealed class LightmapBakeService
         int w = (int)tex.Width, h = (int)tex.Height;
         if (w <= 0 || h <= 0) return null;
         int n = w * h;
-        var rgba = new byte[n * 4];
+        byte[] rgba = new byte[n * 4];
         try
         {
             if (tex.ImageFormat == TextureImageFormat.Color4b)
@@ -461,7 +461,7 @@ public sealed class LightmapBakeService
             }
             else if (tex.ImageFormat is TextureImageFormat.UnsignedShort4 or TextureImageFormat.Short4)
             {
-                var tmp = new ushort[n * 4];
+                ushort[] tmp = new ushort[n * 4];
                 tex.GetData<ushort>(tmp);
                 for (int i = 0; i < n * 4; i++) rgba[i] = (byte)(tmp[i] >> 8);
             }

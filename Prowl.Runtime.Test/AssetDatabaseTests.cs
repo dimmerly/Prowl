@@ -18,7 +18,7 @@ public sealed class Crate : Asset
 {
     public int Size;
     public Crate? Other;
-    public List<Crate> Many = new();
+    public List<Crate> Many = [];
     [NotHeld] public Crate? Unheld;
     public AssetRef<Crate> Later;
 }

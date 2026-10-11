@@ -521,7 +521,7 @@ public static class EditorGUI
                 }));
         }
 
-        void Palette() { foreach (var hex in palette) Swatch(hex); }
+        void Palette() { foreach (string hex in palette) Swatch(hex); }
 
         Row(paper, id, label, () =>
         {

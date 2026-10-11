@@ -223,8 +223,8 @@ public static class Input
         Current.SetGamepadVibration(gamepadIndex, leftMotor, rightMotor);
     }
 
-    private static readonly Dictionary<int, float> s_vibrationEnds = new();
-    private static readonly List<int> s_expiredVibrations = new();
+    private static readonly Dictionary<int, float> s_vibrationEnds = [];
+    private static readonly List<int> s_expiredVibrations = [];
 
     /// <summary>
     /// Vibrates a gamepad for <paramref name="seconds"/> of real time, then stops it. The stop happens even if

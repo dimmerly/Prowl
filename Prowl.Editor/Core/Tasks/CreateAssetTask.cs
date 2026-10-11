@@ -79,7 +79,7 @@ public class CreateAssetTask : EditorTask
 
             if (!string.IsNullOrEmpty(renameResult))
             {
-                var path = TaskType switch
+                string? path = TaskType switch
                 {
                     AssetType.Asset => CreateAsset(entry, relativeFolder, renameResult),
                     AssetType.Shader => CreateShader(renameResult, relativeFolder),
@@ -156,7 +156,7 @@ public class CreateAssetTask : EditorTask
 
         try
         {
-            var instance = entry.Factory != null ? entry.Factory() : Activator.CreateInstance(entry.Type);
+            object? instance = entry.Factory != null ? entry.Factory() : Activator.CreateInstance(entry.Type);
             EchoObject echo = Serializer.Serialize(typeof(object), instance);
             if (echo == null) return null;
             File.WriteAllText(filePath, echo.WriteToString());

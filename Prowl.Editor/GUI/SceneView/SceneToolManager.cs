@@ -40,9 +40,9 @@ public sealed class SceneToolEntry
 /// </summary>
 public static class SceneToolManager
 {
-    private static readonly List<SceneToolEntry> _entries = new();
-    private static readonly List<SceneTool> _live = new();
-    private static readonly List<SceneTool> _scratch = new();
+    private static readonly List<SceneToolEntry> _entries = [];
+    private static readonly List<SceneTool> _live = [];
+    private static readonly List<SceneTool> _scratch = [];
 
     /// <summary>Every registered tool, in strip order.</summary>
     public static IReadOnlyList<SceneToolEntry> All => _entries;

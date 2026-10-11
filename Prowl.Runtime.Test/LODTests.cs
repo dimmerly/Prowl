@@ -24,14 +24,14 @@ public class LODTests
         Float3[] positions = mesh.Vertices;
         Float3[] normals = mesh.Normals;
         Float2[] uvs = mesh.UV;
-        var indices = mesh.Indices;
+        uint[] indices = mesh.Indices;
 
         string Corner(uint i) => $"{positions[i]}|{normals[i]}|{uvs[i]}";
 
         var triangles = new List<string>();
         for (int i = 0; i < indices.Length; i += 3)
         {
-            var corners = new[] { Corner(indices[i]), Corner(indices[i + 1]), Corner(indices[i + 2]) };
+            string[] corners = new[] { Corner(indices[i]), Corner(indices[i + 1]), Corner(indices[i + 2]) };
             int first = Array.IndexOf(corners, corners.Min(StringComparer.Ordinal));
             triangles.Add(string.Join(";", corners[first], corners[(first + 1) % 3], corners[(first + 2) % 3]));
         }
@@ -199,7 +199,7 @@ public class LODTests
 
         Assert.Equal(2, mesh.SubMeshCount);
         Float3[] positions = mesh.Vertices;
-        var indices = mesh.Indices;
+        uint[] indices = mesh.Indices;
         for (int s = 0; s < 2; s++)
         {
             SubMeshDescriptor sub = mesh.GetSubMesh(s);

@@ -19,7 +19,7 @@ namespace Prowl.Runtime.UI;
 [ComponentIcon("")] // ChevronDown
 public class UIDropdown : Selectable, IPointerClickHandler, ISubmitHandler, ICancelHandler
 {
-    [SerializeField] private List<string> _options = new();
+    [SerializeField] private List<string> _options = [];
     /// <summary>The selectable choices. Edit directly or via the Add/Clear/Set helpers.</summary>
     public List<string> Options => _options;
 
@@ -52,7 +52,7 @@ public class UIDropdown : Selectable, IPointerClickHandler, ISubmitHandler, ICan
     public ProwlAction ValueChangedAction => _onValueChanged;
 
     [SerializeIgnore] private bool _open;
-    [SerializeIgnore] private readonly List<Item> _items = new();
+    [SerializeIgnore] private readonly List<Item> _items = [];
 
     private sealed class Item
     {

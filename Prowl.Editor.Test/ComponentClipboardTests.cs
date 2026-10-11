@@ -75,7 +75,7 @@ public sealed class ClipNestedRefComp : Component
 {
     public sealed class RefBox { public GameObject? GO; }
 
-    public List<GameObject> Targets = new();
+    public List<GameObject> Targets = [];
     public RefBox? Wrapper;
 }
 

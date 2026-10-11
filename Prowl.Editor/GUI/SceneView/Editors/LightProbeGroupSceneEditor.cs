@@ -36,7 +36,7 @@ public class LightProbeGroupSceneEditor : SceneTool
     private const float ProbePickRadius = 8f;
 
     private LightProbeGroup? _group;
-    private readonly List<int> _selection = new();
+    private readonly List<int> _selection = [];
     private Camera? _cam;
 
     /// <summary> Called when the tool is activated. Resolves the LightProbeGroup from the active object, clears the selection, and resets the move handle state. </summary>

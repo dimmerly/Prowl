@@ -263,7 +263,7 @@ public class ColorPropertyEditor : PropertyEditor
         ProjectsEditorSettings settings = EditorRegistries.GetSettings<ProjectsEditorSettings>();
         // Convert hex strings to Color list, keep in sync
         var colors = new List<Color>();
-        foreach (var hex in settings.ColorPalette)
+        foreach (string hex in settings.ColorPalette)
         {
             System.Drawing.Color sc = ColorRamp.ParseHex(hex);
             colors.Add(new Color(sc.R / 255f, sc.G / 255f, sc.B / 255f, 1f));

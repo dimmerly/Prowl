@@ -128,7 +128,7 @@ public sealed class SnapTurn : Component
 /// <summary>A box on a controller that lights up with the trigger and carries a block while the grip is held.</summary>
 public sealed class SimpleHand : Component
 {
-    public static readonly List<Rigidbody3D> Grabbables = new();
+    public static readonly List<Rigidbody3D> Grabbables = [];
 
     public XRHand Hand;
     public float Reach = 0.12f;

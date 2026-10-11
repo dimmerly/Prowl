@@ -45,15 +45,15 @@ internal sealed class AnimationGraphView
     /// <summary>The id the widget uses for a node's single output.</summary>
     public const string OutputPort = "out";
 
-    private readonly List<GraphNode> _nodes = new();
-    private readonly List<GraphConnection> _wires = new();
-    private readonly Dictionary<string, GraphNodeRecord> _records = new();
-    private readonly List<GraphProblem> _problems = new();
-    private readonly List<GraphGroup> _groups = new();
-    private readonly Dictionary<GraphNode, GraphBadge> _liveBadges = new();
+    private readonly List<GraphNode> _nodes = [];
+    private readonly List<GraphConnection> _wires = [];
+    private readonly Dictionary<string, GraphNodeRecord> _records = [];
+    private readonly List<GraphProblem> _problems = [];
+    private readonly List<GraphGroup> _groups = [];
+    private readonly Dictionary<GraphNode, GraphBadge> _liveBadges = [];
 
     /// <summary>A view per graph a sub graph node runs, kept only to draw its thumbnail.</summary>
-    private readonly Dictionary<string, AnimationGraphView> _inner = new();
+    private readonly Dictionary<string, AnimationGraphView> _inner = [];
 
     public AnimationGraphView() => Editing = new AnimationGraphEditing(this);
 
@@ -64,7 +64,7 @@ internal sealed class AnimationGraphView
 
     /// <summary>Whether this view keeps node names in step with their settings. Off for thumbnails.</summary>
     public bool WritesNames { get; set; } = true;
-    private readonly List<GraphSticky> _notes = new();
+    private readonly List<GraphSticky> _notes = [];
 
     private AnimationGraph? _graph;
     private bool _stale = true;
@@ -780,10 +780,10 @@ internal sealed class AnimationGraphView
     /// <summary>A detached copy of some nodes with everything inside them, for the clipboard.</summary>
     public sealed class Fragment
     {
-        public readonly List<GraphNodeRecord> Nodes = new();
-        public readonly List<GraphNodeRecord> Inside = new();
-        public readonly List<GraphGroupRecord> Groups = new();
-        public readonly List<GraphNoteRecord> Notes = new();
+        public readonly List<GraphNodeRecord> Nodes = [];
+        public readonly List<GraphNodeRecord> Inside = [];
+        public readonly List<GraphGroupRecord> Groups = [];
+        public readonly List<GraphNoteRecord> Notes = [];
     }
 
     public Fragment Capture(IReadOnlyList<GraphNodeRecord> sources)
@@ -1055,11 +1055,11 @@ internal sealed class AnimationGraphView
 /// </summary>
 internal sealed class AnimationGraphStateView
 {
-    private readonly List<GraphNode> _nodes = new();
-    private readonly List<GraphConnection> _wires = new();
-    private readonly List<GraphGroup> _groups = new();
-    private readonly List<GraphSticky> _notes = new();
-    private readonly Dictionary<string, GraphStateRecord> _states = new();
+    private readonly List<GraphNode> _nodes = [];
+    private readonly List<GraphConnection> _wires = [];
+    private readonly List<GraphGroup> _groups = [];
+    private readonly List<GraphSticky> _notes = [];
+    private readonly Dictionary<string, GraphStateRecord> _states = [];
 
     private GraphNodeRecord? _machine;
     private AnimationGraph? _graph;
@@ -1375,7 +1375,7 @@ internal sealed class AnimationGraphProbe
         public float Progress { get; }
     }
 
-    private readonly List<Animator> _candidates = new();
+    private readonly List<Animator> _candidates = [];
     private Animator? _animator;
 
     /// <summary>The animators in the scene running this graph, for when there is more than one.</summary>

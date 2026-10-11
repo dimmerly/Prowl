@@ -11,7 +11,7 @@ public class InputActionTests
 {
     private sealed class HeldKeys : NullInputHandler, IInputHandler
     {
-        public readonly HashSet<KeyCode> Held = new();
+        public readonly HashSet<KeyCode> Held = [];
         bool IInputHandler.GetKey(KeyCode key) => Held.Contains(key);
     }
 
@@ -91,7 +91,7 @@ public class InputActionTests
 
     private sealed class VibrationRecorder : NullInputHandler, IInputHandler
     {
-        public readonly List<(int Pad, float Left, float Right)> Calls = new();
+        public readonly List<(int Pad, float Left, float Right)> Calls = [];
         void IInputHandler.SetGamepadVibration(int gamepadIndex, float leftMotor, float rightMotor) => Calls.Add((gamepadIndex, leftMotor, rightMotor));
     }
 

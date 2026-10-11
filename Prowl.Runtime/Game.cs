@@ -322,7 +322,7 @@ public abstract class Game
         Debug.LogSuccess("Headless initialization complete");
 
         _headlessQuitRequested = false;
-        ConsoleCancelEventHandler cancelHandler = (_, e) => { e.Cancel = true; _headlessQuitRequested = true; };
+        void cancelHandler(object? _, ConsoleCancelEventArgs e) { e.Cancel = true; _headlessQuitRequested = true; }
         try { Console.CancelKeyPress += cancelHandler; } catch { /* no console in some hosts */ }
 
         Application.TargetFrameRate = options.TargetFrameRate;

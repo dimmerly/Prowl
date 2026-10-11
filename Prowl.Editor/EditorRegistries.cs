@@ -65,25 +65,25 @@ public static class EditorRegistries
 
     #region Data
 
-    private static readonly Dictionary<Type, Type> _customEditorTypes = new();
-    private static readonly Dictionary<Type, CustomEditor> _customEditorCache = new();
-    private static readonly Dictionary<Type, Type> _propertyEditorTypes = new();
-    private static readonly Dictionary<Type, PropertyEditor> _propertyEditorCache = new();
-    private static readonly Dictionary<Type, Type> _assetEditorTypes = new();
-    private static readonly Dictionary<Type, AssetImporterEditor> _assetEditorCache = new();
-    private static readonly Dictionary<Type, Type> _animationNodeEditorTypes = new();
+    private static readonly Dictionary<Type, Type> _customEditorTypes = [];
+    private static readonly Dictionary<Type, CustomEditor> _customEditorCache = [];
+    private static readonly Dictionary<Type, Type> _propertyEditorTypes = [];
+    private static readonly Dictionary<Type, PropertyEditor> _propertyEditorCache = [];
+    private static readonly Dictionary<Type, Type> _assetEditorTypes = [];
+    private static readonly Dictionary<Type, AssetImporterEditor> _assetEditorCache = [];
+    private static readonly Dictionary<Type, Type> _animationNodeEditorTypes = [];
 
     // Keyed by importer type name, matching AssetEntry.ImporterType.
-    private static readonly Dictionary<string, Type> _assetEditorTypesByImporter = new();
-    private static readonly Dictionary<string, AssetImporterEditor> _assetEditorByImporterCache = new();
+    private static readonly Dictionary<string, Type> _assetEditorTypesByImporter = [];
+    private static readonly Dictionary<string, AssetImporterEditor> _assetEditorByImporterCache = [];
 
     private static readonly Dictionary<string, Type> _importersByExt = new(StringComparer.OrdinalIgnoreCase);
     private static readonly Dictionary<string, Type> _importersByName = new(StringComparer.OrdinalIgnoreCase);
     public static IEnumerable<string> RegisteredImporterExtensions => _importersByExt.Keys;
 
-    private static readonly Dictionary<Type, string> _componentIcons = new();
+    private static readonly Dictionary<Type, string> _componentIcons = [];
 
-    private static readonly Dictionary<Type, IThumbnailGenerator> _thumbnailGenerators = new();
+    private static readonly Dictionary<Type, IThumbnailGenerator> _thumbnailGenerators = [];
 
     private static readonly List<DropHandlerEntry> _dropHandlers = [];
 
@@ -274,7 +274,7 @@ public static class EditorRegistries
         ImporterForAttribute? attr = type.GetCustomAttribute<ImporterForAttribute>();
         if (attr == null) return;
         _importersByName[type.Name] = type;
-        foreach (var ext in attr.Extensions)
+        foreach (string ext in attr.Extensions)
             _importersByExt[NormalizeExt(ext)] = type;
     }
 
@@ -445,9 +445,9 @@ public static class EditorRegistries
             if (method.ReturnType != typeof(string) || method.GetParameters().Length != 0) continue;
             try
             {
-                var icon = (string?)method.Invoke(null, null);
+                string? icon = (string?)method.Invoke(null, null);
                 if (string.IsNullOrEmpty(icon)) continue;
-                foreach (var ext in attr.Extensions) RegisterFileIcon(ext, icon!);
+                foreach (string ext in attr.Extensions) RegisterFileIcon(ext, icon!);
             }
             catch (Exception ex) { Debug.LogWarning($"EditorRegistries: FileIcon method {method.Name} threw: {ex.Message}"); }
         }
@@ -470,7 +470,7 @@ public static class EditorRegistries
             try
             {
                 var del = (AssetDoubleClickHandler)Delegate.CreateDelegate(typeof(AssetDoubleClickHandler), method);
-                foreach (var ext in attr.Extensions) RegisterDoubleClickHandler(ext, del);
+                foreach (string ext in attr.Extensions) RegisterDoubleClickHandler(ext, del);
             }
             catch (Exception ex) { Debug.LogWarning($"EditorRegistries: failed to bind double-click handler {method.Name}: {ex.Message}"); }
         }
@@ -605,7 +605,7 @@ public static class EditorRegistries
     public static string GetComponentIcon(Type componentType)
     {
         for (Type? cur = componentType; cur != null && cur != typeof(object); cur = cur.BaseType)
-            if (_componentIcons.TryGetValue(cur, out var icon)) return icon;
+            if (_componentIcons.TryGetValue(cur, out string? icon)) return icon;
         return EditorIcons.PuzzlePiece;
     }
 
@@ -752,7 +752,7 @@ public static class EditorRegistries
     public static string GetFileIcon(string fileName) => GetFileIconForExtension(Path.GetExtension(fileName ?? ""));
 
     public static string GetFileIconForExtension(string extension)
-        => !string.IsNullOrEmpty(extension) && _fileIcons.TryGetValue(extension, out var icon) ? icon : _defaultFileIcon;
+        => !string.IsNullOrEmpty(extension) && _fileIcons.TryGetValue(extension, out string? icon) ? icon : _defaultFileIcon;
 
     public static void RegisterFileIcon(string extension, string icon)
     {
@@ -762,7 +762,7 @@ public static class EditorRegistries
 
     public static void RegisterFileIcons(string icon, params string[] extensions)
     {
-        foreach (var ext in extensions) RegisterFileIcon(ext, icon);
+        foreach (string ext in extensions) RegisterFileIcon(ext, icon);
     }
 
     private static void RegisterBuiltInFileIcons()

@@ -52,7 +52,7 @@ public class ExternalAssetDropTests : IDisposable
     [Fact]
     public void JunkAndMetaFiles_AreSkipped()
     {
-        var sources = new[]
+        string[] sources = new[]
         {
             MakeExternalFile("Model.fbx.meta"),
             MakeExternalFile("Thumbs.db"),

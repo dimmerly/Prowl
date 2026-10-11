@@ -115,7 +115,7 @@ public class SDFGeneratorTests(ITestOutputHelper output)
         Mesh right = Mesh.CreateCube(new Float3(1f, 0.6f, 2f));
         Float3[] vertices = [.. left.Vertices!.Select(v => v + new Float3(-1f, 0f, 0f))
 , .. right.Vertices!.Select(v => v + new Float3(1f, -0.5f, 0.3f))];
-        var indices = left.Indices!.Concat(right.Indices!.Select(i => i + (uint)left.Vertices!.Length)).ToArray();
+        uint[] indices = [.. left.Indices!, .. right.Indices!.Select(i => i + (uint)left.Vertices!.Length)];
         var both = new Mesh { Vertices = vertices, Indices = indices };
 
         bool Inside(Float3 p) =>

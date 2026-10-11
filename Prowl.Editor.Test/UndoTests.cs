@@ -422,7 +422,7 @@ public class UndoTests : EditorTestHarness
         (Scene _, GameObject? go, UndoComp _) = MakeScene();
         go.Transform.LocalPosition = new Float3(0, 0, 0);
 
-        Undo.BeginContinuous(new[] { go }, "Move");
+        Undo.BeginContinuous([go], "Move");
         go.Transform.LocalPosition = new Float3(5, 0, 0);
         Undo.EndContinuous();
 
@@ -440,7 +440,7 @@ public class UndoTests : EditorTestHarness
         (Scene _, GameObject? go, UndoComp _) = MakeScene();
         go.Transform.LocalPosition = new Float3(0, 0, 0);
 
-        Undo.BeginContinuous(new[] { go }, "Move");
+        Undo.BeginContinuous([go], "Move");
         go.Transform.LocalPosition = new Float3(5, 0, 0);
         Undo.CancelContinuous();
 
@@ -454,7 +454,7 @@ public class UndoTests : EditorTestHarness
         (Scene _, GameObject? go, UndoComp _) = MakeScene();
         go.Transform.LocalPosition = new Float3(0, 0, 0);
 
-        Undo.BeginContinuous(new[] { go }, "Move");
+        Undo.BeginContinuous([go], "Move");
         go.Transform.LocalPosition = new Float3(5, 0, 0);
         Undo.PerformUndo(); // cancels the drag rather than popping the stack
 
@@ -467,7 +467,7 @@ public class UndoTests : EditorTestHarness
     public void Continuous_NoMovement_PushesNoStep()
     {
         (Scene _, GameObject? go, UndoComp _) = MakeScene();
-        Undo.BeginContinuous(new[] { go }, "Move");
+        Undo.BeginContinuous([go], "Move");
         // no movement
         Undo.EndContinuous();
 
@@ -623,7 +623,7 @@ public class UndoTests : EditorTestHarness
         a.Transform.LocalPosition = Float3.Zero;
         b.Transform.LocalPosition = Float3.Zero;
 
-        Undo.BeginContinuous(new[] { a, b }, "Move");
+        Undo.BeginContinuous([a, b], "Move");
         a.Transform.LocalPosition = new Float3(5, 0, 0);
         b.Transform.LocalPosition = new Float3(0, 7, 0);
         Undo.EndContinuous();

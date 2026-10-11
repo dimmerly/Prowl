@@ -235,10 +235,10 @@ public sealed class PhysicsShowcaseGame : StationGame
     // ----------------------------------------------------------------
 
     private Float3 _bodiesCenter;
-    private readonly List<GameObject> _bodies = new();
+    private readonly List<GameObject> _bodies = [];
     private ContactCounter _binFloor = null!;
     private float _restitution = 0.1f;
-    private readonly List<GameObject> _rampCrates = new();
+    private readonly List<GameObject> _rampCrates = [];
     private GameObject _ramp = null!;
 
     private enum Shape { Box, Sphere, Capsule, Cylinder, Cone, Rock }
@@ -359,7 +359,7 @@ public sealed class PhysicsShowcaseGame : StationGame
     // ----------------------------------------------------------------
 
     private Float3 _stackCenter;
-    private readonly List<GameObject> _stack = new();
+    private readonly List<GameObject> _stack = [];
 
     private void BuildStacking(Float3 c)
     {
@@ -411,7 +411,7 @@ public sealed class PhysicsShowcaseGame : StationGame
     // ----------------------------------------------------------------
 
     private Float3 _bowlCenter;
-    private readonly List<GameObject> _bowlBodies = new();
+    private readonly List<GameObject> _bowlBodies = [];
 
     private void BuildMeshColliders(Float3 c)
     {
@@ -443,7 +443,7 @@ public sealed class PhysicsShowcaseGame : StationGame
                 uvs[z * stride + x] = new Float2(u, v);
             }
 
-        var indices = new uint[cells * cells * 6];
+        uint[] indices = new uint[cells * cells * 6];
         int k = 0;
         for (int z = 0; z < cells; z++)
             for (int x = 0; x < cells; x++)
@@ -766,9 +766,9 @@ public sealed class PhysicsShowcaseGame : StationGame
     //  7  Triggers
     // ----------------------------------------------------------------
 
-    private readonly List<TriggerGate> _gates = new();
+    private readonly List<TriggerGate> _gates = [];
     private Float3 _releasePoint;
-    private readonly List<GameObject> _triggerBalls = new();
+    private readonly List<GameObject> _triggerBalls = [];
 
     private Func<string> _gateStatus = () => string.Empty;
 
@@ -969,7 +969,7 @@ public sealed class QueryProbes : Component
     private ShapeCastHit _sphereHit;
     private bool _sphereHits;
     private float _zoneRadius;
-    private readonly List<ShapeCastHit> _overlaps = new();
+    private readonly List<ShapeCastHit> _overlaps = [];
 
     private const float RayLength = 9f;
     private const float LaneLength = 11f;

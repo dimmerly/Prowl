@@ -110,7 +110,7 @@ public class AudioTests : RuntimeTestBase
 
     private static float[] Ramp(int frames, int channels)
     {
-        var samples = new float[frames * channels];
+        float[] samples = new float[frames * channels];
 
         for (int i = 0; i < samples.Length; i++)
             samples[i] = i / (float)samples.Length;
@@ -631,7 +631,7 @@ public class AudioTests : RuntimeTestBase
         AudioClip clip = AudioClip.Create("stored", new float[400], 1, 8000);
         EchoObject echo = Serializer.Serialize(clip);
 
-        echo["AudioData"] = new EchoObject(new byte[] { 9, 9, 9, 9 });
+        echo["AudioData"] = new EchoObject([9, 9, 9, 9]);
 
         AudioClip restored = Serializer.Deserialize<AudioClip>(echo)!;
 

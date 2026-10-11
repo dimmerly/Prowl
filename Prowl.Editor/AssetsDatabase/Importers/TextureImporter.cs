@@ -184,7 +184,7 @@ public class SpriteImportSettings
     public byte TightMeshAlphaThreshold = 1;
 
     /// <summary>Named secondary maps (e.g. "_NormalMap") applied to every sprite in this texture.</summary>
-    public Dictionary<string, Texture2D> SecondaryTextures = new();
+    public Dictionary<string, Texture2D> SecondaryTextures = [];
 
     // Slicing-tool state (editor convenience; the importer only reads Slices).
     /// <summary> The auto-slicing tool last used in the Sprite Editor. The importer only reads Slices, not this value. </summary>
@@ -205,7 +205,7 @@ public class SpriteImportSettings
     public bool IsoIsAlternate = false;
 
     /// <summary> The authored slice list. This is what the importer reads to build sprite sub-assets. </summary>
-    public List<SpriteSliceData> Slices = new();
+    public List<SpriteSliceData> Slices = [];
 }
 
 #endregion
@@ -343,7 +343,7 @@ public sealed class SpriteEditTarget
 /// </summary>
 public static class SpriteEditRegistry
 {
-    private static readonly Dictionary<Guid, SpriteEditTarget> _targets = new();
+    private static readonly Dictionary<Guid, SpriteEditTarget> _targets = [];
 
     /// <summary>Gets the shared target for a texture, loading its settings from the <c>.meta</c> on first use.</summary>
     public static SpriteEditTarget Get(Guid textureGuid)
@@ -433,7 +433,7 @@ public static class SpriteSlicer
         int cols = Math.Max(1, d.GridCellCount.X), rows = Math.Max(1, d.GridCellCount.Y);
         int cellW = (texW - d.GridOffset.X - (cols - 1) * d.GridPadding.X) / cols;
         int cellH = (texH - d.GridOffset.Y - (rows - 1) * d.GridPadding.Y) / rows;
-        if (cellW <= 0 || cellH <= 0) return new List<SpriteSliceData>();
+        if (cellW <= 0 || cellH <= 0) return [];
         return GridCells(texW, texH, cellW, cellH, d.GridOffset, d.GridPadding, d.KeepEmptyRects, alpha, baseName, d.GeneratedPivot, pivot);
     }
 
@@ -489,7 +489,7 @@ public static class SpriteSlicer
         var result = new List<SpriteSliceData>();
         if (alpha == null) return result;
 
-        var visited = new bool[texW * texH];
+        bool[] visited = new bool[texW * texH];
         var stack = new Stack<int>();
 
         for (int start = 0; start < visited.Length; start++)
@@ -562,17 +562,17 @@ public static class SpriteSlicer
         {
             int w = (int)tex.Width, h = (int)tex.Height;
             int count = w * h;
-            var alpha = new byte[count];
+            byte[] alpha = new byte[count];
 
             if (tex.ImageFormat == TextureImageFormat.Color4b)
             {
-                var rgba = new byte[count * 4];
+                byte[] rgba = new byte[count * 4];
                 tex.GetData<byte>(rgba.AsMemory());
                 for (int i = 0; i < count; i++) alpha[i] = rgba[i * 4 + 3];
             }
             else if (tex.ImageFormat == TextureImageFormat.UnsignedShort4)
             {
-                var rgba = new ushort[count * 4];
+                ushort[] rgba = new ushort[count * 4];
                 tex.GetData<ushort>(rgba.AsMemory());
                 for (int i = 0; i < count; i++) alpha[i] = (byte)(rgba[i * 4 + 3] >> 8);
             }
@@ -604,8 +604,8 @@ public static class SpriteSliceMatcher
     {
         if (previous.Count == 0 || generated.Count == 0) return generated;
 
-        var oldClaimed = new bool[previous.Count];
-        var newMatched = new bool[generated.Count];
+        bool[] oldClaimed = new bool[previous.Count];
+        bool[] newMatched = new bool[generated.Count];
 
         // Pass 1: identical rects. A cell the re-slice didn't move keeps its slice outright. Built in
         // reverse so the earliest duplicate wins, which keeps the result independent of dictionary order.
@@ -752,11 +752,11 @@ public static class SpriteBuilder
     {
         if (s.Mode == SpriteMode.Single)
         {
-            if (s.Slices.Count > 0) return new List<SpriteSliceData> { s.Slices[0] };
-            return new List<SpriteSliceData>
-            {
+            if (s.Slices.Count > 0) return [s.Slices[0]];
+            return
+            [
                 new() { Name = baseName, Rect = new SpriteRect(0, 0, texW, texH), Alignment = SpriteAlignment.Center }
-            };
+            ];
         }
         return s.Slices;
     }
@@ -808,7 +808,7 @@ public static class SpriteBuilder
     private static byte[] ExtractRectAlpha(byte[] fullAlpha, int texW, int texH, SpriteRect rect)
     {
         int rw = rect.Width, rh = rect.Height;
-        var a = new byte[rw * rh];
+        byte[] a = new byte[rw * rh];
         for (int ly = 0; ly < rh; ly++)
         {
             int sy = rect.Y + ly;

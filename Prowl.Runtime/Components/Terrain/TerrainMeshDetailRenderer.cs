@@ -141,7 +141,7 @@ internal class TerrainMeshDetailRenderer
     private static void Rebuild(Build build, TerrainData data, TerrainComponent terrain, Float4x4 terrainToWorld, DetailPrototype proto,
         int protoIdx, Mesh mesh, Float2 centre, float distance, Float4 painted)
     {
-        var densityMap = data.DetailLayers[protoIdx];
+        byte[] densityMap = data.DetailLayers[protoIdx];
         int detailRes = data.DetailResolution;
         float terrainSize = data.Size;
         float cellSize = terrainSize / detailRes;

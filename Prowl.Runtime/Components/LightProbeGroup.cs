@@ -17,7 +17,7 @@ namespace Prowl.Runtime;
 public class LightProbeGroup : Component
 {
     /// <summary>Probe positions in this object's local space.</summary>
-    public List<Float3> ProbePositions = new();
+    public List<Float3> ProbePositions = [];
 
     /// <summary>Probe world positions (local positions transformed by this object's matrix).</summary>
     public IEnumerable<Float3> GetWorldPositions()

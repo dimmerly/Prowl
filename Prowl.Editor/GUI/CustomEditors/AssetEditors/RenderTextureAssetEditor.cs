@@ -37,7 +37,7 @@ public class RenderTextureAssetEditor : AssetImporterEditor
 
     /// <summary>Per asset, so edits survive looking at something else and coming back. Per-instance
     /// state would be one slot that the next selection overwrites.</summary>
-    private static readonly Dictionary<Guid, Description> s_edits = new();
+    private static readonly Dictionary<Guid, Description> s_edits = [];
 
     private Description Edits(AssetEntry entry, RenderTexture rt)
     {

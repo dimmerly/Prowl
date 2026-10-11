@@ -80,7 +80,7 @@ public sealed class Sprite : Asset
     /// Named secondary maps aligned to the same <see cref="Rect"/> (e.g. "_NormalMap", "_MaskMap").
     /// Sampled by lit / masked sprite shaders.
     /// </summary>
-    public Dictionary<string, Texture2D> SecondaryTextures = new();
+    public Dictionary<string, Texture2D> SecondaryTextures = [];
 
     /// <summary>Cached mesh positions in local units, pivot-relative (x right, y up, z assumed 0).</summary>
     public Float2[] Vertices = Array.Empty<Float2>();
@@ -144,30 +144,30 @@ public sealed class Sprite : Asset
         float x0 = -px, y0 = -py;
         float x1 = w - px, y1 = h - py;
 
-        Vertices = new Float2[]
-        {
+        Vertices =
+        [
             new(x0, y0), // bottom-left
             new(x1, y0), // bottom-right
             new(x1, y1), // top-right
             new(x0, y1), // top-left
-        };
+        ];
 
         float u0 = Rect.X / (float)textureWidth;
         float v0 = Rect.Y / (float)textureHeight;
         float u1 = Rect.MaxX / (float)textureWidth;
         float v1 = Rect.MaxY / (float)textureHeight;
 
-        UV = new Float2[]
-        {
+        UV =
+        [
             new(u0, v0),
             new(u1, v0),
             new(u1, v1),
             new(u0, v1),
-        };
+        ];
 
-        Indices = new ushort[] { 0, 1, 2, 2, 3, 0 };
+        Indices = [0, 1, 2, 2, 3, 0];
 
-        PhysicsShape = new[] { new[] { Vertices[0], Vertices[1], Vertices[2], Vertices[3] } };
+        PhysicsShape = [new[] { Vertices[0], Vertices[1], Vertices[2], Vertices[3] }];
 
         BoundsMin = new Float2(x0, y0);
         BoundsMax = new Float2(x1, y1);
@@ -374,7 +374,7 @@ public static class SpriteMeshTracer
     /// <summary>The traced result in pixel space: the simplified outline loops plus a triangulated mesh.</summary>
     public sealed class TracedMesh
     {
-        public List<Float2[]> Contours = new();
+        public List<Float2[]> Contours = [];
         public Float2[] Vertices = Array.Empty<Float2>();
         public ushort[] Indices = Array.Empty<ushort>();
     }
@@ -474,7 +474,7 @@ public static class SpriteMeshTracer
             }
         }
 
-        var used = new bool[edgeStart.Count];
+        bool[] used = new bool[edgeStart.Count];
         var contours = new List<Float2[]>();
 
         // Each edge belongs to exactly one loop, so consuming them bounds the whole walk - no guard
@@ -548,7 +548,7 @@ public static class SpriteMeshTracer
         Array.Copy(points, ring, n);
         ring[n] = points[0];
 
-        var keep = new bool[n + 1];
+        bool[] keep = new bool[n + 1];
         keep[0] = keep[far] = keep[n] = true;
         SimplifySegment(ring, 0, far, tolerance, keep);
         SimplifySegment(ring, far, n, tolerance, keep);

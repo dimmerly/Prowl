@@ -215,7 +215,7 @@ public class InspectorPanel : DockPanel
 
     private void OnSelectionChanged()
     {
-        var active = Selection.ActiveObject;
+        object? active = Selection.ActiveObject;
 
         // If the new selection is a folder (or all selected are folders), keep the
         // previous inspectable so browsing folders doesn't wipe the inspector.
@@ -240,7 +240,7 @@ public class InspectorPanel : DockPanel
         Origami.ScrollView(paper, "insp_scroll", width, height).Padding(0, 0, 0, 0).Body(() =>
         {
             // Determine what to inspect: current selection, unless it's a folder
-            var active = Selection.ActiveObject;
+            object? active = Selection.ActiveObject;
             if (active == null || IsFolderSelection(active))
                 active = _lastInspectable;
 
@@ -311,7 +311,7 @@ public class InspectorPanel : DockPanel
 
                 for (int i = 0; i < Selection.Count && i < 20; i++)
                 {
-                    var obj = Selection.Selected[i];
+                    object obj = Selection.Selected[i];
                     string name = obj switch
                     {
                         ContentItem ci => $"{(ci.IsFolder ? EditorIcons.Folder : GetExtensionIcon(Path.GetExtension(ci.Name).ToLowerInvariant()))} {ci.Name}",

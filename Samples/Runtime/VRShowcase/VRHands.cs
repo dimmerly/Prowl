@@ -124,15 +124,15 @@ public sealed class PhysicsHand : Component
     private Float3 _frameRelative, _frameVelocity, _frameSpin;
     private Quaternion _frameRotation = Quaternion.Identity;
     private bool _hasFrame;
-    private readonly List<Rigidbody3D> _clearing = new();
-    private readonly List<ShapeCastHit> _overlaps = new();
+    private readonly List<Rigidbody3D> _clearing = [];
+    private readonly List<ShapeCastHit> _overlaps = [];
     private GameObject? _pull;
     private DriveConstraint? _pullDrive;
     private float _pullTightness, _pullTime;
     private Float3 _pullTo;
     private Quaternion _pullToRotation = Quaternion.Identity;
-    private static readonly HashSet<Rigidbody3D> s_ignoringPlayer = new();
-    private static readonly List<PhysicsHand> s_hands = new();
+    private static readonly HashSet<Rigidbody3D> s_ignoringPlayer = [];
+    private static readonly List<PhysicsHand> s_hands = [];
 
     /// <summary>
     /// Drives the hand from something other than its controller, such as a scripted hand or a test. While set, it
@@ -1105,7 +1105,7 @@ public sealed class GravityGlove : Component
     private const float CatchWindow = 0.35f;
     private bool _wasGripping;
     private LineRenderer _line = null!;
-    private readonly HashSet<Rigidbody3D> _ignore = new();
+    private readonly HashSet<Rigidbody3D> _ignore = [];
 
     private static readonly Color Aiming = new(0.5f, 0.8f, 1f, 0.35f);
     private static readonly Color Picked = new(1f, 0.7f, 0.3f, 0.9f);

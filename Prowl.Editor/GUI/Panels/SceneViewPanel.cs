@@ -451,19 +451,19 @@ public class SceneViewPanel : DockPanel
                 {
                     // Shared with HierarchyPanel so the viewport enforces the same prefab
                     // structural-child protection and undo registration as the Hierarchy's Delete.
-                    foreach (GameObject go in HierarchyPanel.ExcludeNestedSelections(Selection.GetSelected<GameObject>().ToList()))
+                    foreach (GameObject go in HierarchyPanel.ExcludeNestedSelections([.. Selection.GetSelected<GameObject>()]))
                         HierarchyPanel.DeleteGameObject(go);
                     Selection.Clear();
                     EditorSceneManager.MarkDirty();
                 }
                 else if (ShortcutManager.IsPressed("Scene/Duplicate"))
                 {
-                    List<GameObject> dupes = GameObjectClipboard.Duplicate(Selection.GetSelected<GameObject>().ToList());
+                    List<GameObject> dupes = GameObjectClipboard.Duplicate([.. Selection.GetSelected<GameObject>()]);
                     foreach (GameObject d in dupes) Undo.RegisterCreatedObject(d, "Duplicate");
                 }
                 else if (ShortcutManager.IsPressed("Scene/Copy"))
                 {
-                    GameObjectClipboard.Copy(Selection.GetSelected<GameObject>().ToList());
+                    GameObjectClipboard.Copy([.. Selection.GetSelected<GameObject>()]);
                 }
                 else if (ShortcutManager.IsPressed("Scene/Paste"))
                 {
@@ -796,7 +796,7 @@ public class SceneViewPanel : DockPanel
 
     private void DrawSelectionGizmos()
     {
-        foreach (var obj in Selection.Selected)
+        foreach (object obj in Selection.Selected)
         {
             if (obj is not GameObject go) continue;
 
@@ -891,8 +891,7 @@ public class SceneViewPanel : DockPanel
     {
         Undo.EndContinuous();
         if (_gizmoDuplicated && _gizmoTargets is { } targets)
-            Undo.RegisterActionGroup("Duplicate", targets.Where(go => go.IsValid())
-                .Select(Undo.CaptureCreatedObject).ToArray());
+            Undo.RegisterActionGroup("Duplicate", [.. targets.Where(go => go.IsValid()).Select(Undo.CaptureCreatedObject)]);
         _gizmoDuplicated = false;
         _wasGizmoActive = false;
         _gizmoTargets = null;

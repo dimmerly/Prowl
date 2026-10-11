@@ -490,7 +490,7 @@ public sealed class PickNumberNode : AnimationGraphNode
         List<PinGroup> options = ctx.Groups(r);
         if (options.Count == 0) return otherwise.IsDriven ? otherwise.NodeIndex : ctx.Graph.AddConstFloat(otherwise.Constant);
 
-        var conditions = new int[options.Count];
+        int[] conditions = new int[options.Count];
         var values = new FloatInput[options.Count];
         for (int i = 0; i < options.Count; i++)
         {

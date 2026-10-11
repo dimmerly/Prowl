@@ -398,7 +398,7 @@ public class Mesh : Asset, ISerializable
     }
 
     // Submesh support: each submesh defines a range within the shared index buffer
-    private List<SubMeshDescriptor> _subMeshes = new();
+    private List<SubMeshDescriptor> _subMeshes = [];
 
     /// <summary>Number of submeshes. Returns 1 if no submeshes defined (entire mesh is one submesh).</summary>
     public int SubMeshCount { get { EnsureLoaded(); return _subMeshes.Count > 0 ? _subMeshes.Count : 1; } }
@@ -702,15 +702,15 @@ public class Mesh : Asset, ISerializable
 
         if (instancedVAO == null)
         {
-            var instanceFormat = new VertexFormat(new[]
-            {
+            var instanceFormat = new VertexFormat(
+            [
                 new Element((VertexSemantic)8, VertexType.Float, 4, divisor: 1),  // ModelRow0
                 new Element((VertexSemantic)9, VertexType.Float, 4, divisor: 1),  // ModelRow1
                 new Element((VertexSemantic)10, VertexType.Float, 4, divisor: 1), // ModelRow2
                 new Element((VertexSemantic)11, VertexType.Float, 4, divisor: 1), // ModelRow3
                 new Element((VertexSemantic)12, VertexType.Float, 4, divisor: 1), // Color (RGBA)
                 new Element((VertexSemantic)13, VertexType.Float, 4, divisor: 1), // CustomData
-            });
+            ]);
             VertexFormat meshFormat = GetVertexLayout(this);
             instancedVAO = Graphics.CreateVertexArray(
                 meshFormat,
@@ -2087,7 +2087,7 @@ public static class MeshGeometry
         geometry.AddFaceAttribute(SubMesh, GeometryData.AttributeBaseType.Int, 1);
 
         // Vertices that share a position share a geometry vertex
-        var weld = new int[count];
+        int[] weld = new int[count];
         var points = new Dictionary<Float3, int>(count, PositionComparer.Instance);
         var basePoints = new List<Float3>();
         for (int i = 0; i < count; i++)
@@ -2121,8 +2121,8 @@ public static class MeshGeometry
             {
                 if (layer == layerTriangles.Count)
                 {
-                    layerTriangles.Add(new HashSet<(int, int, int)>());
-                    layerEdges.Add(new HashSet<long>());
+                    layerTriangles.Add([]);
+                    layerEdges.Add([]);
                 }
                 HashSet<long> edges = layerEdges[layer];
                 if (layerTriangles[layer].Contains(key) || edges.Contains(ab) || edges.Contains(bc) || edges.Contains(ca)) continue;
@@ -2241,9 +2241,9 @@ public static class MeshGeometry
         var deltaTangents = new List<List<Float3>?>();
         foreach (FrameNames names in frameNames)
         {
-            deltaPositions.Add(new List<Float3>());
-            deltaNormals.Add(geometry.HasLoopAttribute(names.Normal) ? new List<Float3>() : null);
-            deltaTangents.Add(geometry.HasLoopAttribute(names.Tangent) ? new List<Float3>() : null);
+            deltaPositions.Add([]);
+            deltaNormals.Add(geometry.HasLoopAttribute(names.Normal) ? [] : null);
+            deltaTangents.Add(geometry.HasLoopAttribute(names.Tangent) ? [] : null);
         }
 
         var emitted = new Dictionary<GeometryData.Vertex, List<(GeometryData.Loop Loop, int Index)>>();
@@ -2271,7 +2271,7 @@ public static class MeshGeometry
             }
             if (hasSkin)
             {
-                var ids = attributes.TryGetValue(BoneIndices, out GeometryData.AttributeValue? value) && value is GeometryData.IntAttributeValue n ? n.Data : new int[4];
+                int[] ids = attributes.TryGetValue(BoneIndices, out GeometryData.AttributeValue? value) && value is GeometryData.IntAttributeValue n ? n.Data : new int[4];
                 boneIndices.Add(new Float4(ids[0], ids[1], ids[2], ids[3]));
                 boneWeights.Add(Float4Of(attributes, BoneWeights));
             }
@@ -2289,7 +2289,7 @@ public static class MeshGeometry
             subMeshCount = Math.Max(subMeshCount, SubMeshOf(face) + 1);
 
         var subIndices = new List<uint>[subMeshCount];
-        for (int s = 0; s < subMeshCount; s++) subIndices[s] = new List<uint>();
+        for (int s = 0; s < subMeshCount; s++) subIndices[s] = [];
 
         foreach (GeometryData.Face face in geometry.Faces)
         {
@@ -2465,31 +2465,31 @@ public static class MeshGeometry
 
     private static void Set(Dictionary<string, GeometryData.AttributeValue> attributes, string name, Float2 v)
     {
-        var d = Floats(attributes, name);
+        float[] d = Floats(attributes, name);
         d[0] = v.X; d[1] = v.Y;
     }
 
     private static void Set(Dictionary<string, GeometryData.AttributeValue> attributes, string name, Float3 v)
     {
-        var d = Floats(attributes, name);
+        float[] d = Floats(attributes, name);
         d[0] = v.X; d[1] = v.Y; d[2] = v.Z;
     }
 
     private static void Set(Dictionary<string, GeometryData.AttributeValue> attributes, string name, Float4 v)
     {
-        var d = Floats(attributes, name);
+        float[] d = Floats(attributes, name);
         d[0] = v.X; d[1] = v.Y; d[2] = v.Z; d[3] = v.W;
     }
 
     private static void Set(Dictionary<string, GeometryData.AttributeValue> attributes, string name, Color v)
     {
-        var d = Floats(attributes, name);
+        float[] d = Floats(attributes, name);
         d[0] = v.R; d[1] = v.G; d[2] = v.B; d[3] = v.A;
     }
 
     private static void Set(Dictionary<string, GeometryData.AttributeValue> attributes, string name, Color32 v)
     {
-        var d = Floats(attributes, name);
+        float[] d = Floats(attributes, name);
         d[0] = v.R / 255f; d[1] = v.G / 255f; d[2] = v.B / 255f; d[3] = v.A / 255f;
     }
 

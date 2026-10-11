@@ -43,5 +43,5 @@ public class SubEmitter
 [Serializable]
 public class SubEmittersModule : ParticleSystemModule
 {
-    public List<SubEmitter> Emitters = new();
+    public List<SubEmitter> Emitters = [];
 }

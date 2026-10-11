@@ -177,7 +177,7 @@ public class SceneLoadResilienceTests : RuntimeTestBase
         linker.Value = 7;
         GameObject c = CreateGameObject("C");
         c.AddComponent<ResiliencePointer>().Other = linker;
-        foreach (GameObject? go in missingScriptWrittenFirst ? new[] { a, b, c } : new[] { c, b, a })
+        foreach (GameObject? go in missingScriptWrittenFirst ? new[] { a, b, c } : [c, b, a])
             scene.Add(go);
 
         Scene loaded = MissingForTwoSaves(scene);

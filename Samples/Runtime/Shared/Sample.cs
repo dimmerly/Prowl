@@ -40,7 +40,7 @@ public abstract class StationGame : Game
     protected GameObject CameraObject = null!;
     protected Camera MainCamera = null!;
     protected SampleHud Hud = null!;
-    public readonly List<Station> Stations = new();
+    public readonly List<Station> Stations = [];
     public int CurrentStation { get; private set; }
 
     /// <summary>Key help for moving around, shown after the station keys.</summary>
@@ -284,7 +284,7 @@ public abstract class StationGame : Game
         shot.Dispose();
 
         // PNG rows are top first and each starts with a filter byte, the texture is bottom first.
-        var raw = new byte[height * (width * 3 + 1)];
+        byte[] raw = new byte[height * (width * 3 + 1)];
         for (int y = 0; y < height; y++)
         {
             int row = y * (width * 3 + 1);
@@ -304,7 +304,7 @@ public abstract class StationGame : Game
 
         using FileStream stream = File.Create(file);
         stream.Write([137, 80, 78, 71, 13, 10, 26, 10]);
-        var header = new byte[13];
+        byte[] header = new byte[13];
         WriteBigEndian(header, 0, (uint)width);
         WriteBigEndian(header, 4, (uint)height);
         header[8] = 8;
@@ -316,7 +316,7 @@ public abstract class StationGame : Game
 
     private static void WriteChunk(Stream stream, string type, byte[] data)
     {
-        var buffer = new byte[4];
+        byte[] buffer = new byte[4];
         WriteBigEndian(buffer, 0, (uint)data.Length);
         stream.Write(buffer);
         byte[] typeBytes = System.Text.Encoding.ASCII.GetBytes(type);
@@ -515,9 +515,9 @@ public sealed class ChaseCamera : Component
 /// <summary>Collects quads for a procedural mesh, winding each one to face the given direction.</summary>
 public sealed class MeshBuilder
 {
-    private readonly List<Float3> _vertices = new();
-    private readonly List<Float2> _uvs = new();
-    private readonly List<uint> _indices = new();
+    private readonly List<Float3> _vertices = [];
+    private readonly List<Float2> _uvs = [];
+    private readonly List<uint> _indices = [];
 
     public void Quad(Float3 a, Float3 b, Float3 c, Float3 d, Float2 ua, Float2 ub, Float2 uc, Float2 ud, Float3 facing)
     {

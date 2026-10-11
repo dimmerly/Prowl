@@ -702,11 +702,10 @@ public class TerrainTests
         ];
 
         string source = Shader.LoadDefault(DefaultShader.Grass).Passes.First().VertexSource;
-        var declared = Regex.Matches(source, @"uniform\s+\w+\s+(_Scatter\w+)\s*;")
+        string[] declared = [.. Regex.Matches(source, @"uniform\s+\w+\s+(_Scatter\w+)\s*;")
             .Select(m => m.Groups[1].Value)
             .Distinct()
-            .OrderBy(n => n)
-            .ToArray();
+            .OrderBy(n => n)];
 
         Assert.Equal(expected.OrderBy(n => n).ToArray(), declared);
     }

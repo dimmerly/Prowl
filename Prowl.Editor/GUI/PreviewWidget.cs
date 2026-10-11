@@ -12,7 +12,7 @@ namespace Prowl.Editor.GUI;
 public sealed class PreviewWidget : IDisposable
 {
     // A preview keeps its subject in a live scene, which keeps everything it shows loaded, so each lives only while drawn.
-    private static readonly Dictionary<Guid, PreviewWidget> s_byAsset = new();
+    private static readonly Dictionary<Guid, PreviewWidget> s_byAsset = [];
 
     /// <summary> Gets or creates a PreviewWidget for the specified asset, reusing an existing one if its dimensions and grid setting match. Editors are shared between inspector panels - EditorRegistries caches a single instance per asset type - so a widget held as an editor field is reconfigured by every panel every frame, and they all end up drawing whichever asset set it up last. Keying on the asset gives each its own. </summary>
     public static PreviewWidget For(Guid asset, int width = 256, int height = 256, bool showGrid = false)

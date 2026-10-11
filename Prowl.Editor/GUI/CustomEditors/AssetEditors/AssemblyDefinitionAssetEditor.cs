@@ -25,7 +25,7 @@ public class AssemblyDefinitionAssetEditor : AssetImporterEditor
 {
     /// <summary>The definition being edited, per asset. Static so switching selection and coming back
     /// keeps the edits - a single slot would re-read the file and discard them.</summary>
-    private static readonly Dictionary<Guid, AssemblyDefinition> s_edits = new();
+    private static readonly Dictionary<Guid, AssemblyDefinition> s_edits = [];
 
     private AssemblyDefinition Edits(AssetEntry entry, string absPath)
     {
@@ -106,7 +106,7 @@ public class AssemblyDefinitionAssetEditor : AssetImporterEditor
         if (others.Count == 0)
             Origami.Label(paper, $"{id}_refs_none", "No other assembly definitions in project.").Show();
 
-        foreach (var name in others)
+        foreach (string? name in others)
         {
             bool referenced = def.References.Any(r => r.Equals(name, StringComparison.OrdinalIgnoreCase));
             Origami.Checkbox(paper, $"{id}_ref_{name}", referenced, v =>
@@ -133,7 +133,7 @@ public class AssemblyDefinitionAssetEditor : AssetImporterEditor
 
         if (!anyPlatform)
         {
-            foreach (var platform in BuildPlatforms.All)
+            foreach (string platform in BuildPlatforms.All)
                 IncludeToggle(paper, $"{id}_inc_{platform}", platform, def);
         }
 

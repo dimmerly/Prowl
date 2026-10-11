@@ -42,7 +42,7 @@ public class AssetDatabasePanel : DockPanel
     private bool _showUnloaded;
     private bool _showOnlyUnreached;
     private string _typeFilter = "";
-    private readonly HashSet<Guid> _expandedFamilies = new();
+    private readonly HashSet<Guid> _expandedFamilies = [];
     private Guid? _selectedGuid;
 
     private enum SortMode { Default, Name, Type, Size, SinceReached }
@@ -65,12 +65,12 @@ public class AssetDatabasePanel : DockPanel
     {
         public Row Root;
         public string RootPath = "";
-        public readonly List<Row> Subs = new();
+        public readonly List<Row> Subs = [];
         public long TotalSizeBytes => Root.SizeBytes + Subs.Sum(s => s.SizeBytes);
     }
 
     // Lists every asset, so it must not keep them loaded.
-    [NotHeld] private readonly List<FamilyGroup> _families = new();
+    [NotHeld] private readonly List<FamilyGroup> _families = [];
     private int _loadedCount, _unreachedCount;
 
     #region Loaded-count History (sparkline)
@@ -211,7 +211,7 @@ public class AssetDatabasePanel : DockPanel
 
     #region Toolbar
 
-    private readonly List<string> _typeOptions = new();
+    private readonly List<string> _typeOptions = [];
 
     private void DrawToolbar(Paper paper, FontFile font)
     {
@@ -472,7 +472,7 @@ public class AssetDatabasePanel : DockPanel
     private static string FormatBytes(long bytes)
     {
         if (bytes <= 0) return "-";
-        string[] u = { "B", "KB", "MB", "GB" };
+        string[] u = ["B", "KB", "MB", "GB"];
         double s = bytes;
         int i = 0;
         while (s >= 1024 && i < u.Length - 1) { s /= 1024; i++; }

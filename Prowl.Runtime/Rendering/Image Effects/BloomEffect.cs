@@ -61,8 +61,10 @@ public sealed class BloomEffect : ImageEffect
         cmd.Blit(context.SceneColor, thresholdRT, _mat, 0);
 
         // Downsample chain each iteration halves resolution
-        var mipChain = new List<RenderTexture>();
-        mipChain.Add(thresholdRT);
+        var mipChain = new List<RenderTexture>
+        {
+            thresholdRT
+        };
 
         RenderTexture current = thresholdRT;
         for (int i = 0; i < Iterations; i++)

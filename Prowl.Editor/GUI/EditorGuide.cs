@@ -42,7 +42,7 @@ public sealed class Guide
     /// <summary> Stable identifier used to track whether this guide has been seen. </summary>
     public readonly string Id;
     /// <summary> The ordered list of steps in this guide. </summary>
-    public readonly List<GuideStep> Steps = new();
+    public readonly List<GuideStep> Steps = [];
     /// <summary> Initializes a new guide with the given stable id. </summary>
     public Guide(string id) { Id = id; }
     /// <summary> Adds a step to the guide and returns this instance for chaining. </summary>

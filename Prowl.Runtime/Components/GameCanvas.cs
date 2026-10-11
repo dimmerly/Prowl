@@ -166,7 +166,7 @@ public class GameCanvas : Component
     public void MarkDirty(UIDirtyFlags flags) => _isDirty = true;
 
     /// <summary>Elements whose vertices changed without anything that moves layout, re-baked in place.</summary>
-    [SerializeIgnore] private readonly List<UIBehaviour> _rebake = new();
+    [SerializeIgnore] private readonly List<UIBehaviour> _rebake = [];
 
     /// <summary>
     /// Requests a re-bake of just <paramref name="ui"/>'s mesh, for a change that touches its vertices but

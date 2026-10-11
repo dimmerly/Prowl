@@ -156,7 +156,7 @@ public class SpriteEditorWindow : DockPanel
 
     private sealed class EditSnapshot
     {
-        public List<SpriteSliceData> Slices = new();
+        public List<SpriteSliceData> Slices = [];
         public float PixelsPerUnit;
         public bool GenerateTightMesh;
         public float TightMeshDetail;
@@ -665,7 +665,7 @@ public class SpriteEditorWindow : DockPanel
         return -1;
     }
 
-    private static readonly int[] s_corners = { 0, 2, 4, 6 };
+    private static readonly int[] s_corners = [0, 2, 4, 6];
 
     private int HitCorner(Float2 pointer, SpriteRect rc, int texH)
     {

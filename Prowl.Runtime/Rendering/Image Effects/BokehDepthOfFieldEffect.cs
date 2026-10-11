@@ -186,7 +186,7 @@ public sealed class BokehDepthOfFieldEffect : ImageEffect
 
     private static string[] BuildKernelNames()
     {
-        var names = new string[71];
+        string[] names = new string[71];
         for (int i = 0; i < names.Length; i++) names[i] = $"_Kernel[{i}]";
         return names;
     }

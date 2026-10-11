@@ -33,7 +33,7 @@ public static class ProjectBuilder
                 Type = BuildSettingsPanel.BuildStatusReport.BuildStatusReportType.Info,
                 Message = message,
             };
-            var serializedOutput = Serializer.Serialize(logMessage).WriteToString();
+            string serializedOutput = Serializer.Serialize(logMessage).WriteToString();
             string serializedBase64 = Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(serializedOutput));
             Console.WriteLine(serializedBase64);
         }
@@ -69,7 +69,7 @@ public static class ProjectBuilder
                 Message = message,
                 Progress = progress
             };
-            var serializedOutput = Serializer.Serialize(logMessage).WriteToString();
+            string serializedOutput = Serializer.Serialize(logMessage).WriteToString();
             string serializedBase64 = Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(serializedOutput));
             Console.WriteLine(serializedBase64);
         }
@@ -101,7 +101,7 @@ public static class ProjectBuilder
             try
             {
                 Console.WriteLine($"[BEGIN]{args.Data}[END]");
-                var serializedData = System.Text.Encoding.UTF8.GetString(Convert.FromBase64String(args.Data));
+                string serializedData = System.Text.Encoding.UTF8.GetString(Convert.FromBase64String(args.Data));
                 var echoData = EchoObject.ReadFromString(serializedData);
                 BuildSettingsPanel.BuildStatusReport? logData = Serializer.Deserialize<BuildSettingsPanel.BuildStatusReport>(echoData);
 
@@ -202,7 +202,7 @@ public static class ProjectBuilder
         Runtime.Debug.Log($"[Build] Starting {pipeline.DisplayName} build to {outputPath}...", LogSeverity.Normal);
 
         var progress = new BuildProgress();
-        var projectPath = Project.Current?.RootPath ?? "";
+        string projectPath = Project.Current?.RootPath ?? "";
 
         // In the editor the build runs beside the frame loop, which publishes any asset it loads. A command line
         // build blocks the main thread instead, so it builds there.

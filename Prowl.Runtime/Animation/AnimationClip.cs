@@ -35,7 +35,7 @@ public sealed class AnimationClip : Asset, ISerializable
     public string SourceName = string.Empty;
 
     /// <summary>The clip's markers, handed to Motion when the clip is decoded.</summary>
-    public List<ClipEvent> Events = new();
+    public List<ClipEvent> Events = [];
 
     /// <summary>Where in the take the clip starts, in seconds, as the import cut it.</summary>
     public float TakeStart;
@@ -92,7 +92,7 @@ public sealed class AnimationClip : Asset, ISerializable
         if (_humanoid == null || target is not { IsHuman: true })
             return null;
 
-        _bound ??= new Dictionary<MotionAvatar, MotionClip>();
+        _bound ??= [];
         if (_bound.TryGetValue(target, out MotionClip? bound))
             return bound;
 
@@ -202,7 +202,7 @@ public sealed class AnimationClip : Asset, ISerializable
         _duration = value.Get("Duration")?.FloatValue ?? 0f;
         _frameCount = value.Get("FrameCount")?.IntValue ?? 0;
         Avatar = Serializer.Deserialize<Avatar>(value.Get("Avatar"), ctx);
-        Events = value.Get("Events") is { } events ? Serializer.Deserialize<List<ClipEvent>>(events, ctx) ?? new() : new();
+        Events = value.Get("Events") is { } events ? Serializer.Deserialize<List<ClipEvent>>(events, ctx) ?? [] : [];
         TakeStart = value.Get("TakeStart")?.FloatValue ?? 0f;
 
         byte[]? payload = value.Get("Clip")?.ByteArrayValue;

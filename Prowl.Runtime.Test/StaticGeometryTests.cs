@@ -41,7 +41,7 @@ public class StaticGeometryTests : RuntimeTestBase
     private static List<IRenderable> Collect(Scene scene)
     {
         var renderables = new List<IRenderable>();
-        scene.CollectRenderables(null!, renderables, new List<IRenderableLight>());
+        scene.CollectRenderables(null!, renderables, []);
         return renderables;
     }
 

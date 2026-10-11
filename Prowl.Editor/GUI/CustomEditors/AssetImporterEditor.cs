@@ -46,7 +46,7 @@ public abstract class AssetImporterEditor
     /// editor instance per asset type, so per-instance state would be a single slot that the next
     /// selection overwrites.
     /// </summary>
-    private static readonly Dictionary<Guid, EchoObject> s_baselines = new();
+    private static readonly Dictionary<Guid, EchoObject> s_baselines = [];
 
     /// <summary>
     /// This editor's current authored state as Echo, or null when it has nothing that can be applied.

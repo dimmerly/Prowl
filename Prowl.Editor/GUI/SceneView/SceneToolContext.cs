@@ -21,7 +21,7 @@ namespace Prowl.Editor.GUI.SceneView;
 /// </summary>
 public sealed class SceneToolContext
 {
-    private readonly Dictionary<(Type tool, Type state), object> _state = new();
+    private readonly Dictionary<(Type tool, Type state), object> _state = [];
 
     internal SceneToolContext(HandleContext handles) => Handles = handles;
 
@@ -62,7 +62,7 @@ public sealed class SceneToolContext
     public GameObject? ActiveObject => Selection.GetSelected<GameObject>().FirstOrDefault();
 
     /// <summary> All currently selected GameObjects. </summary>
-    public IReadOnlyList<GameObject> SelectedObjects => Selection.GetSelected<GameObject>().ToList();
+    public IReadOnlyList<GameObject> SelectedObjects => [.. Selection.GetSelected<GameObject>()];
 
     internal void Begin(Scene scene, object view)
     {

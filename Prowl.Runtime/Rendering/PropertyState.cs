@@ -145,16 +145,16 @@ public partial class PropertyState : ISerializationCallbackReceiver
     /// override-tracking migration.</summary>
     public System.Collections.Generic.IEnumerable<string> EnumerateNames()
     {
-        foreach (var k in _floats.Keys)     yield return k;
-        foreach (var k in _ints.Keys)       yield return k;
-        foreach (var k in _vectors2.Keys)   yield return k;
-        foreach (var k in _vectors3.Keys)   yield return k;
-        foreach (var k in _vectors4.Keys)   yield return k;
-        foreach (var k in _colors.Keys)     yield return k;
-        foreach (var k in _matrices.Keys)   yield return k;
-        foreach (var k in _textures.Keys)   yield return k;
-        foreach (var k in _textures3D.Keys) yield return k;
-        foreach (var k in _texturesCube.Keys) yield return k;
+        foreach (string k in _floats.Keys)     yield return k;
+        foreach (string k in _ints.Keys)       yield return k;
+        foreach (string k in _vectors2.Keys)   yield return k;
+        foreach (string k in _vectors3.Keys)   yield return k;
+        foreach (string k in _vectors4.Keys)   yield return k;
+        foreach (string k in _colors.Keys)     yield return k;
+        foreach (string k in _matrices.Keys)   yield return k;
+        foreach (string k in _textures.Keys)   yield return k;
+        foreach (string k in _textures3D.Keys) yield return k;
+        foreach (string k in _texturesCube.Keys) yield return k;
     }
 
     /// <summary>Drop the entry for <paramref name="name"/> from every type bucket.

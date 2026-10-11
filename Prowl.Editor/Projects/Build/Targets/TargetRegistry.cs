@@ -84,10 +84,10 @@ public sealed class TargetRegistry
 
     /// <summary>Ordered by id, so a menu built from this looks the same on every machine.</summary>
     public IReadOnlyList<PlatformTarget> All
-        => _targets.Values.OrderBy(t => t.Id, StringComparer.Ordinal).ToList();
+        => [.. _targets.Values.OrderBy(t => t.Id, StringComparer.Ordinal)];
 
     public IReadOnlyList<PlatformTarget> ByFamily(string family)
-        => All.Where(t => string.Equals(t.Family, family, StringComparison.OrdinalIgnoreCase)).ToList();
+        => [.. All.Where(t => string.Equals(t.Family, family, StringComparison.OrdinalIgnoreCase))];
 }
 
 /// <summary>The targets that ship with the engine.</summary>

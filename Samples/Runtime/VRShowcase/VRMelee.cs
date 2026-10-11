@@ -72,7 +72,7 @@ public sealed class Stabber : Component
     private const float UnstabDelay = 0.25f;
     private const float UnstabBack = 0.01f;
 
-    private static readonly List<Stabber> s_stuck = new();
+    private static readonly List<Stabber> s_stuck = [];
 
     private Float3 _velocity, _spin;
     private GameObject? _joint;
@@ -233,7 +233,7 @@ public sealed class HitFlash : Component
 {
     public Color BaseColor = new(0.6f, 0.5f, 0.35f, 1f);
     public Color FlashColor = new(1f, 0.15f, 0.05f, 1f);
-    public List<Material> Materials = new();
+    public List<Material> Materials = [];
 
     private float _flash;
 

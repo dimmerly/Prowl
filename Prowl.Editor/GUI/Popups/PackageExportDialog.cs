@@ -22,9 +22,9 @@ namespace Prowl.Editor.GUI.Popups;
 public static class PackageExportDialog
 {
     private static readonly ModalHandle _handle = new();
-    private static List<string> _explicitPaths = new();    // user-selected assets
-    private static HashSet<string> _dependencyPaths = new(); // auto-resolved dependencies
-    private static HashSet<string> _enabledPaths = new();
+    private static List<string> _explicitPaths = [];    // user-selected assets
+    private static HashSet<string> _dependencyPaths = []; // auto-resolved dependencies
+    private static HashSet<string> _enabledPaths = [];
     private static bool _includeDependencies = true;
     private static bool _lastIncludeDependencies = true; // track toggle changes
     private static bool _includeProjectSettings;
@@ -251,7 +251,7 @@ public static class PackageExportDialog
         {
             string parent = Path.GetDirectoryName(folder)?.Replace('\\', '/') ?? "";
             if (!childFolders.ContainsKey(parent))
-                childFolders[parent] = new List<string>();
+                childFolders[parent] = [];
             childFolders[parent].Add(folder);
         }
 
@@ -259,7 +259,7 @@ public static class PackageExportDialog
         {
             string parent = Path.GetDirectoryName(path)?.Replace('\\', '/') ?? "";
             if (!childFiles.ContainsKey(parent))
-                childFiles[parent] = new List<string>();
+                childFiles[parent] = [];
             childFiles[parent].Add(path);
         }
 
@@ -392,8 +392,8 @@ public static class PackageExportDialog
                             }
                         },
                         startPath: Path.GetDirectoryName(_outputPath),
-                        filters: new[] { "*.prowlpackage" },
-                        filterLabels: new[] { Loc.Get("editor.filter_package") });
+                        filters: ["*.prowlpackage"],
+                        filterLabels: [Loc.Get("editor.filter_package")]);
                     }).Width(30).Show();
             }
         }

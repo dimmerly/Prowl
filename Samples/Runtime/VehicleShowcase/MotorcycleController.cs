@@ -59,7 +59,7 @@ public sealed class MotorcycleController : Component
     public bool Controlled;
     public bool LightsOn = true;
     public Material? BrakeLights;
-    public readonly List<Light> Headlights = new();
+    public readonly List<Light> Headlights = [];
 
     private const float Gravity = 9.81f;
 

@@ -105,15 +105,15 @@ public sealed class GraphNodeRecord
     /// <summary>The state or embedded sub graph this node belongs to, or empty for the graph itself.</summary>
     public string Owner = string.Empty;
 
-    public List<GraphInputRecord> Inputs = new();
+    public List<GraphInputRecord> Inputs = [];
 
-    public Dictionary<string, NodeValue> Properties = new();
+    public Dictionary<string, NodeValue> Properties = [];
 
     /// <summary>Inputs by name: settings exposed as ports, and a sub graph's parameters, with the node wired to each.</summary>
-    public Dictionary<string, string> PropertyInputs = new();
+    public Dictionary<string, string> PropertyInputs = [];
 
     /// <summary>The states of a state machine node. Empty on every other kind.</summary>
-    public List<GraphStateRecord> States = new();
+    public List<GraphStateRecord> States = [];
 
     /// <summary>Where the node sits in the editor. The compiler ignores it.</summary>
     public Float2 EditorPosition;
@@ -157,7 +157,7 @@ public sealed class GraphStateRecord
     /// <summary>The machine's Any State, whose transitions leave every other state on their target's Enter.</summary>
     public bool IsAny;
 
-    public List<GraphTransitionRecord> Transitions = new();
+    public List<GraphTransitionRecord> Transitions = [];
     public Float2 EditorPosition;
 
     public bool UsesAsset => Graph is not null;

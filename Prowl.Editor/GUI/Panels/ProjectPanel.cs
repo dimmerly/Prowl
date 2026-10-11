@@ -52,7 +52,7 @@ public class ProjectPanel : DockPanel
     }
 
     // Handled Virtual (Placeholder) content to be displayed with normal objects
-    public List<ContentItem> VirtualContentItems = new();
+    public List<ContentItem> VirtualContentItems = [];
 
     // The content model is rebuilt only when something it derives from moves, since the panel itself
     // redraws every frame.
@@ -69,8 +69,8 @@ public class ProjectPanel : DockPanel
     // (Paper element storage and Selection), so they survive the nodes being reused.
     private List<OrigamiUI.TreeNode>? _folderTreeNodes;
     private List<object>? _folderTreeItems;
-    private readonly Dictionary<string, ContentItem> _folderTreeItemsByPath = new();
-    private readonly HashSet<string> _selectedFolderPaths = new();
+    private readonly Dictionary<string, ContentItem> _folderTreeItemsByPath = [];
+    private readonly HashSet<string> _selectedFolderPaths = [];
     private int _folderTreeVersion = -1;
 
     public string CurrentFolder => _currentFolder;
@@ -94,7 +94,7 @@ public class ProjectPanel : DockPanel
     // lets "drop on empty space" fall back to the currently-open folder.
     private bool _contentBgHovered;
     // Rename state is managed by RenameOverlay
-    private static readonly HashSet<Guid> _expandedAssets = new(); // files with sub-assets expanded
+    private static readonly HashSet<Guid> _expandedAssets = []; // files with sub-assets expanded
     private static Guid _pendingPingNavigate; // Navigate to pinged asset's folder on next frame
     private static Guid _lastPingedGuid; // Track when a new ping starts
     private const float MinThumbSize = 20f;  // Below this = list mode
@@ -225,7 +225,7 @@ public class ProjectPanel : DockPanel
         }
 
         EditorAssetBackend? assetDb = EditorAssetBackend.Instance;
-        List<ContentItem> entries = assetDb != null ? GetContentEntries(assetDb) : new List<ContentItem>();
+        List<ContentItem> entries = assetDb != null ? GetContentEntries(assetDb) : [];
 
         using (paper.Row("proj_root").Size(width, height).Enter())
         {
@@ -337,7 +337,7 @@ public class ProjectPanel : DockPanel
         if (!string.IsNullOrEmpty(_currentFolder))
         {
             string acc = "";
-            foreach (var seg in _currentFolder.Split('/'))
+            foreach (string seg in _currentFolder.Split('/'))
             {
                 acc = acc.Length > 0 ? acc + "/" + seg : seg;
                 items.Add(new BreadcrumbItem(seg, "", acc));
@@ -421,7 +421,7 @@ public class ProjectPanel : DockPanel
         }
 
         Guid[] guids = [.. bundle.Select(b => b.Guid)];
-        var paths = bundle.Select(b => b.RelativePath).ToArray();
+        string[] paths = [.. bundle.Select(b => b.RelativePath)];
         return new AssetDragPayload(item.Guid, item.Name, primaryType, guids, paths);
     }
 
@@ -442,7 +442,7 @@ public class ProjectPanel : DockPanel
         if (!Directory.Exists(destAbs)) return;
 
         int moved = 0;
-        foreach (var rawSrc in payload.AssetPaths)
+        foreach (string rawSrc in payload.AssetPaths)
         {
             if (string.IsNullOrEmpty(rawSrc)) continue;
             string src = rawSrc.Replace('\\', '/').TrimEnd('/');
@@ -507,7 +507,7 @@ public class ProjectPanel : DockPanel
         if (!DragDrop.HasPayloadType<AssetDragPayload>()) return false;
         var payload = (AssetDragPayload)DragDrop.Payload!;
 
-        foreach (var rawSrc in payload.AssetPaths)
+        foreach (string rawSrc in payload.AssetPaths)
         {
             if (string.IsNullOrEmpty(rawSrc)) continue;
             string src = rawSrc.Replace('\\', '/').TrimEnd('/');
@@ -689,7 +689,7 @@ public class ProjectPanel : DockPanel
             ? [.. db.GetSubFolders(relativePath)
                 .Where(f => !f.Name.StartsWith('.'))
                 .OrderBy(f => f.Name, StringComparer.OrdinalIgnoreCase)]
-            : new List<EditorAssetBackend.FolderRecord>();
+            : [];
 
         nodes.Add(new OrigamiUI.TreeNode
         {
@@ -1085,7 +1085,7 @@ public class ProjectPanel : DockPanel
                             .Where(p => p.Equals(sel.RelativePath, StringComparison.OrdinalIgnoreCase)
                                      || p.StartsWith(prefix, StringComparison.OrdinalIgnoreCase))
                             .ToList();
-                        foreach (var path in toDelete)
+                        foreach (string? path in toDelete)
                             db.DeleteAsset(path);
 
                         if (Directory.Exists(absPath))
@@ -1604,7 +1604,7 @@ public class ProjectPanel : DockPanel
     private static string FormatSize(long bytes)
     {
         if (bytes <= 0) return "-";
-        string[] u = { "B", "KB", "MB", "GB" };
+        string[] u = ["B", "KB", "MB", "GB"];
         double s = bytes; int i = 0;
         while (s >= 1024 && i < u.Length - 1) { s /= 1024; i++; }
         return $"{(i == 0 ? s.ToString("0") : s.ToString("0.#"))} {u[i]}";
@@ -1639,7 +1639,7 @@ public class ContentItem
     public bool HasSubAssets; // True if this file has expandable sub-assets
     public long Size;         // File size in bytes (0 for folders/virtual)
     public DateTime Modified; // Last write time (UTC)
-    public List<ContentItem> Subs = new(); // Sub-assets of this file (populated for both views)
+    public List<ContentItem> Subs = []; // Sub-assets of this file (populated for both views)
 
     public override bool Equals(object? obj) => obj is ContentItem c && c.Guid == Guid && c.RelativePath == RelativePath;
     public override int GetHashCode() => Guid != Guid.Empty ? Guid.GetHashCode() : RelativePath.GetHashCode();

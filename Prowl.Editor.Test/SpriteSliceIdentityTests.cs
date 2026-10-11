@@ -122,7 +122,7 @@ public class SpriteSliceIdentityTests
         SpriteSliceData incoming = Slice("tex_0", 0, 0, 16, 16);
         incoming.Alignment = SpriteAlignment.TopRight; // what the user just picked for this run
 
-        List<SpriteSliceData> result = SpriteSliceMatcher.CarryOverIdentities(new List<SpriteSliceData> { old }, Generated(incoming));
+        List<SpriteSliceData> result = SpriteSliceMatcher.CarryOverIdentities([old], Generated(incoming));
 
         Assert.Equal(new Float4(2, 3, 4, 5), result[0].Border);
         Assert.Equal(SpriteAlignment.TopRight, result[0].Alignment);
@@ -139,7 +139,7 @@ public class SpriteSliceIdentityTests
         SpriteSliceData incoming = Slice("tex_0", 0, 0, 16, 16);
         incoming.Alignment = SpriteAlignment.Center;
 
-        List<SpriteSliceData> result = SpriteSliceMatcher.CarryOverIdentities(new List<SpriteSliceData> { old }, Generated(incoming));
+        List<SpriteSliceData> result = SpriteSliceMatcher.CarryOverIdentities([old], Generated(incoming));
 
         Assert.Equal(SpriteAlignment.Custom, result[0].Alignment);
         Assert.Equal(new Float2(0.25f, 0.75f), result[0].CustomPivot);
@@ -166,7 +166,7 @@ public class SpriteSliceIdentityTests
         List<SpriteSliceData> generated = Generated(Slice("tex_0", 0, 0, 16, 16));
         Guid id = generated[0].Id;
 
-        List<SpriteSliceData> result = SpriteSliceMatcher.CarryOverIdentities(new List<SpriteSliceData>(), generated);
+        List<SpriteSliceData> result = SpriteSliceMatcher.CarryOverIdentities([], generated);
 
         Assert.Single(result);
         Assert.Equal(id, result[0].Id);

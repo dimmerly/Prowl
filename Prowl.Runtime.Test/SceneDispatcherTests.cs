@@ -57,7 +57,7 @@ public sealed class SelfRemovingListener : Component
 
 public static class PhysicsLog
 {
-    public static readonly List<string> Entries = new();
+    public static readonly List<string> Entries = [];
 }
 
 /// <summary>

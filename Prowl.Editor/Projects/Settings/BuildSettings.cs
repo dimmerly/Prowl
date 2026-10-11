@@ -31,7 +31,7 @@ public sealed class BuildSettings : ProjectSettingsBase
 {
     public override bool DrawInProjectSettingsPanel => false;
 
-    public List<SceneBuildEntry> Scenes = new();
+    public List<SceneBuildEntry> Scenes = [];
 
     public BuildConfiguration Config = BuildConfiguration.Release;
     public string OutputDirectory = "Builds";
@@ -46,7 +46,7 @@ public sealed class BuildSettings : ProjectSettingsBase
     /// Per-platform profiles.  Missing entries will be created with
     /// defaults on first access.
     /// </summary>
-    public List<PlatformBuildProfile> PlatformProfiles = new();
+    public List<PlatformBuildProfile> PlatformProfiles = [];
 
     /// <summary>
     /// Returns (or lazily creates) the profile for the given target.

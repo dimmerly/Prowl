@@ -248,7 +248,7 @@ public class TextAreaAttributeHandler : OrigamiUI.AttributeHandler
         FieldInfo field, object target, Action<object?> onChange, int depth)
     {
         var textArea = (TextAreaAttribute)attr;
-        var value = (string?)field.GetValue(target) ?? "";
+        string value = (string?)field.GetValue(target) ?? "";
         OrigamiTheme theme = OrigamiUI.Origami.Current;
         OrigamiMetrics m = theme.Metrics;
 

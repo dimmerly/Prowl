@@ -41,7 +41,7 @@ public class AssemblyDefinitionImporter : AssetImporter
 
     private static string SanitizeName(string raw)
     {
-        var chars = raw.Select(c => char.IsLetterOrDigit(c) || c == '_' || c == '.' ? c : '_').ToArray();
+        char[] chars = [.. raw.Select(c => char.IsLetterOrDigit(c) || c == '_' || c == '.' ? c : '_')];
         string name = new string(chars).Trim('.', '_');
         return string.IsNullOrEmpty(name) ? "NewAssembly" : name;
     }

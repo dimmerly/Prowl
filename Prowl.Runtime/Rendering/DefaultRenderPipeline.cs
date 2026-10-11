@@ -69,14 +69,14 @@ public class DefaultRenderPipeline : RenderPipeline
     private static Material? s_iconMaterial;
     private static Mesh? s_iconQuad;
     private static Mesh s_gridMesh;
-    private static readonly List<IRenderable> s_shadowCasters = new();
+    private static readonly List<IRenderable> s_shadowCasters = [];
     private static Material s_gridMaterial;
 
     public static DefaultRenderPipeline Default { get; } = new();
 
     // Per-Scene BVH state. Keyed weakly so it goes away with the scene without an explicit
     // unload hook from this side; a dropped scene drops its light textures on the next GC pass.
-    private static readonly ConditionalWeakTable<Scene, SceneLightSystem> s_lightSystems = new();
+    private static readonly ConditionalWeakTable<Scene, SceneLightSystem> s_lightSystems = [];
 
     /// <summary>Get (or create) the light system bound to a scene. Creating one is cheap (no
     /// GPU allocation until the first <see cref="SceneLightSystem.Reconcile"/>).</summary>

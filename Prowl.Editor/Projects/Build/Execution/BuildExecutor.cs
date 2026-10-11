@@ -104,7 +104,7 @@ public sealed class BuildExecutor
         return new BuildOutcome
         {
             Succeeded = !aborted && !context.HasErrors,
-            Issues = context.Issues.ToList(),
+            Issues = [.. context.Issues],
             Duration = stopwatch.Elapsed,
             OperationsRun = operationsRun,
         };

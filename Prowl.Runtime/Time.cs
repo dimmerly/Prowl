@@ -27,7 +27,7 @@ public class TimeData
     public float TimeScale = 1f;
     public float TimeSmoothFactor = .25f;
 
-    private readonly List<TimeScaleModifier> _modifiers = new();
+    private readonly List<TimeScaleModifier> _modifiers = [];
 
     /// <summary>The scale time actually runs at: <see cref="TimeScale"/> times every active <see cref="TimeScaleModifier"/>.</summary>
     public float EffectiveTimeScale

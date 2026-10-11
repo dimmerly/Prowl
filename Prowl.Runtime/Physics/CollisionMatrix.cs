@@ -87,7 +87,7 @@ public static class CollisionMatrix
     /// <summary>Which layers the given one collides with, indexed by layer.</summary>
     public static bool[] GetLayerCollisions(int layer)
     {
-        var result = new bool[LayerCount];
+        bool[] result = new bool[LayerCount];
         if (!InRange(layer)) return result;
 
         uint row = Volatile.Read(ref s_rows)[layer];
@@ -132,7 +132,7 @@ public static class CollisionMatrix
 
     private static uint[] CreateRows(bool shouldCollide)
     {
-        var rows = new uint[LayerCount];
+        uint[] rows = new uint[LayerCount];
         if (shouldCollide) Array.Fill(rows, uint.MaxValue);
         return rows;
     }

@@ -60,7 +60,7 @@ public class EmissionModule : ParticleSystemModule
     [Tooltip("Particles per world unit the emitter moves.")]
     public MinMaxCurve RateOverDistance = new(0f);
 
-    public List<ParticleBurst> Bursts = new();
+    public List<ParticleBurst> Bursts = [];
 
     private float _timeAccumulator;
     private float _distanceAccumulator;

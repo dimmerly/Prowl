@@ -211,7 +211,7 @@ public sealed class ScriptingShowcaseGame : StationGame
 
     private Float3 _instantiateCenter;
     private GameObject _template = null!;
-    private readonly List<GameObject> _clones = new();
+    private readonly List<GameObject> _clones = [];
 
     private void BuildInstantiate(Float3 c)
     {
@@ -436,7 +436,7 @@ public sealed class ScriptingShowcaseGame : StationGame
 /// <summary>Records lifecycle calls into a shared log so the HUD can show them.</summary>
 public sealed class LifecycleProbe : Component
 {
-    public static readonly List<string> Log = new();
+    public static readonly List<string> Log = [];
 
     private void Record(string call)
     {

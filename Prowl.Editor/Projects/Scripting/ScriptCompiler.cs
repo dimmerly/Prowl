@@ -47,9 +47,9 @@ public static class ScriptCompiler
         public bool AllowUnsafe = true;
         public bool NoEngineReferences;
         public AsmDefFile? Source;  // null for the default Game/Editor assemblies
-        public readonly List<string> Scripts = new();
-        public readonly List<string> AssemblyReferences = new();   // other unit names
-        public readonly List<string> ManagedPluginPaths = new();   // absolute .dll paths
+        public readonly List<string> Scripts = [];
+        public readonly List<string> AssemblyReferences = [];   // other unit names
+        public readonly List<string> ManagedPluginPaths = [];   // absolute .dll paths
 
         public string CsprojPath = "";
         public string OutputDllPath = "";
@@ -213,14 +213,14 @@ public static class ScriptCompiler
         // Reject duplicate assembly names early - they would clobber each other's output.
         var dupes = asmdefs.GroupBy(a => a.Name, StringComparer.OrdinalIgnoreCase).Where(g => g.Count() > 1).ToList();
         if (dupes.Count > 0)
-            return (new(), $"Duplicate assembly definition name(s): {string.Join(", ", dupes.Select(d => d.Key))}");
+            return ([], $"Duplicate assembly definition name(s): {string.Join(", ", dupes.Select(d => d.Key))}");
 
         // Reject asmdef names reserved for the default assemblies - they would clobber the defaults.
-        var reserved = new[] { $"{project.Name}.Game", $"{project.Name}.Editor" };
+        string[] reserved = new[] { $"{project.Name}.Game", $"{project.Name}.Editor" };
         var clashing = asmdefs.Where(a => reserved.Contains(a.Name, StringComparer.OrdinalIgnoreCase))
             .Select(a => a.Name).Distinct(StringComparer.OrdinalIgnoreCase).ToList();
         if (clashing.Count > 0)
-            return (new(), $"Assembly definition name(s) reserved for the default assemblies: {string.Join(", ", clashing)}");
+            return ([], $"Assembly definition name(s) reserved for the default assemblies: {string.Join(", ", clashing)}");
 
         string defaultDefines = $"PROWL;PROWL_EDITOR;{GetVersionDefine()}";
         var activeDefines = new HashSet<string>(defaultDefines.Split(';'), StringComparer.OrdinalIgnoreCase);
@@ -259,7 +259,7 @@ public static class ScriptCompiler
         // Classify scripts into their owning assembly.
         if (Directory.Exists(project.AssetsPath))
         {
-            foreach (var script in Directory.EnumerateFiles(project.AssetsPath, "*.cs", SearchOption.AllDirectories))
+            foreach (string script in Directory.EnumerateFiles(project.AssetsPath, "*.cs", SearchOption.AllDirectories))
             {
                 AsmDefFile? owner = AssemblyDefinitionDatabase.FindOwner(script, asmdefs);
                 if (owner != null)
@@ -309,7 +309,7 @@ public static class ScriptCompiler
             // Assembly references.
             if (unit.Source != null)
             {
-                foreach (var refName in unit.Source.Definition.References)
+                foreach (string refName in unit.Source.Definition.References)
                 {
                     if (refName.Equals(unit.Name, StringComparison.OrdinalIgnoreCase))
                         continue; // ignore self-reference
@@ -350,7 +350,7 @@ public static class ScriptCompiler
         // Order by dependency (referenced assemblies build first).
         (List<CompilationUnit>? ordered, string? cycle) = TopologicalSort(units, byName);
         if (cycle != null)
-            return (new(), $"Cyclic assembly references detected: {cycle}");
+            return ([], $"Cyclic assembly references detected: {cycle}");
 
         return (ordered, null);
     }
@@ -375,7 +375,7 @@ public static class ScriptCompiler
 
             state[u.Name] = 1;
             stack.Add(u.Name);
-            foreach (var dep in u.AssemblyReferences)
+            foreach (string dep in u.AssemblyReferences)
                 if (byName.TryGetValue(dep, out CompilationUnit? depUnit))
                     Visit(depUnit, stack);
             stack.RemoveAt(stack.Count - 1);
@@ -384,9 +384,9 @@ public static class ScriptCompiler
         }
 
         foreach (CompilationUnit u in units)
-            Visit(u, new List<string>());
+            Visit(u, []);
 
-        return (cycle == null ? ordered : new(), cycle);
+        return (cycle == null ? ordered : [], cycle);
     }
 
     // ================================================================
@@ -428,7 +428,7 @@ public static class ScriptCompiler
             AppendReference(sb, emitted, "Prowl.Runtime", Path.Combine(engineDir, "Prowl.Runtime.dll"), copyLocal: true);
             AppendReference(sb, emitted, "Prowl.Editor", Path.Combine(engineDir, "Prowl.Editor.dll"), copyLocal: true);
 
-            foreach (var dll in Directory.EnumerateFiles(engineDir, "*.dll"))
+            foreach (string dll in Directory.EnumerateFiles(engineDir, "*.dll"))
             {
                 string name = Path.GetFileNameWithoutExtension(dll);
                 if (name == "Prowl.Runtime" || name == "Prowl.Editor" || unitNames.Contains(name)) continue;
@@ -456,11 +456,11 @@ public static class ScriptCompiler
         }
 
         // Managed plugin references.
-        foreach (var pluginPath in unit.ManagedPluginPaths)
+        foreach (string pluginPath in unit.ManagedPluginPaths)
             AppendReference(sb, emitted, Path.GetFileNameWithoutExtension(pluginPath), pluginPath, copyLocal: true);
 
         // Other user assemblies (built earlier; share OutputPath so they must not be copied over).
-        foreach (var refName in unit.AssemblyReferences)
+        foreach (string refName in unit.AssemblyReferences)
         {
             string dll = Path.Combine(project.ScriptAssemblyPath, $"{refName}.dll");
             AppendReference(sb, emitted, refName, dll, copyLocal: false);
@@ -474,7 +474,7 @@ public static class ScriptCompiler
 
         // Compile items.
         sb.AppendLine("  <ItemGroup>");
-        foreach (var script in unit.Scripts)
+        foreach (string script in unit.Scripts)
             sb.AppendLine($"    <Compile Include=\"{Xml(Path.GetRelativePath(project.RootPath, script))}\" />");
         sb.AppendLine("  </ItemGroup>");
 
@@ -568,7 +568,7 @@ public static class ScriptCompiler
         var editor = new List<string>();
         if (!Directory.Exists(project.AssetsPath)) return (game, editor);
 
-        foreach (var file in Directory.EnumerateFiles(project.AssetsPath, "*.cs", SearchOption.AllDirectories))
+        foreach (string file in Directory.EnumerateFiles(project.AssetsPath, "*.cs", SearchOption.AllDirectories))
             (IsEditorPath(project, file) ? editor : game).Add(file);
 
         return (game, editor);
@@ -584,7 +584,7 @@ public static class ScriptCompiler
     /// <summary>Evaluates asmdef define constraints (supports "SYMBOL" and "!SYMBOL").</summary>
     private static bool EvaluateDefineConstraints(List<string> constraints, HashSet<string> defined)
     {
-        foreach (var raw in constraints)
+        foreach (string raw in constraints)
         {
             string c = raw.Trim();
             if (c.Length == 0) continue;
@@ -602,7 +602,7 @@ public static class ScriptCompiler
 
     internal static string GetVersionDefine()
     {
-        var version = Assembly.GetExecutingAssembly()
+        string version = Assembly.GetExecutingAssembly()
             .GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion
             ?? Assembly.GetExecutingAssembly().GetName().Version?.ToString() ?? "0.0.1";
         int plus = version.IndexOf('+');
@@ -670,7 +670,7 @@ public static class ScriptCompiler
 
     internal static void LogBuildOutput(string stdout, string stderr)
     {
-        foreach (var line in stdout.Split('\n', StringSplitOptions.RemoveEmptyEntries))
+        foreach (string line in stdout.Split('\n', StringSplitOptions.RemoveEmptyEntries))
         {
             string trimmed = line.Trim();
             if (trimmed.Contains(": error "))

@@ -36,7 +36,7 @@ public sealed class Skidmarks : Component
         public float Along;
     }
 
-    private readonly Dictionary<WheelCollider, Trail> _trails = new();
+    private readonly Dictionary<WheelCollider, Trail> _trails = [];
     private Mesh _mesh = null!;
     private Float3[] _vertices = null!;
     private Float3[] _normals = null!;
@@ -204,7 +204,7 @@ public sealed class TyreSpray : Component
     /// <summary>The most puffs, clouds or chips one wheel throws each second.</summary>
     public float MaxRate = 90f;
 
-    private readonly Dictionary<WheelCollider, float> _wheels = new();
+    private readonly Dictionary<WheelCollider, float> _wheels = [];
     private readonly Random _random = new();
     private ParticleSystemComponent _smoke = null!, _dust = null!, _chips = null!;
 
