@@ -204,6 +204,13 @@ Check our [Contributing guide](https://github.com/ProwlEngine/Prowl/blob/main/CO
 	<tbody>
 		<tr>
             <td align="center">
+                <a href="https://github.com/dimmerly">
+                    <img src="https://avatars.githubusercontent.com/u/223179705?v=4" width="100;" alt="dimmerly"/>
+                    <br />
+                    <sub><b>Dimmer</b></sub>
+                </a>
+            </td>
+            <td align="center">
                 <a href="https://github.com/michaelsakharov">
                     <img src="https://avatars.githubusercontent.com/u/8621606?v=4" width="100;" alt="michaelsakharov"/>
                     <br />
@@ -238,6 +245,8 @@ Check our [Contributing guide](https://github.com/ProwlEngine/Prowl/blob/main/CO
                     <sub><b>Will</b></sub>
                 </a>
             </td>
+		</tr>
+		<tr>
             <td align="center">
                 <a href="https://github.com/brmassa">
                     <img src="https://avatars.githubusercontent.com/u/13696218?v=4" width="100;" alt="brmassa"/>
@@ -245,20 +254,11 @@ Check our [Contributing guide](https://github.com/ProwlEngine/Prowl/blob/main/CO
                     <sub><b>Bruno Massa</b></sub>
                 </a>
             </td>
-		</tr>
-		<tr>
             <td align="center">
                 <a href="https://github.com/EJTP">
                     <img src="https://avatars.githubusercontent.com/u/87308197?v=4" width="100;" alt="EJTP"/>
                     <br />
                     <sub><b>EJTP</b></sub>
-                </a>
-            </td>
-            <td align="center">
-                <a href="https://github.com/dimmerly">
-                    <img src="https://avatars.githubusercontent.com/u/223179705?v=4" width="100;" alt="dimmerly"/>
-                    <br />
-                    <sub><b>Dimmer</b></sub>
                 </a>
             </td>
             <td align="center">
