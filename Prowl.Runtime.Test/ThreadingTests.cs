@@ -26,7 +26,9 @@ public sealed class ForgetsBaseDispose : Component
 /// <summary>Runs whatever a test hands it from inside Update, the way gameplay code starts work.</summary>
 public sealed class GameplayHook : Component
 {
+#pragma warning disable CA2211 // Non-constant fields should not be visible
     public static Action? OnUpdate;
+#pragma warning restore CA2211 // Non-constant fields should not be visible
 
     public override void Update() => OnUpdate?.Invoke();
 }
@@ -62,7 +64,9 @@ public class ThreadingTests : RuntimeTestBase
 
         public LoopScope() => MainThreadContext.Install();
 
+#pragma warning disable CA1822 // Mark members as static
         public MainThreadContext Context => MainThreadContext.Current!;
+#pragma warning restore CA1822 // Mark members as static
 
         public void Pump() => Context.Pump();
 
@@ -512,7 +516,7 @@ public class ThreadingTests : RuntimeTestBase
     {
         using var loop = new LoopScope();
 
-        async Task RestartThenReturn()
+        static async Task RestartThenReturn()
         {
             MainThreadContext.Restart();
             await Task.CompletedTask;

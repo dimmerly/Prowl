@@ -180,7 +180,7 @@ public static partial class PrefabUtility
         if (IsEditablePrefab(prefabGuid)) return true;
 
         string name = EditorAssetBackend.Instance?.GetEntry(prefabGuid)?.Path ?? prefabGuid.ToString();
-        Runtime.Debug.LogWarning(LoadPrefab(prefabGuid) is PrefabAsset
+        Runtime.Debug.LogWarning(LoadPrefab(prefabGuid) is not null
             ? $"[Prefab] Cannot {operation}: '{name}' is generated from its source file. " +
               "Change it there and reimport, or unpack the instance."
             : $"[Prefab] Cannot {operation}: prefab asset '{name}' could not be loaded.");
@@ -261,9 +261,9 @@ public static partial class PrefabUtility
 
     private static void ApplyOverridesCore(GameObject instanceRoot, bool recordUndo)
     {
-        _refreshingFromApply = true;
+        s_refreshingFromApply = true;
         try { ApplyOverridesCoreInner(instanceRoot, recordUndo); }
-        finally { _refreshingFromApply = false; }
+        finally { s_refreshingFromApply = false; }
     }
 
     private static void ApplyOverridesCoreInner(GameObject instanceRoot, bool recordUndo)
@@ -481,9 +481,9 @@ public static partial class PrefabUtility
 
     private static void ApplySelectedOverridesCore(GameObject instanceGO, List<PropertyOverride> overrides, bool recordUndo)
     {
-        _refreshingFromApply = true;
+        s_refreshingFromApply = true;
         try { ApplySelectedOverridesCoreInner(instanceGO, overrides, recordUndo); }
-        finally { _refreshingFromApply = false; }
+        finally { s_refreshingFromApply = false; }
     }
 
     /// <summary>
@@ -1374,7 +1374,7 @@ public static partial class PrefabUtility
 
     // Set while an apply is running, which reimports the asset itself. Without this the import
     // notification would refresh the instances a second time, replacing every object again.
-    private static bool _refreshingFromApply;
+    private static bool s_refreshingFromApply;
 
     /// <summary>
     /// Bring open-scene instances up to date after their prefab asset was imported. Covers a prefab
@@ -1395,7 +1395,7 @@ public static partial class PrefabUtility
             InvalidateSource(entry.Guid);
 
             // Whether instances may be rebuilt right now is a separate question.
-            if (_refreshingFromApply || Application.IsPlaying) continue;
+            if (s_refreshingFromApply || Application.IsPlaying) continue;
             if (Scene.Current == null || PrefabEditingMode.IsEditing) continue;
 
             try
@@ -1423,7 +1423,7 @@ public static partial class PrefabUtility
         Scene? scene = Scene.Current;
 
         // The entries are gone, so go by which cached prefabs the database can no longer resolve.
-        foreach (Guid prefabGuid in _sourceCache.Keys.ToList())
+        foreach (Guid prefabGuid in s_sourceCache.Keys.ToList())
         {
             if (db.GetEntry(prefabGuid) != null) continue;
 
@@ -2118,7 +2118,7 @@ public static partial class PrefabUtility
     // This list is load-bearing: the field set below is Echo's, so anything Echo persists and that is
     // not named here is comparable. _identifier especially - identifiers are regenerated on every
     // deserialization, so instance and source always differ and every component would record one.
-    private static readonly HashSet<string> _skipFields =
+    private static readonly HashSet<string> s_skipFields =
     [
         "_identifier",          // regenerated per load; never per-instance state
         "_enabledInHierarchy",  // derived from _enabled and the parent chain
@@ -2129,7 +2129,7 @@ public static partial class PrefabUtility
     ];
 
     // Keyed by concrete type; the field set never changes for a type within a session.
-    private static readonly Dictionary<Type, FieldInfo[]> _overridableFields = [];
+    private static readonly Dictionary<Type, FieldInfo[]> s_overridableFields = [];
 
     /// <summary>
     /// The fields an override may address: exactly what Echo persists, minus engine bookkeeping.
@@ -2137,11 +2137,11 @@ public static partial class PrefabUtility
     private static FieldInfo[] GetOverridableFields(object instance)
     {
         Type type = instance.GetType();
-        if (_overridableFields.TryGetValue(type, out FieldInfo[]? cached)) return cached;
+        if (s_overridableFields.TryGetValue(type, out FieldInfo[]? cached)) return cached;
 
-        FieldInfo[] fields = [.. instance.GetSerializableFields().Where(f => !_skipFields.Contains(f.Name))];
+        FieldInfo[] fields = [.. instance.GetSerializableFields().Where(f => !s_skipFields.Contains(f.Name))];
 
-        _overridableFields[type] = fields;
+        s_overridableFields[type] = fields;
         return fields;
     }
 
@@ -2241,14 +2241,14 @@ public static partial class PrefabUtility
     // compared against, on every frame the inspector drew one. Nothing about a prefab changes without
     // going through a write here or an import, and both drop what they invalidate, so the frame
     // counter was buying nothing the invalidation was not already buying.
-    private static readonly Dictionary<Guid, GameObject> _sourceCache = [];
+    private static readonly Dictionary<Guid, GameObject> s_sourceCache = [];
 
     private static GameObject? GetCachedPrefabSource(Guid prefabGuid)
     {
-        if (_sourceCache.TryGetValue(prefabGuid, out GameObject? cached))
+        if (s_sourceCache.TryGetValue(prefabGuid, out GameObject? cached))
         {
             if (cached.IsValid()) return cached;
-            _sourceCache.Remove(prefabGuid);
+            s_sourceCache.Remove(prefabGuid);
         }
 
         PrefabAsset? prefab = LoadPrefab(prefabGuid);
@@ -2259,7 +2259,7 @@ public static partial class PrefabUtility
         // override paths are written in terms of.
         var source = GameObject.InstantiateDetached(prefab);
         if (source != null)
-            _sourceCache[prefabGuid] = source;
+            s_sourceCache[prefabGuid] = source;
 
         return source;
     }
@@ -2273,7 +2273,7 @@ public static partial class PrefabUtility
     /// objects out to callers: disposing here would turn a reference held across an import into a
     /// dead one, to buy nothing the collector was not already going to do.
     /// </summary>
-    private static void InvalidateSource(Guid prefabGuid) => _sourceCache.Remove(prefabGuid);
+    private static void InvalidateSource(Guid prefabGuid) => s_sourceCache.Remove(prefabGuid);
 
     // A revert, an undo or leaving play mode refills a prefab without an import, which is what normally drops its source.
     internal static void OnAssetReloaded(Asset asset, ReloadReason reason)

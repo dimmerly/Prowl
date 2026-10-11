@@ -85,13 +85,13 @@ public sealed class DerivedStateComp : Component
 /// brought back into line with its prefab, what belongs to the instance rather than the prefab, and
 /// the fact that prefabs do not nest.
 /// </summary>
-public class PrefabTests : EditorTestHarness
+public partial class PrefabTests : EditorTestHarness
 {
     #region Safety
 
     private GameObject Inst(Guid guid) => GameObject.InstantiateDetached(GetPrefab(guid)!)!;
 
-    private void SetSceneCurrent(params GameObject[] instances)
+    private static void SetSceneCurrent(params GameObject[] instances)
     {
         var scene = new Scene();
         foreach (GameObject i in instances) scene.Add(i);
@@ -714,8 +714,11 @@ public class PrefabTests : EditorTestHarness
         // The link itself is observable through IsPrefabInstance, so it stays.
         Assert.Contains("AssetId", text);
         // The overridden value survives as the object's own state, once rather than twice.
-        Assert.Single(System.Text.RegularExpressions.Regex.Matches(text, "12345"));
+        Assert.Single(OverriddenValueSurvived().Matches(text));
     }
+
+    [System.Text.RegularExpressions.GeneratedRegex("12345")]
+    private static partial System.Text.RegularExpressions.Regex OverriddenValueSurvived();
 
     [Fact]
     public void Build_StripReportsNothingToDoOnAPlainScene()
@@ -2760,7 +2763,7 @@ public class PrefabTests : EditorTestHarness
 
     #region Reconcile
 
-    private Scene LoadSceneWith(params GameObject[] objects)
+    private static Scene LoadSceneWith(params GameObject[] objects)
     {
         var scene = new Scene();
         foreach (GameObject o in objects) scene.Add(o);
