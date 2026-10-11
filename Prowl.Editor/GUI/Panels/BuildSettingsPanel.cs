@@ -500,12 +500,11 @@ public class BuildSettingsPanel : DockPanel
 
     /// <summary>A card per pipeline, from the same discovery the build itself uses.</summary>
     public List<BuildPipelineInfo> GetBuildPlatforms()
-        => ProjectBuilder.DiscoverPipelines()
+        => [.. ProjectBuilder.DiscoverPipelines()
             .Select(p => new BuildPipelineInfo
             {
                 BuildPipelineType = p.GetType(),
                 Name = p.DisplayName,
                 Icon = p.Icon,
-            })
-            .ToList();
+            })];
 }

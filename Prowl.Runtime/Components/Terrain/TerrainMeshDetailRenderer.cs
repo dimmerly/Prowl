@@ -234,7 +234,7 @@ internal class TerrainMeshDetailRenderer
                 "The furthest painted cells are left bare. Paint it more sparsely or shorten Detail Distance.");
         }
 
-        build.Instances = instances.ToArray();
+        build.Instances = [.. instances];
         build.Renderables = build.Instances.Length == 0
             ? []
             : BuildRenderables(build.Instances, terrain, proto, mesh, centre, radius,

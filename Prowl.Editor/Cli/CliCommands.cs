@@ -84,31 +84,30 @@ public static class CliCommands
             return;
         }
 
-        Arg[] args = method.GetParameters()
+        Arg[] args = [.. method.GetParameters()
             .Select(p => p.GetCustomAttribute<CliArgAttribute>() is { } a
                 ? new Arg(p, a.Name, a.Description)
-                : new Arg(p, p.Name ?? $"arg{p.Position}", ""))
-            .ToArray();
+                : new Arg(p, p.Name ?? $"arg{p.Position}", ""))];
         s_commands[attr.Name] = new Command(attr.Name, attr.Description, method, args);
     }
 
     internal static void Clear() => s_commands.Clear();
 
-    public static List<CliCommandInfo> Describe() => s_commands.Values
+    public static List<CliCommandInfo> Describe() => [.. s_commands.Values
         .OrderBy(c => c.Name, StringComparer.OrdinalIgnoreCase)
         .Select(c => new CliCommandInfo
         {
             Name = c.Name,
             Description = c.Description,
-            Args = c.Args.Select(a => new CliArgInfo
+            Args = [.. c.Args.Select(a => new CliArgInfo
             {
                 Name = a.Name,
                 Description = a.Description,
                 Type = DescribeType(a.Parameter.ParameterType),
                 Required = !a.Parameter.HasDefaultValue,
                 Default = a.Parameter.HasDefaultValue ? a.Parameter.DefaultValue?.ToString() : null,
-            }).ToList(),
-        }).ToList();
+            })],
+        })];
 
     /// <summary> Binds the request's arguments and invokes the command. Returns what the method returned, which may be a Task still running. </summary>
     public static object? Invoke(CliRunRequest request)

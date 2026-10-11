@@ -614,7 +614,7 @@ public static class SDFGenerator
                     triangles.Add(new Triangle(a, b, c));
                 }
             }
-            return triangles.Count == 0 ? null : new Surface(triangles.ToArray());
+            return triangles.Count == 0 ? null : new Surface([.. triangles]);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

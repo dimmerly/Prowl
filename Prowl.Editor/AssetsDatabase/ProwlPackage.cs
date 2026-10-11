@@ -424,8 +424,6 @@ public static class ProwlPackage
 
         string prefix = string.IsNullOrEmpty(folderRelativePath) ? "" : folderRelativePath.Replace('\\', '/') + "/";
 
-        return db.GetAllAssetPaths()
-            .Where(p => string.IsNullOrEmpty(prefix) || p.StartsWith(prefix, StringComparison.OrdinalIgnoreCase))
-            .ToList();
+        return [.. db.GetAllAssetPaths().Where(p => string.IsNullOrEmpty(prefix) || p.StartsWith(prefix, StringComparison.OrdinalIgnoreCase))];
     }
 }

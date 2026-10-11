@@ -156,7 +156,7 @@ public class AssetWatcher : IDisposable
             }
 
             _pendingEvents.Clear();
-            return coalesced.Values.ToList();
+            return [.. coalesced.Values];
         }
     }
 

@@ -169,7 +169,7 @@ internal static class RoslynScriptBackend
             // 6. Update state. Compilation/trees/refs reflect what we just built; the success snapshot
             //    only advances when the emit actually succeeded (so a repeat of failing source does not
             //    get skipped and silently return the last good image).
-            MetadataReference[] refArray = references.ToArray();
+            MetadataReference[] refArray = [.. references];
             state ??= new UnitState();
             state.Trees = newTrees;
             state.Compilation = compilation;

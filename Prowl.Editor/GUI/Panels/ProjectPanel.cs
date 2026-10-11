@@ -420,7 +420,7 @@ public class ProjectPanel : DockPanel
             bundle.Add(item);
         }
 
-        Guid[] guids = bundle.Select(b => b.Guid).ToArray();
+        Guid[] guids = [.. bundle.Select(b => b.Guid)];
         var paths = bundle.Select(b => b.RelativePath).ToArray();
         return new AssetDragPayload(item.Guid, item.Name, primaryType, guids, paths);
     }
@@ -686,10 +686,9 @@ public class ProjectPanel : DockPanel
         // filesystem every frame.
         EditorAssetBackend? db = EditorAssetBackend.Instance;
         List<EditorAssetBackend.FolderRecord> subDirs = db != null
-            ? db.GetSubFolders(relativePath)
+            ? [.. db.GetSubFolders(relativePath)
                 .Where(f => !f.Name.StartsWith('.'))
-                .OrderBy(f => f.Name, StringComparer.OrdinalIgnoreCase)
-                .ToList()
+                .OrderBy(f => f.Name, StringComparer.OrdinalIgnoreCase)]
             : new List<EditorAssetBackend.FolderRecord>();
 
         nodes.Add(new OrigamiUI.TreeNode
@@ -1540,7 +1539,7 @@ public class ProjectPanel : DockPanel
                 Icon = EditorIcons.Folder, TypeLabel = "Folder",
             });
         }
-        folders = folders.OrderBy(f => f.Name, StringComparer.OrdinalIgnoreCase).ToList();
+        folders = [.. folders.OrderBy(f => f.Name, StringComparer.OrdinalIgnoreCase)];
 
         // Files gathered as units (a top-level file plus any expanded sub-assets) so sorting keeps
         // sub-assets attached to their parent.
@@ -1593,7 +1592,7 @@ public class ProjectPanel : DockPanel
         items.AddRange(VirtualContentItems);
         foreach ((ContentItem item, List<ContentItem> subs) u in sorted) items.Add(u.item);  // subs live on item.Subs, not flattened
 
-        items = items.Where(i => EditorUtils.MatchesSearch(i.Name, _searchText)).ToList();
+        items = [.. items.Where(i => EditorUtils.MatchesSearch(i.Name, _searchText))];
 
         return items;
     }

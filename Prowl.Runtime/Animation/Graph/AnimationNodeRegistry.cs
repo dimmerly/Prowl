@@ -473,7 +473,7 @@ public sealed class GraphCompileContext
             int bone = Skeleton.GetBoneIndex(BoneName(part));
             if (bone != MotionSkeleton.InvalidIndex) chain.Add(bone);
         }
-        return chain.ToArray();
+        return [.. chain];
     }
 
     /// <summary>A clip setting resolved onto the rig being compiled for, or null when it cannot be.</summary>

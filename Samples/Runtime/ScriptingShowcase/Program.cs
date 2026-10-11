@@ -425,7 +425,7 @@ public sealed class ScriptingShowcaseGame : StationGame
         Header(paper, font, "Tags", 1);
         Button(paper, font, "Find everything tagged Enemy", () =>
         {
-            GameObject[] found = SampleScene.AllObjects.Where(go => go.CompareTag("Enemy")).ToArray();
+            GameObject[] found = [.. SampleScene.AllObjects.Where(go => go.CompareTag("Enemy"))];
             foreach (GameObject enemy in found)
                 enemy.GetComponent<Hop>()!.Jump();
             _layerStatus = $"Found {found.Length} objects tagged Enemy";

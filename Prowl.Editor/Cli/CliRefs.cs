@@ -90,7 +90,7 @@ public static class CliRefs
     {
         if (text.Trim() == "@selection")
             return Selection.GetSelected<GameObject>().ToList() is { Count: > 0 } selected ? selected : throw new CliException("Nothing is selected.");
-        return SplitList(text).Select(ResolveGameObject).ToList();
+        return [.. SplitList(text).Select(ResolveGameObject)];
     }
 
     public static IEnumerable<string> SplitList(string text)
@@ -420,7 +420,7 @@ public static class CliRefs
 
     private static void Replace(EchoObject root, List<Segment> segments, EchoObject value, string path)
     {
-        EchoObject parent = Navigate(root, segments.Take(segments.Count - 1).ToList(), path);
+        EchoObject parent = Navigate(root, [.. segments.Take(segments.Count - 1)], path);
         Segment last = segments[^1];
         parent = Unwrap(parent);
 

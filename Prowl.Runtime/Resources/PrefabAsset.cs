@@ -95,7 +95,7 @@ public static class StoredTree
         var found = new List<Asset>();
         var seen = new HashSet<Guid>();
         Collect(tree, found, seen);
-        return found.ToArray();
+        return [.. found];
     }
 
     private static void Collect(EchoObject? tag, List<Asset> found, HashSet<Guid> seen)

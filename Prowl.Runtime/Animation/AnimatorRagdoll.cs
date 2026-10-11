@@ -151,7 +151,7 @@ internal sealed class AnimatorRagdoll
             _partOfBone[index] = parts.Count;
             parts.Add(new Part { Body = body, Bone = bones[bone], BoneIndex = index });
         }
-        _parts = parts.ToArray();
+        _parts = [.. parts];
         for (int i = 0; i < _parts.Length; i++)
             _parts[i].Parent = ParentPart(_skeleton, _partOfBone, _parts[i].BoneIndex);
         for (int i = 0; i < _parts.Length; i++)
@@ -516,7 +516,7 @@ internal sealed class AnimatorRagdoll
         for (int i = 0; i < _parts.Length; i++)
             for (int p = i; p >= 0; p = _parts[p].Parent)
                 if (p == joint) { beyond.Add(i); break; }
-        return beyond.ToArray();
+        return [.. beyond];
     }
 
     // Two parts collide only while they are apart both in the animation and in the simulation.

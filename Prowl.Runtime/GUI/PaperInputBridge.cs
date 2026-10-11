@@ -119,6 +119,6 @@ public static class PaperInputBridge
         map[KeyCode.SuperLeft] = PaperKey.LeftSuper;
         map[KeyCode.SuperRight] = PaperKey.RightSuper;
 
-        return map.Select(kv => (kv.Key, kv.Value)).ToArray();
+        return [.. map.Select(kv => (kv.Key, kv.Value))];
     }
 }

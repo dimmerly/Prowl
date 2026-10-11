@@ -1036,7 +1036,7 @@ public class ThreadingTests : RuntimeTestBase
     [Fact]
     public void ReadingTimeFromAnotherThreadWhileTheLoopSwapsItNeverThrows()
     {
-        TimeData[] saved = Time.TimeStack.ToArray();
+        TimeData[] saved = [.. Time.TimeStack];
         var frame = new TimeData { DeltaTime = 0.5f };
         using var stop = new CancellationTokenSource();
 

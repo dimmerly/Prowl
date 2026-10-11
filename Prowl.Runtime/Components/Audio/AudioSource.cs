@@ -1290,7 +1290,7 @@ public sealed class AudioSource : Component
     public void ClearEffects()
     {
         AssertOwner();
-        AudioEffect[] removed = _effects.ToArray();
+        AudioEffect[] removed = [.. _effects];
         _effects.Clear();
         _chain.Publish(_effects);
 

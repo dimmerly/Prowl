@@ -165,7 +165,7 @@ internal sealed class Release_1_0_Preview5 : MigrationRelease
         if (!tag.TryGet("AssetID", out EchoObject? id)) return tag;
         changed = true;
 
-        List<string> content = tag.GetNames().Where(n => n is not ("AssetID" or "$type" or "$id")).ToList();
+        List<string> content = [.. tag.GetNames().Where(n => n is not ("AssetID" or "$type" or "$id"))];
         if (content.Count == 0 || (content.Count == 1 && content[0] == "Instance"))
         {
             if (Guid.TryParse(id!.StringValue, out Guid guid) && guid != Guid.Empty)

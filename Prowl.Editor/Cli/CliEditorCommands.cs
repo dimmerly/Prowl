@@ -559,7 +559,7 @@ public static class CliEditorCommands
         JsonObject obj;
         try { obj = JsonNode.Parse(values) as JsonObject ?? throw new CliException("--values must be a JSON object of field path to value."); }
         catch (System.Text.Json.JsonException ex) { throw new CliException($"--values is not valid JSON: {ex.Message}"); }
-        return obj.Select(kv => (kv.Key, kv.Value?.ToJsonString() ?? "null")).ToList();
+        return [.. obj.Select(kv => (kv.Key, kv.Value?.ToJsonString() ?? "null"))];
     }
 
     // ================================================================
@@ -1773,7 +1773,7 @@ internal static class CliApi
             var preferred = matches.Where(t => Rank(t) == best).ToList();
             if (best == int.MaxValue || preferred.Count > 1)
                 throw new CliException($"'{typeName}' is ambiguous: {string.Join(", ", matches.Select(t => t.FullName))}. Use the full name.");
-            others = matches.Except(preferred).ToList();
+            others = [.. matches.Except(preferred)];
             matches = preferred;
         }
         Type type = matches[0];
@@ -1915,7 +1915,7 @@ internal static class CliApi
         else if (full && type.Namespace != null) name = type.Namespace + "." + name;
 
         Type[] args = type.GetGenericArguments();
-        if (type.IsNested && type.DeclaringType != null) args = args.Skip(type.DeclaringType.GetGenericArguments().Length).ToArray();
+        if (type.IsNested && type.DeclaringType != null) args = [.. args.Skip(type.DeclaringType.GetGenericArguments().Length)];
         return args.Length > 0 ? $"{name}<{string.Join(", ", args.Select(a => TypeName(a, full: false)))}>" : name;
     }
 

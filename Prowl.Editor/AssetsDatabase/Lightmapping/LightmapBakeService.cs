@@ -315,7 +315,7 @@ public sealed class LightmapBakeService
             for (int i = 0; i < sh.Length; i++) runtimeSH[i] = ConvertSH(sh[i]);
             ProbeTetrahedralizer.Result tet = ProbeTetrahedralizer.Build(_probePositions);
 
-            scene.BakedLighting.ProbePositions = _probePositions.ToArray();
+            scene.BakedLighting.ProbePositions = [.. _probePositions];
             scene.BakedLighting.ProbeSH = runtimeSH;
             scene.BakedLighting.ProbeTetrahedra = tet.Tetrahedra;
             scene.BakedLighting.ProbeTetNeighbours = tet.Neighbours;

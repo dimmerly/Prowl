@@ -584,10 +584,10 @@ public sealed class UIMeshBuilder
 
         // Use ToArray() once per attribute. Engine `Mesh` setters validate length
         // consistency and (re)allocate GPU buffers when sizes change.
-        m.Vertices = _verts.ToArray();
-        m.UV       = _uvs.ToArray();
-        m.Colors32 = _colors.ToArray();
-        m.Indices  = _indices.ToArray();
+        m.Vertices = [.. _verts];
+        m.UV       = [.. _uvs];
+        m.Colors32 = [.. _colors];
+        m.Indices  = [.. _indices];
         m.RecalculateBounds();   // populates `mesh.bounds` (lowercase field)
         m.Upload();
     }

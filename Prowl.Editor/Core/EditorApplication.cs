@@ -225,9 +225,9 @@ public class EditorApplication : Game
         };
         PropertyGridConfig.DrawTypePicker = (paper, id, baseType, currentValue, onChange) =>
         {
-            Type[] types = EditorUtils.GetAllTypes()
+            Type[] types = [.. EditorUtils.GetAllTypes()
                 .Where(t => baseType.IsAssignableFrom(t) && !t.IsAbstract && !t.IsInterface)
-                .Take(20).ToArray();
+                .Take(20)];
 
             if (types.Length == 0) return;
 
@@ -1036,8 +1036,8 @@ public class EditorApplication : Game
                     (Loc.Get("editor.dir_downloads"), EditorIcons.Download, System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "Downloads")),
                     (Loc.Get("editor.dir_user"), EditorIcons.User, Environment.GetFolderPath(Environment.SpecialFolder.UserProfile)),
                 ],
-                GetDrives = () => System.IO.DriveInfo.GetDrives()
-                    .Where(d => d.IsReady).Select(d => (d.Name, d.Name)).ToArray(),
+                GetDrives = () => [.. System.IO.DriveInfo.GetDrives()
+                    .Where(d => d.IsReady).Select(d => (d.Name, d.Name))],
             };
             return s_fileDialogConfig;
         }
@@ -1289,7 +1289,7 @@ public class EditorApplication : Game
             "Noto Sans",           // Linux
         ];
 
-        Scribe.FontFile[] systemFonts = PaperInstance.EnumerateSystemFonts().ToArray();
+        Scribe.FontFile[] systemFonts = [.. PaperInstance.EnumerateSystemFonts()];
         int loaded = 0;
 
         foreach (var family in fallbackFamilies)

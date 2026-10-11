@@ -271,12 +271,12 @@ public class BuildSystemProjectTests : EditorTestHarness
     [Fact]
     public void GenerateManifest_IsByteIdenticalRegardlessOfSetOrder()
     {
-        Guid[] guids = Enumerable.Range(0, 64).Select(_ => Guid.NewGuid()).ToArray();
+        Guid[] guids = [.. Enumerable.Range(0, 64).Select(_ => Guid.NewGuid())];
         var resources = guids.Take(8).Select((g, i) => new ResourceEntry($"Textures/Asset{i}", g, "")).ToList();
         Guid defaultScene = guids[0];
 
         string first = WriteManifest(guids, resources, defaultScene);
-        string second = WriteManifest(guids.Reverse().ToArray(), resources, defaultScene);
+        string second = WriteManifest([.. guids.Reverse()], resources, defaultScene);
 
         Assert.Equal(
             Convert.ToHexString(File.ReadAllBytes(first)),

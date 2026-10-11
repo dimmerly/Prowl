@@ -129,15 +129,15 @@ public static class LightmapUVGenerator
 
         // Vertices first: when the count changes the setter resets the dependent channels, so the
         // assignments below must follow. Index/topology length is unchanged so submeshes stay valid.
-        mesh.Vertices = newVerts.ToArray();
-        if (newNormals != null) mesh.Normals = newNormals.ToArray();
-        if (newUV != null) mesh.UV = newUV.ToArray();
-        mesh.UV2 = newUV2.ToArray();
-        if (newTangents != null) mesh.Tangents = newTangents.ToArray();
-        if (newColors != null) mesh.Colors = newColors.ToArray();
-        else if (newColors32 != null) mesh.Colors32 = newColors32.ToArray();
-        if (newBoneIdx != null) mesh.BoneIndices = newBoneIdx.ToArray();
-        if (newBoneW != null) mesh.BoneWeights = newBoneW.ToArray();
+        mesh.Vertices = [.. newVerts];
+        if (newNormals != null) mesh.Normals = [.. newNormals];
+        if (newUV != null) mesh.UV = [.. newUV];
+        mesh.UV2 = [.. newUV2];
+        if (newTangents != null) mesh.Tangents = [.. newTangents];
+        if (newColors != null) mesh.Colors = [.. newColors];
+        else if (newColors32 != null) mesh.Colors32 = [.. newColors32];
+        if (newBoneIdx != null) mesh.BoneIndices = [.. newBoneIdx];
+        if (newBoneW != null) mesh.BoneWeights = [.. newBoneW];
 
         if (newVerts.Count > ushort.MaxValue)
             mesh.IndexFormat = IndexFormat.UInt32;

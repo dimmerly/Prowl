@@ -351,7 +351,7 @@ public class HierarchyPanel : DockPanel
                     {
                         if (DragDrop.IsDragging) return;
                         var go = (GameObject)n.UserData!;
-                        GameObject[] selected = Selection.GetSelected<GameObject>().ToArray();
+                        GameObject[] selected = [.. Selection.GetSelected<GameObject>()];
                         if (selected.Length > 0 && Selection.IsSelected(go))
                             DragDrop.StartDrag(new GameObjectDragPayload(selected));
                         else
@@ -568,7 +568,7 @@ public class HierarchyPanel : DockPanel
     private void ProcessGODrop(GameObjectDragPayload goDrop, GameObject target, string targetId, DropPosition dropPos, int insertIndex = -1)
     {
         // Captured into a list first: the drag is over by the time the answer comes back.
-        List<GameObject> dragged = ExcludeNestedSelections(goDrop.GameObjects).ToList();
+        List<GameObject> dragged = [.. ExcludeNestedSelections(goDrop.GameObjects)];
         if (PrefabUtility.NeedsBreaking(dragged))
         {
             DragDrop.EndDrag();
@@ -1195,10 +1195,9 @@ public class HierarchyPanel : DockPanel
 
     private List<GameObject> GetDisplayRoots(Scene scene)
     {
-        return scene.RootObjects
+        return [.. scene.RootObjects
             .Where(go => !go.HideFlags.HasFlag(HideFlags.Hide)
-                      && !go.HideFlags.HasFlag(HideFlags.HideAndDontSave))
-            .ToList();
+                      && !go.HideFlags.HasFlag(HideFlags.HideAndDontSave))];
     }
 
     private static Color GetPrefabTextColor(GameObject go)

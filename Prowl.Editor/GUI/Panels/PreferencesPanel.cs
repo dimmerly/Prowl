@@ -71,7 +71,7 @@ public class PreferencesPanel : DockPanel
 
         using (paper.Row("pref_root").Width(width).Height(height).Clip().Enter())
         {
-            (string id, string, string icon)[] cats = Cats.Select(c => (c.id, Loc.Get(c.label), c.icon)).ToArray();
+            (string id, string, string icon)[] cats = [.. Cats.Select(c => (c.id, Loc.Get(c.label), c.icon))];
             float side = EditorGUI.Sidebar(paper, "pref_side", cats, TabId(_tab), c => _tab = ParseTab(c));
             paper.Box("pref_vdiv").Width(1).BackgroundColor(EditorTheme.BorderSoft).IsNotInteractable();
 
@@ -241,7 +241,7 @@ public class PreferencesPanel : DockPanel
     private void DrawThemeRail(Paper paper, Scribe.FontFile font, float w)
     {
         EditorGUI.Sidebar(paper, "pref_theme_rail",
-            ThemeCats.Select(c => (c.id, Loc.Get(c.label), c.icon)).ToArray(),
+            [.. ThemeCats.Select(c => (c.id, Loc.Get(c.label), c.icon))],
             _themeCat, id => _themeCat = id,
             width: w, rowHeight: 34f,
             footer: () =>

@@ -65,7 +65,7 @@ public class EnvironmentPanel : DockPanel
 
         using (paper.Row("env_root").Width(width).Height(height).Clip().Enter())
         {
-            (string id, string, string icon)[] cats = Cats.Select(c => (c.id, Loc.Get(c.label), c.icon)).ToArray();
+            (string id, string, string icon)[] cats = [.. Cats.Select(c => (c.id, Loc.Get(c.label), c.icon))];
             float side = EditorGUI.Sidebar(paper, "env_side", cats, _cat, c => _cat = c);
             paper.Box("env_vdiv").Width(1).BackgroundColor(EditorTheme.BorderSoft).IsNotInteractable();
 

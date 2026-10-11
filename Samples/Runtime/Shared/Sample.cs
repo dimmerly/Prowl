@@ -532,7 +532,7 @@ public sealed class MeshBuilder
 
     public Mesh Build()
     {
-        var mesh = new Mesh { Vertices = _vertices.ToArray(), UV = _uvs.ToArray(), Indices = _indices.ToArray() };
+        var mesh = new Mesh { Vertices = [.. _vertices], UV = [.. _uvs], Indices = [.. _indices] };
         mesh.RecalculateNormals();
         mesh.RecalculateBounds();
         mesh.RecalculateTangents();
@@ -965,7 +965,7 @@ public static class Sample
     // ----------------------------------------------------------------
 
     public static AnimationCurve Curve(params (float time, float value)[] keys)
-        => new(keys.Select(k => new Keyframe(k.time, k.value)).ToArray());
+        => new([.. keys.Select(k => new Keyframe(k.time, k.value))]);
 
     public static Gradient Grad((float time, Color color)[] colors, (float time, float alpha)[] alphas)
         => new(colors.Select(k => new GradientColorKey(k.time, k.color)), alphas.Select(k => new GradientAlphaKey(k.time, k.alpha)));

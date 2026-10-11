@@ -667,7 +667,7 @@ public class Transform : ISerializationCallbackReceiver
     {
         if (GameObject == null) return;
         // Copy because SetParent mutates the Children list.
-        GameObject[] snapshot = GameObject.Children.ToArray();
+        GameObject[] snapshot = [.. GameObject.Children];
         foreach (GameObject child in snapshot)
             child.SetParent(null, worldPositionStays);
     }

@@ -37,7 +37,7 @@ public class SMAAEffectTests
         Shader shader = Shader.LoadDefault(DefaultShader.SMAA);
         Assert.NotNull(shader);
 
-        string[] passNames = shader.Passes.Select(p => p.Name).ToArray();
+        string[] passNames = [.. shader.Passes.Select(p => p.Name)];
         Assert.Equal(new[] { "EdgeDetection", "BlendWeights", "NeighborhoodBlend" }, passNames);
 
         // The `#include "SMAA"` must have been inlined: the blend-weight fragment source should

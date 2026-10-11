@@ -223,7 +223,7 @@ internal static class ClayBackedImporter
 
                 Skin clayskin = clayModel.Skins[n.SkinIndex];
                 // Mirror Clay.Skin -> Prowl Mesh.BindPoses + Mesh.BoneNames (relative paths).
-                mesh.BindPoses = clayskin.InverseBindPoses.ToArray();
+                mesh.BindPoses = [.. clayskin.InverseBindPoses];
                 mesh.BoneNames = new string[clayskin.BoneNodeIndices.Length];
                 var boneTransforms = new Transform[clayskin.BoneNodeIndices.Length];
                 for (int b = 0; b < clayskin.BoneNodeIndices.Length; b++)

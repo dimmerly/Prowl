@@ -414,7 +414,7 @@ public partial class GameObject : EngineObject, ISerializable
     /// </summary>
     /// <param name="otherTag">The tag to search for.</param>
     /// <returns>An array of GameObjects with the given tag.</returns>
-    public GameObject[] FindGameObjectsWithTag(string otherTag) => Scene.IsValid() ? Scene.AllObjects.Where(gameObject => gameObject.CompareTag(otherTag)).ToArray() : [];
+    public GameObject[] FindGameObjectsWithTag(string otherTag) => Scene.IsValid() ? [.. Scene.AllObjects.Where(gameObject => gameObject.CompareTag(otherTag))] : [];
 
 
     /// <summary>

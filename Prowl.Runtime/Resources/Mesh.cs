@@ -2317,11 +2317,11 @@ public static class MeshGeometry
             return mesh;
         }
 
-        mesh.Vertices = positions.ToArray();
-        if (hasNormals) mesh.Normals = normals.ToArray();
-        if (hasTangents) mesh.Tangents = tangents.ToArray();
-        if (hasUV) mesh.UV = uv.ToArray();
-        if (hasUV2) mesh.UV2 = uv2.ToArray();
+        mesh.Vertices = [.. positions];
+        if (hasNormals) mesh.Normals = [.. normals];
+        if (hasTangents) mesh.Tangents = [.. tangents];
+        if (hasUV) mesh.UV = [.. uv];
+        if (hasUV2) mesh.UV2 = [.. uv2];
         if (hasColor)
         {
             if (source != null && source.HasColors32 && !source.HasColors)
@@ -2333,13 +2333,13 @@ public static class MeshGeometry
             }
             else
             {
-                mesh.Colors = colors.ToArray();
+                mesh.Colors = [.. colors];
             }
         }
         if (hasSkin)
         {
-            mesh.BoneIndices = boneIndices.ToArray();
-            mesh.BoneWeights = boneWeights.ToArray();
+            mesh.BoneIndices = [.. boneIndices];
+            mesh.BoneWeights = [.. boneWeights];
         }
         if (frameCounts.Count > 0)
         {
@@ -2354,7 +2354,7 @@ public static class MeshGeometry
                     shapes[s].Frames[f] = new BlendShapeFrame
                     {
                         Weight = shape != null && f < shape.Frames.Length ? shape.Frames[f].Weight : 100f,
-                        DeltaVertices = deltaPositions[layer].ToArray(),
+                        DeltaVertices = [.. deltaPositions[layer]],
                         DeltaNormals = deltaNormals[layer]?.ToArray(),
                         DeltaTangents = deltaTangents[layer]?.ToArray(),
                     };
@@ -2367,7 +2367,7 @@ public static class MeshGeometry
         foreach (List<uint> list in subIndices) all.AddRange(list);
         mesh.IndexFormat = positions.Count > ushort.MaxValue ? IndexFormat.UInt32 : IndexFormat.UInt16;
         mesh.MeshTopology = Topology.Triangles;
-        mesh.Indices = all.ToArray();
+        mesh.Indices = [.. all];
 
         int start = 0;
         mesh.SetSubMeshCount(subMeshCount);

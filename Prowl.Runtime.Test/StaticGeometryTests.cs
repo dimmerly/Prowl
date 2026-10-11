@@ -114,7 +114,7 @@ public class StaticGeometryTests : RuntimeTestBase
         var glass = new Material(Shader.LoadDefault(DefaultShader.StandardTransparent));
         Mesh skinned = Mesh.CreateCube(Float3.One);
         skinned.BoneIndices = new Float4[skinned.VertexCount];
-        skinned.BoneWeights = Enumerable.Repeat(new Float4(1, 0, 0, 0), skinned.VertexCount).ToArray();
+        skinned.BoneWeights = [.. Enumerable.Repeat(new Float4(1, 0, 0, 0), skinned.VertexCount)];
 
         AddRenderer(scene, Float3.Zero, isStatic: false);
         AddRenderer(scene, Float3.Zero, glass);

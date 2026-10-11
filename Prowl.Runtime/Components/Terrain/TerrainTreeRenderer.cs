@@ -85,7 +85,7 @@ internal class TerrainTreeRenderer
             // One instanced draw per submesh so trees with multi-material meshes render each
             // submesh with its own material.
             int subMeshCount = mesh.SubMeshCount;
-            InstanceData[] instanceArr = _instanceDataList.ToArray();
+            InstanceData[] instanceArr = [.. _instanceDataList];
             Float3 sortPos = (bmin + bmax) * 0.5f;
             AABB worldBounds = new AABB(bmin, bmax);
 

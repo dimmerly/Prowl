@@ -118,7 +118,7 @@ internal sealed class ClipEventTrack
 
         // Painting happens after this frame's clicks have run, and a click can add or delete an event, so
         // the strip paints the events as they were laid out rather than the live list.
-        ClipEvent[] shown = events.ConvertAll(e => e.Clone()).ToArray();
+        ClipEvent[] shown = [.. events.ConvertAll(e => e.Clone())];
         using (track.Enter())
             paper.Draw((canvas, rect) => Paint(canvas, rect, font, shown, placed, playhead));
 

@@ -327,8 +327,8 @@ public static class Input
     /// </summary>
     public static bool AnyKey => Current.IsAnyKeyDown;
 
-    private static readonly KeyCode[] s_anyKeys = Enum.GetValues<KeyCode>().Distinct().Where(k => k != KeyCode.Unknown).ToArray();
-    private static readonly MouseButton[] s_anyMouseButtons = Enum.GetValues<MouseButton>().Where(b => b != MouseButton.Unknown).ToArray();
+    private static readonly KeyCode[] s_anyKeys = [.. Enum.GetValues<KeyCode>().Distinct().Where(k => k != KeyCode.Unknown)];
+    private static readonly MouseButton[] s_anyMouseButtons = [.. Enum.GetValues<MouseButton>().Where(b => b != MouseButton.Unknown)];
     private static readonly GamepadButton[] s_anyGamepadButtons = Enum.GetValues<GamepadButton>();
 
     /// <summary>

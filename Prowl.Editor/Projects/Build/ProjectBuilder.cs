@@ -246,10 +246,9 @@ public static class ProjectBuilder
         }
 
         // Type enumeration promises no order, and the first entry is what a fresh project defaults to.
-        return found
+        return [.. found
             .OrderBy(p => p.DisplayName, StringComparer.Ordinal)
-            .ThenBy(p => p.GetType().FullName, StringComparer.Ordinal)
-            .ToList();
+            .ThenBy(p => p.GetType().FullName, StringComparer.Ordinal)];
     }
 
     /// <summary>The pipeline the Build window selected, or the desktop one when nothing is stored.</summary>

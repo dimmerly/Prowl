@@ -205,9 +205,7 @@ public class MaterialAssetEditor : AssetImporterEditor
 
         _shaderPickerOwner = owner;
         _shaderMenu.Reset();
-        _shaderEntries = (EditorAssetBackend.Instance?.GetShaderCatalog() ?? [])
-            .Select(s => MenuTreeEntry.FromPath(s.MenuPath, s.IsBuiltIn ? EditorIcons.Cube : EditorIcons.FileCode, s.Guid))
-            .ToList();
+        _shaderEntries = [.. (EditorAssetBackend.Instance?.GetShaderCatalog() ?? []).Select(s => MenuTreeEntry.FromPath(s.MenuPath, s.IsBuiltIn ? EditorIcons.Cube : EditorIcons.FileCode, s.Guid))];
     }
 
     private static void CloseShaderPicker() => _shaderPickerOwner = Guid.Empty;

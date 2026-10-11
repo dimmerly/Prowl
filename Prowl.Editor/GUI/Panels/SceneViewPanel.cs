@@ -989,8 +989,8 @@ public class SceneViewPanel : DockPanel
         if (dragging && !_wasGizmoActive)
         {
             _gizmoHasMoved = false;
-            _gizmoSelection = selectedObjects.ToArray();
-            _gizmoTargets = GameObjectClipboard.FilterToRoots(_gizmoSelection).ToArray();
+            _gizmoSelection = [.. selectedObjects];
+            _gizmoTargets = [.. GameObjectClipboard.FilterToRoots(_gizmoSelection)];
             Undo.BeginContinuous(_gizmoTargets, "Transform");
         }
         _wasGizmoActive = dragging;
@@ -1025,11 +1025,11 @@ public class SceneViewPanel : DockPanel
                         }
                         if (_gizmoSelection is { } selection)
                         {
-                            _gizmoSelection = selection.Select(FindCopy).ToArray();
+                            _gizmoSelection = [.. selection.Select(FindCopy)];
                             Selection.Clear();
                             foreach (GameObject go in _gizmoSelection) Selection.AddToSelection(go);
                         }
-                        _gizmoTargets = targets = copies.ToArray();
+                        _gizmoTargets = targets = [.. copies];
                         _gizmoDuplicated = true;
                     }
                     // Copies are recorded at release; their final pose belongs to creation.

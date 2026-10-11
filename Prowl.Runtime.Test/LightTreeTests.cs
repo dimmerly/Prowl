@@ -117,7 +117,7 @@ public class LightTreeTests
     [Fact]
     public void CoincidentLights_StillBuild()
     {
-        Vector4[] lights = Enumerable.Repeat(new Vector4(1, 2, 3, 4), 500).ToArray();
+        Vector4[] lights = [.. Enumerable.Repeat(new Vector4(1, 2, 3, 4), 500)];
         foreach (bool morton in new[] { false, true })
         {
             var tree = new LightTreeBuilder();
@@ -190,9 +190,9 @@ public class ForwardLightTreesTests
     private static float LengthSquared(Float3 v) => Float3.Dot(v, v);
 
     // Bits, since an empty child's lanes are NaN
-    private static int[] NodeBits(ForwardLightTrees trees) => Enumerable.Range(0, 64)
+    private static int[] NodeBits(ForwardLightTrees trees) => [.. Enumerable.Range(0, 64)
         .SelectMany(i => new[] { trees.NodeTable[i].X, trees.NodeTable[i].Y, trees.NodeTable[i].Z, trees.NodeTable[i].W })
-        .Select(BitConverter.SingleToInt32Bits).ToArray();
+        .Select(BitConverter.SingleToInt32Bits)];
 
     private static Float3 PositionOf(ForwardLightTrees trees, int record)
     {
@@ -327,7 +327,7 @@ public class ForwardLightTreesTests
 
         for (int i = 0; i < 50; i++)
             trees.Track(lights[i].Light, lights[i].Data, i % 2 != 0);
-        (StubLight Light, ForwardLightData Data)[] kept = lights.Skip(25).ToArray();
+        (StubLight Light, ForwardLightData Data)[] kept = [.. lights.Skip(25)];
         trees.RemoveUnseen(new HashSet<IRenderableLight>(kept.Select(l => (IRenderableLight)l.Light), ReferenceEqualityComparer.Instance));
         trees.BeginFrame(null);
         trees.Prepare();

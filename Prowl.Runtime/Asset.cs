@@ -234,6 +234,6 @@ internal static class AssetContent
             foreach (FieldInfo field in current.GetFields(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.DeclaredOnly))
                 if (!typeof(Delegate).IsAssignableFrom(field.FieldType) && !field.IsDefined(typeof(NotContentAttribute)))
                     fields.Add(field);
-        return fields.ToArray();
+        return [.. fields];
     }
 }

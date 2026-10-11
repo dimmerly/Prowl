@@ -102,7 +102,7 @@ public class ProjectSettingsPanel : DockPanel
 
         using (paper.Row("ps_root").Size(width, height).Clip().Enter())
         {
-            float side = EditorGUI.Sidebar(paper, "ps_side", cats.ToArray(), _selectedIndex.ToString(),
+            float side = EditorGUI.Sidebar(paper, "ps_side", [.. cats], _selectedIndex.ToString(),
                 c => { if (int.TryParse(c, out int idx)) _selectedIndex = idx; });
             paper.Box("ps_vdiv").Width(1).BackgroundColor(EditorTheme.BorderSoft).IsNotInteractable();
 

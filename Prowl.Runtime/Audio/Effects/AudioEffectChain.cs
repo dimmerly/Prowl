@@ -47,7 +47,7 @@ internal sealed class AudioEffectChain
                 chain.Add(effect);
         }
 
-        _chain = chain.ToArray();
+        _chain = [.. chain];
     }
 
     /// <summary>

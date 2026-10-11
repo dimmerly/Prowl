@@ -143,7 +143,7 @@ public class GameObjectCloneTests : RuntimeTestBase
 
         GameObject clone = ObjectCopy.Clone(source);
 
-        List<Marker> markers = clone.GetComponents<Marker>().ToList();
+        List<Marker> markers = [.. clone.GetComponents<Marker>()];
         Assert.Equal(2, markers.Count);
         Assert.Equal(1, markers[0].Number);
         Assert.Equal(2, markers[1].Number);

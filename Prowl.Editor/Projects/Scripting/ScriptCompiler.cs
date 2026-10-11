@@ -179,7 +179,7 @@ public static class ScriptCompiler
     public static List<string> GetEditorAssemblyPaths(Project project)
     {
         (List<CompilationUnit>? units, string _) = BuildPlan(project);
-        return units.Where(u => u.Scripts.Count > 0).Select(u => u.OutputDllPath).ToList();
+        return [.. units.Where(u => u.Scripts.Count > 0).Select(u => u.OutputDllPath)];
     }
 
     /// <summary>A user assembly destined for a player build.</summary>

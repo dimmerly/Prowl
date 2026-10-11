@@ -113,8 +113,8 @@ public class SDFGeneratorTests(ITestOutputHelper output)
     {
         Mesh left = Mesh.CreateCube(new Float3(1f, 2f, 1f));
         Mesh right = Mesh.CreateCube(new Float3(1f, 0.6f, 2f));
-        Float3[] vertices = left.Vertices!.Select(v => v + new Float3(-1f, 0f, 0f))
-            .Concat(right.Vertices!.Select(v => v + new Float3(1f, -0.5f, 0.3f))).ToArray();
+        Float3[] vertices = [.. left.Vertices!.Select(v => v + new Float3(-1f, 0f, 0f))
+, .. right.Vertices!.Select(v => v + new Float3(1f, -0.5f, 0.3f))];
         var indices = left.Indices!.Concat(right.Indices!.Select(i => i + (uint)left.Vertices!.Length)).ToArray();
         var both = new Mesh { Vertices = vertices, Indices = indices };
 
@@ -130,7 +130,7 @@ public class SDFGeneratorTests(ITestOutputHelper output)
     public void FlippedTriangles_ChangeNothing()
     {
         Mesh cube = Mesh.CreateCube(Float3.One);
-        uint[] indices = cube.Indices!.ToArray();
+        uint[] indices = [.. cube.Indices!];
         for (int i = 0; i + 2 < indices.Length; i += 6)
             (indices[i + 1], indices[i + 2]) = (indices[i + 2], indices[i + 1]);
         Check(new Mesh { Vertices = cube.Vertices, Indices = indices }, InsideUnitCube, 24, 1.2f);
@@ -148,7 +148,7 @@ public class SDFGeneratorTests(ITestOutputHelper output)
             bool top = v[indices[i]].Y > 0.49f && v[indices[i + 1]].Y > 0.49f && v[indices[i + 2]].Y > 0.49f;
             if (!top) kept.AddRange([indices[i], indices[i + 1], indices[i + 2]]);
         }
-        var open = new Mesh { Vertices = v, Indices = kept.ToArray() };
+        var open = new Mesh { Vertices = v, Indices = [.. kept] };
 
         SDFGenerator.Surface surface = SDFGenerator.Surface.From(open)!;
         int res = 24;

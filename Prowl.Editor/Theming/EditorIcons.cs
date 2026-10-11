@@ -28,14 +28,13 @@ public class EditorIcons
         var random = new Random(seed);
 
         // Use Reflection to get all public static fields
-        FieldInfo[] fields = typeof(EditorIcons).GetFields(BindingFlags.Public | BindingFlags.Static)
+        FieldInfo[] fields = [.. typeof(EditorIcons).GetFields(BindingFlags.Public | BindingFlags.Static)
             // Filter only unicode character fields (icons)
             .Where(field =>
                 field.FieldType == typeof(string) &&
                 !field.Name.StartsWith("FontIcon") &&
                 !field.Name.StartsWith("IconMin") &&
-                !field.Name.StartsWith("IconMax"))
-            .ToArray();
+                !field.Name.StartsWith("IconMax"))];
 
         if (fields.Length == 0)
         {

@@ -190,7 +190,7 @@ public class ReflectionProbe : Component
             EchoObject faces = value["Faces"];
             var list = new List<byte[]>(faces.Count);
             for (int i = 0; i < faces.Count; i++) list.Add(faces[i].ByteArrayValue);
-            Faces = list.ToArray();
+            Faces = [.. list];
         }
     }
 }

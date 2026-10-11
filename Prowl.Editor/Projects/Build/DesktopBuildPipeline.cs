@@ -815,7 +815,7 @@ public class DesktopBuildPipeline : BuildPipeline
             TargetId = plan.Profile.TargetId,
             BuildDateUtcTicks = BuildTimestampTicks(),
             DefaultScene = plan.DefaultScene.ToString(),
-            AssemblyLoadOrder = plan.Assemblies.Select(a => a.Name).ToList(),
+            AssemblyLoadOrder = [.. plan.Assemblies.Select(a => a.Name)],
             Packaging = request.Packaging,
             WindowWidth = plan.Profile.WindowWidth,
             WindowHeight = plan.Profile.WindowHeight,
@@ -1195,7 +1195,7 @@ public class DesktopBuildPipeline : BuildPipeline
     private static void BundleMacApp(string outputDir, string executableName, string productName, string companyName, string version)
     {
         // Snapshot BEFORE creating the bundle folder so it never sweeps up itself.
-        List<string> existingEntries = Directory.GetFileSystemEntries(outputDir).ToList();
+        List<string> existingEntries = [.. Directory.GetFileSystemEntries(outputDir)];
 
         string appDir = Path.Combine(outputDir, MacBundleName(productName));
         string macOsDir = Path.Combine(appDir, "Contents", "MacOS");

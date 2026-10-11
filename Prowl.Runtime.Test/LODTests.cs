@@ -130,14 +130,14 @@ public class LODTests
         }
 
         var mesh = new Mesh { Name = "SkinnedGrid" };
-        mesh.Vertices = positions.ToArray();
-        mesh.Normals = normals.ToArray();
-        mesh.UV = uvs.ToArray();
-        mesh.BoneIndices = boneIndices.ToArray();
-        mesh.BoneWeights = boneWeights.ToArray();
+        mesh.Vertices = [.. positions];
+        mesh.Normals = [.. normals];
+        mesh.UV = [.. uvs];
+        mesh.BoneIndices = [.. boneIndices];
+        mesh.BoneWeights = [.. boneWeights];
         mesh.BindPoses = [Float4x4.Identity, Float4x4.Identity];
         mesh.BoneNames = ["Root", "Tip"];
-        mesh.BlendShapes = [new BlendShape { Name = "Bend", Frames = [new BlendShapeFrame { Weight = 100f, DeltaVertices = offsets.ToArray() }] }];
+        mesh.BlendShapes = [new BlendShape { Name = "Bend", Frames = [new BlendShapeFrame { Weight = 100f, DeltaVertices = [.. offsets] }] }];
         mesh.Indices = [.. left, .. right];
         mesh.SetSubMeshCount(2);
         mesh.SetSubMesh(0, new SubMeshDescriptor(0, left.Count));
@@ -295,11 +295,11 @@ public class LODTests
         }
 
         var mesh = new Mesh { Name = "Card" };
-        mesh.Vertices = positions.ToArray();
-        mesh.Normals = normals.ToArray();
-        mesh.BoneIndices = Enumerable.Repeat(new Float4(0, 1, 0, 0), positions.Count).ToArray();
-        mesh.BoneWeights = weights.ToArray();
-        mesh.Indices = indices.ToArray();
+        mesh.Vertices = [.. positions];
+        mesh.Normals = [.. normals];
+        mesh.BoneIndices = [.. Enumerable.Repeat(new Float4(0, 1, 0, 0), positions.Count)];
+        mesh.BoneWeights = [.. weights];
+        mesh.Indices = [.. indices];
         mesh.RecalculateBounds();
         return mesh;
     }

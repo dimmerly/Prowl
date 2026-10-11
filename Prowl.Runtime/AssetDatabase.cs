@@ -73,7 +73,7 @@ public static class AssetDatabase
         lock (s_mountLock)
         {
             if (Array.IndexOf(s_mounts, source) < 0) return;
-            s_mounts = s_mounts.Where(mount => mount != source).ToArray();
+            s_mounts = [.. s_mounts.Where(mount => mount != source)];
         }
         RefreshAfterMountChange();
     }
@@ -388,7 +388,7 @@ public static class AssetDatabase
 
     /// <summary>Loads a set of assets, and by default everything they depend on, holding them all until the group is disposed.</summary>
     public static AssetGroup LoadGroup(IEnumerable<Asset> assets, bool withDependencies = true)
-        => new(withDependencies ? WithDependencies(assets) : assets.Distinct().ToList());
+        => new(withDependencies ? WithDependencies(assets) : [.. assets.Distinct()]);
 
     /// <summary>Loads a scene's stored data and everything it depends on, without instantiating it.</summary>
     public static AssetGroup Preload(SceneAsset scene) => LoadGroup([scene]);
@@ -1131,7 +1131,7 @@ public sealed class AssetWalker
                 if (field.IsDefined(typeof(HeldStaticAttribute)))
                     fields.Add(field);
         }
-        return fields.ToArray();
+        return [.. fields];
     }
 
     [UnconditionalSuppressMessage("Trimming", "IL2070:DynamicallyAccessedMembers",
@@ -1153,7 +1153,7 @@ public sealed class AssetWalker
                     fields.Add(Getter(field));
 
         Kind kind = collection && ElementCanHold(type) ? Kind.Enumerable : typeof(Asset).IsAssignableFrom(type) ? Kind.Asset : Kind.Object;
-        return new Plan { Kind = kind, Fields = fields.ToArray() };
+        return new Plan { Kind = kind, Fields = [.. fields] };
     }
 
     // A compiled read is many times faster than reflection. Types a hot reload can unload keep the reflection read,

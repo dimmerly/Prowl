@@ -201,7 +201,7 @@ public class PlayerAssetBackend : AssetBackend, IDisposable
         var guids = new List<Guid>(list.List.Count);
         foreach (EchoObject item in list.List)
             if (Guid.TryParse(item.StringValue, out Guid guid)) guids.Add(guid);
-        return guids.ToArray();
+        return [.. guids];
     }
 
     public void Dispose()

@@ -161,7 +161,7 @@ internal static class MixerParameters
             }
         }
 
-        FieldInfo[] result = fields.ToArray();
+        FieldInfo[] result = [.. fields];
         s_parameters[type] = result;
         return result;
     }

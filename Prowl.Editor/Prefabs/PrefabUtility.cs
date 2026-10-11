@@ -334,7 +334,7 @@ public static partial class PrefabUtility
                     // Put the overrides back on the live instance before refreshing, since the
                     // refresh is what re-applies them to the rebuilt objects.
                     GameObject? live = Undo.FindGO(rootId);
-                    if (live.IsValid()) live!.PrefabOverrides = oldOverrides.ToList();
+                    if (live.IsValid()) live!.PrefabOverrides = [.. oldOverrides];
                     RefreshAllInstances(prefabGuid);
                 },
                 redo: () =>
@@ -1089,10 +1089,9 @@ public static partial class PrefabUtility
         root = prefabRoot.IsValid() ? prefabRoot! : instanceGO;
 
         string prefix = GetOverridePath(instanceGO, component, "");
-        return root.PrefabOverrides
+        return [.. root.PrefabOverrides
             .Where(o => o.Path.StartsWith(prefix, StringComparison.Ordinal))
-            .Select(o => o.Path)
-            .ToList();
+            .Select(o => o.Path)];
     }
 
     /// <summary>Whether this component of an instance has anything overridden on it.</summary>
@@ -1114,13 +1113,13 @@ public static partial class PrefabUtility
 
         // Captured either side and restored wholesale, so one undo step covers every member reverted
         // and the order the records run in does not matter.
-        List<PropertyOverride> before = root.PrefabOverrides.ToList();
+        List<PropertyOverride> before = [.. root.PrefabOverrides];
         EchoObject? beforeState = Serializer.Serialize(component.GetType(), component, ComponentValueContext(component));
 
         foreach (string path in paths)
             RevertSingleOverrideCore(instanceGO, path, recordUndo: false);
 
-        List<PropertyOverride> after = root.PrefabOverrides.ToList();
+        List<PropertyOverride> after = [.. root.PrefabOverrides];
         EchoObject? afterState = Serializer.Serialize(component.GetType(), component, ComponentValueContext(component));
 
         Guid rootId = root.Identifier;
@@ -1137,7 +1136,7 @@ public static partial class PrefabUtility
             GameObject? live = Undo.FindGO(rootId);
             if (live.IsNotValid()) return;
 
-            live!.PrefabOverrides = overrides.ToList();
+            live!.PrefabOverrides = [.. overrides];
 
             Component? target = live.GetComponentInChildrenByIdentifier(componentId);
             if (target.IsNotValid() || state == null) return;
@@ -1156,7 +1155,7 @@ public static partial class PrefabUtility
         if (!GuardEditablePrefab(instanceGO.PrefabAssetId, "apply a component")) return;
 
         List<string> paths = PathsFor(instanceGO, component, out GameObject root);
-        List<PropertyOverride> overrides = root.PrefabOverrides.Where(o => paths.Contains(o.Path)).ToList();
+        List<PropertyOverride> overrides = [.. root.PrefabOverrides.Where(o => paths.Contains(o.Path))];
         if (overrides.Count == 0) return;
 
         ApplySelectedOverridesCore(instanceGO, overrides, recordUndo: true);
@@ -1253,11 +1252,10 @@ public static partial class PrefabUtility
         foreach (PropertyOverride ov in root.PrefabOverrides)
             described.Add(Describe(root, source, ov));
 
-        return described
+        return [.. described
             .OrderBy(d => d.ObjectName, StringComparer.OrdinalIgnoreCase)
             .ThenBy(d => d.ComponentName, StringComparer.OrdinalIgnoreCase)
-            .ThenBy(d => d.MemberName, StringComparer.OrdinalIgnoreCase)
-            .ToList();
+            .ThenBy(d => d.MemberName, StringComparer.OrdinalIgnoreCase)];
     }
 
     private static OverrideDescription Describe(GameObject root, GameObject? source, PropertyOverride ov)
@@ -1544,7 +1542,7 @@ public static partial class PrefabUtility
     /// </summary>
     private static void SettleStrayPrefabContent(Guid prefabGuid, Scene scene)
     {
-        List<GameObject> belonging = scene.AllObjects.Where(go => go.IsValid() && go.PrefabAssetId == prefabGuid).ToList();
+        List<GameObject> belonging = [.. scene.AllObjects.Where(go => go.IsValid() && go.PrefabAssetId == prefabGuid)];
 
         // If nothing here stands for the prefab's root object then the asset was rewritten with fresh
         // identities, and none of these objects can be judged against it.
@@ -2141,9 +2139,7 @@ public static partial class PrefabUtility
         Type type = instance.GetType();
         if (_overridableFields.TryGetValue(type, out FieldInfo[]? cached)) return cached;
 
-        FieldInfo[] fields = instance.GetSerializableFields()
-            .Where(f => !_skipFields.Contains(f.Name))
-            .ToArray();
+        FieldInfo[] fields = [.. instance.GetSerializableFields().Where(f => !_skipFields.Contains(f.Name))];
 
         _overridableFields[type] = fields;
         return fields;
@@ -2358,9 +2354,7 @@ public static partial class PrefabUtility
 
             // The components too: each records where it came from on itself, and a link without those
             // addresses nothing.
-            (Component c, Guid SourceIdentifier)[] components = go.GetComponents<Component>()
-                .Select(c => (c, c.SourceIdentifier))
-                .ToArray();
+            (Component c, Guid SourceIdentifier)[] components = [.. go.GetComponents<Component>().Select(c => (c, c.SourceIdentifier))];
 
             captured.Add(new PrefabState(go, go.PrefabLink?.Clone(), components));
 

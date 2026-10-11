@@ -77,16 +77,16 @@ public static partial class PrefabUtility
     {
         if (scene.IsNotValid() || prefabGuid == Guid.Empty) return [];
 
-        List<GameObject> belonging = scene.AllObjects.Where(go => go.PrefabAssetId == prefabGuid).ToList();
-        List<GameObject> roots = belonging.Where(IsInstanceRoot).ToList();
+        List<GameObject> belonging = [.. scene.AllObjects.Where(go => go.PrefabAssetId == prefabGuid)];
+        List<GameObject> roots = [.. belonging.Where(IsInstanceRoot)];
         if (roots.Count > 0) return roots;
 
         // Nothing in the scene stands for the prefab's root object. That means the asset was rewritten
         // with fresh identities, by a hand edit or by an importer that does not keep them, so no object
         // can be matched to it any more. Falling back to the shape of the hierarchy at least brings the
         // instances up to date, at the cost of rebuilding what is under them.
-        return belonging.Where(go => go.Parent == null || !go.Parent.IsValid()
-            || go.Parent.PrefabAssetId != prefabGuid).ToList();
+        return [.. belonging.Where(go => go.Parent == null || !go.Parent.IsValid()
+            || go.Parent.PrefabAssetId != prefabGuid)];
     }
 
     /// <summary>
@@ -139,7 +139,7 @@ public static partial class PrefabUtility
     public static List<PropertyOverride> GetPropertyModifications(GameObject go)
     {
         GameObject? instanceRoot = GetPrefabInstanceRoot(go);
-        return instanceRoot == null ? [] : instanceRoot.PrefabOverrides.ToList();
+        return instanceRoot == null ? [] : [.. instanceRoot.PrefabOverrides];
     }
 
     /// <summary>
@@ -155,8 +155,8 @@ public static partial class PrefabUtility
         if (instanceRoot == null) return;
         if (!GuardNotPlaying("change prefab overrides")) return;
 
-        List<PropertyOverride> before = instanceRoot.PrefabOverrides.ToList();
-        List<PropertyOverride> after = modifications.ToList();
+        List<PropertyOverride> before = [.. instanceRoot.PrefabOverrides];
+        List<PropertyOverride> after = [.. modifications];
         Guid rootId = instanceRoot.Identifier;
 
         Apply(after);
@@ -172,7 +172,7 @@ public static partial class PrefabUtility
             GameObject? live = Undo.FindGO(rootId);
             if (live.IsNotValid()) return;
 
-            live!.PrefabOverrides = overrides.ToList();
+            live!.PrefabOverrides = [.. overrides];
             RefreshOneInstance(live);
         }
     }

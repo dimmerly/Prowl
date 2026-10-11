@@ -387,7 +387,7 @@ internal sealed unsafe class OpenXRInput
             }
 
             if (accepted.Count == 0) continue;
-            ActionSuggestedBinding[] all = accepted.ToArray();
+            ActionSuggestedBinding[] all = [.. accepted];
             fixed (ActionSuggestedBinding* ptr = all)
                 OpenXRSession.Check(Suggest(profile, ptr, all.Length), "xrSuggestInteractionProfileBindings");
         }

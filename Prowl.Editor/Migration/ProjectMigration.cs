@@ -24,11 +24,10 @@ public static class ProjectMigration
     private static MigrationRelease[]? s_releases;
 
     /// <summary> Every release with migration steps, oldest first. </summary>
-    public static IReadOnlyList<MigrationRelease> Releases => s_releases ??= typeof(MigrationRelease).Assembly.GetTypes()
+    public static IReadOnlyList<MigrationRelease> Releases => s_releases ??= [.. typeof(MigrationRelease).Assembly.GetTypes()
         .Where(t => t.IsSubclassOf(typeof(MigrationRelease)) && !t.IsAbstract)
         .Select(t => (MigrationRelease)Activator.CreateInstance(t)!)
-        .OrderBy(r => r.Version)
-        .ToArray();
+        .OrderBy(r => r.Version)];
 
     /// <summary> How many steps the release for this exact version has, zero when it has none. </summary>
     public static int StepCount(EngineVersion version) => Releases.FirstOrDefault(r => r.Version == version)?.Steps.Length ?? 0;

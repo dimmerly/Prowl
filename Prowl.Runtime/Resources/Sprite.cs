@@ -422,8 +422,8 @@ public static class SpriteMeshTracer
                 indices.Add((ushort)(baseIdx + i));
         }
 
-        result.Vertices = verts.ToArray();
-        result.Indices = indices.ToArray();
+        result.Vertices = [.. verts];
+        result.Indices = [.. indices];
         return result;
     }
 
@@ -496,7 +496,7 @@ public static class SpriteMeshTracer
             }
 
             if (loop.Count >= 3)
-                contours.Add(loop.ToArray());
+                contours.Add([.. loop]);
         }
 
         return contours;
@@ -557,7 +557,7 @@ public static class SpriteMeshTracer
         for (int i = 0; i < n; i++)
             if (keep[i]) outPts.Add(ring[i]);
 
-        return outPts.Count >= 3 ? outPts.ToArray() : points;
+        return outPts.Count >= 3 ? [.. outPts] : points;
     }
 
     private static void SimplifySegment(Float2[] pts, int first, int last, float tol, bool[] keep)

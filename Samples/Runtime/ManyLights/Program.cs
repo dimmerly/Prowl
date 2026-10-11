@@ -76,7 +76,7 @@ public sealed class ManyLightsGame : StationGame
         PlanSlots();
 
         _bulb = Mesh.CreateSphere(0.08f, 4, 6);
-        _bulbMaterials = Palette.Select(c => Unlit(new Color(c.R * 6f, c.G * 6f, c.B * 6f, 1f))).ToArray();
+        _bulbMaterials = [.. Palette.Select(c => Unlit(new Color(c.R * 6f, c.G * 6f, c.B * 6f, 1f)))];
         SetLightCount(DefaultLights);
     }
 

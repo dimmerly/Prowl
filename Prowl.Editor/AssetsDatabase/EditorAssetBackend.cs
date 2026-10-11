@@ -626,7 +626,7 @@ public class EditorAssetBackend : AssetBackend
         if (succeeded.Count > 0)
         {
             IndexVersion++;
-            OnAssetsImported?.Invoke(succeeded.ToArray());
+            OnAssetsImported?.Invoke([.. succeeded]);
             ReclaimMemory();
         }
     }
@@ -780,11 +780,11 @@ public class EditorAssetBackend : AssetBackend
                         Name = sub.Name,
                         Type = sub.GetType(),
                         // Persisted so the graph can be re-seeded on next startup (see Initialize()).
-                        Dependencies = subCtx.Dependencies.ToArray(),
-                        SoftDependencies = subCtx.SoftDependencies.ToArray(),
+                        Dependencies = [.. subCtx.Dependencies],
+                        SoftDependencies = [.. subCtx.SoftDependencies],
                     });
                 }
-                entry.SubAssets = subEntries.ToArray();
+                entry.SubAssets = [.. subEntries];
             }
             else
             {
@@ -824,9 +824,9 @@ public class EditorAssetBackend : AssetBackend
             entry.NeedsReimport = false;
 
             // Hard and soft edges both ship. Editor edges (prefab links) only drive refreshes.
-            entry.Dependencies = mainCtx.Dependencies.ToArray();
-            entry.SoftDependencies = mainCtx.SoftDependencies.ToArray();
-            entry.EditorDependencies = ctx.EditorDependencies.ToArray();
+            entry.Dependencies = [.. mainCtx.Dependencies];
+            entry.SoftDependencies = [.. mainCtx.SoftDependencies];
+            entry.EditorDependencies = [.. ctx.EditorDependencies];
             _dependencies.SetDependencies(entry.Guid, ShippedEdges(mainCtx));
 
             // Every object already standing for this file takes the new content, so whatever holds one keeps it.
@@ -1009,7 +1009,7 @@ public class EditorAssetBackend : AssetBackend
 
     /// <summary> Get the relative path of every tracked asset. </summary>
     public string[] GetAllAssetPaths()
-        => _pathToGuid.Keys.ToArray();
+        => [.. _pathToGuid.Keys];
 
     // ================================================================
     //  Shader menu paths
@@ -1881,8 +1881,8 @@ public class EditorAssetBackend : AssetBackend
         {
             MetadataCache.Save(_project.MetadataDbPath, _guidToEntry.Values);
             IndexVersion++;
-            if (imported.Count > 0) OnAssetsImported?.Invoke(imported.ToArray());
-            if (deleted.Count > 0) OnAssetsDeleted?.Invoke(deleted.ToArray());
+            if (imported.Count > 0) OnAssetsImported?.Invoke([.. imported]);
+            if (deleted.Count > 0) OnAssetsDeleted?.Invoke([.. deleted]);
         }
     }
 

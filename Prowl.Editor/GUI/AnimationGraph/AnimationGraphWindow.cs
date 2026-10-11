@@ -516,7 +516,7 @@ public class AnimationGraphWindow : DockPanel
     {
         var path = new List<BreadcrumbItem>();
 
-        Guid[] parents = _parents.ToArray();
+        Guid[] parents = [.. _parents];
         for (int i = parents.Length - 1; i >= 0; i--)
         {
             AnimationGraph? graph = AssetDatabase.Get<AnimationGraph>(parents[i]);

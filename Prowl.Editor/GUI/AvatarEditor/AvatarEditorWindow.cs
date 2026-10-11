@@ -590,7 +590,7 @@ public class AvatarEditorWindow : DockPanel
                 || name.Contains("Ring") || name.Contains("Little"))
                 bones.Add((HumanBodyBone)i);
         }
-        return bones.ToArray();
+        return [.. bones];
     }
 
     /// <summary>"LeftUpperArm" reads better as "Left Upper Arm".</summary>

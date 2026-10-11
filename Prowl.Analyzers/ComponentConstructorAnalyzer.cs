@@ -88,9 +88,7 @@ public sealed class ComponentConstructorAnalyzer : DiagnosticAnalyzer
         // Component itself declares one, and it is the base every component chains through.
         if (SymbolEqualityComparer.Default.Equals(type, component)) return;
 
-        IMethodSymbol[] declared = type.InstanceConstructors
-            .Where(c => !c.IsImplicitlyDeclared)
-            .ToArray();
+        IMethodSymbol[] declared = [.. type.InstanceConstructors.Where(c => !c.IsImplicitlyDeclared)];
 
         foreach (IMethodSymbol? constructor in declared)
         {
@@ -124,9 +122,7 @@ public sealed class ComponentConstructorAnalyzer : DiagnosticAnalyzer
         // A static field is not part of constructing the component, so it is nothing to do with this.
         if (InitializedSymbols(initializer).Any(symbol => symbol.IsStatic)) return;
 
-        IInvocationOperation[] calls = initializer.Value.Descendants().Prepend(initializer.Value)
-            .OfType<IInvocationOperation>()
-            .ToArray();
+        IInvocationOperation[] calls = [.. initializer.Value.Descendants().Prepend(initializer.Value).OfType<IInvocationOperation>()];
 
         // A delegate cannot be defended: nothing has run yet to assign it, so it is still null.
         // Anything else reaching into game or engine code is suspect but may well be pure.

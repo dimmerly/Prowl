@@ -61,7 +61,7 @@ public class ShaderCatalogTests : EditorTestHarness
         List<EditorAssetBackend.ShaderMenuEntry> entries = Assets.GetShaderCatalog(includeHidden: true);
         var sorted = entries.Select(e => e.MenuPath).OrderBy(p => p, StringComparer.OrdinalIgnoreCase).ToList();
 
-        Assert.Equal(sorted, entries.Select(e => e.MenuPath).ToList());
+        Assert.Equal(sorted, [.. entries.Select(e => e.MenuPath)]);
     }
 
     [Fact]

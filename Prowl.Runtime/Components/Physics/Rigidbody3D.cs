@@ -623,7 +623,7 @@ public sealed class Rigidbody3D : Component
         if (!IsSimulated) return;
 
         // Take the colliders off while the body is still alive, so their shapes are removed cleanly.
-        Collider[] colliders = GetComponentsInChildren<Collider>().ToArray();
+        Collider[] colliders = [.. GetComponentsInChildren<Collider>()];
         foreach (Collider collider in colliders)
             if (collider.IsValid()) collider.Detach();
 

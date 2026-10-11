@@ -22,7 +22,7 @@ public class DefaultInputHandler : IInputHandler, IDisposable
 
     // Enum.GetValues builds a new array on every call, and these are walked every frame.
     // Distinct drops aliases like D0, which would otherwise update the same key twice a frame and hide its press.
-    private static readonly KeyCode[] s_keyCodes = Enum.GetValues<KeyCode>().Distinct().ToArray();
+    private static readonly KeyCode[] s_keyCodes = [.. Enum.GetValues<KeyCode>().Distinct()];
     private static readonly MouseButton[] s_mouseButtons = Enum.GetValues<MouseButton>();
     private static readonly GamepadButton[] s_gamepadButtons = Enum.GetValues<GamepadButton>();
     public IReadOnlyList<IJoystick> Joysticks => Context.Joysticks;

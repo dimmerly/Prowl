@@ -39,10 +39,9 @@ public static class PackageExportDialog
     /// <summary> Opens the export overlay dialog with the given asset paths, resolving dependencies and rebuilding the file tree. </summary>
     public static void Open(List<string> selectedAssetPaths)
     {
-        _explicitPaths = selectedAssetPaths
+        _explicitPaths = [.. selectedAssetPaths
             .Distinct(StringComparer.OrdinalIgnoreCase)
-            .OrderBy(p => p, StringComparer.OrdinalIgnoreCase)
-            .ToList();
+            .OrderBy(p => p, StringComparer.OrdinalIgnoreCase)];
         _includeDependencies = true;
         _lastIncludeDependencies = true;
         _includeProjectSettings = false;
@@ -111,10 +110,9 @@ public static class PackageExportDialog
         if (_includeDependencies)
             allPaths.AddRange(_dependencyPaths);
 
-        allPaths = allPaths
+        allPaths = [.. allPaths
             .Distinct(StringComparer.OrdinalIgnoreCase)
-            .OrderBy(p => p, StringComparer.OrdinalIgnoreCase)
-            .ToList();
+            .OrderBy(p => p, StringComparer.OrdinalIgnoreCase)];
 
         // Reset enabled: all on by default
         _enabledPaths = new HashSet<string>(allPaths, StringComparer.OrdinalIgnoreCase);
@@ -228,10 +226,9 @@ public static class PackageExportDialog
         if (_includeDependencies)
             allPaths.AddRange(_dependencyPaths);
 
-        allPaths = allPaths
+        allPaths = [.. allPaths
             .Distinct(StringComparer.OrdinalIgnoreCase)
-            .OrderBy(p => p, StringComparer.OrdinalIgnoreCase)
-            .ToList();
+            .OrderBy(p => p, StringComparer.OrdinalIgnoreCase)];
 
         // Collect all unique folder paths and file entries
         var folderSet = new HashSet<string>(StringComparer.OrdinalIgnoreCase);

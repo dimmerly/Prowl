@@ -377,7 +377,7 @@ public static class GameObjectInspector
             int selLayer = layerIndices.IndexOf(go.LayerIndex);
             if (selLayer < 0) selLayer = 0;
             string layerVal = selLayer >= 0 && selLayer < layerNames.Count ? layerNames[selLayer] : "";
-            SelDropdown(paper, font, "gi_layer", Loc.Get("inspector.layer"), layerVal, layerNames.ToArray(), selLayer,
+            SelDropdown(paper, font, "gi_layer", Loc.Get("inspector.layer"), layerVal, [.. layerNames], selLayer,
                 v =>
                 {
                     if (v >= 0 && v < layerIndices.Count)

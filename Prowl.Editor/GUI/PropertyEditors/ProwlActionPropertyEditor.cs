@@ -136,7 +136,7 @@ public class ProwlActionPropertyEditor : PropertyEditor
                 if (owner != null)
                 {
                     List<MemberOption> members = BuildMembers(owner);
-                    string[] names = members.Select(m => m.Display).ToArray();
+                    string[] names = [.. members.Select(m => m.Display)];
                     int sel = members.FindIndex(m => ReferenceEquals(m.Target, call.Target) && m.Name == call.Member);
 
                     EditorGUI.Row(paper, $"{id}_fn", "Function", () =>

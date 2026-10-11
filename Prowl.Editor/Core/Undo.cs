@@ -787,7 +787,7 @@ public static class Undo
         }
         else if (propertyRecords.Count > 0)
         {
-            PushStep(new UndoStep("Modify Properties", propertyRecords.Cast<UndoRecord>().ToList(), isCoalescable: true));
+            PushStep(new UndoStep("Modify Properties", [.. propertyRecords.Cast<UndoRecord>()], isCoalescable: true));
         }
     }
 

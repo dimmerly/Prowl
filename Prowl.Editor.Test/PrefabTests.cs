@@ -4827,7 +4827,7 @@ public class PrefabTests : EditorTestHarness
             src => src.AddComponent<VecComp>().V = new Float3(1, 0, 0));
         PrefabUtility.RefreshAllInstances(guid);
 
-        List<VecComp> vecs = instance.GetComponents<VecComp>().ToList();
+        List<VecComp> vecs = [.. instance.GetComponents<VecComp>()];
         Assert.Equal(2, vecs.Count);
         Assert.Equal(9.0, added.V.X, 3);                                    // the instance's own is untouched
         Assert.Equal(Guid.Empty, instance.GetComponentSourceIdentifier(added));
