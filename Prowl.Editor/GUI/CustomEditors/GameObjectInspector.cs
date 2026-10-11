@@ -986,7 +986,7 @@ public static class GameObjectInspector
         // On an instance, what this component is supposed to be is whatever the prefab says, so Reset
         // means go back to that. Everywhere else there is nothing to go back to but the values a new
         // one of its type would have.
-        bool provided = go.IsPrefabInstance && go.GetComponentSourceIdentifier(comp) != Guid.Empty;
+        bool provided = go.IsPrefabInstance && comp.SourceIdentifier != Guid.Empty;
 
         builder.Item(Loc.Get(provided ? "inspector.revert_component" : "inspector.reset"), () =>
         {

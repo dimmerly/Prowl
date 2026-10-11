@@ -175,11 +175,6 @@ public partial class GameObject : EngineObject, ISerializable
     /// <summary>Overrides without creating a link for an object that has none.</summary>
     public bool HasPrefabOverrides => _prefabLink is { Overrides.Count: > 0 };
 
-    /// <summary>The identifier of the component in the prefab that <paramref name="component"/> came
-    /// from, or Guid.Empty when it is not part of the prefab. The component itself holds this; the
-    /// method stays because callers read it while walking an object's components.</summary>
-    public static Guid GetComponentSourceIdentifier(Component component) => component.SourceIdentifier;
-
     /// <summary>Clear all prefab tracking data on this GameObject and its components.</summary>
     internal void ClearPrefabData()
     {
@@ -784,7 +779,7 @@ public partial class GameObject : EngineObject, ISerializable
     {
         ArgumentNullException.ThrowIfNull(component, nameof(component));
 
-        if (!Application.IsPlaying && IsPrefabInstance && GetComponentSourceIdentifier(component) != Guid.Empty)
+        if (!Application.IsPlaying && IsPrefabInstance && component.SourceIdentifier != Guid.Empty)
         {
             Debug.LogWarning($"[Prefab] '{component.GetType().Name}' on '{Name}' comes from a prefab, " +
                 "so removing it means breaking the connection to that prefab first.");

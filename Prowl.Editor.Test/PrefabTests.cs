@@ -1141,7 +1141,7 @@ public class PrefabTests : EditorTestHarness
         // An override path names its object and its component by these, so an instance without them
         // addresses nothing in the prefab it was just made from.
         Assert.NotEqual(Guid.Empty, root.SourceIdentifier);
-        Assert.NotEqual(Guid.Empty, root.GetComponentSourceIdentifier(comp));
+        Assert.NotEqual(Guid.Empty, comp.SourceIdentifier);
         Assert.NotEqual(Guid.Empty, child.SourceIdentifier);
     }
 
@@ -1239,7 +1239,7 @@ public class PrefabTests : EditorTestHarness
         // no longer say which prefab object any of it came from.
         Assert.True(root.IsPrefabInstance);
         Assert.Equal(stampedSource, root.SourceIdentifier);
-        Assert.NotEqual(Guid.Empty, root.GetComponentSourceIdentifier(comp));
+        Assert.NotEqual(Guid.Empty, comp.SourceIdentifier);
 
         comp.A = 42;
         PrefabUtility.RecordComponentOverrides(root, comp);
@@ -2540,7 +2540,7 @@ public class PrefabTests : EditorTestHarness
         {
             EchoObject entry = written.First(e => e.Get("$type")?.StringValue?.Contains(live.GetType().Name) == true);
             Assert.Equal(Guid.Parse(entry.Get("_identifier")!.StringValue),
-                instance.GetComponentSourceIdentifier(live));
+                live.SourceIdentifier);
         }
     }
 
@@ -2911,7 +2911,7 @@ public class PrefabTests : EditorTestHarness
         Assert.NotNull(added);
         Assert.Equal(1.0, added!.V.X, 3);
         // It belongs to the prefab, so it is tracked as such rather than looking instance-added.
-        Assert.NotEqual(Guid.Empty, instance.GetComponentSourceIdentifier(added));
+        Assert.NotEqual(Guid.Empty, added.SourceIdentifier);
     }
 
     [Fact]
@@ -3268,7 +3268,7 @@ public class PrefabTests : EditorTestHarness
         GameObject dupe = GameObjectClipboard.Duplicate([instance])[0];
 
         OverrideComp component = dupe.GetComponent<OverrideComp>()!;
-        Assert.NotEqual(Guid.Empty, dupe.GetComponentSourceIdentifier(component));
+        Assert.NotEqual(Guid.Empty, component.SourceIdentifier);
         Assert.NotEqual(Guid.Empty, dupe.Children[0].SourceIdentifier);
     }
 
@@ -3357,7 +3357,7 @@ public class PrefabTests : EditorTestHarness
 
         OverrideComp component = added.GetComponent<OverrideComp>()!;
         Assert.Equal(7, component.A);
-        Assert.NotEqual(Guid.Empty, added.GetComponentSourceIdentifier(component));
+        Assert.NotEqual(Guid.Empty, component.SourceIdentifier);
         Assert.Single(added.GetComponents<Component>().Where(c => c.SourceIdentifier != Guid.Empty));
     }
 
@@ -3537,9 +3537,9 @@ public class PrefabTests : EditorTestHarness
 
         (LinkComp added, GameObject mine) = AddOwnContent(instance);
 
-        Assert.Equal(Guid.Empty, instance.GetComponentSourceIdentifier(added));
+        Assert.Equal(Guid.Empty, added.SourceIdentifier);
         Assert.Equal(Guid.Empty, mine.SourceIdentifier);
-        Assert.NotEqual(Guid.Empty, instance.GetComponentSourceIdentifier(instance.GetComponent<OverrideComp>()!));
+        Assert.NotEqual(Guid.Empty, instance.GetComponent<OverrideComp>()!.SourceIdentifier);
         Assert.NotEqual(Guid.Empty, instance.Children.Single(c => c.Name == "Child").SourceIdentifier);
     }
 
@@ -3558,7 +3558,7 @@ public class PrefabTests : EditorTestHarness
         Assert.Contains(live.Children, c => c.Name == "Mine");
 
         // The classification has to survive too, or the next refresh treats them as prefab content.
-        Assert.Equal(Guid.Empty, live.GetComponentSourceIdentifier(live.GetComponent<LinkComp>()!));
+        Assert.Equal(Guid.Empty, live.GetComponent<LinkComp>()!.SourceIdentifier);
         Assert.Equal(Guid.Empty, live.Children.Single(c => c.Name == "Mine").SourceIdentifier);
     }
 
@@ -3632,13 +3632,13 @@ public class PrefabTests : EditorTestHarness
 
         Guid childSource = instance.Children[0].SourceIdentifier;
         OverrideComp component = instance.GetComponent<OverrideComp>()!;
-        Guid componentSource = instance.GetComponentSourceIdentifier(component);
+        Guid componentSource = component.SourceIdentifier;
 
         EditPrefabSource(guid, "Stable.prefab", src => src.GetComponent<OverrideComp>()!.A = 5);
         PrefabUtility.RefreshAllInstances(guid);
 
         Assert.Equal(childSource, instance.Children[0].SourceIdentifier);
-        Assert.Equal(componentSource, instance.GetComponentSourceIdentifier(component));
+        Assert.Equal(componentSource, component.SourceIdentifier);
     }
 
     [Fact]
@@ -4715,14 +4715,14 @@ public class PrefabTests : EditorTestHarness
         LoadSceneWith(instance);
 
         GameObject before = Inst(guid);
-        Guid beforeId = before.GetComponentSourceIdentifier(before.GetComponent<OverrideComp>()!);
+        Guid beforeId = before.GetComponent<OverrideComp>()!.SourceIdentifier;
 
         instance.GetComponent<OverrideComp>()!.A = 5;
         PrefabUtility.ReconcileInstance(instance);
         PrefabUtility.ApplyOverrides(instance);
 
         GameObject after = Inst(guid);
-        Guid afterId = after.GetComponentSourceIdentifier(after.GetComponent<OverrideComp>()!);
+        Guid afterId = after.GetComponent<OverrideComp>()!.SourceIdentifier;
 
         Assert.Equal(beforeId, afterId);
     }
@@ -4830,9 +4830,9 @@ public class PrefabTests : EditorTestHarness
         List<VecComp> vecs = [.. instance.GetComponents<VecComp>()];
         Assert.Equal(2, vecs.Count);
         Assert.Equal(9.0, added.V.X, 3);                                    // the instance's own is untouched
-        Assert.Equal(Guid.Empty, instance.GetComponentSourceIdentifier(added));
+        Assert.Equal(Guid.Empty, added.SourceIdentifier);
         Assert.Contains(vecs, v => Math.Abs(v.V.X - 1.0) < 0.001            // and the prefab's arrived beside it
-            && instance.GetComponentSourceIdentifier(v) != Guid.Empty);
+            && v.SourceIdentifier != Guid.Empty);
     }
 
     [Fact]
@@ -5024,7 +5024,7 @@ public class PrefabTests : EditorTestHarness
             Assert.Equal(childSource, restored.Children[0].GetComponent<OverrideComp>()!.SourceIdentifier);
 
             // Which is what keeps an override addressable across the round trip.
-            Assert.Equal(rootSource, restored.GetComponentSourceIdentifier(restored.GetComponent<OverrideComp>()!));
+            Assert.Equal(rootSource, restored.GetComponent<OverrideComp>()!.SourceIdentifier);
         }
         finally { reloaded.Dispose(); }
     }

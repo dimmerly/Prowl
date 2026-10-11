@@ -110,7 +110,7 @@ public static partial class PrefabUtility
 
         foreach (Component component in go.GetComponents<Component>())
         {
-            if (go.GetComponentSourceIdentifier(component) != componentSourceId) continue;
+            if (component.SourceIdentifier != componentSourceId) continue;
 
             target = component;
             return;

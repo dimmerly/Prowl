@@ -688,11 +688,11 @@ public static partial class PrefabUtility
 
         foreach (Component sourceComponent in source.GetComponents<Component>())
         {
-            Guid sourceId = source.GetComponentSourceIdentifier(sourceComponent);
+            Guid sourceId = sourceComponent.SourceIdentifier;
             if (sourceId == Guid.Empty) continue;
 
             Component? match = instance.GetComponents<Component>()
-                .FirstOrDefault(c => instance.GetComponentSourceIdentifier(c) == sourceId);
+                .FirstOrDefault(c => c.SourceIdentifier == sourceId);
             if (match.IsValid()) map.Link(sourceComponent, match!);
         }
 
@@ -829,7 +829,7 @@ public static partial class PrefabUtility
         {
             foreach (Component component in owner.GetComponents<Component>())
             {
-                if (owner.GetComponentSourceIdentifier(component) != Guid.Empty) continue;
+                if (component.SourceIdentifier != Guid.Empty) continue;
 
                 found.Add(new AdditionDescription
                 {
@@ -864,7 +864,7 @@ public static partial class PrefabUtility
         static bool Any(GameObject owner)
         {
             foreach (Component component in owner.GetComponents<Component>())
-                if (owner.GetComponentSourceIdentifier(component) == Guid.Empty) return true;
+                if (component.SourceIdentifier == Guid.Empty) return true;
 
             foreach (GameObject child in owner.Children)
                 if (!IsProvidedByPrefab(child) || Any(child)) return true;
@@ -1729,11 +1729,11 @@ public static partial class PrefabUtility
         // copy, whose fallback is "whatever sits at the same index", and that eats instance additions.
         foreach (Component sourceComponent in source.GetComponents<Component>())
         {
-            Guid sourceId = source.GetComponentSourceIdentifier(sourceComponent);
+            Guid sourceId = sourceComponent.SourceIdentifier;
             if (sourceId == Guid.Empty) continue;
 
             Component? match = instance.GetComponents<Component>()
-                .FirstOrDefault(c => instance.GetComponentSourceIdentifier(c) == sourceId);
+                .FirstOrDefault(c => c.SourceIdentifier == sourceId);
 
             // Same identity, different type: the prefab replaced what sits there, so the old one goes
             // rather than being kept beside a second component answering to the same identity.
@@ -1777,14 +1777,14 @@ public static partial class PrefabUtility
 
         PrefabLink link = instance.EnsurePrefabLink();
         var sourceComponentIds = source.GetComponents<Component>()
-            .Select(c => source.GetComponentSourceIdentifier(c))
+            .Select(c => c.SourceIdentifier)
             .ToHashSet();
 
         foreach (Component component in instance.GetComponents<Component>().ToList())
         {
             if (component.IsNotValid()) continue;
 
-            Guid sourceId = instance.GetComponentSourceIdentifier(component);
+            Guid sourceId = component.SourceIdentifier;
             if (sourceId == Guid.Empty || sourceComponentIds.Contains(sourceId)) continue;
 
             instance.RemoveComponentInternal(component);
@@ -1829,7 +1829,7 @@ public static partial class PrefabUtility
 
         foreach (Component sourceComponent in source.GetComponents<Component>())
         {
-            Guid sourceId = source.GetComponentSourceIdentifier(sourceComponent);
+            Guid sourceId = sourceComponent.SourceIdentifier;
             if (sourceId == Guid.Empty) continue;
             if (!map.TryGetTarget(sourceComponent, out object? paired) || paired is not Component component)
                 continue;
@@ -1955,7 +1955,7 @@ public static partial class PrefabUtility
 
     /// <summary>The override path for a field on a component of a prefab instance.</summary>
     public static string GetOverridePath(GameObject instanceGO, Component component, string fieldPath)
-        => $"{instanceGO.SourceIdentifier}{PathSeparator}{instanceGO.GetComponentSourceIdentifier(component)}{PathSeparator}{fieldPath}";
+        => $"{instanceGO.SourceIdentifier}{PathSeparator}{component.SourceIdentifier}{PathSeparator}{fieldPath}";
 
     /// <summary>The override path for a field on the GameObject itself.</summary>
     public static string GetOverridePath(GameObject instanceGO, string fieldName)
@@ -2446,10 +2446,10 @@ public static partial class PrefabUtility
         foreach (Component copyComponent in copy.GetComponents<Component>().ToList())
         {
             Component? original = instance.GetComponentByIdentifier(copyComponent.Identifier);
-            Guid sourceId = original.IsValid() ? instance.GetComponentSourceIdentifier(original!) : Guid.Empty;
+            Guid sourceId = original.IsValid() ? original!.SourceIdentifier : Guid.Empty;
 
             bool provided = sourceId != Guid.Empty
-                && sourceComponents.Any(c => source.GetComponentSourceIdentifier(c) == sourceId);
+                && sourceComponents.Any(c => c.SourceIdentifier == sourceId);
 
             if (!provided)
                 copy.RemoveComponentInternal(copyComponent);

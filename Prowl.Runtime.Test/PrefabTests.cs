@@ -120,7 +120,7 @@ public class PrefabTests : RuntimeTestBase
             // What tells a prefab-provided component from one the instance adds later. Position is
             // not used, so reordering cannot reclassify anything.
             Component provided = instance.GetComponents<Component>().First();
-            Assert.NotEqual(Guid.Empty, instance.GetComponentSourceIdentifier(provided));
+            Assert.NotEqual(Guid.Empty, provided.SourceIdentifier);
             Assert.NotEqual(Guid.Empty, instance.Children[0].SourceIdentifier);
         }
         finally { Application.IsEditor = wasEditor; }
@@ -149,7 +149,7 @@ public class PrefabTests : RuntimeTestBase
             Assert.Equal(assetId, instance.Children[0].PrefabAssetId);
 
             Component provided = instance.GetComponents<Component>().First();
-            Assert.Equal(Guid.Empty, instance.GetComponentSourceIdentifier(provided));
+            Assert.Equal(Guid.Empty, provided.SourceIdentifier);
             Assert.Equal(Guid.Empty, instance.Children[0].SourceIdentifier);
         }
         finally { Application.IsEditor = wasEditor; }
@@ -187,7 +187,7 @@ public class PrefabTests : RuntimeTestBase
         GameObject instance = GameObject.InstantiateDetached(prefab)!;
         Component added = instance.AddComponent<SerializableComponent>();
 
-        Assert.Equal(Guid.Empty, instance.GetComponentSourceIdentifier(added));
+        Assert.Equal(Guid.Empty, added.SourceIdentifier);
     }
 
     [Fact]

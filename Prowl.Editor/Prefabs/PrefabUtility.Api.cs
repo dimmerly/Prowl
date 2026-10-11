@@ -118,14 +118,14 @@ public static partial class PrefabUtility
         GameObject owner = component.GameObject;
         if (owner.IsNotValid()) return null;
 
-        Guid sourceId = owner.GetComponentSourceIdentifier(component);
+        Guid sourceId = component.SourceIdentifier;
         if (sourceId == Guid.Empty) return null;
 
         GameObject? sourceObject = GetCorrespondingObjectFromSource(owner);
         if (sourceObject == null) return null;
 
         return sourceObject.GetComponents<Component>()
-            .FirstOrDefault(c => sourceObject.GetComponentSourceIdentifier(c) == sourceId);
+            .FirstOrDefault(c => c.SourceIdentifier == sourceId);
     }
 
     #endregion
