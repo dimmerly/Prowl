@@ -178,7 +178,7 @@ public partial class GameObject : EngineObject, ISerializable
     /// <summary>The identifier of the component in the prefab that <paramref name="component"/> came
     /// from, or Guid.Empty when it is not part of the prefab. The component itself holds this; the
     /// method stays because callers read it while walking an object's components.</summary>
-    public Guid GetComponentSourceIdentifier(Component component) => component.SourceIdentifier;
+    public static Guid GetComponentSourceIdentifier(Component component) => component.SourceIdentifier;
 
     /// <summary>Clear all prefab tracking data on this GameObject and its components.</summary>
     internal void ClearPrefabData()
@@ -1209,7 +1209,7 @@ public partial class GameObject : EngineObject, ISerializable
         Debug.Log(sb.ToString());
     }
 
-    private void PrintRecursive(GameObject obj, System.Text.StringBuilder sb, string indent, bool isRoot)
+    private static void PrintRecursive(GameObject obj, System.Text.StringBuilder sb, string indent, bool isRoot)
     {
         // Print GameObject info
         string enabledIndicator = obj.Enabled ? "" : " [DISABLED]";
@@ -1269,7 +1269,7 @@ public partial class GameObject : EngineObject, ISerializable
         }
     }
 
-    private string FormatVector(Float3 v)
+    private static string FormatVector(Float3 v)
     {
         return $"({v.X:F2}, {v.Y:F2}, {v.Z:F2})";
     }
@@ -1523,7 +1523,7 @@ public partial class GameObject : EngineObject, ISerializable
             if (!ctx.idToObject.ContainsKey(refId) && typeTag != null
                 && !string.IsNullOrWhiteSpace(typeTag.StringValue) && RuntimeUtils.FindType(typeTag.StringValue) != null)
             {
-                try { Serializer.Deserialize(node, typeof(object), ctx); return; }
+                try { Serializer.Deserialize<object>(node, ctx); return; }
                 catch (Exception ex) { Debug.LogWarning($"Failed to recover a reference trapped in a missing component on '{Name}': {ex.Message}"); }
             }
         }
@@ -1552,7 +1552,7 @@ public partial class GameObject : EngineObject, ISerializable
         // Recovered when its type exists again, otherwise it stays missing so the data survives another save.
         Component? component = missing!.ComponentData != null ? TryRecoverComponent(missing.ComponentData) : null;
         if (component.IsValid())
-            component!.LoadedIdentifier = missing.LoadedIdentifier;
+            component!._loadedIdentifier = missing._loadedIdentifier;
         else
             component = missing;
 

@@ -28,7 +28,7 @@ public abstract class Component : EngineObject, ISerializationCallbackReceiver
 
     // The identifier stored in the data this component was last loaded from. A scene load restores it.
     [SerializeIgnore]
-    internal Guid LoadedIdentifier;
+    internal Guid _loadedIdentifier;
 
     // On the component rather than in a table keyed by component identifier: identifiers are handed out
     // fresh by every load, so such a table goes stale wherever a copy forgets to rewrite its keys.
@@ -615,7 +615,7 @@ public abstract class Component : EngineObject, ISerializationCallbackReceiver
         // A fresh identity every time: a copy of a component must not come back wearing the
         // original's identifier. Which source component this came from is recorded on the owning
         // GameObject's prefab link instead.
-        LoadedIdentifier = _identifier;
+        _loadedIdentifier = _identifier;
         if (!GameObject.PreservingIdentifiers)
             _identifier = Guid.NewGuid();
 

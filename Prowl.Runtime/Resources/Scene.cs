@@ -1046,8 +1046,8 @@ public class Scene : EngineObject, ISerializationCallbackReceiver
                 obj.SetIdentifier(obj.LoadedIdentifier);
 
             foreach (Component comp in obj.GetComponents<Component>())
-                if (comp.LoadedIdentifier != Guid.Empty)
-                    comp.Identifier = comp.LoadedIdentifier;
+                if (comp._loadedIdentifier != Guid.Empty)
+                    comp.Identifier = comp._loadedIdentifier;
         }
 
         foreach (GameObject obj in serializeObj)

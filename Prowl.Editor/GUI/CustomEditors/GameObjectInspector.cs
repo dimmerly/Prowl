@@ -58,9 +58,9 @@ public static class GameObjectInspector
     }
 
     // Sections (Transform + each component) remember their collapsed state here; absent = expanded.
-    private static readonly HashSet<string> _collapsedSections = [];
-    private static bool IsExpanded(string id) => !_collapsedSections.Contains(id);
-    private static void ToggleSection(string id) { if (!_collapsedSections.Add(id)) _collapsedSections.Remove(id); }
+    private static readonly HashSet<string> s_collapsedSections = [];
+    private static bool IsExpanded(string id) => !s_collapsedSections.Contains(id);
+    private static void ToggleSection(string id) { if (!s_collapsedSections.Add(id)) s_collapsedSections.Remove(id); }
 
     private static bool SectionHeader(Paper paper, Prowl.Scribe.FontFile font, string id,
         string glyph, string title, Color titleColor, Action? trailing = null, Action? onDragStart = null)
@@ -472,7 +472,7 @@ public static class GameObjectInspector
         t.LocalScale = Float3.One;
     }
 
-    private static readonly (Float2 min, Float2 max)[,] AnchorPresets = new (Float2, Float2)[4, 4]
+    private static readonly (Float2 min, Float2 max)[,] s_anchorPresets = new (Float2, Float2)[4, 4]
     {
         // Row 0: top fixed (TopLeft, TopCenter, TopRight) + horizontal-stretch top
         { (new(0f, 1f), new(0f, 1f)),     (new(0.5f, 1f), new(0.5f, 1f)),     (new(1f, 1f), new(1f, 1f)),     (new(0f, 1f), new(1f, 1f)) },
@@ -502,13 +502,13 @@ public static class GameObjectInspector
         // Top block: 4x4 anchor preset grid on the left, position + size fields filling the rest.
         using (paper.Row("gi_rt_top").Height(UnitValue.Auto).Gap(8).Margin(4, 4, 2, 2).Enter())
         {
-            DrawAnchorPresetGrid(paper, font, go, rt);
+            DrawAnchorPresetGrid(paper, go, rt);
 
             using (paper.Column("gi_rt_top_right").Width(UnitValue.Stretch()).Height(UnitValue.Auto).Enter())
             {
-                DrawPositionRow(paper, font, go, rt, t);
-                DrawSizeRow(paper, font, go, rt);
-                DrawPivotRow(paper, font, go, rt);
+                DrawPositionRow(paper, go, rt, t);
+                DrawSizeRow(paper, go, rt);
+                DrawPivotRow(paper, go, rt);
             }
         }
 
@@ -570,7 +570,7 @@ public static class GameObjectInspector
     /// Renders the 4x4 anchor preset grid. The active preset is highlighted; clicking a cell
     /// applies its (AnchorMin, AnchorMax) to the RectTransform.
     /// </summary>
-    private static void DrawAnchorPresetGrid(Paper paper, Prowl.Scribe.FontFile font, GameObject go, RectTransform rt)
+    private static void DrawAnchorPresetGrid(Paper paper, GameObject go, RectTransform rt)
     {
         const float CellSize = 22f;
         const float CellGap = 2f;
@@ -593,9 +593,9 @@ public static class GameObjectInspector
                 {
                     for (int col = 0; col < 4; col++)
                     {
-                        (Float2 min, Float2 max) preset = AnchorPresets[row, col];
+                        (Float2 min, Float2 max) = s_anchorPresets[row, col];
                         DrawAnchorPresetCell(paper, $"gi_rt_acell_{row}_{col}", go, rt,
-                            preset.min, preset.max, CellSize);
+                            min, max, CellSize);
                     }
                 }
             }
@@ -706,9 +706,9 @@ public static class GameObjectInspector
     }
 
     // Nebula axis colors, matching Origami's vector fields (X red, Y green, Z blue).
-    private static readonly System.Drawing.Color AxisXColor = System.Drawing.Color.FromArgb(255, 251, 113, 133);
-    private static readonly System.Drawing.Color AxisYColor = System.Drawing.Color.FromArgb(255, 74, 222, 128);
-    private static readonly System.Drawing.Color AxisZColor = System.Drawing.Color.FromArgb(255, 96, 165, 250);
+    private static readonly System.Drawing.Color s_axisXColor = System.Drawing.Color.FromArgb(255, 251, 113, 133);
+    private static readonly System.Drawing.Color s_axisYColor = System.Drawing.Color.FromArgb(255, 74, 222, 128);
+    private static readonly System.Drawing.Color s_axisZColor = System.Drawing.Color.FromArgb(255, 96, 165, 250);
 
     private static bool AxisStretched(float anchorMin, float anchorMax) => MathF.Abs(anchorMin - anchorMax) > 1e-5f;
 
@@ -762,7 +762,7 @@ public static class GameObjectInspector
     /// Position row. Each axis is contextual: a fixed axis shows Pos X / Pos Y, a
     /// stretched axis shows the edge inset (Left / Top) instead. Z always comes from Transform.LocalPosition.
     /// </summary>
-    private static void DrawPositionRow(Paper paper, Prowl.Scribe.FontFile font, GameObject go, RectTransform rt, Transform t)
+    private static void DrawPositionRow(Paper paper, GameObject go, RectTransform rt, Transform t)
     {
         bool sx = AxisStretched(rt.AnchorMin.X, rt.AnchorMax.X);
         bool sy = AxisStretched(rt.AnchorMin.Y, rt.AnchorMax.Y);
@@ -773,20 +773,20 @@ public static class GameObjectInspector
             using (paper.Row("gi_rt_pos_r").Height(UnitValue.Auto).Gap(6).Enter())
             {
                 if (sx)
-                    NumCell(paper, "gi_rt_pos_x", "Left", AxisXColor, OffsetMin(p.X, s.X, pv.X), nv =>
+                    NumCell(paper, "gi_rt_pos_x", "Left", s_axisXColor, OffsetMin(p.X, s.X, pv.X), nv =>
                     { SolveHoldMax(p.X, s.X, pv.X, nv, out float a, out float sz); ApplyAxis(go, rt, 0, a, sz, "Rect Left"); });
                 else
-                    NumCell(paper, "gi_rt_pos_x", "X", AxisXColor, p.X, nv =>
+                    NumCell(paper, "gi_rt_pos_x", "X", s_axisXColor, p.X, nv =>
                         ApplyAxis(go, rt, 0, nv, rt.SizeDelta.X, "Rect PosX"));
 
                 if (sy)
-                    NumCell(paper, "gi_rt_pos_y", "Top", AxisYColor, -OffsetMax(p.Y, s.Y, pv.Y), nv =>
+                    NumCell(paper, "gi_rt_pos_y", "Top", s_axisYColor, -OffsetMax(p.Y, s.Y, pv.Y), nv =>
                     { SolveHoldMin(p.Y, s.Y, pv.Y, -nv, out float a, out float sz); ApplyAxis(go, rt, 1, a, sz, "Rect Top"); });
                 else
-                    NumCell(paper, "gi_rt_pos_y", "Y", AxisYColor, p.Y, nv =>
+                    NumCell(paper, "gi_rt_pos_y", "Y", s_axisYColor, p.Y, nv =>
                         ApplyAxis(go, rt, 1, nv, rt.SizeDelta.Y, "Rect PosY"));
 
-                NumCell(paper, "gi_rt_pos_z", "Z", AxisZColor, t.LocalPosition.Z, nv =>
+                NumCell(paper, "gi_rt_pos_z", "Z", s_axisZColor, t.LocalPosition.Z, nv =>
                 {
                     var nl = new Float3(t.LocalPosition.X, t.LocalPosition.Y, nv);
                     Undo.RecordGameObjectChange(go, "Rect PosZ", t.LocalPosition, nl, (g, x) => g.Transform.LocalPosition = x, coalesce: true);
@@ -800,7 +800,7 @@ public static class GameObjectInspector
     /// Size row. Contextual per axis: a fixed axis shows Width / Height, a stretched axis shows the
     /// opposite edge inset (Right / Bottom). An empty third column keeps it aligned with the Z field above.
     /// </summary>
-    private static void DrawSizeRow(Paper paper, Prowl.Scribe.FontFile font, GameObject go, RectTransform rt)
+    private static void DrawSizeRow(Paper paper, GameObject go, RectTransform rt)
     {
         bool sx = AxisStretched(rt.AnchorMin.X, rt.AnchorMax.X);
         bool sy = AxisStretched(rt.AnchorMin.Y, rt.AnchorMax.Y);
@@ -811,17 +811,17 @@ public static class GameObjectInspector
             using (paper.Row("gi_rt_size_r").Height(UnitValue.Auto).Gap(6).Enter())
             {
                 if (sx)
-                    NumCell(paper, "gi_rt_size_x", "Right", AxisXColor, -OffsetMax(p.X, s.X, pv.X), nv =>
+                    NumCell(paper, "gi_rt_size_x", "Right", s_axisXColor, -OffsetMax(p.X, s.X, pv.X), nv =>
                     { SolveHoldMin(p.X, s.X, pv.X, -nv, out float a, out float sz); ApplyAxis(go, rt, 0, a, sz, "Rect Right"); });
                 else
-                    NumCell(paper, "gi_rt_size_x", "W", AxisXColor, s.X, nv =>
+                    NumCell(paper, "gi_rt_size_x", "W", s_axisXColor, s.X, nv =>
                         ApplyAxis(go, rt, 0, rt.AnchoredPosition.X, nv, "Rect Width"));
 
                 if (sy)
-                    NumCell(paper, "gi_rt_size_y", "Bottom", AxisYColor, OffsetMin(p.Y, s.Y, pv.Y), nv =>
+                    NumCell(paper, "gi_rt_size_y", "Bottom", s_axisYColor, OffsetMin(p.Y, s.Y, pv.Y), nv =>
                     { SolveHoldMax(p.Y, s.Y, pv.Y, nv, out float a, out float sz); ApplyAxis(go, rt, 1, a, sz, "Rect Bottom"); });
                 else
-                    NumCell(paper, "gi_rt_size_y", "H", AxisYColor, s.Y, nv =>
+                    NumCell(paper, "gi_rt_size_y", "H", s_axisYColor, s.Y, nv =>
                         ApplyAxis(go, rt, 1, rt.AnchoredPosition.Y, nv, "Rect Height"));
 
                 paper.Box("gi_rt_size_pad").Width(UnitValue.Stretch()).Height(1).IsNotInteractable();
@@ -829,7 +829,7 @@ public static class GameObjectInspector
         }, labelWidth: EditorTheme.LabelWidth / 2f);
     }
 
-    private static void DrawPivotRow(Paper paper, Prowl.Scribe.FontFile font, GameObject go, RectTransform rt)
+    private static void DrawPivotRow(Paper paper, GameObject go, RectTransform rt)
     {
 
         EditorGUI.Row(paper, "gi_rt_pivot", "Pivot", () =>
@@ -1102,7 +1102,7 @@ public static class GameObjectInspector
                     .TextColor(EditorTheme.Ink500)
                     .FontSize(EditorTheme.FontSize).Alignment(TextAlignment.MiddleCenter);
 
-                if (_addComponentOpen && _addComponentTarget == go)
+                if (s_addComponentOpen && s_addComponentTarget == go)
                 {
                     if (paper.IsKeyPressed(PaperKey.Escape))
                         CloseAddComponentPopup();
@@ -1193,20 +1193,20 @@ public static class GameObjectInspector
 
     // The override list opens in a popover. Inline it ran to a header and a row per entry with no
     // bound, and setting a flag down a deep instance puts hundreds of them above every component.
-    private static bool _overridesPopupOpen;
-    private static GameObject? _overridesPopupTarget;
+    private static bool s_overridesPopupOpen;
+    private static GameObject? s_overridesPopupTarget;
 
     private static void ToggleOverridesPopup(GameObject target)
     {
-        bool sameTarget = _overridesPopupOpen && _overridesPopupTarget == target;
-        _overridesPopupOpen = !sameTarget;
-        _overridesPopupTarget = sameTarget ? null : target;
+        bool sameTarget = s_overridesPopupOpen && s_overridesPopupTarget == target;
+        s_overridesPopupOpen = !sameTarget;
+        s_overridesPopupTarget = sameTarget ? null : target;
     }
 
     private static void CloseOverridesPopup()
     {
-        _overridesPopupOpen = false;
-        _overridesPopupTarget = null;
+        s_overridesPopupOpen = false;
+        s_overridesPopupTarget = null;
     }
 
     private static void DrawOverridesButton(Paper paper, Prowl.Scribe.FontFile font, GameObject go)
@@ -1229,7 +1229,7 @@ public static class GameObjectInspector
                 .TextColor(EditorTheme.Ink500)
                 .FontSize(EditorTheme.FontSizeSmall).Alignment(TextAlignment.MiddleCenter);
 
-            if (!_overridesPopupOpen || _overridesPopupTarget != go) return;
+            if (!s_overridesPopupOpen || s_overridesPopupTarget != go) return;
 
             if (paper.IsKeyPressed(PaperKey.Escape))
             {
@@ -1503,45 +1503,45 @@ public static class GameObjectInspector
     //  Add Component Popup
     // ================================================================
 
-    private static bool _addComponentOpen;
-    private static GameObject? _addComponentTarget;
-    private static readonly MenuTreeState _addComponentMenu = new();
-    private static List<MenuTreeEntry>? _cachedComponents;
+    private static bool s_addComponentOpen;
+    private static GameObject? s_addComponentTarget;
+    private static readonly MenuTreeState s_addComponentMenu = new();
+    private static List<MenuTreeEntry>? s_cachedComponents;
 
     /// <summary>
     /// Drop the cached component list (which holds every Component <see cref="Type"/>,
     /// including user ones) so the script AssemblyLoadContext can be collected.
     /// </summary>
-    public static void ClearAddComponentCache() => _cachedComponents = null;
+    public static void ClearAddComponentCache() => s_cachedComponents = null;
 
     private static void ToggleAddComponentPopup(GameObject target)
     {
-        if (_addComponentOpen && _addComponentTarget == target)
+        if (s_addComponentOpen && s_addComponentTarget == target)
         {
             CloseAddComponentPopup();
             return;
         }
 
-        _addComponentTarget = target;
-        _addComponentMenu.Reset();
-        _cachedComponents ??= GatherComponents();
-        _addComponentOpen = true;
+        s_addComponentTarget = target;
+        s_addComponentMenu.Reset();
+        s_cachedComponents ??= GatherComponents();
+        s_addComponentOpen = true;
     }
 
     private static void CloseAddComponentPopup()
     {
-        _addComponentOpen = false;
-        _addComponentTarget = null;
+        s_addComponentOpen = false;
+        s_addComponentTarget = null;
     }
 
     private static void RenderAddComponentPopover(Paper paper, ElementHandle trigHandle)
     {
-        MenuTreePopup.Popover(paper, "gi_acp", trigHandle, _cachedComponents ?? [], _addComponentMenu,
+        MenuTreePopup.Popover(paper, "gi_acp", trigHandle, s_cachedComponents ?? [], s_addComponentMenu,
             entry =>
             {
-                if (_addComponentTarget != null && entry.Tag is Type type)
+                if (s_addComponentTarget != null && entry.Tag is Type type)
                 {
-                    AddComponentWithUndo(_addComponentTarget, type);
+                    AddComponentWithUndo(s_addComponentTarget, type);
                     CloseAddComponentPopup();
                 }
             },

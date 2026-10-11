@@ -71,7 +71,7 @@ public class MissingComponent : Component, ISerializable
             {
                 if (!ctx.unresolvedDefinitions.TryGetValue(id, out EchoObject? definition)) return;
                 Load(definition, definition, ctx);
-                LoadedIdentifier = Identifier;
+                _loadedIdentifier = Identifier;
                 if (!GameObject.PreservingIdentifiers)
                     Identifier = Guid.NewGuid();
                 CaptureReferences(ctx);

@@ -94,7 +94,7 @@ public class LineRenderer : Component, IRenderable, IMaterialRenderer
             renderables.Add(this);
     }
 
-    private bool PointsEqual(List<Float3> a, List<Float3> b)
+    private static bool PointsEqual(List<Float3> a, List<Float3> b)
     {
         if (a.Count != b.Count) return false;
 
