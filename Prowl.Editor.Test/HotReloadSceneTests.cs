@@ -69,7 +69,7 @@ public class HotReloadSceneTests : EditorTestHarness
     [Fact]
     public void RealRecompile_RunningScene_RepointsRegistry_SoNewCodeRunsOnMigratedInstance()
     {
-        using var play = EnterPlayMode();
+        using PlayModeScope play = EnterPlayMode();
 
         Assembly v1 = CompileGameAssembly("Ticker.cs",
             "using Prowl.Runtime; public class Ticker : Component { public int Ticks; public override void Update() { Ticks++; } }");
@@ -115,7 +115,7 @@ public class HotReloadSceneTests : EditorTestHarness
         scene.Add(go);
 
         string text = Serializer.Serialize(scene).WriteToString();
-        var restored = Serializer.Deserialize<Scene>(EchoObject.ReadFromString(text))!;
+        Scene restored = Serializer.Deserialize<Scene>(EchoObject.ReadFromString(text))!;
 
         Component restoredLoot = restored.AllObjects
             .First(g => g.Name == "Chest")
@@ -226,7 +226,7 @@ public class HotReloadSceneTests : EditorTestHarness
     [Fact]
     public void Migrate_Scene_NewlyOverriddenCallback_StartsDispatching()
     {
-        using var play = EnterPlayMode();
+        using PlayModeScope play = EnterPlayMode();
 
         Assembly v1 = CompileGameAssembly("Cb.cs",
             "using Prowl.Runtime; public class C : Component { public int U; public override void Update() { U++; } }");
@@ -256,7 +256,7 @@ public class HotReloadSceneTests : EditorTestHarness
     [Fact]
     public void Migrate_Scene_ComponentGainingItsFirstCallback_StartsDispatching()
     {
-        using var play = EnterPlayMode();
+        using PlayModeScope play = EnterPlayMode();
 
         Assembly v1 = CompileGameAssembly("First.cs",
             "using Prowl.Runtime; public class C : Component { public int Data; }");
@@ -287,7 +287,7 @@ public class HotReloadSceneTests : EditorTestHarness
     [Fact]
     public void Migrate_Scene_ComponentLosingItsOnlyCallback_StopsDispatching()
     {
-        using var play = EnterPlayMode();
+        using PlayModeScope play = EnterPlayMode();
 
         Assembly v1 = CompileGameAssembly("Last.cs",
             "using Prowl.Runtime; public class C : Component { public int U; public override void Update() { U++; } }");

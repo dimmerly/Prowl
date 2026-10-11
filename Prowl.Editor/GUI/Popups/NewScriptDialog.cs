@@ -56,7 +56,7 @@ public static class NewScriptDialog
 
     private static void DrawContent(Paper paper)
     {
-        var font = EditorTheme.DefaultFont;
+        Scribe.FontFile? font = EditorTheme.DefaultFont;
         (bool ok, string? error) = Validate(s_name, s_folder);
 
         const float bodyHeight = 300f;
@@ -81,7 +81,7 @@ public static class NewScriptDialog
                         for (int i = 0; i < s_templates.Count; i++)
                         {
                             int captured = i;
-                            var tpl = s_templates[i];
+                            ScriptTemplate tpl = s_templates[i];
                             bool isSel = i == s_selectedIndex;
 
                             using (paper.Row($"scr_tpl_{i}")
@@ -116,7 +116,7 @@ public static class NewScriptDialog
                        .Width(UnitValue.Stretch()).Height(UnitValue.Stretch())
                        .Enter())
             {
-                var tpl = s_templates[s_selectedIndex];
+                ScriptTemplate tpl = s_templates[s_selectedIndex];
                 if (font != null)
                 {
                     paper.Box("scr_tpl_title")
@@ -144,7 +144,7 @@ public static class NewScriptDialog
                 if (font != null)
                 {
                     string hint = ok ? Loc.Get("newscript.will_create", new { name = s_name }) : (error ?? "");
-                    var col = ok ? EditorTheme.Green400 : EditorTheme.Red400;
+                    Color col = ok ? EditorTheme.Green400 : EditorTheme.Red400;
                     paper.Box("scr_hint")
                         .Width(UnitValue.Stretch()).Height(UnitValue.Auto).MinHeight(18)
                         .Text(hint, font)
@@ -198,7 +198,7 @@ public static class NewScriptDialog
 
         string fileName = s_name + ".cs";
         string absPath = Path.Combine(absFolder, fileName);
-        var tpl = s_templates[s_selectedIndex];
+        ScriptTemplate tpl = s_templates[s_selectedIndex];
         File.WriteAllText(absPath, tpl.Generate(s_name));
         EditorAssetBackend.Instance?.InvalidateFolderIndex();
 

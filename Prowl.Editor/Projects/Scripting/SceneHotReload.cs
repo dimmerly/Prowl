@@ -52,19 +52,19 @@ public static class SceneHotReload
             options.Scope.Include(typeof(GameObject).Assembly);     // Prowl.Runtime
             options.Scope.Include(typeof(SceneHotReload).Assembly); // Prowl.Editor
 
-            foreach (var (previous, _) in assemblyPairs)
+            foreach ((Assembly? previous, Assembly _) in assemblyPairs)
                 options.Scope.Include(previous); // user statics live on the previous assembly
         });
 
-        var request = ReloadRequest.Create().Root(scene);
-        foreach (var (previous, current) in assemblyPairs)
+        ReloadRequest.Builder request = ReloadRequest.Create().Root(scene);
+        foreach ((Assembly? previous, Assembly? current) in assemblyPairs)
             request.Replace(previous, current);
 
-        var report = engine.Apply(request.Build());
+        ReloadReport report = engine.Apply(request.Build());
 
         // Asset objects of a user type were replaced too. The walk repoints the registry with everything else,
         // and this makes sure of it, so a GUID never answers with an object nothing else still uses.
-        foreach (var (old, replacement) in report.Replaced)
+        foreach ((object? old, object? replacement) in report.Replaced)
             if (old is Asset { Registered: true } stale && replacement is Asset fresh)
                 AssetDatabase.Replace(stale, fresh);
 
@@ -90,7 +90,7 @@ public static class SceneHotReload
 
     private static void Summarize(ReloadReport report)
     {
-        var stats = report.Statistics;
+        ReloadStatistics stats = report.Statistics;
 
         string summary =
             $"[Ember] Migrated {stats.ObjectsReplaced} object(s), preserved {stats.ObjectsPreserved}, " +

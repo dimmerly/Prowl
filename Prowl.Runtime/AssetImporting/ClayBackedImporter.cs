@@ -36,7 +36,7 @@ internal static class ClayBackedImporter
     public static ModelImportResult Import(FileInfo assetPath, ModelImporterSettings settings)
     {
         string ext = assetPath.Extension.ToLowerInvariant();
-        var clayModel = Clay.Importer.ModelImporter.Load(assetPath.FullName, MapSettings(settings, ext));
+        Model clayModel = Clay.Importer.ModelImporter.Load(assetPath.FullName, MapSettings(settings, ext));
         return Bake(clayModel, Path.GetFileNameWithoutExtension(assetPath.Name), settings);
     }
 
@@ -52,7 +52,7 @@ internal static class ClayBackedImporter
             ".fbx" => "fbx",
             _ => throw new NotSupportedException($"Unsupported model format: {ext}"),
         };
-        var clayModel = Clay.Importer.ModelImporter.Load(stream, format, MapSettings(settings, ext));
+        Model clayModel = Clay.Importer.ModelImporter.Load(stream, format, MapSettings(settings, ext));
         return Bake(clayModel, Path.GetFileNameWithoutExtension(virtualPath), settings);
     }
 
@@ -65,7 +65,7 @@ internal static class ClayBackedImporter
         // Start from Clay's GameQuality preset (triangulate, dedup, tangents, bone-weight limit,
         // populate skeletons, bounds, RH->LH coord convert, sort by topology, etc.) then layer the
         // Prowl-specific toggles on top.
-        var flags = PostProcessPresets.GameQuality;
+        PostProcessFlags flags = PostProcessPresets.GameQuality;
 
         // Normals come from Clay. Its steps split vertices along edges sharper than the smoothing
         // angle, which is what actually produces flat or hard-edged shading; generating them at the
@@ -123,7 +123,7 @@ internal static class ClayBackedImporter
     {
         if (clayModel.Log.Entries.Count > 0)
         {
-            foreach (var entry in clayModel.Log.Entries)
+            foreach (ImportLogEntry entry in clayModel.Log.Entries)
             {
                 if (entry.Severity == ImportLogSeverity.Warning)
                     Debug.LogWarning($"[Clay] {entry}");
@@ -135,7 +135,7 @@ internal static class ClayBackedImporter
         // 1. Textures - resolve once, share by Clay texture index. Resolution (not necessarily
         // decoding - see IModelTextureResolver) happens through the resolver, so the editor can
         // supply one that only ever produces references to database textures and never touches pixel data itself.
-        var resolver = settings.TextureResolver ?? DefaultModelTextureResolver.Instance;
+        IModelTextureResolver resolver = settings.TextureResolver ?? DefaultModelTextureResolver.Instance;
         var textureCache = new Texture2D?[clayModel.Textures.Count];
         // Skipped wholesale when materials are off, so an import that wants no materials also does
         // not decode or register the textures only those materials would have referenced.
@@ -175,7 +175,7 @@ internal static class ClayBackedImporter
         var nodeGOs = new GameObject[clayModel.Nodes.Count];
         for (int i = 0; i < clayModel.Nodes.Count; i++)
         {
-            var n = clayModel.Nodes[i];
+            ModelNode n = clayModel.Nodes[i];
             var go = new GameObject(string.IsNullOrEmpty(n.Name) ? $"Node_{i}" : n.Name);
             nodeGOs[i] = go;
             go.Transform.LocalPosition = n.LocalPosition;
@@ -185,13 +185,13 @@ internal static class ClayBackedImporter
         // Parenting pass (after all GOs exist so SetParent can find the parent).
         for (int i = 0; i < clayModel.Nodes.Count; i++)
         {
-            var parent = clayModel.Nodes[i].Parent;
+            ModelNode? parent = clayModel.Nodes[i].Parent;
             if (parent is null) continue;
             nodeGOs[i].SetParent(nodeGOs[parent.Index], worldPositionStays: false);
         }
         // Rename the model root.
         nodeGOs[clayModel.Root.Index].Name = string.IsNullOrEmpty(modelName) ? "Model" : modelName;
-        var rootGO = nodeGOs[clayModel.Root.Index];
+        GameObject rootGO = nodeGOs[clayModel.Root.Index];
 
         // 5. Renderers + skin wiring.
         // Bind poses and bone names live on the Mesh, but a model may point one mesh at two
@@ -202,11 +202,11 @@ internal static class ClayBackedImporter
 
         for (int i = 0; i < clayModel.Nodes.Count; i++)
         {
-            var n = clayModel.Nodes[i];
+            ModelNode n = clayModel.Nodes[i];
             if (n.MeshIndex < 0) continue;
-            var go = nodeGOs[i];
-            var mesh = meshes[n.MeshIndex];
-            var matRefs = BuildMatRefs(meshSubmeshMaterials[n.MeshIndex], materialRefs);
+            GameObject go = nodeGOs[i];
+            PMesh mesh = meshes[n.MeshIndex];
+            List<PMaterial> matRefs = BuildMatRefs(meshSubmeshMaterials[n.MeshIndex], materialRefs);
 
             if (n.SkinIndex >= 0)
             {
@@ -221,7 +221,7 @@ internal static class ClayBackedImporter
                     meshes.Add(mesh);
                 }
 
-                var clayskin = clayModel.Skins[n.SkinIndex];
+                Skin clayskin = clayModel.Skins[n.SkinIndex];
                 // Mirror Clay.Skin -> Prowl Mesh.BindPoses + Mesh.BoneNames (relative paths).
                 mesh.BindPoses = clayskin.InverseBindPoses.ToArray();
                 mesh.BoneNames = new string[clayskin.BoneNodeIndices.Length];
@@ -233,7 +233,7 @@ internal static class ClayBackedImporter
                     mesh.BoneNames[b] = Transform.GetRelativePath(boneTransforms[b], rootGO.Transform);
                 }
 
-                var smr = go.AddComponent<SkinnedMeshRenderer>();
+                SkinnedMeshRenderer smr = go.AddComponent<SkinnedMeshRenderer>();
                 smr.SharedMesh = mesh;
                 smr.Materials = matRefs;
                 Transform? rootBoneTransform = clayskin.RootNodeIndex >= 0
@@ -245,13 +245,13 @@ internal static class ClayBackedImporter
             {
                 // Morph-only mesh (no skin): a SkinnedMeshRenderer still owns the blend-shape
                 // weights. No bones to wire skinning stays disabled in-shader.
-                var smr = go.AddComponent<SkinnedMeshRenderer>();
+                SkinnedMeshRenderer smr = go.AddComponent<SkinnedMeshRenderer>();
                 smr.SharedMesh = mesh;
                 smr.Materials = matRefs;
             }
             else
             {
-                var mr = go.AddComponent<MeshRenderer>();
+                MeshRenderer mr = go.AddComponent<MeshRenderer>();
                 mr.Mesh = mesh;
                 mr.Materials = matRefs;
             }
@@ -286,7 +286,7 @@ internal static class ClayBackedImporter
                 foreach (ClayAnim clip in clayModel.AnimationClips)
                     animations.Add(BuildClip(clip, clayModel, rig, avatar, settings));
 
-            var animator = rootGO.AddComponent<Animator>();
+            Animator animator = rootGO.AddComponent<Animator>();
             animator.Avatar = avatar;
             animator.Clips = [.. animations];
         }
@@ -359,7 +359,7 @@ internal static class ClayBackedImporter
             var weights4 = new Float4[src.BoneWeights.Length];
             for (int v = 0; v < src.BoneWeights.Length; v++)
             {
-                var bw = src.BoneWeights[v];
+                BoneWeight bw = src.BoneWeights[v];
                 indices4[v] = new Float4(
                     bw.Weight0 > 0f ? bw.Index0 + 1 : 0,
                     bw.Weight1 > 0f ? bw.Index1 + 1 : 0,
@@ -378,11 +378,11 @@ internal static class ClayBackedImporter
             var shapes = new PBlendShape[src.BlendShapes.Length];
             for (int i = 0; i < src.BlendShapes.Length; i++)
             {
-                var cb = src.BlendShapes[i];
+                Clay.BlendShape cb = src.BlendShapes[i];
                 var frames = new PBlendShapeFrame[cb.Frames.Length];
                 for (int f = 0; f < cb.Frames.Length; f++)
                 {
-                    var cf = cb.Frames[f];
+                    Clay.BlendShapeFrame cf = cb.Frames[f];
                     frames[f] = new PBlendShapeFrame
                     {
                         Weight = cf.Weight,
@@ -404,7 +404,7 @@ internal static class ClayBackedImporter
             dst.SetSubMeshCount(src.SubMeshes.Length);
             for (int s = 0; s < src.SubMeshes.Length; s++)
             {
-                var sm = src.SubMeshes[s];
+                SubMesh sm = src.SubMeshes[s];
                 dst.SetSubMesh(s, new SubMeshDescriptor(sm.IndexStart, sm.IndexCount, MapTopology(sm.Topology)));
                 submeshMatIndices[s] = sm.MaterialIndex;
             }
@@ -441,7 +441,7 @@ internal static class ClayBackedImporter
     /// <summary>Attaches a <see cref="Camera"/> matching the source lens.</summary>
     private static void BuildCamera(Clay.Camera src, GameObject go)
     {
-        var cam = go.AddComponent<Camera>();
+        Camera cam = go.AddComponent<Camera>();
 
         if (src.Projection == CameraProjection.Orthographic)
         {
@@ -599,7 +599,7 @@ internal static class ClayBackedImporter
     /// </summary>
     private static void ApplyTextureTransform(PMaterial mat, ClayMaterial src)
     {
-        var slot = src.BaseColorTexture;
+        MaterialTextureSlot? slot = src.BaseColorTexture;
         if (slot is not null)
         {
             mat.SetVector("_Tiling", slot.Scale);
@@ -610,7 +610,7 @@ internal static class ClayBackedImporter
                     "the Standard shaders only support tiling and offset, so the rotation was dropped.");
         }
 
-        foreach (var other in EnumerateSlots(src))
+        foreach (MaterialTextureSlot? other in EnumerateSlots(src))
         {
             if (other is null || ReferenceEquals(other, slot)) continue;
 

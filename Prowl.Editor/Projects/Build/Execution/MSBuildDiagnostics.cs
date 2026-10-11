@@ -45,14 +45,14 @@ public static partial class MSBuildDiagnostics
         issue = null!;
         if (string.IsNullOrWhiteSpace(line)) return false;
 
-        var match = DiagnosticPattern.Match(line);
+        Match match = DiagnosticPattern.Match(line);
         if (!match.Success) return false;
 
         string origin = match.Groups["origin"].Value;
         string? file = null;
         int? number = null;
 
-        var originMatch = OriginPattern.Match(origin);
+        Match originMatch = OriginPattern.Match(origin);
         if (originMatch.Success)
         {
             file = originMatch.Groups["file"].Value;
@@ -92,7 +92,7 @@ public static partial class MSBuildDiagnostics
 
         foreach (string line in output.Split('\n'))
         {
-            if (!TryParse(line.TrimEnd('\r'), stage, out var issue)) continue;
+            if (!TryParse(line.TrimEnd('\r'), stage, out BuildIssue? issue)) continue;
 
             // MSBuild prints the same diagnostic once per project that pulled the file in.
             if (!seen.Add($"{issue.Code}|{issue.File}|{issue.Line}|{issue.Message}")) continue;

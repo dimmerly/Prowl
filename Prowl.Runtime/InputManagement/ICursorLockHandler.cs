@@ -3,6 +3,8 @@
 
 using Prowl.Vector;
 
+using Silk.NET.Maths;
+
 namespace Prowl.Runtime;
 
 /// <summary>
@@ -45,7 +47,7 @@ public class CursorLockContext
     /// </summary>
     public virtual IntRect GetConfineBounds()
     {
-        var size = Window.InternalWindow.Size;
+        Vector2D<int> size = Window.InternalWindow.Size;
         return new IntRect(Int2.Zero, new Int2(size.X - 1, size.Y - 1));
     }
 }

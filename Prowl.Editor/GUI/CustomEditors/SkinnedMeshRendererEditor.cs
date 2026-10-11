@@ -4,6 +4,8 @@ using Prowl.Editor.Theming;
 using Prowl.OrigamiUI;
 using Prowl.PaperUI;
 using Prowl.Runtime;
+using Prowl.Runtime.Resources;
+using Prowl.Scribe;
 
 namespace Prowl.Editor.Inspector;
 
@@ -19,7 +21,7 @@ public class SkinnedMeshRendererEditor : CustomEditor
     public override void OnGUI(Paper paper, string id, object target)
     {
         var renderer = (SkinnedMeshRenderer)target;
-        var font = EditorTheme.DefaultFont;
+        FontFile? font = EditorTheme.DefaultFont;
         if (font == null) return;
 
         // Snapshot the component state before any widget (default fields or sliders) mutates it.
@@ -28,7 +30,7 @@ public class SkinnedMeshRendererEditor : CustomEditor
         // Default inspector (mesh, materials, bone paths, etc.).
         DrawDefaultInspector(paper, id, renderer);
 
-        var mesh = renderer.SharedMesh;
+        Mesh? mesh = renderer.SharedMesh;
         int count = mesh.IsValid() ? mesh.BlendShapeCount : 0;
         if (mesh == null || count == 0)
             return;

@@ -81,14 +81,14 @@ public sealed class MemoryAssetBackend : AssetBackend
     /// <summary>How many times each asset was read, for tests that check what loaded.</summary>
     public ConcurrentDictionary<Guid, int> Reads { get; } = new();
 
-    public override Type? GetAssetType(Guid assetId) => _assets.TryGetValue(assetId, out var entry) ? entry.Type : null;
+    public override Type? GetAssetType(Guid assetId) => _assets.TryGetValue(assetId, out (Type Type, EchoObject Content, string Path) entry) ? entry.Type : null;
 
-    public override string? GetAssetPath(Guid assetId) => _assets.TryGetValue(assetId, out var entry) ? entry.Path : null;
+    public override string? GetAssetPath(Guid assetId) => _assets.TryGetValue(assetId, out (Type Type, EchoObject Content, string Path) entry) ? entry.Path : null;
 
     protected internal override bool ReadContent(Guid assetId, Asset staging, SerializationContext context)
     {
         Reads.AddOrUpdate(assetId, 1, (_, count) => count + 1);
-        return _assets.TryGetValue(assetId, out var entry) && ReadInto(entry.Content.Clone(), staging, context);
+        return _assets.TryGetValue(assetId, out (Type Type, EchoObject Content, string Path) entry) && ReadInto(entry.Content.Clone(), staging, context);
     }
 }
 

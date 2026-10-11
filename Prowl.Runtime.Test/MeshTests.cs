@@ -28,7 +28,7 @@ public class MeshTests
     [Fact]
     public void Serialize_EmptyMesh_DoesNotThrow()
     {
-        var ex = Record.Exception(() => Serializer.Serialize(new Mesh()));
+        Exception ex = Record.Exception(() => Serializer.Serialize(new Mesh()));
         Assert.Null(ex);
     }
 
@@ -71,18 +71,18 @@ public class MeshTests
     {
         var gizmos = new GizmoBuilder();
         gizmos.DrawLine(Float3.Zero, Float3.UnitX, Color.Red);
-        var (first, _) = gizmos.UpdateMesh();
+        (Mesh? first, Mesh? _) = gizmos.UpdateMesh();
         Float3[] firstVertices = first!.Vertices;
 
         gizmos.Clear();
         gizmos.DrawLine(Float3.Zero, Float3.UnitX, Color.Red);
-        var (same, _) = gizmos.UpdateMesh();
+        (Mesh? same, Mesh? _) = gizmos.UpdateMesh();
         Assert.Same(first, same);
         Assert.Same(firstVertices, same!.Vertices);
 
         gizmos.Clear();
         gizmos.DrawLine(Float3.Zero, Float3.UnitY, Color.Red);
-        var (changed, _) = gizmos.UpdateMesh();
+        (Mesh? changed, Mesh? _) = gizmos.UpdateMesh();
         Assert.NotSame(firstVertices, changed!.Vertices);
         Assert.Equal(Float3.UnitY, changed.Vertices[1]);
     }
@@ -96,12 +96,12 @@ public class MeshTests
             Vertices = [Float3.Zero, Float3.UnitX, Float3.UnitY],
             Indices = [0, 1, 2],
         };
-        var before = mesh.EnsureInstanceVAO(4, out _);
+        GraphicsVertexArray before = mesh.EnsureInstanceVAO(4, out _);
 
         mesh.Vertices = [Float3.Zero, Float3.UnitX, Float3.UnitY, Float3.One];
         mesh.Indices = [0, 1, 2, 1, 3, 2];
         mesh.Upload();
-        var after = mesh.EnsureInstanceVAO(4, out _);
+        GraphicsVertexArray after = mesh.EnsureInstanceVAO(4, out _);
 
         Assert.NotNull(after);
         Assert.NotSame(before, after);

@@ -38,7 +38,7 @@ public class TextComponent : Graphic, ILayoutElement
     {
         get
         {
-            var f = _font;
+            FontAsset? f = _font;
             return f is { IsLoaded: true } ? f : FontAsset.LoadDefault();
         }
     }
@@ -96,7 +96,7 @@ public class TextComponent : Graphic, ILayoutElement
         FontAsset? font = ResolvedFont;
         if (font.IsNotValid() || font.FontFile is null || string.IsNullOrEmpty(Text)) return;
 
-        var rt = GameObject.RectTransform;
+        RectTransform? rt = GameObject.RectTransform;
         if (rt is null) return;
         Rect r = rt.ComputedRect;
         if (r.Size.X <= 0 || r.Size.Y <= 0) return;

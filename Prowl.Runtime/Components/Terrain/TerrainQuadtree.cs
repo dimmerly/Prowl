@@ -52,7 +52,7 @@ public class TerrainQuadtree
             if (chunk.Children == null)
                 chunk.Subdivide();
 
-            foreach (var child in chunk.Children)
+            foreach (TerrainChunk child in chunk.Children)
                 UpdateNode(child, cameraPosition, lodQuality);
         }
         else
@@ -66,7 +66,7 @@ public class TerrainQuadtree
                 else
                 {
                     // Still within hysteresis range - keep children
-                    foreach (var child in chunk.Children)
+                    foreach (TerrainChunk child in chunk.Children)
                         UpdateNode(child, cameraPosition, lodQuality);
                     return;
                 }

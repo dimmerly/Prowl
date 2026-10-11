@@ -28,7 +28,7 @@ public class ProjectSettingsTests : EditorTestHarness
         Prowl.Runtime.NavMeshAreas.SetAreaName(Custom, "Swamp");
         Prowl.Runtime.NavMeshAreas.SetAreaCost(Custom, 5f);
 
-        var settings = EditorRegistries.GetSettings<NavigationSettings>();
+        NavigationSettings settings = EditorRegistries.GetSettings<NavigationSettings>();
         settings.ResetToDefaults();
 
         Assert.Equal(string.Empty, settings.AreaNames[Custom]);
@@ -61,7 +61,7 @@ public class ProjectSettingsTests : EditorTestHarness
     [Fact]
     public void NavigationSettings_Defaults_MatchTheRuntimeAreaCosts()
     {
-        var settings = EditorRegistries.GetSettings<NavigationSettings>();
+        NavigationSettings settings = EditorRegistries.GetSettings<NavigationSettings>();
         settings.ResetToDefaults();
 
         for (int area = 0; area < Prowl.Runtime.NavMeshAreas.MaxAreas; area++)

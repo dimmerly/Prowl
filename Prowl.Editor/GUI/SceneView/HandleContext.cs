@@ -147,7 +147,7 @@ public sealed class HandleContext
         ViewportHovered = viewportHovered;
 
         _viewProjection = camera.ProjectionMatrix * camera.ViewMatrix;
-        var camTransform = camera.GameObject.Transform;
+        Transform camTransform = camera.GameObject.Transform;
         _camPosition = camTransform.Position;
         _camForward = camTransform.Forward;
         MouseRay = camera.ScreenPointToRay(mouseLocal, ViewportSize);

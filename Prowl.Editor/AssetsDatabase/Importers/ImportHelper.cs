@@ -41,14 +41,14 @@ public static class ImportHelper
     {
         try
         {
-            var echo = read(ctx.AbsolutePath);
-            var serCtx = CreateTrackingContext(out var dependencies);
-            var asset = Serializer.Deserialize<T>(echo, serCtx);
+            EchoObject echo = read(ctx.AbsolutePath);
+            SerializationContext serCtx = CreateTrackingContext(out HashSet<Guid>? dependencies);
+            T? asset = Serializer.Deserialize<T>(echo, serCtx);
             if (asset != null)
             {
                 asset.Name = ctx.FileName;
                 ctx.SetMainAsset(asset);
-                foreach (var dep in dependencies)
+                foreach (Guid dep in dependencies)
                     ctx.AddDependency(dep);
             }
             else
@@ -80,24 +80,24 @@ public static class ImportHelper
 
         if (echo.TagType == EchoType.Compound)
         {
-            if (echo.TryGet("$asset", out var stub) && Guid.TryParse(stub.StringValue, out var assetGuid) && assetGuid != Guid.Empty)
+            if (echo.TryGet("$asset", out EchoObject? stub) && Guid.TryParse(stub.StringValue, out Guid assetGuid) && assetGuid != Guid.Empty)
                 hard.Add(assetGuid);
-            if (soft != null && echo.TryGet("$assetRef", out var lazy) && Guid.TryParse(lazy.StringValue, out var softGuid) && softGuid != Guid.Empty)
+            if (soft != null && echo.TryGet("$assetRef", out EchoObject? lazy) && Guid.TryParse(lazy.StringValue, out Guid softGuid) && softGuid != Guid.Empty)
                 soft.Add(softGuid);
 
             // A prefab instance keeps its link. Read from inside the link rather than matching a bare
             // "AssetId" anywhere, which would pick up unrelated fields of the same name.
-            if (editor != null && echo.TryGet("Prefab", out var linkTag) && linkTag.TagType == EchoType.Compound
-                && linkTag.TryGet("AssetId", out var prefabIdTag)
-                && Guid.TryParse(prefabIdTag.StringValue, out var prefabGuid) && prefabGuid != Guid.Empty)
+            if (editor != null && echo.TryGet("Prefab", out EchoObject? linkTag) && linkTag.TagType == EchoType.Compound
+                && linkTag.TryGet("AssetId", out EchoObject? prefabIdTag)
+                && Guid.TryParse(prefabIdTag.StringValue, out Guid prefabGuid) && prefabGuid != Guid.Empty)
                 editor.Add(prefabGuid);
 
-            foreach (var kvp in echo.Tags)
+            foreach (KeyValuePair<string, EchoObject> kvp in echo.Tags)
                 CollectAssetDependencies(kvp.Value, hard, soft, editor);
         }
         else if (echo.TagType == EchoType.List && echo.List != null)
         {
-            foreach (var item in echo.List)
+            foreach (EchoObject item in echo.List)
                 CollectAssetDependencies(item, hard, soft, editor);
         }
     }
@@ -115,8 +115,8 @@ public static class ImportHelper
         {
             bool isInstance = false;
 
-            if (echo.TryGet("Prefab", out var link) && link.TagType == EchoType.Compound
-                && link.TryGet("AssetId", out var idTag)
+            if (echo.TryGet("Prefab", out EchoObject? link) && link.TagType == EchoType.Compound
+                && link.TryGet("AssetId", out EchoObject? idTag)
                 && Guid.TryParse(idTag.StringValue, out Guid assetId) && assetId != Guid.Empty)
             {
                 if (insideInstance)
@@ -125,12 +125,12 @@ public static class ImportHelper
                     isInstance = true;
             }
 
-            foreach (var child in echo.Tags.Values)
+            foreach (EchoObject child in echo.Tags.Values)
                 removed |= FlattenNestedPrefabLinks(child, insideInstance || isInstance);
         }
         else if (echo.TagType == EchoType.List && echo.List != null)
         {
-            foreach (var item in echo.List)
+            foreach (EchoObject item in echo.List)
                 removed |= FlattenNestedPrefabLinks(item, insideInstance);
         }
 

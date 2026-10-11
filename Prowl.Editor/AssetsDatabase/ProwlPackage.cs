@@ -6,6 +6,7 @@ using System.Linq;
 using System.Security.Cryptography;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using System.Text.RegularExpressions;
 
 using Prowl.Editor.GUI.Popups;
 using Prowl.Editor.Projects;
@@ -60,7 +61,7 @@ public static class ProwlPackage
     [AssetDoubleClickHandler(".prowlpackage")]
     private static bool OnDoubleClickPackage(string relativePath, Guid guid)
     {
-        var project = Project.Current;
+        Project? project = Project.Current;
         if (project == null) return false;
         string absPath = Path.Combine(project.AssetsPath, relativePath);
         if (File.Exists(absPath))
@@ -79,9 +80,9 @@ public static class ProwlPackage
     /// </summary>
     public static void Export(string outputPath, IEnumerable<string> assetRelativePaths, bool includeProjectSettings, bool includeDependencies)
     {
-        var project = Project.Current;
+        Project? project = Project.Current;
         if (project == null) throw new InvalidOperationException("No project is open.");
-        var db = EditorAssetBackend.Instance;
+        EditorAssetBackend? db = EditorAssetBackend.Instance;
         if (db == null) throw new InvalidOperationException("Asset database not initialized.");
 
         // Collect all asset paths (including dependencies if requested)
@@ -95,10 +96,10 @@ public static class ProwlPackage
 
             if (includeDependencies)
             {
-                var entry = db.GetEntry(path);
+                AssetEntry? entry = db.GetEntry(path);
                 if (entry?.Dependencies != null)
                 {
-                    foreach (var depGuid in entry.Dependencies)
+                    foreach (Guid depGuid in entry.Dependencies)
                     {
                         // Use GuidToPathIncludingSubAssets so sub-asset dependencies
                         // resolve to their parent asset's file path
@@ -117,7 +118,7 @@ public static class ProwlPackage
             ContainsProjectSettings = includeProjectSettings,
         };
 
-        using var stream = File.Create(outputPath);
+        using FileStream stream = File.Create(outputPath);
         using var archive = new ZipArchive(stream, ZipArchiveMode.Create);
 
         foreach (string relPath in allPaths)
@@ -125,7 +126,7 @@ public static class ProwlPackage
             string absPath = Path.Combine(project.AssetsPath, relPath);
             if (!File.Exists(absPath)) continue;
 
-            var entry = db.GetEntry(relPath);
+            AssetEntry? entry = db.GetEntry(relPath);
 
             // Add asset file
             string zipRelPath = "Assets/" + relPath.Replace('\\', '/');
@@ -178,7 +179,7 @@ public static class ProwlPackage
 
         // Write manifest
         string manifestJson = JsonSerializer.Serialize(manifest, JsonOptions);
-        var manifestEntry = archive.CreateEntry("manifest.json");
+        ZipArchiveEntry manifestEntry = archive.CreateEntry("manifest.json");
         using (var writer = new StreamWriter(manifestEntry.Open()))
             writer.Write(manifestJson);
 
@@ -190,7 +191,7 @@ public static class ProwlPackage
     /// </summary>
     public static PackageManifest? ReadManifest(string packagePath)
     {
-        using var stream = File.OpenRead(packagePath);
+        using FileStream stream = File.OpenRead(packagePath);
         using var archive = new ZipArchive(stream, ZipArchiveMode.Read);
         return ReadManifest(archive);
     }
@@ -200,7 +201,7 @@ public static class ProwlPackage
     /// </summary>
     public static PackageManifest? ReadManifest(ZipArchive archive)
     {
-        var entry = archive.GetEntry("manifest.json");
+        ZipArchiveEntry? entry = archive.GetEntry("manifest.json");
         if (entry == null) return null;
 
         using var reader = new StreamReader(entry.Open());
@@ -214,11 +215,11 @@ public static class ProwlPackage
     public static byte[]? ReadThumbnail(ZipArchive archive, string assetRelPath)
     {
         string entryPath = "Assets/" + assetRelPath.Replace('\\', '/') + ".thumb";
-        var entry = archive.GetEntry(entryPath);
+        ZipArchiveEntry? entry = archive.GetEntry(entryPath);
         if (entry == null) return null;
 
         using var ms = new MemoryStream();
-        using (var entryStream = entry.Open())
+        using (Stream entryStream = entry.Open())
             entryStream.CopyTo(ms);
         return ms.ToArray();
     }
@@ -232,31 +233,31 @@ public static class ProwlPackage
         string zipAssetPath = "Assets/" + assetRelPath.Replace('\\', '/');
         string zipMetaPath = zipAssetPath + ".meta";
 
-        var assetEntry = archive.GetEntry(zipAssetPath);
+        ZipArchiveEntry? assetEntry = archive.GetEntry(zipAssetPath);
         if (assetEntry == null) return false;
 
         string destFile = Path.Combine(destAssetsPath, assetRelPath);
         Directory.CreateDirectory(Path.GetDirectoryName(destFile)!);
 
         // Extract the asset file
-        using (var src = assetEntry.Open())
-        using (var dst = File.Create(destFile))
+        using (Stream src = assetEntry.Open())
+        using (FileStream dst = File.Create(destFile))
             src.CopyTo(dst);
 
         // Extract the .meta file
-        var metaEntry = archive.GetEntry(zipMetaPath);
+        ZipArchiveEntry? metaEntry = archive.GetEntry(zipMetaPath);
         if (metaEntry != null)
         {
             string destMeta = MetaFile.GetMetaPath(destFile);
-            using var src = metaEntry.Open();
-            using var dst = File.Create(destMeta);
+            using Stream src = metaEntry.Open();
+            using FileStream dst = File.Create(destMeta);
             src.CopyTo(dst);
         }
 
         // Extract any companion files (e.g., .bin for .gltf, .mtl for .obj)
         // They're stored in the zip at the same relative path under Assets/
         string assetDir = Path.GetDirectoryName(zipAssetPath)?.Replace('\\', '/') ?? "Assets";
-        foreach (var entry in archive.Entries)
+        foreach (ZipArchiveEntry entry in archive.Entries)
         {
             string entryPath = entry.FullName.Replace('\\', '/');
             // Skip the main asset, its meta, and its thumbnail
@@ -273,8 +274,8 @@ public static class ProwlPackage
             string companionRelPath = entryPath["Assets/".Length..];
             string companionDest = Path.Combine(destAssetsPath, companionRelPath);
             Directory.CreateDirectory(Path.GetDirectoryName(companionDest)!);
-            using var csrc = entry.Open();
-            using var cdst = File.Create(companionDest);
+            using Stream csrc = entry.Open();
+            using FileStream cdst = File.Create(companionDest);
             csrc.CopyTo(cdst);
         }
 
@@ -288,15 +289,15 @@ public static class ProwlPackage
     {
         Directory.CreateDirectory(destProjectSettingsPath);
 
-        foreach (var entry in archive.Entries)
+        foreach (ZipArchiveEntry entry in archive.Entries)
         {
             if (!entry.FullName.StartsWith("ProjectSettings/", StringComparison.OrdinalIgnoreCase))
                 continue;
             if (string.IsNullOrEmpty(entry.Name)) continue; // directory entry
 
             string destFile = Path.Combine(destProjectSettingsPath, entry.Name);
-            using var src = entry.Open();
-            using var dst = File.Create(destFile);
+            using Stream src = entry.Open();
+            using FileStream dst = File.Create(destFile);
             src.CopyTo(dst);
         }
     }
@@ -307,13 +308,13 @@ public static class ProwlPackage
     public static ImportAction DetermineAction(ZipArchive archive, PackageAssetEntry packageAsset, string assetsPath)
     {
         // Parse the GUID from the package entry
-        if (!EditorUtils.TryParseNonEmptyGuid(packageAsset.Guid, out var guid))
+        if (!EditorUtils.TryParseNonEmptyGuid(packageAsset.Guid, out Guid guid))
             return ImportAction.Add;
 
-        var db = EditorAssetBackend.Instance;
+        EditorAssetBackend? db = EditorAssetBackend.Instance;
         if (db == null) return ImportAction.Add;
 
-        var existing = db.GetEntry(guid);
+        AssetEntry? existing = db.GetEntry(guid);
         if (existing == null) return ImportAction.Add;
 
         // GUID exists in project - compare file content
@@ -327,15 +328,15 @@ public static class ProwlPackage
 
         // Size matches - compare hashes
         string zipAssetPath = "Assets/" + packageAsset.Path.Replace('\\', '/');
-        var zipEntry = archive.GetEntry(zipAssetPath);
+        ZipArchiveEntry? zipEntry = archive.GetEntry(zipAssetPath);
         if (zipEntry == null) return ImportAction.Add;
 
         byte[] existingHash;
-        using (var fs = File.OpenRead(existingAbsPath))
+        using (FileStream fs = File.OpenRead(existingAbsPath))
             existingHash = SHA256.HashData(fs);
 
         byte[] packageHash;
-        using (var zipStream = zipEntry.Open())
+        using (Stream zipStream = zipEntry.Open())
         using (var ms = new MemoryStream())
         {
             zipStream.CopyTo(ms);
@@ -403,7 +404,7 @@ public static class ProwlPackage
     private static IEnumerable<string> ExtractUriReferences(string gltfJson, string baseDir)
     {
         // Simple regex to find "uri": "filename.ext" patterns (not data: URIs)
-        var matches = System.Text.RegularExpressions.Regex.Matches(gltfJson, @"""uri""\s*:\s*""([^""]+)""");
+        MatchCollection matches = System.Text.RegularExpressions.Regex.Matches(gltfJson, @"""uri""\s*:\s*""([^""]+)""");
         foreach (System.Text.RegularExpressions.Match match in matches)
         {
             string uri = match.Groups[1].Value;
@@ -416,9 +417,9 @@ public static class ProwlPackage
     /// <summary> Collect all asset paths under a folder, used when exporting a folder selection. </summary>
     public static List<string> CollectFolderAssets(string folderRelativePath)
     {
-        var project = Project.Current;
+        Project? project = Project.Current;
         if (project == null) return new List<string>();
-        var db = EditorAssetBackend.Instance;
+        EditorAssetBackend? db = EditorAssetBackend.Instance;
         if (db == null) return new List<string>();
 
         string prefix = string.IsNullOrEmpty(folderRelativePath) ? "" : folderRelativePath.Replace('\\', '/') + "/";

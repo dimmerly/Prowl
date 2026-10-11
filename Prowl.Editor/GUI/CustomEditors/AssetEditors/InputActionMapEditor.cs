@@ -58,7 +58,7 @@ public class InputActionMapEditor : AssetImporterEditor
 
     public override void OnGUI(Paper paper, string id, AssetEntry entry, EngineObject? asset)
     {
-        var font = EditorTheme.DefaultFont;
+        Scribe.FontFile? font = EditorTheme.DefaultFont;
         if (font == null) return;
         var map = asset as InputActionMap;
         if (map == null) return;
@@ -133,7 +133,7 @@ public class InputActionMapEditor : AssetImporterEditor
 
             paper.Box($"{id}_div").Height(1).BackgroundColor(EditorTheme.Ink200).Margin(0, 3, 0, 3);
 
-            foreach (var action in map.Actions.ToList())
+            foreach (InputAction? action in map.Actions.ToList())
             {
                 bool sel = _selectedAction == action.Name;
                 string icon = action.ActionType switch
@@ -171,7 +171,7 @@ public class InputActionMapEditor : AssetImporterEditor
             .Padding(6, 6, 6, 6)
             .Enter())
         {
-            var action = _selectedAction != null ? map.FindAction(_selectedAction) : null;
+            InputAction? action = _selectedAction != null ? map.FindAction(_selectedAction) : null;
             if (action == null)
             {
                 paper.Box($"{id}_empty").Height(80)
@@ -219,7 +219,7 @@ public class InputActionMapEditor : AssetImporterEditor
             for (int i = 0; i < action.Bindings.Count; i++)
             {
                 int idx = i;
-                var binding = action.Bindings[i];
+                InputBinding binding = action.Bindings[i];
                 bool sel = _selectedBindingIdx == i;
 
                 DrawBindingRow(paper, $"{id}_br{i}", binding, sel, () =>
@@ -243,7 +243,7 @@ public class InputActionMapEditor : AssetImporterEditor
             {
                 int idx = i;
                 int selIdx = bindingOffset + i;
-                var composite = action.CompositeBindings[i];
+                InputCompositeBinding composite = action.CompositeBindings[i];
                 bool sel = _selectedBindingIdx == selIdx;
 
                 DrawCompositeRow(paper, $"{id}_cr{i}", composite, font, fs, sel, () =>
@@ -310,7 +310,7 @@ public class InputActionMapEditor : AssetImporterEditor
     private void DrawBindingRow(Paper paper, string id, InputBinding binding, bool selected,
         Action onSelect, Action onRemove)
     {
-        var font = EditorTheme.DefaultFont!;
+        Scribe.FontFile font = EditorTheme.DefaultFont!;
         float fs = EditorTheme.FontSize;
 
         using (paper.Row(id)
@@ -457,7 +457,7 @@ public class InputActionMapEditor : AssetImporterEditor
             for (int i = 0; i < partNames.Count; i++)
             {
                 string partName = partNames[i];
-                var partBinding = composite.Parts[partName];
+                InputBinding partBinding = composite.Parts[partName];
 
                 Origami.Header(paper, $"{id}_ph{i}", $"{partName.ToUpper()}").Show();
 
@@ -482,7 +482,7 @@ public class InputActionMapEditor : AssetImporterEditor
 
     private void DrawListenButton(Paper paper, string id, InputBinding binding, string? compositePartName)
     {
-        var font = EditorTheme.DefaultFont!;
+        Scribe.FontFile font = EditorTheme.DefaultFont!;
         bool isThisListening = _listeningForBinding && _listenCompositePartName == compositePartName;
 
         if (isThisListening)
@@ -650,7 +650,7 @@ public class InputActionMapEditor : AssetImporterEditor
 
     private void DrawProcessorList(Paper paper, string id, List<IInputProcessor> processors)
     {
-        var font = EditorTheme.DefaultFont!;
+        Scribe.FontFile font = EditorTheme.DefaultFont!;
         float fs = EditorTheme.FontSize;
 
         paper.Box($"{id}_lbl").Height(18)
@@ -660,7 +660,7 @@ public class InputActionMapEditor : AssetImporterEditor
         for (int i = 0; i < processors.Count; i++)
         {
             int idx = i;
-            var proc = processors[i];
+            IInputProcessor proc = processors[i];
 
             using (paper.Column($"{id}_p{i}")
                 .Height(UnitValue.Auto)

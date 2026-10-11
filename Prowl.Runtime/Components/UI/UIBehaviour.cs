@@ -46,14 +46,14 @@ public abstract class UIBehaviour : Component
 
     public override void OnEnable()
     {
-        var canvas = GetCanvas();
+        GameCanvas? canvas = GetCanvas();
         if (canvas.IsValid()) canvas.MarkDirty(UIDirtyFlags.Hierarchy);
         MarkDirty(UIDirtyFlags.Hierarchy);
     }
 
     public override void OnDisable()
     {
-        var canvas = GetCanvas();
+        GameCanvas? canvas = GetCanvas();
         if (canvas.IsValid()) canvas.MarkDirty(UIDirtyFlags.Hierarchy);
         MarkDirty(UIDirtyFlags.Hierarchy);
     }
@@ -63,7 +63,7 @@ public abstract class UIBehaviour : Component
         // Run the OnValide only in the editor- During runtime, dirtying should be driven by the fields themselves.
         if (!Application.IsPlaying)
         {
-            var canvas = GetCanvas();
+            GameCanvas? canvas = GetCanvas();
             if (canvas.IsValid()) canvas.MarkDirty(UIDirtyFlags.All);
             MarkDirty(UIDirtyFlags.All);
         }
@@ -71,14 +71,14 @@ public abstract class UIBehaviour : Component
 
     public override void OnAddedToScene()
     {
-        var canvas = GetCanvas();
+        GameCanvas? canvas = GetCanvas();
         if (canvas.IsValid()) canvas.MarkDirty(UIDirtyFlags.Hierarchy);
         MarkDirty(UIDirtyFlags.Hierarchy);
     }
 
     public override void OnRemovedFromScene()
     {
-        var canvas = GetCanvas();
+        GameCanvas? canvas = GetCanvas();
         if (canvas.IsValid()) canvas.MarkDirty(UIDirtyFlags.Hierarchy);
 
         MarkDirty(UIDirtyFlags.Hierarchy);
@@ -114,7 +114,7 @@ public abstract class UIBehaviour : Component
     public void MarkDirty(UIDirtyFlags flags)
     {
         DirtyFlags |= flags;
-        var canvas = GetCanvas();
+        GameCanvas? canvas = GetCanvas();
         if (canvas.IsValid()) canvas.MarkDirty(flags);
     }
 

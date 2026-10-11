@@ -127,7 +127,7 @@ public sealed class GTAOEffect : ImageEffect
         _mat.SetVector("_JitterOffset", eye.Jitter);
         _mat.SetTexture("_CameraNormalsTexture", context.DepthNormals.InternalTextures[0]);
 
-        using var cmd = Graphics.GetCommandBuffer("GTAO");
+        using CommandBuffer cmd = Graphics.GetCommandBuffer("GTAO");
 
         // Pass 4: shrink depth to AO resolution, then point every later pass at the small copy.
         _mat.SetTexture("_CameraDepthTexture", context.DepthNormals.InternalDepth);

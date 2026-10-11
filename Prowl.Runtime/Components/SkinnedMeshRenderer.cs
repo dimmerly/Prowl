@@ -82,20 +82,20 @@ public class SkinnedMeshRenderer : Component, IMaterialRenderer, IColorTint
     /// <summary>Number of blend shapes on the shared mesh (0 if none).</summary>
     public int BlendShapeCount
     {
-        get { var mesh = SharedMesh; return mesh.IsValid() ? mesh.BlendShapeCount : 0; }
+        get { Mesh? mesh = SharedMesh; return mesh.IsValid() ? mesh.BlendShapeCount : 0; }
     }
 
     /// <summary>Index of a blend shape by name, or -1 if not found.</summary>
     public int GetBlendShapeIndex(string name)
     {
-        var mesh = SharedMesh;
+        Mesh? mesh = SharedMesh;
         return mesh.IsValid() ? mesh.GetBlendShapeIndex(name) : -1;
     }
 
     /// <summary>The blend shape's name, or empty if out of range.</summary>
     public string GetBlendShapeName(int index)
     {
-        var mesh = SharedMesh;
+        Mesh? mesh = SharedMesh;
         return mesh.IsValid() ? mesh.GetBlendShapeName(index) : string.Empty;
     }
 
@@ -403,7 +403,7 @@ public class SkinnedMeshRenderer : Component, IMaterialRenderer, IColorTint
 
     public override void OnRenderCollect(Camera camera, List<IRenderable> renderables, List<IRenderableLight> lights)
     {
-        var mesh = SharedMesh;
+        Mesh? mesh = SharedMesh;
         if (mesh == null || Materials.Count == 0) return;
 
         Resolve();

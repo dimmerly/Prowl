@@ -124,17 +124,17 @@ public sealed class LocalVariantCache : IVariantCache
     {
         if (!Directory.Exists(_root)) return ValueTask.FromResult(0);
 
-        var cutoff = DateTime.UtcNow - _maxAge;
+        DateTime cutoff = DateTime.UtcNow - _maxAge;
         long kept = 0;
         int removed = 0;
 
         // Newest first, so the budget is spent on what was used most recently.
-        var entries = new DirectoryInfo(_root)
+        IOrderedEnumerable<FileInfo> entries = new DirectoryInfo(_root)
             .EnumerateFiles("*", SearchOption.AllDirectories)
             .Where(f => !f.Name.EndsWith(".partial", StringComparison.Ordinal))
             .OrderByDescending(f => f.LastWriteTimeUtc);
 
-        foreach (var file in entries)
+        foreach (FileInfo? file in entries)
         {
             ct.ThrowIfCancellationRequested();
 
@@ -163,7 +163,7 @@ public sealed class LocalVariantCache : IVariantCache
 
         try
         {
-            await using (var destination = File.Create(temp))
+            await using (FileStream destination = File.Create(temp))
                 await data.CopyToAsync(destination, ct).ConfigureAwait(false);
 
             try

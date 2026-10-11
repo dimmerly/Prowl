@@ -66,7 +66,7 @@ public class InstancedMeshRenderable : IRenderable
             Float3 min = new Float3(float.MaxValue);
             Float3 max = new Float3(float.MinValue);
 
-            foreach (var instance in instanceData)
+            foreach (InstanceData instance in instanceData)
             {
                 AABB instanceBounds = meshBounds.TransformBy((Float4x4)instance.GetMatrix());
                 min = new Float3(

@@ -76,7 +76,7 @@ public sealed class SceneToolContext
     /// </summary>
     public T State<T>() where T : class, new()
     {
-        var key = (CurrentTool?.GetType() ?? typeof(SceneTool), typeof(T));
+        (Type, Type) key = (CurrentTool?.GetType() ?? typeof(SceneTool), typeof(T));
         if (!_state.TryGetValue(key, out object? existing))
         {
             existing = new T();
@@ -88,7 +88,7 @@ public sealed class SceneToolContext
     /// <summary>Forget a tool's stored state, e.g. on deactivation.</summary>
     public void ClearState(SceneTool tool)
     {
-        foreach (var key in _state.Keys.Where(k => k.tool == tool.GetType()).ToList())
+        foreach ((Type tool, Type state) key in _state.Keys.Where(k => k.tool == tool.GetType()).ToList())
             _state.Remove(key);
     }
 

@@ -22,9 +22,9 @@ public class WindZoneTests : RuntimeTestBase
     /// <summary>Zone with the time-varying terms off, so only the profile is left.</summary>
     private WindZone CreateZone(Scene scene, Float3 position, float radius, float strength)
     {
-        var go = CreateGameObject("WindZone");
+        GameObject go = CreateGameObject("WindZone");
         go.Transform.Position = position;
-        var zone = go.AddComponent<WindZone>();
+        WindZone zone = go.AddComponent<WindZone>();
         zone.Radius = radius;
         zone.WindMain = strength;
         zone.Turbulence = 0f;
@@ -36,8 +36,8 @@ public class WindZoneTests : RuntimeTestBase
     [Fact]
     public void EnabledZonesRegisterAndUnregister()
     {
-        var scene = CreateScene(enable: true);
-        var zone = CreateZone(scene, Float3.Zero, 10f, 1f);
+        Scene scene = CreateScene(enable: true);
+        WindZone zone = CreateZone(scene, Float3.Zero, 10f, 1f);
 
         Assert.Contains(zone, WindZone.Active);
 
@@ -51,8 +51,8 @@ public class WindZoneTests : RuntimeTestBase
     {
         // Downwash, not an explosion: the middle is where the air arrives, so it has no outward
         // push of its own. The flow builds as it spreads and dies at the rim.
-        var scene = CreateScene(enable: true);
-        var zone = CreateZone(scene, Float3.Zero, 10f, 2f);
+        Scene scene = CreateScene(enable: true);
+        WindZone zone = CreateZone(scene, Float3.Zero, 10f, 2f);
 
         float eye = zone.SampleWind(new Float3(0.2f, 0f, 0f), 0f).X;
         float spread = zone.SampleWind(new Float3(4.5f, 0f, 0f), 0f).X;
@@ -68,8 +68,8 @@ public class WindZoneTests : RuntimeTestBase
     {
         // What the middle gets is the column coming down, which is what pins particles to the
         // ground under a hovering craft rather than blasting them sideways.
-        var scene = CreateScene(enable: true);
-        var zone = CreateZone(scene, Float3.Zero, 10f, 2f);
+        Scene scene = CreateScene(enable: true);
+        WindZone zone = CreateZone(scene, Float3.Zero, 10f, 2f);
 
         Float3 eye = zone.SampleWind(Float3.Zero, 0f);
 
@@ -81,8 +81,8 @@ public class WindZoneTests : RuntimeTestBase
     [Fact]
     public void OutflowIsRadial()
     {
-        var scene = CreateScene(enable: true);
-        var zone = CreateZone(scene, new Float3(5f, 0f, 5f), 10f, 1f);
+        Scene scene = CreateScene(enable: true);
+        WindZone zone = CreateZone(scene, new Float3(5f, 0f, 5f), 10f, 1f);
 
         Float3 wind = zone.SampleWind(new Float3(5f, 0f, 9f), 0f);
 
@@ -95,8 +95,8 @@ public class WindZoneTests : RuntimeTestBase
     {
         // Turbulence has to animate. A field that only varies in space reads as noise painted on
         // the ground rather than as air moving over it.
-        var scene = CreateScene(enable: true);
-        var zone = CreateZone(scene, Float3.Zero, 10f, 2f);
+        Scene scene = CreateScene(enable: true);
+        WindZone zone = CreateZone(scene, Float3.Zero, 10f, 2f);
         zone.Turbulence = 0.6f;
 
         var sample = new Float3(3.5f, 0f, 0f);
@@ -111,8 +111,8 @@ public class WindZoneTests : RuntimeTestBase
     {
         // Turning the strength up past the point where grass lies flat has to keep doing something,
         // and what it does is drive the gust fronts outward faster.
-        var scene = CreateScene(enable: true);
-        var zone = CreateZone(scene, Float3.Zero, 10f, 1f);
+        Scene scene = CreateScene(enable: true);
+        WindZone zone = CreateZone(scene, Float3.Zero, 10f, 1f);
         zone.Turbulence = 0.6f;
 
         float ChangeRate(float strength)
@@ -136,8 +136,8 @@ public class WindZoneTests : RuntimeTestBase
         // decorrelate the whole gust pattern, and worse the longer the game has been running. That
         // reads as the field flickering whenever the zone is dragged, so a nudge has to stay a nudge
         // no matter how late it happens.
-        var scene = CreateScene(enable: true);
-        var zone = CreateZone(scene, Float3.Zero, 10f, 2f);
+        Scene scene = CreateScene(enable: true);
+        WindZone zone = CreateZone(scene, Float3.Zero, 10f, 2f);
         zone.Turbulence = 1f;
 
         var sample = new Float3(4f, 0f, 0f);
@@ -156,9 +156,9 @@ public class WindZoneTests : RuntimeTestBase
     public void HeightFadesTheGroundEffect()
     {
         // A zone parked well overhead should barely stir the ground under it
-        var scene = CreateScene(enable: true);
-        var low = CreateZone(scene, Float3.Zero, 10f, 2f);
-        var high = CreateZone(scene, new Float3(0f, 8f, 0f), 10f, 2f);
+        Scene scene = CreateScene(enable: true);
+        WindZone low = CreateZone(scene, Float3.Zero, 10f, 2f);
+        WindZone high = CreateZone(scene, new Float3(0f, 8f, 0f), 10f, 2f);
 
         var ground = new Float3(4.5f, 0f, 0f);
 
@@ -169,9 +169,9 @@ public class WindZoneTests : RuntimeTestBase
     [Fact]
     public void NearestZoneWinsForParticles()
     {
-        var scene = CreateScene(enable: true);
+        Scene scene = CreateScene(enable: true);
         CreateZone(scene, new Float3(100f, 0f, 0f), 10f, 1f);
-        var close = CreateZone(scene, new Float3(2f, 0f, 0f), 10f, 1f);
+        WindZone close = CreateZone(scene, new Float3(2f, 0f, 0f), 10f, 1f);
 
         Assert.Equal(close, WindZone.GetNearest(Float3.Zero));
     }
@@ -179,7 +179,7 @@ public class WindZoneTests : RuntimeTestBase
     [Fact]
     public void GatherReturnsTheFourNearestZonesInOrder()
     {
-        var scene = CreateScene(enable: true);
+        Scene scene = CreateScene(enable: true);
         for (int i = 5; i >= 1; i--)
             CreateZone(scene, new Float3(i * 10f, 0f, 0f), 1f, 1f);
 
@@ -212,14 +212,14 @@ public class WindZoneTests : RuntimeTestBase
     [Fact]
     public void ParticlesAccelerateAlongTheWind()
     {
-        var scene = CreateScene(enable: true);
+        Scene scene = CreateScene(enable: true);
         CreateZone(scene, Float3.Zero, 10f, 5f);
 
-        var go = CreateGameObject("Particles");
-        var system = go.AddComponent<ParticleSystemComponent>();
+        GameObject go = CreateGameObject("Particles");
+        ParticleSystemComponent system = go.AddComponent<ParticleSystemComponent>();
         scene.Add(go);
 
-        var wind = ForceOnly(system);
+        WindModule wind = ForceOnly(system);
         Prepare(system, SimulationSpace.World);
 
         var particle = new Particle { Position = new Float3(2f, 0f, 0f), StartLifetime = 1f, Lifetime = 1f };
@@ -232,11 +232,11 @@ public class WindZoneTests : RuntimeTestBase
     [Fact]
     public void ParticlesIgnoreWindWhenTheModuleIsOff()
     {
-        var scene = CreateScene(enable: true);
+        Scene scene = CreateScene(enable: true);
         CreateZone(scene, Float3.Zero, 10f, 5f);
 
-        var go = CreateGameObject("Particles");
-        var system = go.AddComponent<ParticleSystemComponent>();
+        GameObject go = CreateGameObject("Particles");
+        ParticleSystemComponent system = go.AddComponent<ParticleSystemComponent>();
         system.SimulationSpace = SimulationSpace.World;
         system.Emission.Enabled = false;
         scene.Add(go);
@@ -250,17 +250,17 @@ public class WindZoneTests : RuntimeTestBase
     [Fact]
     public void LocalSpaceParticlesGetWindInTheirOwnSpace()
     {
-        var scene = CreateScene(enable: true);
+        Scene scene = CreateScene(enable: true);
         CreateZone(scene, Float3.Zero, 100f, 5f);
 
-        var go = CreateGameObject("Particles");
+        GameObject go = CreateGameObject("Particles");
         // Yawed 90 degrees: world +X wind has to arrive as local -Z (or +Z, sign depends on the turn).
         go.Transform.Rotation = Quaternion.AxisAngle(Float3.UnitY, MathF.PI * 0.5f);
         go.Transform.Position = new Float3(10f, 0f, 0f);
-        var system = go.AddComponent<ParticleSystemComponent>();
+        ParticleSystemComponent system = go.AddComponent<ParticleSystemComponent>();
         scene.Add(go);
 
-        var wind = ForceOnly(system);
+        WindModule wind = ForceOnly(system);
         Prepare(system, SimulationSpace.Local);
 
         var particle = new Particle { StartLifetime = 1f, Lifetime = 1f };
@@ -273,9 +273,9 @@ public class WindZoneTests : RuntimeTestBase
     [Fact]
     public void DragCarriesParticlesTowardTheWindVelocity()
     {
-        var scene = CreateScene(enable: true);
-        var go = CreateGameObject("Particles");
-        var system = go.AddComponent<ParticleSystemComponent>();
+        Scene scene = CreateScene(enable: true);
+        GameObject go = CreateGameObject("Particles");
+        ParticleSystemComponent system = go.AddComponent<ParticleSystemComponent>();
         scene.Add(go);
 
         system.Wind.Enabled = true;
@@ -295,9 +295,9 @@ public class WindZoneTests : RuntimeTestBase
     [Fact]
     public void DragIsStableAtAnyTimestep()
     {
-        var scene = CreateScene(enable: true);
-        var go = CreateGameObject("Particles");
-        var system = go.AddComponent<ParticleSystemComponent>();
+        Scene scene = CreateScene(enable: true);
+        GameObject go = CreateGameObject("Particles");
+        ParticleSystemComponent system = go.AddComponent<ParticleSystemComponent>();
         scene.Add(go);
 
         system.Wind.Enabled = true;
@@ -318,9 +318,9 @@ public class WindZoneTests : RuntimeTestBase
     [Fact]
     public void AmbientWindBlowsWithoutAnyZone()
     {
-        var scene = CreateScene(enable: true);
-        var go = CreateGameObject("Particles");
-        var system = go.AddComponent<ParticleSystemComponent>();
+        Scene scene = CreateScene(enable: true);
+        GameObject go = CreateGameObject("Particles");
+        ParticleSystemComponent system = go.AddComponent<ParticleSystemComponent>();
         scene.Add(go);
 
         system.Wind.Enabled = true;
@@ -339,9 +339,9 @@ public class WindZoneTests : RuntimeTestBase
     [Fact]
     public void TurbulenceDecorrelatesNeighbouringParticles()
     {
-        var scene = CreateScene(enable: true);
-        var go = CreateGameObject("Particles");
-        var system = go.AddComponent<ParticleSystemComponent>();
+        Scene scene = CreateScene(enable: true);
+        GameObject go = CreateGameObject("Particles");
+        ParticleSystemComponent system = go.AddComponent<ParticleSystemComponent>();
         scene.Add(go);
 
         system.Wind.Enabled = true;
@@ -361,9 +361,9 @@ public class WindZoneTests : RuntimeTestBase
     [Fact]
     public void TurbulenceStaysWithinItsSpeed()
     {
-        var scene = CreateScene(enable: true);
-        var go = CreateGameObject("Particles");
-        var system = go.AddComponent<ParticleSystemComponent>();
+        Scene scene = CreateScene(enable: true);
+        GameObject go = CreateGameObject("Particles");
+        ParticleSystemComponent system = go.AddComponent<ParticleSystemComponent>();
         scene.Add(go);
 
         system.Wind.Enabled = true;

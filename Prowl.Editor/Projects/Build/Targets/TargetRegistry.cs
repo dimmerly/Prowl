@@ -26,7 +26,7 @@ public sealed class TargetRegistry
     public static TargetRegistry CreateWithBuiltIns()
     {
         var registry = new TargetRegistry();
-        foreach (var target in BuiltInTargets.All)
+        foreach (PlatformTarget target in BuiltInTargets.All)
             registry.Register(target);
         return registry;
     }
@@ -49,7 +49,7 @@ public sealed class TargetRegistry
     {
         ArgumentNullException.ThrowIfNull(provider);
 
-        foreach (var target in provider.GetTargets())
+        foreach (PlatformTarget target in provider.GetTargets())
         {
             // One malformed target must not take the provider's other targets down with it.
             try { Register(target); }
@@ -71,14 +71,14 @@ public sealed class TargetRegistry
     public void ResetToBuiltIns()
     {
         _targets.Clear();
-        foreach (var target in BuiltInTargets.All)
+        foreach (PlatformTarget target in BuiltInTargets.All)
             Register(target);
     }
 
     public bool TryGet(string id, out PlatformTarget? target) => _targets.TryGetValue(id, out target);
 
     public PlatformTarget Get(string id)
-        => TryGet(id, out var target) && target != null
+        => TryGet(id, out PlatformTarget? target) && target != null
             ? target
             : throw new KeyNotFoundException($"No build target is registered as '{id}'.");
 

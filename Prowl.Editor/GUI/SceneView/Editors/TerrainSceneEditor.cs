@@ -67,7 +67,7 @@ public class TerrainSceneEditor : SceneTool
     public override void OnToolStripGUI(SceneToolContext ctx, Paper paper, string id)
     {
         if (_terrain == null) return;
-        var font = Theming.EditorTheme.DefaultFont!;
+        Scribe.FontFile font = Theming.EditorTheme.DefaultFont!;
 
         // Transform tool button (always available)
         bool isTransform = _useTransformTool;
@@ -165,7 +165,7 @@ public class TerrainSceneEditor : SceneTool
         }
 
         // Update brush preview
-        var terrainData = _terrain.Data;
+        TerrainData? terrainData = _terrain.Data;
         if (terrainData == null)
         {
             _terrain.BrushVisible = false;
@@ -211,9 +211,9 @@ public class TerrainSceneEditor : SceneTool
                     if (removed > 0)
                     {
                         var postTreeList = new List<TreeInstance>(terrainData.Trees);
-                        var capturedData = terrainData;
-                        var pre = preTreeList;
-                        var post = postTreeList;
+                        TerrainData capturedData = terrainData;
+                        List<TreeInstance> pre = preTreeList;
+                        List<TreeInstance> post = postTreeList;
                         Undo.RegisterAction("Remove Trees",
                             () => { capturedData.Trees = new List<TreeInstance>(pre); },
                             () => { capturedData.Trees = new List<TreeInstance>(post); });
@@ -225,9 +225,9 @@ public class TerrainSceneEditor : SceneTool
                 {
                     TerrainEditor.PlaceTrees(terrainData, terrainUV, terrainData.Size);
                     var postTreeList = new List<TreeInstance>(terrainData.Trees);
-                    var capturedData = terrainData;
-                    var pre = preTreeList;
-                    var post = postTreeList;
+                    TerrainData capturedData = terrainData;
+                    List<TreeInstance> pre = preTreeList;
+                    List<TreeInstance> post = postTreeList;
                     Undo.RegisterAction("Place Trees",
                         () => { capturedData.Trees = new List<TreeInstance>(pre); },
                         () => { capturedData.Trees = new List<TreeInstance>(post); });
@@ -309,7 +309,7 @@ public class TerrainSceneEditor : SceneTool
                 var preRect = CopyRect(_preStrokeHeights, res, minX, minZ, maxX, maxZ);
                 var postRect = CopyRect(data.Heights, res, minX, minZ, maxX, maxZ);
                 int cx = minX, cz = minZ, cxe = maxX, cze = maxZ, cres = res;
-                var capturedData = data;
+                TerrainData capturedData = data;
                 Undo.RegisterAction("Terrain Height",
                     () => { PasteRect(capturedData.Heights!, cres, cx, cz, cxe, cze, preRect); capturedData.SetHeightmapDirty(); },
                     () => { PasteRect(capturedData.Heights!, cres, cx, cz, cxe, cze, postRect); capturedData.SetHeightmapDirty(); });
@@ -328,7 +328,7 @@ public class TerrainSceneEditor : SceneTool
                 var preRect = CopyRectStride(_preStrokeSplats, res, stride, minX, minZ, maxX, maxZ);
                 var postRect = CopyRectStride(data.Splats, res, stride, minX, minZ, maxX, maxZ);
                 int cx = minX, cz = minZ, cxe = maxX, cze = maxZ, cres = res;
-                var capturedData = data;
+                TerrainData capturedData = data;
 
                 // Skipped once a layer or resolution change has altered the pixel layout
                 void Paste(float[] rect)
@@ -347,7 +347,7 @@ public class TerrainSceneEditor : SceneTool
             // Simple full-array undo for holes (byte array is small)
             var pre = _preStrokeHoles;
             var post = (byte[])data.Holes.Clone();
-            var capturedData = data;
+            TerrainData capturedData = data;
             Undo.RegisterAction("Terrain Holes",
                 () => { capturedData.Holes = (byte[])pre.Clone(); capturedData.SetHolesDirty(); },
                 () => { capturedData.Holes = (byte[])post.Clone(); capturedData.SetHolesDirty(); });
@@ -369,7 +369,7 @@ public class TerrainSceneEditor : SceneTool
                     var preRect = CopyRect(preArr, res, minX, minZ, maxX, maxZ);
                     var postRect = CopyRect(postArr, res, minX, minZ, maxX, maxZ);
                     int cx = minX, cz = minZ, cxe = maxX, cze = maxZ, cres = res, cidx = idx;
-                    var capturedData = data;
+                    TerrainData capturedData = data;
                     Undo.RegisterAction("Terrain Detail",
                         () => { PasteRect(capturedData.DetailLayers[cidx], cres, cx, cz, cxe, cze, preRect); capturedData.SetDetailsDirty(); },
                         () => { PasteRect(capturedData.DetailLayers[cidx], cres, cx, cz, cxe, cze, postRect); capturedData.SetDetailsDirty(); });

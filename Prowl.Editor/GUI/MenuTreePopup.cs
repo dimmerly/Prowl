@@ -103,7 +103,7 @@ public static class MenuTreePopup
         string emptyText,
         float minWidth = 280f)
     {
-        var font = EditorTheme.DefaultFont;
+        Scribe.FontFile? font = EditorTheme.DefaultFont;
         if (font == null) return;
 
         float triggerWidth = trigger.Data.LayoutRect.Size.X > 0 ? (float)trigger.Data.LayoutRect.Size.X : minWidth;
@@ -173,7 +173,7 @@ public static class MenuTreePopup
         IReadOnlyList<MenuTreeEntry> entries, MenuTreeState state, Action<MenuTreeEntry> onPick, string emptyText)
     {
         string prefix = string.Join("/", state.Nav);
-        var (leaves, subfolders) = SplitLevel(entries, prefix);
+        (List<MenuTreeEntry>? leaves, List<string>? subfolders) = SplitLevel(entries, prefix);
 
         if (state.Nav.Count > 0)
         {
@@ -240,7 +240,7 @@ public static class MenuTreePopup
         var leaves = new List<MenuTreeEntry>();
         var subfolders = new HashSet<string>(StringComparer.Ordinal);
 
-        foreach (var e in entries)
+        foreach (MenuTreeEntry e in entries)
         {
             if (e.Category == prefix)
             {

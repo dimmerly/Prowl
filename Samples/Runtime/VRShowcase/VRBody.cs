@@ -130,19 +130,19 @@ public sealed class VRBody : Component
     public static VRBody Create(Float3 feet, float eyeHeight)
     {
         var root = new GameObject("VR Body");
-        var body = root.AddComponent<VRBody>();
+        VRBody body = root.AddComponent<VRBody>();
         body.BuiltEyeHeight = eyeHeight;
         body.TargetEyeHeight = eyeHeight;
 
-        var ball = Part(root, "Ball", feet + new Float3(0f, BallRadius, 0f), PlayerMass * BallShare, 1.2f);
+        Rigidbody3D ball = Part(root, "Ball", feet + new Float3(0f, BallRadius, 0f), PlayerMass * BallShare, 1.2f);
         ball.AddComponent<SphereCollider>().Radius = BallRadius;
         body.Ball = ball;
 
         // The leg and its bumper never turn and never grip, so walls slide past them while only the spinning ball
         // touches the ground.
-        var leg = Part(root, "Leg", feet + new Float3(0f, LegCenter, 0f), PlayerMass * LegShare, 0f);
+        Rigidbody3D leg = Part(root, "Leg", feet + new Float3(0f, LegCenter, 0f), PlayerMass * LegShare, 0f);
         leg.Constraints = RigidbodyConstraints.FreezeRotation;
-        var legShape = leg.AddComponent<CapsuleCollider>();
+        CapsuleCollider legShape = leg.AddComponent<CapsuleCollider>();
         legShape.Radius = LegRadius;
         legShape.Height = LegHeight;
         var bumper = new GameObject("Bumper");
@@ -151,12 +151,12 @@ public sealed class VRBody : Component
         bumper.AddComponent<SphereCollider>().Radius = BallRadius + BumperClearance;
         body.Leg = leg;
 
-        var socket = leg.AddComponent<BallSocketConstraint>();
+        BallSocketConstraint socket = leg.AddComponent<BallSocketConstraint>();
         socket.Anchor = new Float3(0f, BallRadius - LegCenter, 0f);
         socket.ConnectedBody = body.Ball;
 
         // The torso's origin is the eyes, with the head just above and the trunk hanging below.
-        var torso = Part(root, "Torso", feet + new Float3(0f, eyeHeight, 0f), PlayerMass * (1f - BallShare - LegShare), 0f);
+        Rigidbody3D torso = Part(root, "Torso", feet + new Float3(0f, eyeHeight, 0f), PlayerMass * (1f - BallShare - LegShare), 0f);
         torso.Constraints = RigidbodyConstraints.FreezeRotation;
         body._torsoShape = torso.AddComponent<CapsuleCollider>();
         body._torsoShape.Radius = TorsoRadius;
@@ -168,7 +168,7 @@ public sealed class VRBody : Component
         body.Torso = torso;
 
         // The spine lets the torso slide straight up and down the leg, and its motor holds the eye height.
-        var spine = torso.AddComponent<PrismaticJoint>();
+        PrismaticJoint spine = torso.AddComponent<PrismaticJoint>();
         spine.Axis = Float3.UnitY;
         spine.Pinned = true;
         spine.MinDistance = LowestEyes - eyeHeight;
@@ -192,7 +192,7 @@ public sealed class VRBody : Component
         var go = new GameObject(name);
         go.SetParent(root);
         go.Transform.Position = position;
-        var rb = go.AddComponent<Rigidbody3D>();
+        Rigidbody3D rb = go.AddComponent<Rigidbody3D>();
         rb.Mass = mass;
         rb.Friction = friction;
         rb.EnableSpeculativeContacts = true;

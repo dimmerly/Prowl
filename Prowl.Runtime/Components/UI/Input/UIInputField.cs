@@ -201,7 +201,7 @@ public class UIInputField : Selectable,
         if (!IsInteractable()) return;
         try { OnSubmitted?.Invoke(_text); }
         catch (Exception ex) { Debug.LogError($"[UIInputField] OnSubmitted on '{Name}' threw: {ex.Message}\n{ex.StackTrace}"); }
-        var es = EventSystem.Current;
+        EventSystem? es = EventSystem.Current;
         if (es.IsValid()) es.SetSelected(null); // ends editing (fires OnDeselect -> EndEdit)
     }
 

@@ -2,6 +2,7 @@
 // Licensed under the MIT License. See the LICENSE file in the project root for details.
 
 using System;
+using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 
@@ -13,6 +14,7 @@ using Jitter2.Dynamics.Constraints;
 using Jitter2.LinearMath;
 
 using Prowl.Echo;
+using Prowl.Runtime.Resources;
 using Prowl.Vector;
 
 namespace Prowl.Runtime;
@@ -461,7 +463,7 @@ public sealed class Rigidbody3D : Component
     private void EnsureBody()
     {
         if (IsSimulated) return;
-        var scene = GameObject.IsValid() ? GameObject.Scene : null;
+        Scene? scene = GameObject.IsValid() ? GameObject.Scene : null;
         World? world = scene.IsValid() ? scene.Physics?.World : null;
         if (world != null) CreateBody(world);
     }
@@ -474,7 +476,7 @@ public sealed class Rigidbody3D : Component
         UpdateShapes(_body);
         UpdateTransform(_body);
         _lastSyncedTransformVersion = Transform.Version; // initial pose is already in the body
-        var scene = GameObject.IsValid() ? GameObject.Scene : null;
+        Scene? scene = GameObject.IsValid() ? GameObject.Scene : null;
         PhysicsWorld physics = scene.IsValid() ? scene.Physics : null;
         physics?.RegisterBody(this);
         physics?.RebindConstraints(this);
@@ -608,10 +610,10 @@ public sealed class Rigidbody3D : Component
             return;
 
         // Get all colliders in this GameObject and its children
-        var colliders = GetComponentsInChildren<Collider>();
+        IEnumerable<Collider> colliders = GetComponentsInChildren<Collider>();
 
         // A collider under a nested rigidbody belongs to that one, not to this.
-        foreach (var collider in colliders)
+        foreach (Collider collider in colliders)
             if (ReferenceEquals(collider.FindOwningRigidbody(), this))
                 collider.TryAttachTo(this);
     }
@@ -744,8 +746,8 @@ public sealed class Rigidbody3D : Component
         rb.RemoveShapes(rb.Shapes, MassInertiaUpdateMode.Preserve);
 
         // Get all child colliders and have them re-attach
-        var colliders = GetComponentsInChildren<Collider>();
-        foreach (var collider in colliders)
+        IEnumerable<Collider> colliders = GetComponentsInChildren<Collider>();
+        foreach (Collider collider in colliders)
         {
             // Detach the collider first (in case it's attached to us or static)
             collider.Detach();
@@ -814,7 +816,7 @@ public sealed class Rigidbody3D : Component
         AssertOwner();
         if (!TryGetMovingBody(out RigidBody body)) return;
 
-        var jForce = force.ToJitter();
+        JVector jForce = force.ToJitter();
         switch (mode)
         {
             case ForceMode.Force:
@@ -848,8 +850,8 @@ public sealed class Rigidbody3D : Component
         AssertOwner();
         if (!TryGetMovingBody(out RigidBody body)) return;
 
-        var jForce = force.ToJitter();
-        var jPosition = worldPosition.ToJitter();
+        JVector jForce = force.ToJitter();
+        JVector jPosition = worldPosition.ToJitter();
 
         if (mode == ForceMode.Impulse)
         {
@@ -874,7 +876,7 @@ public sealed class Rigidbody3D : Component
         AssertOwner();
         if (!TryGetMovingBody(out RigidBody body)) return;
 
-        var jTorque = torque.ToJitter();
+        JVector jTorque = torque.ToJitter();
 
         switch (mode)
         {
@@ -929,7 +931,7 @@ public sealed class Rigidbody3D : Component
     {
         if (_body == null) return Float3.Zero;
 
-        var point = worldPoint.ToJitter();
+        JVector point = worldPoint.ToJitter();
         JVector r = point - _body.Position;
         JVector velocity = _body.Velocity + JVector.Cross(_body.AngularVelocity, r);
 
@@ -1000,8 +1002,8 @@ public sealed class Rigidbody3D : Component
         AssertOwner();
         if (!TryGetMovingBody(out RigidBody body)) return;
 
-        var jImpulse = impulse.ToJitter();
-        var jPosition = worldPosition.ToJitter();
+        JVector jImpulse = impulse.ToJitter();
+        JVector jPosition = worldPosition.ToJitter();
 
         body.ApplyImpulse(jImpulse, jPosition);
 
@@ -1016,7 +1018,7 @@ public sealed class Rigidbody3D : Component
         AssertOwner();
         if (!TryGetMovingBody(out RigidBody body)) return;
 
-        var jImpulse = impulse.ToJitter();
+        JVector jImpulse = impulse.ToJitter();
         body.ApplyImpulse(jImpulse);
 
         SetActive(true);
@@ -1030,7 +1032,7 @@ public sealed class Rigidbody3D : Component
         AssertOwner();
         if (!TryGetMovingBody(out RigidBody body)) return;
 
-        var jImpulse = angularImpulse.ToJitter();
+        JVector jImpulse = angularImpulse.ToJitter();
         body.AngularVelocity += JVector.Transform(jImpulse, body.Data.InverseInertiaWorld);
 
         SetActive(true);

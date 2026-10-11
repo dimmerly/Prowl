@@ -76,7 +76,7 @@ public sealed record MSBuildProjectSpec
         else if (RuntimeIdentifiers.Count > 1)
             sb.AppendLine($"    <RuntimeIdentifiers>{Escape(string.Join(';', RuntimeIdentifiers))}</RuntimeIdentifiers>");
 
-        foreach (var (key, value) in Properties.OrderBy(p => p.Key, StringComparer.Ordinal))
+        foreach ((string? key, string? value) in Properties.OrderBy(p => p.Key, StringComparer.Ordinal))
         {
             if (!IsValidElementName(key))
                 throw new InvalidOperationException($"'{key}' is not a usable MSBuild property name.");
@@ -89,7 +89,7 @@ public sealed record MSBuildProjectSpec
         if (References.Count > 0)
         {
             sb.AppendLine("  <ItemGroup>");
-            foreach (var reference in References.OrderBy(r => r.Name, StringComparer.Ordinal))
+            foreach (AssemblyRef? reference in References.OrderBy(r => r.Name, StringComparer.Ordinal))
             {
                 sb.AppendLine($"    <Reference Include=\"{Escape(reference.Name)}\">");
                 sb.AppendLine($"      <HintPath>{Escape(reference.HintPath)}</HintPath>");
@@ -104,7 +104,7 @@ public sealed record MSBuildProjectSpec
         if (Packages.Count > 0)
         {
             sb.AppendLine("  <ItemGroup>");
-            foreach (var package in Packages.OrderBy(p => p.Id, StringComparer.Ordinal))
+            foreach (PackageRef? package in Packages.OrderBy(p => p.Id, StringComparer.Ordinal))
                 sb.AppendLine($"    <PackageReference Include=\"{Escape(package.Id)}\" Version=\"{Escape(package.Version)}\" />");
             sb.AppendLine("  </ItemGroup>");
         }
@@ -128,7 +128,7 @@ public sealed record MSBuildProjectSpec
         if (EmbeddedResources.Count > 0)
         {
             sb.AppendLine("  <ItemGroup>");
-            foreach (var resource in EmbeddedResources.OrderBy(r => r.Path, StringComparer.Ordinal))
+            foreach (EmbeddedResourceRef? resource in EmbeddedResources.OrderBy(r => r.Path, StringComparer.Ordinal))
             {
                 sb.AppendLine($"    <EmbeddedResource Include=\"{Escape(resource.Path)}\">");
                 sb.AppendLine($"      <LogicalName>{Escape(resource.LogicalName)}</LogicalName>");

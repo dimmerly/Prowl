@@ -48,7 +48,7 @@ public sealed class EngineObjectNullAnalyzer : DiagnosticAnalyzer
         context.EnableConcurrentExecution();
         context.RegisterCompilationStartAction(start =>
         {
-            var engineObject = start.Compilation.GetTypeByMetadataName(EngineObjectMetadataName);
+            INamedTypeSymbol? engineObject = start.Compilation.GetTypeByMetadataName(EngineObjectMetadataName);
             if (engineObject is null) return; // no reference to Prowl.Runtime in this compilation
 
             start.RegisterOperationAction(ctx =>

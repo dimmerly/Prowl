@@ -377,7 +377,7 @@ public sealed class MainThreadContext : SynchronizationContext
 
         int pending = _queue.Count;
 
-        for (int i = 0; i < pending && _queue.TryDequeue(out var entry); i++)
+        for (int i = 0; i < pending && _queue.TryDequeue(out Entry entry); i++)
         {
             try { entry.Callback(entry.State); }
             catch (OperationCanceledException e) when (IsDeliberateCancellation(e)) { }

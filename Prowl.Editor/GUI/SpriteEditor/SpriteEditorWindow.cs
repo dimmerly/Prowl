@@ -66,7 +66,7 @@ public class SpriteEditorWindow : DockPanel
     {
         get
         {
-            var tex = _texture;
+            Texture2D? tex = _texture;
             return $"Sprite: {(tex.IsValid() ? tex.Name : "?")}";
         }
     }

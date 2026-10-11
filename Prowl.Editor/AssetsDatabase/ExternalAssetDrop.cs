@@ -75,7 +75,7 @@ public static class ExternalAssetDrop
 
     private static void HandleDrop(string[] paths, string? targetFolder)
     {
-        var db = EditorAssetBackend.Instance!;
+        EditorAssetBackend db = EditorAssetBackend.Instance!;
         string assetsPath = Project.Current!.AssetsPath;
 
         string destRel = targetFolder ?? ProjectPanel.Instance?.CurrentFolder ?? "";
@@ -161,7 +161,7 @@ public static class ExternalAssetDrop
     {
         for (int i = _reveals.Count - 1; i >= 0; i--)
         {
-            var (db, handler, deadline) = _reveals[i];
+            (EditorAssetBackend? db, Action<string[]>? handler, DateTime deadline) = _reveals[i];
             if (ReferenceEquals(db, EditorAssetBackend.Instance) && DateTime.UtcNow < deadline) continue;
             db.OnAssetsImported -= handler;
             _reveals.RemoveAt(i);

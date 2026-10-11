@@ -1108,7 +1108,7 @@ internal sealed class ShadowRenderer : IDisposable
         if (mesh.HasBoneIndices && mesh.HasBoneWeights) return false;
 
         bool twoSided = kind == BatchedTwoSided;
-        var key = (mesh, renderable.GetSubMeshIndex(), twoSided);
+        (Mesh mesh, int, bool twoSided) key = (mesh, renderable.GetSubMeshIndex(), twoSided);
         if (!_batchLookup.TryGetValue(key, out ShadowBatch? batch))
         {
             if (_batches.Count == _batchPool.Count) _batchPool.Add(new ShadowBatch());

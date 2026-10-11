@@ -49,14 +49,14 @@ public class SerializationTests : RuntimeTestBase
     [Fact]
     public void GameObject_RoundTrip_ReattachesComponents()
     {
-        var go = CreateGameObject();
-        var comp = go.AddComponent<SerializableComponent>();
+        GameObject go = CreateGameObject();
+        SerializableComponent comp = go.AddComponent<SerializableComponent>();
         comp.IntField = 123;
 
-        var clone = RoundTrip(go);
+        GameObject clone = RoundTrip(go);
 
         // Deserialize must rebuild the component, its data, the cache (GetComponent) and the back-reference.
-        var cloneComp = clone.GetComponent<SerializableComponent>();
+        SerializableComponent? cloneComp = clone.GetComponent<SerializableComponent>();
         Assert.NotNull(cloneComp);
         Assert.Equal(123, cloneComp.IntField);
         Assert.Same(clone, cloneComp.GameObject);
@@ -66,11 +66,11 @@ public class SerializationTests : RuntimeTestBase
     [Fact]
     public void GameObject_RoundTrip_ReconstructsChildParentLinks()
     {
-        var parent = CreateGameObject("Parent");
-        var child = CreateGameObject("Child");
+        GameObject parent = CreateGameObject("Parent");
+        GameObject child = CreateGameObject("Child");
         child.SetParent(parent);
 
-        var clone = RoundTrip(parent);
+        GameObject clone = RoundTrip(parent);
 
         Assert.Single(clone.Children);
         Assert.Equal("Child", clone.Children[0].Name);
@@ -80,9 +80,9 @@ public class SerializationTests : RuntimeTestBase
     [Fact]
     public void GameObject_RoundTrip_WiresTransformToGameObject()
     {
-        var go = CreateGameObject();
+        GameObject go = CreateGameObject();
 
-        var clone = RoundTrip(go);
+        GameObject clone = RoundTrip(go);
 
         Assert.Same(clone, clone.Transform.GameObject);
     }
@@ -92,14 +92,14 @@ public class SerializationTests : RuntimeTestBase
     {
         // GameObject.Serialize writes these fields by hand, so a regression there wouldn't be caught
         // by Echo's tests.
-        var go = CreateGameObject("Hero");
+        GameObject go = CreateGameObject("Hero");
         go.TagIndex = 2;
         go.LayerIndex = 3;
         go.IsStatic = true;
         go.HideFlags = HideFlags.DontSave;
         go.Enabled = false;
 
-        var clone = RoundTrip(go);
+        GameObject clone = RoundTrip(go);
 
         Assert.Equal("Hero", clone.Name);
         Assert.Equal(2, clone.TagIndex);
@@ -112,14 +112,14 @@ public class SerializationTests : RuntimeTestBase
     [Fact]
     public void GameObject_RoundTrip_OneWayComponentReference_Rewires()
     {
-        var root = CreateGameObject("Root");
-        var refComp = root.AddComponent<CrossRefComponent>();
-        var child = CreateGameObject("Child");
-        var target = child.AddComponent<SerializableComponent>();
+        GameObject root = CreateGameObject("Root");
+        CrossRefComponent refComp = root.AddComponent<CrossRefComponent>();
+        GameObject child = CreateGameObject("Child");
+        SerializableComponent target = child.AddComponent<SerializableComponent>();
         child.SetParent(root);
         refComp.Other = target;
 
-        var clone = RoundTrip(root);
+        GameObject clone = RoundTrip(root);
 
         // A one-way reference to another object in the same graph rewires to the cloned target.
         Assert.Same(clone.Children[0].GetComponent<SerializableComponent>(), clone.GetComponent<CrossRefComponent>()!.Other);
@@ -131,18 +131,18 @@ public class SerializationTests : RuntimeTestBase
         // Two components referencing each other across the parent/child boundary must both survive a
         // round trip. This relies on GameObject.Deserialize visiting Components before Children to
         // match the serialization order (Echo's reference encoding is single-pass, definition-first).
-        var root = CreateGameObject("Root");
-        var a = root.AddComponent<CrossRefComponent>();
-        var child = CreateGameObject("Child");
-        var b = child.AddComponent<CrossRefComponent>();
+        GameObject root = CreateGameObject("Root");
+        CrossRefComponent a = root.AddComponent<CrossRefComponent>();
+        GameObject child = CreateGameObject("Child");
+        CrossRefComponent b = child.AddComponent<CrossRefComponent>();
         child.SetParent(root);
         a.Other = b;
         b.Other = a;
 
-        var clone = RoundTrip(root);
+        GameObject clone = RoundTrip(root);
 
-        var ca = clone.GetComponent<CrossRefComponent>()!;
-        var cb = clone.Children[0].GetComponent<CrossRefComponent>()!;
+        CrossRefComponent ca = clone.GetComponent<CrossRefComponent>()!;
+        CrossRefComponent cb = clone.Children[0].GetComponent<CrossRefComponent>()!;
         Assert.Same(cb, ca.Other);
         Assert.Same(ca, cb.Other);
     }
@@ -151,9 +151,9 @@ public class SerializationTests : RuntimeTestBase
     public void GameObject_RoundTrip_GeneratesFreshIdentifier()
     {
         // A raw GameObject deserialize intentionally mints a new identifier; only Scene restores them.
-        var go = CreateGameObject();
+        GameObject go = CreateGameObject();
 
-        var clone = RoundTrip(go);
+        GameObject clone = RoundTrip(go);
 
         Assert.NotEqual(go.Identifier, clone.Identifier);
     }
@@ -165,16 +165,16 @@ public class SerializationTests : RuntimeTestBase
     [Fact]
     public void Scene_RoundTrip_ReaddsObjectsAndHierarchy()
     {
-        var scene = CreateScene();
-        var parent = CreateGameObject("Parent");
-        var child = CreateGameObject("Child");
+        Scene scene = CreateScene();
+        GameObject parent = CreateGameObject("Parent");
+        GameObject child = CreateGameObject("Child");
         child.SetParent(parent);
         scene.Add(parent);
 
-        var clone = RoundTrip(scene);
+        Scene clone = RoundTrip(scene);
 
         Assert.Equal(2, clone.Count);
-        var cloneParent = clone.RootObjects.Single();
+        GameObject cloneParent = clone.RootObjects.Single();
         Assert.Equal("Parent", cloneParent.Name);
         Assert.Single(cloneParent.Children);
         Assert.Same(clone, cloneParent.Children[0].Scene);
@@ -184,16 +184,16 @@ public class SerializationTests : RuntimeTestBase
     public void Scene_RoundTrip_RestoresIdentifiers()
     {
         // The parallel identifier arrays Scene maintains are the reason save/load keeps stable IDs.
-        var scene = CreateScene();
-        var go = CreateGameObject("Obj");
-        var comp = go.AddComponent<SerializableComponent>();
+        Scene scene = CreateScene();
+        GameObject go = CreateGameObject("Obj");
+        SerializableComponent comp = go.AddComponent<SerializableComponent>();
         scene.Add(go);
         Guid goId = go.Identifier;
         Guid compId = comp.Identifier;
 
-        var clone = RoundTrip(scene);
+        Scene clone = RoundTrip(scene);
 
-        var cloneGo = clone.FindObjectByIdentifier<GameObject>(goId);
+        GameObject? cloneGo = clone.FindObjectByIdentifier<GameObject>(goId);
         Assert.NotNull(cloneGo);
         Assert.Equal("Obj", cloneGo.Name);
         Assert.NotNull(clone.FindObjectByIdentifier<SerializableComponent>(compId));
@@ -205,11 +205,11 @@ public class SerializationTests : RuntimeTestBase
     [Fact]
     public void GameObject_Deserialize_WithUnresolvableTransform_FallsBackAndDoesNotThrow()
     {
-        var go = CreateGameObject("Obj");
-        var echo = Serializer.Serialize(go);
+        GameObject go = CreateGameObject("Obj");
+        EchoObject echo = Serializer.Serialize(go);
         echo.Remove("Transform"); // Transform now deserializes to null
 
-        var clone = Serializer.Deserialize<GameObject>(echo);
+        GameObject? clone = Serializer.Deserialize<GameObject>(echo);
 
         Assert.NotNull(clone);
         Assert.NotNull(clone!.Transform);                 // a GameObject must always have a Transform
@@ -222,19 +222,19 @@ public class SerializationTests : RuntimeTestBase
     [Fact]
     public void Scene_RoundTrip_OneObjectWithUnresolvableTransform_DoesNotWipeScene()
     {
-        var scene = CreateScene();
+        Scene scene = CreateScene();
         scene.Add(CreateGameObject("Healthy1"));
         scene.Add(CreateGameObject("Broken"));
         scene.Add(CreateGameObject("Healthy2"));
 
-        var echo = Serializer.Serialize(scene);
+        EchoObject echo = Serializer.Serialize(scene);
 
         // Drop the "Broken" object's Transform in the serialized array to simulate the unresolved ref.
-        foreach (var el in echo["serializeObj"]["array"].List)
-            if (el.TryGet("Name", out var n) && n!.StringValue == "Broken")
+        foreach (EchoObject el in echo["serializeObj"]["array"].List)
+            if (el.TryGet("Name", out EchoObject? n) && n!.StringValue == "Broken")
                 el.Remove("Transform");
 
-        var clone = Serializer.Deserialize<Scene>(echo)!;
+        Scene clone = Serializer.Deserialize<Scene>(echo)!;
 
         Assert.Equal(3, clone.AllObjects.Count());
         Assert.Contains(clone.AllObjects, g => g.Name == "Healthy1");
@@ -256,7 +256,7 @@ public class SerializationTests : RuntimeTestBase
     {
         var holder = new Holder { Asset = new TestAsset { Value = 55, Name = "Asset" } };
 
-        var clone = RoundTrip(holder);
+        Holder clone = RoundTrip(holder);
 
         Assert.NotNull(clone.Asset);
         Assert.Equal(55, clone.Asset!.Value);
@@ -268,7 +268,7 @@ public class SerializationTests : RuntimeTestBase
         var id = Guid.NewGuid();
         var aref = new AssetRef<TestAsset>(id);
 
-        var clone = RoundTrip(aref);
+        AssetRef<TestAsset> clone = RoundTrip(aref);
 
         Assert.Equal(id, clone.AssetID);
     }
@@ -278,7 +278,7 @@ public class SerializationTests : RuntimeTestBase
     {
         AssetRef<TestAsset> aref = default;
 
-        var clone = RoundTrip(aref);
+        AssetRef<TestAsset> clone = RoundTrip(aref);
 
         Assert.True(clone.IsEmpty);
     }
@@ -358,14 +358,14 @@ public class SerializationTests : RuntimeTestBase
 
         AnimationClip clone = RoundTrip(clip);
         clone.Avatar = avatar;
-        var events = clone.GetClip(avatar.Runtime)!.Events;
+        IReadOnlyList<Motion.AnimationEvent> events = clone.GetClip(avatar.Runtime)!.Events;
 
         Assert.Equal(2, events.Count);
-        var foot = Assert.IsType<Motion.FootEvent>(events[0]);
+        Motion.FootEvent foot = Assert.IsType<Motion.FootEvent>(events[0]);
         Assert.Equal(Motion.FootPhase.RightFootDown, foot.Phase);
         Assert.Equal(0.25f, foot.StartTime, 3);
 
-        var named = Assert.IsType<Motion.IdEvent>(events[1]);
+        Motion.IdEvent named = Assert.IsType<Motion.IdEvent>(events[1]);
         Assert.Equal(new Motion.StringID("Swing"), named.Id);
         Assert.Equal(0.5f, named.StartTime, 3);
         Assert.Equal(0.25f, named.Duration, 3);

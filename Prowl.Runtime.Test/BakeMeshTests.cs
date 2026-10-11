@@ -46,7 +46,7 @@ public class BakeMeshTests
     {
         var m = Mesh.CreateCube(Float3.One);
 
-        var baked = PhysicsWorld.BakeMesh(m);
+        BakedPhysicsMesh baked = PhysicsWorld.BakeMesh(m);
 
         Assert.NotNull(baked.TriangleMesh);
         Assert.True(baked.Triangles.Count > 0);
@@ -59,8 +59,8 @@ public class BakeMeshTests
     {
         var m = Mesh.CreateCube(Float3.One);
 
-        var a = PhysicsWorld.BakeMesh(m);
-        var b = PhysicsWorld.BakeMesh(m);
+        BakedPhysicsMesh a = PhysicsWorld.BakeMesh(m);
+        BakedPhysicsMesh b = PhysicsWorld.BakeMesh(m);
 
         Assert.Same(a, b); // same mesh, same version -> shared bake (not rebuilt)
     }
@@ -69,11 +69,11 @@ public class BakeMeshTests
     public void BakeMesh_RebakesAfterMeshChanges()
     {
         var m = Mesh.CreateCube(Float3.One);
-        var first = PhysicsWorld.BakeMesh(m);
+        BakedPhysicsMesh first = PhysicsWorld.BakeMesh(m);
 
         m.Vertices = m.Vertices; // bumps Version, invalidating the cached bake
 
-        var second = PhysicsWorld.BakeMesh(m);
+        BakedPhysicsMesh second = PhysicsWorld.BakeMesh(m);
         Assert.NotSame(first, second);
         Assert.Equal(m.Version, second.Version);
     }

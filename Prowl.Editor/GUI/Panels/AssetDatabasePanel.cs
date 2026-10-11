@@ -81,7 +81,7 @@ public class AssetDatabasePanel : DockPanel
 
     private void SampleHistory()
     {
-        var now = DateTime.UtcNow;
+        DateTime now = DateTime.UtcNow;
         if (now - _lastHistorySample < TimeSpan.FromSeconds(1)) return;
         _lastHistorySample = now;
         _historyHead = (_historyHead + 1) % _countHistory.Length;
@@ -92,10 +92,10 @@ public class AssetDatabasePanel : DockPanel
 
     public override void OnGUI(Paper paper, float width, float height)
     {
-        var font = EditorTheme.DefaultFont;
+        FontFile? font = EditorTheme.DefaultFont;
         if (font == null) return;
 
-        var db = EditorAssetBackend.Instance;
+        EditorAssetBackend? db = EditorAssetBackend.Instance;
         if (db == null)
         {
             EditorGUI.EmptyState(paper, "adb_none", "No project open.", font);
@@ -136,7 +136,7 @@ public class AssetDatabasePanel : DockPanel
             if (asset.IsLoaded && !row.Reached) _unreachedCount++;
             typeNames.Add(row.TypeName);
 
-            if (db.TryGetParentGuid(asset.AssetID, out var parentGuid)) pendingSubs.Add((parentGuid, row));
+            if (db.TryGetParentGuid(asset.AssetID, out Guid parentGuid)) pendingSubs.Add((parentGuid, row));
             else groups[asset.AssetID] = new FamilyGroup { Root = row, RootPath = asset.AssetPath };
         }
 
@@ -146,9 +146,9 @@ public class AssetDatabasePanel : DockPanel
         if (!_typeOptions.Contains(_typeFilter)) _typeFilter = "";
 
         // A sub-asset loads on its own, so its parent often is not loaded. The parent still gets a row to nest under.
-        foreach (var (parentGuid, row) in pendingSubs)
+        foreach ((Guid parentGuid, Row row) in pendingSubs)
         {
-            if (!groups.TryGetValue(parentGuid, out var group))
+            if (!groups.TryGetValue(parentGuid, out FamilyGroup? group))
             {
                 if (AssetDatabase.Get(parentGuid) is not { } parent)
                 {
@@ -164,7 +164,7 @@ public class AssetDatabasePanel : DockPanel
             || r.Name.Contains(_searchText, StringComparison.OrdinalIgnoreCase);
 
         _families.Clear();
-        foreach (var g in groups.Values)
+        foreach (FamilyGroup g in groups.Values)
         {
             if (_showOnlyUnreached && g.Root.Reached && g.Subs.TrueForAll(s => s.Reached)) continue;
             if (!string.IsNullOrEmpty(_typeFilter) && _typeFilter != "All Types"
@@ -278,10 +278,10 @@ public class AssetDatabasePanel : DockPanel
     {
         var sb = new StringBuilder();
         sb.AppendLine("Name\tType\tPath\tState\tSize\tSinceReached\tLoads");
-        foreach (var g in _families)
+        foreach (FamilyGroup g in _families)
         {
             AppendRow(sb, g.Root, g.RootPath);
-            foreach (var s in g.Subs)
+            foreach (Row s in g.Subs)
                 AppendRow(sb, s, g.RootPath);
         }
         paper.SetClipboard(sb.ToString());
@@ -302,17 +302,17 @@ public class AssetDatabasePanel : DockPanel
             return;
         }
 
-        var mono = EditorTheme.FontMono ?? font;
+        FontFile mono = EditorTheme.FontMono ?? font;
 
         // Flat visible list: every root, plus its sub-assets when expanded (or always, while
         // filtering, so a match nested in a collapsed family is still visible).
         var visible = new List<(FamilyGroup group, Row row, bool isSub)>();
-        foreach (var g in _families)
+        foreach (FamilyGroup g in _families)
         {
             visible.Add((g, g.Root, false));
             bool expanded = IsFiltering || _expandedFamilies.Contains(g.Root.Guid);
             if (g.Subs.Count > 0 && expanded)
-                foreach (var s in g.Subs) visible.Add((g, s, true));
+                foreach (Row s in g.Subs) visible.Add((g, s, true));
         }
 
         int activeCol = _sortBy switch { SortMode.Name => 0, SortMode.Type => 2, SortMode.Size => 3, SortMode.SinceReached => 4, _ => -1 };
@@ -340,7 +340,7 @@ public class AssetDatabasePanel : DockPanel
             .OnSelectModified((i, _, _) => _selectedGuid = visible[i].row.Guid)
             .OnRowActivate(i =>
             {
-                var (g, _, isSub) = visible[i];
+                (FamilyGroup? g, Row _, bool isSub) = visible[i];
                 if (!isSub && g.Subs.Count > 0)
                 {
                     if (_expandedFamilies.Contains(g.Root.Guid)) _expandedFamilies.Remove(g.Root.Guid);
@@ -367,8 +367,8 @@ public class AssetDatabasePanel : DockPanel
 
         menu.Item("Reveal in Project", () =>
         {
-            var db = EditorAssetBackend.Instance;
-            Selection.Ping(db != null && db.TryGetParentGuid(asset.AssetID, out var parentGuid) ? parentGuid : asset.AssetID);
+            EditorAssetBackend? db = EditorAssetBackend.Instance;
+            Selection.Ping(db != null && db.TryGetParentGuid(asset.AssetID, out Guid parentGuid) ? parentGuid : asset.AssetID);
         }, icon: EditorIcons.ArrowUpRightFromSquare);
     }
 
@@ -384,7 +384,7 @@ public class AssetDatabasePanel : DockPanel
 
     private void DrawCell(Paper paper, FontFile font, FontFile mono, (FamilyGroup group, Row row, bool isSub) v, int col)
     {
-        var (group, row, isSub) = v;
+        (FamilyGroup? group, Row row, bool isSub) = v;
         string id = row.Guid.ToString();
         bool hasSubs = !isSub && group.Subs.Count > 0;
         bool expanded = _expandedFamilies.Contains(group.Root.Guid);
@@ -485,14 +485,14 @@ public class AssetDatabasePanel : DockPanel
 
     private void DrawDetails(Paper paper, FontFile font, float width, EditorAssetBackend db, Guid guid)
     {
-        var mono = EditorTheme.FontMono ?? font;
+        FontFile mono = EditorTheme.FontMono ?? font;
 
         using (paper.Column("adb_details").Width(width).Height(DetailsHeight).Padding(10, 10, 6, 6).Enter())
         {
             EditorGUI.Divider(paper, "adb_details_div");
 
-            var deps = db.Dependencies.GetDependencies(guid);
-            var dependents = db.Dependencies.GetDependents(guid);
+            IReadOnlySet<Guid> deps = db.Dependencies.GetDependencies(guid);
+            IReadOnlySet<Guid> dependents = db.Dependencies.GetDependents(guid);
             using (paper.Row("adb_dep_row").Height(60).Enter())
             {
                 DrawGuidList(paper, font, mono, db, "adb_dep_out", $"Depends on ({deps.Count})", deps);
@@ -530,7 +530,7 @@ public class AssetDatabasePanel : DockPanel
             Origami.ScrollView(paper, $"{id}_scroll", 0, 42).Body(() =>
             {
                 int i = 0;
-                foreach (var g in guids)
+                foreach (Guid g in guids)
                 {
                     paper.Box($"{id}_item_{i}").Height(16).Clip()
                         .OnClick(g, (guid, _) => { _selectedGuid = guid; Selection.Ping(guid); })

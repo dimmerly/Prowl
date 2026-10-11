@@ -86,7 +86,7 @@ public abstract class EditorTestHarness : IDisposable
             throw new InvalidOperationException($"Failed to create prefab '{relativePath}'.");
 
         Assets.Refresh();
-        var entry = EditorAssetBackend.Instance!.GetEntry(relativePath)
+        AssetEntry entry = EditorAssetBackend.Instance!.GetEntry(relativePath)
             ?? throw new InvalidOperationException($"Prefab '{relativePath}' was written but not imported.");
         return entry.Guid;
     }
@@ -113,7 +113,7 @@ public abstract class EditorTestHarness : IDisposable
     /// </summary>
     protected void EditPrefabSource(Guid guid, string relativePath, Action<GameObject> edit)
     {
-        var source = GameObject.InstantiateDetached(GetPrefab(guid)!)!;
+        GameObject source = GameObject.InstantiateDetached(GetPrefab(guid)!)!;
 
         // Stripped and pinned before the edit, the way prefab editing mode hands the tree over: what
         // is being edited is the prefab, not an instance of it, and the two are not subject to the
@@ -181,7 +181,7 @@ public abstract class EditorTestHarness : IDisposable
     /// <summary>Compile whatever scripts are on disk, assert success, and load the fresh game assembly.</summary>
     protected Assembly CompileGameAssembly()
     {
-        var result = ScriptCompiler.CompileAll(Project);
+        ScriptCompiler.CompileResult result = ScriptCompiler.CompileAll(Project);
         Assert.True(result.Success, $"Compilation failed: {result.Errors}");
         byte[] bytes = File.ReadAllBytes(Project.GameAssemblyPath);
         var asm = Assembly.Load(bytes);
@@ -265,7 +265,7 @@ public abstract class EditorTestHarness : IDisposable
     protected Guid AuthorSceneWithComponent(string componentTypeName, string relativePath = "Main.scene")
     {
         var gameAsm = Assembly.Load(File.ReadAllBytes(Project.GameAssemblyPath));
-        var type = gameAsm.GetType(componentTypeName)
+        Type type = gameAsm.GetType(componentTypeName)
             ?? throw new InvalidOperationException($"Type '{componentTypeName}' not found in the game assembly.");
 
         var scene = new Scene();
@@ -282,7 +282,7 @@ public abstract class EditorTestHarness : IDisposable
     {
         EditorRegistries.Initialize(); // idempotent - ensures BuildSettings exists
 
-        var build = EditorRegistries.GetSettings<BuildSettings>();
+        BuildSettings build = EditorRegistries.GetSettings<BuildSettings>();
         build.Scenes.Clear();
         build.Scenes.Add(new SceneBuildEntry { Path = "Main.scene", SceneGuid = sceneGuid, Enabled = true });
         build.PackagingMode = packaging;
@@ -290,7 +290,7 @@ public abstract class EditorTestHarness : IDisposable
         string outDir = Path.Combine(Path.GetTempPath(), "ProwlTestBuildOut", Guid.NewGuid().ToString("N"));
         build.OutputDirectory = outDir;
 
-        var result = new DesktopBuildPipeline().BuildAsync(Project.RootPath, build, outDir).GetAwaiter().GetResult();
+        BuildResult result = new DesktopBuildPipeline().BuildAsync(Project.RootPath, build, outDir).GetAwaiter().GetResult();
         Assert.True(result.Success, $"Build failed: {result.Errors}");
         return result.OutputPath;
     }
@@ -312,7 +312,7 @@ public abstract class EditorTestHarness : IDisposable
             </Project>
             """);
 
-        var (exit, stdout, stderr) = RunDotnet($"build \"{Path.Combine(dir, assemblyName + ".csproj")}\" -c Release", dir);
+        (int exit, string? stdout, string? stderr) = RunDotnet($"build \"{Path.Combine(dir, assemblyName + ".csproj")}\" -c Release", dir);
         string dll = Path.Combine(dir, "bin", "Release", $"{assemblyName}.dll");
         Assert.True(exit == 0 && File.Exists(dll), $"Building library '{assemblyName}' failed:\n{stdout}\n{stderr}");
         return dll;
@@ -321,7 +321,7 @@ public abstract class EditorTestHarness : IDisposable
     /// <summary>Run the built player headlessly for a few frames and return its stdout (asserts a clean exit).</summary>
     protected string RunPlayerHeadless(string outputDir, int frames = 30)
     {
-        var build = EditorRegistries.GetSettings<BuildSettings>();
+        BuildSettings build = EditorRegistries.GetSettings<BuildSettings>();
         string exe = new DesktopBuildPipeline().GetExecutablePath(outputDir, build);
         Assert.True(File.Exists(exe), $"Executable not found at {exe}");
 
@@ -332,7 +332,7 @@ public abstract class EditorTestHarness : IDisposable
             UseShellExecute = false,
             WorkingDirectory = outputDir,
         };
-        using var proc = Process.Start(psi)!;
+        using Process proc = Process.Start(psi)!;
         string stdout = proc.StandardOutput.ReadToEnd();
         string stderr = proc.StandardError.ReadToEnd();
         bool exited = proc.WaitForExit(90_000);
@@ -367,7 +367,7 @@ public abstract class EditorTestHarness : IDisposable
             CreateNoWindow = true,
             WorkingDirectory = workingDir,
         };
-        using var p = Process.Start(psi)!;
+        using Process p = Process.Start(psi)!;
         string o = p.StandardOutput.ReadToEnd();
         string e = p.StandardError.ReadToEnd();
         p.WaitForExit(180_000);

@@ -192,7 +192,7 @@ public class DefaultInputHandler : IInputHandler, IDisposable
             {
                 wasKeyPressed[key] = isKeyPressed[key];
                 isKeyPressed[key] = false;
-                var keyboards = Keyboards;
+                IReadOnlyList<IKeyboard> keyboards = Keyboards;
                 for (int k = 0; k < keyboards.Count; k++)
                     if (keyboards[k].IsKeyPressed((Silk.NET.Input.Key)key))
                     {
@@ -211,7 +211,7 @@ public class DefaultInputHandler : IInputHandler, IDisposable
             {
                 wasMousePressed[button] = isMousePressed[button];
                 isMousePressed[button] = false;
-                var mice = Mice;
+                IReadOnlyList<IMouse> mice = Mice;
                 for (int m = 0; m < mice.Count; m++)
                     if (mice[m].IsButtonPressed((Silk.NET.Input.MouseButton)button))
                     {

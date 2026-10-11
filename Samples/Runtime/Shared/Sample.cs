@@ -18,10 +18,13 @@ using Prowl.PaperUI;
 using Prowl.PaperUI.Events;
 using Prowl.PaperUI.LayoutEngine;
 using Prowl.Runtime;
+using Prowl.Runtime.ParticleSystem;
 using Prowl.Runtime.Rendering;
 using Prowl.Runtime.Resources;
 using Prowl.Scribe;
 using Prowl.Vector;
+
+using Silk.NET.Maths;
 
 using Gradient = Prowl.Vector.Gradient;
 using MouseButton = Prowl.Runtime.MouseButton;
@@ -178,7 +181,7 @@ public abstract class StationGame : Game
     {
         uint seed = 1;
         foreach (GameObject go in SampleScene.AllObjects)
-            foreach (var particles in go.GetComponents<Prowl.Runtime.ParticleSystem.ParticleSystemComponent>())
+            foreach (ParticleSystemComponent particles in go.GetComponents<Prowl.Runtime.ParticleSystem.ParticleSystemComponent>())
             {
                 particles.AutoRandomSeed = false;
                 particles.RandomSeed = seed++;
@@ -299,7 +302,7 @@ public abstract class StationGame : Game
         using (var zlib = new ZLibStream(compressed, CompressionLevel.Fastest, true))
             zlib.Write(raw);
 
-        using var stream = File.Create(file);
+        using FileStream stream = File.Create(file);
         stream.Write([137, 80, 78, 71, 13, 10, 26, 10]);
         var header = new byte[13];
         WriteBigEndian(header, 0, (uint)width);
@@ -574,7 +577,7 @@ public sealed class PhysicsGrabber : Component
     {
         if (_line == null) CreateLine();
         Camera camera = GetComponent<Camera>()!;
-        var size = Window.InternalWindow.Size;
+        Vector2D<int> size = Window.InternalWindow.Size;
         Ray ray = camera.ScreenPointToRay(new Float2(Input.MousePosition.X, Input.MousePosition.Y), new Float2(size.X, size.Y));
 
         bool overUi = Game.PaperInstance != null && Game.PaperInstance.WantsCapturePointer;
@@ -926,7 +929,7 @@ public static class Sample
     public static GameObject Model(string name, Mesh mesh, Material material, Float3 position, Float3? euler = null, Float3? scale = null)
     {
         var go = new GameObject(name);
-        var renderer = go.AddComponent<MeshRenderer>();
+        MeshRenderer renderer = go.AddComponent<MeshRenderer>();
         renderer.Mesh = mesh;
         renderer.Material = material;
         go.Transform.Position = position;

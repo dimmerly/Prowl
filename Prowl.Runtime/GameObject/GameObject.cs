@@ -193,7 +193,7 @@ public partial class GameObject : EngineObject, ISerializable
     internal void ClearPrefabDataRecursive()
     {
         ClearPrefabData();
-        foreach (var child in Children)
+        foreach (GameObject child in Children)
             child.ClearPrefabDataRecursive();
     }
 
@@ -1262,8 +1262,8 @@ public partial class GameObject : EngineObject, ISerializable
     public override void OnValidate()
     {
         base.OnValidate();
-        var targets = GetComponentsInChildren<Component>();
-        foreach (var target in targets)
+        IEnumerable<Component> targets = GetComponentsInChildren<Component>();
+        foreach (Component target in targets)
         {
             target.OnValidate();
         }
@@ -1338,7 +1338,7 @@ public partial class GameObject : EngineObject, ISerializable
         HideFlags = (HideFlags)(value["HideFlags"]?.IntValue ?? 0);
 
         // Absent for an ordinary GameObject, which then allocates nothing for it.
-        _prefabLink = value.TryGet("Prefab", out var linkTag)
+        _prefabLink = value.TryGet("Prefab", out EchoObject? linkTag)
             ? Serializer.Deserialize<PrefabLink>(linkTag, ctx)
             : null;
 

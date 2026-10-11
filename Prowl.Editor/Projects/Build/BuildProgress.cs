@@ -138,7 +138,7 @@ public sealed class BuildProgress
         var sb = new StringBuilder();
         lock (_lock)
         {
-            foreach (var entry in _entries)
+            foreach (BuildLogEntry entry in _entries)
             {
                 sb.AppendLine(entry.Message);
             }

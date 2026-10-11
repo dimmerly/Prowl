@@ -76,7 +76,7 @@ public static class ProbeTetrahedralizer
             // Collect faces of all tetra whose circumsphere contains p, killing those tetra.
             for (int t = 0; t < tets.Count; t++)
             {
-                var tet = tets[t];
+                Tet tet = tets[t];
                 if (tet.Dead) continue;
                 if (!InCircumsphere(verts[tet.A], verts[tet.B], verts[tet.C], verts[tet.D], p)) continue;
 
@@ -91,14 +91,14 @@ public static class ProbeTetrahedralizer
             for (int f = 0; f < badFaces.Count; f++)
             {
                 if (badFaces[f].v0 < 0) continue; // marked as shared (interior)
-                var face = badFaces[f];
+                (int v0, int v1, int v2) face = badFaces[f];
                 tets.Add(MakeOriented(verts, face.v0, face.v1, face.v2, ip));
             }
         }
 
         // Drop tetra touching any super-tetra vertex, compact, and index.
         var finalTets = new List<Tet>(tets.Count);
-        foreach (var t in tets)
+        foreach (Tet t in tets)
         {
             if (t.Dead) continue;
             if (t.A >= n || t.B >= n || t.C >= n || t.D >= n) continue;
@@ -165,8 +165,8 @@ public static class ProbeTetrahedralizer
                 int b = tets[t].Get((fi + 2) & 3);
                 int cc = tets[t].Get((fi + 3) & 3);
                 Sort3(ref a, ref b, ref cc);
-                var key = (a, b, cc);
-                if (faceMap.TryGetValue(key, out var other))
+                (int a, int b, int cc) key = (a, b, cc);
+                if (faceMap.TryGetValue(key, out (int tet, int face) other))
                 {
                     neighbours[t * 4 + fi] = other.tet;
                     neighbours[other.tet * 4 + other.face] = t;

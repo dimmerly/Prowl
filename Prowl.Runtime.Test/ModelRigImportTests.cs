@@ -30,7 +30,7 @@ public class ModelRigImportTests
     private static string RiggedGltf(float lastKeyTime = 1f, float endZ = 0f)
     {
         var bytes = new byte[8 * sizeof(float)];
-        var span = bytes.AsSpan();
+        Span<byte> span = bytes.AsSpan();
         Write(span, 0, 0f); Write(span, 1, lastKeyTime);              // key times
         Write(span, 2, 0f); Write(span, 3, 1f); Write(span, 4, 0f);   // key 0: (0, 1, 0)
         Write(span, 5, 0f); Write(span, 6, 3f); Write(span, 7, endZ); // key 1: (0, 3, endZ)
@@ -312,7 +312,7 @@ public class ModelRigImportTests
     private static string MaterialGltf()
     {
         var bytes = new byte[9 * sizeof(float) + 3 * sizeof(ushort)];
-        var span = bytes.AsSpan();
+        Span<byte> span = bytes.AsSpan();
         for (int i = 0; i < 9; i++) BitConverter.TryWriteBytes(span[(i * sizeof(float))..], i % 3 == 0 ? 0f : 1f);
         for (ushort i = 0; i < 3; i++) BitConverter.TryWriteBytes(span[(36 + i * sizeof(ushort))..], i);
 

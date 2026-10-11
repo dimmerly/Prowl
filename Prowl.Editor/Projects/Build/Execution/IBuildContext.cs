@@ -57,7 +57,7 @@ public sealed class BuildContext : IBuildContext
     {
         get
         {
-            foreach (var issue in _issues)
+            foreach (BuildIssue issue in _issues)
                 if (issue.Severity == BuildSeverity.Error) return true;
             return false;
         }

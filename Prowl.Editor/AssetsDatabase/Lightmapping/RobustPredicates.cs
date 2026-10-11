@@ -720,7 +720,7 @@ internal static class RobustPredicates
 
     private static double InSphereAdapt(ReadOnlySpan<double> pa, ReadOnlySpan<double> pb, ReadOnlySpan<double> pc, ReadOnlySpan<double> pd, ReadOnlySpan<double> pe, double permanent)
     {
-        var s = Scratch;
+        InSphereScratch s = Scratch;
         double[] ab = s.ab, bc = s.bc, cd = s.cd, da = s.da, ac = s.ac, bd = s.bd;
         double[] t8a = s.t8a, t8b = s.t8b, t8c = s.t8c, t16 = s.t16, t24 = s.t24, t48 = s.t48;
         double[] xdet = s.xdet, ydet = s.ydet, zdet = s.zdet, xydet = s.xydet;
@@ -823,7 +823,7 @@ internal static class RobustPredicates
 
     private static double InSphereExact(ReadOnlySpan<double> pa, ReadOnlySpan<double> pb, ReadOnlySpan<double> pc, ReadOnlySpan<double> pd, ReadOnlySpan<double> pe)
     {
-        var s = Scratch;
+        InSphereScratch s = Scratch;
         double[] ab = s.eab, bc = s.ebc, cd = s.ecd, de = s.ede, ea = s.eea, ac = s.eac, bd = s.ebd, ce = s.ece, da = s.eda, eb = s.eeb;
         double[] t8a = s.xt8a, t8b = s.xt8b, t16 = s.xt16;
         double[] abc = s.abc, bcd = s.bcd, cde = s.cde, dea = s.dea, eab = s.eabx, abd = s.abd, bce = s.bce, cda = s.cda, deb = s.deb, eac = s.eacx;

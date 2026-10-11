@@ -5,6 +5,7 @@ using System;
 using System.Linq;
 
 using Prowl.Runtime.Rendering;
+using Prowl.Runtime.Resources;
 using Prowl.Vector;
 
 using Xunit;
@@ -17,7 +18,7 @@ public class CloudTests
     public void Grid_PutsEveryCornerAtItsParticle()
     {
         const int size = 8;
-        var mesh = CloudRenderer.BuildGrid(size);
+        Mesh mesh = CloudRenderer.BuildGrid(size);
         Float3[] vertices = mesh.Vertices;
         Float2[] uv = mesh.UV;
         uint[] indices = mesh.Indices;

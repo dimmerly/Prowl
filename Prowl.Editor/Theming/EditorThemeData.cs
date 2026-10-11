@@ -47,9 +47,9 @@ public class ColorRamp
         if (index == PrimaryIndex)
             return ParseHex(Primary);
 
-        var p = ParseHex(Primary);
+        Color p = ParseHex(Primary);
         if (index >= Offsets.Length) return p;
-        var o = Offsets[index];
+        (int R, int G, int B) o = Offsets[index];
         return Color.FromArgb(255,
             Math.Clamp(p.R + o.R, 0, 255),
             Math.Clamp(p.G + o.G, 0, 255),
@@ -61,7 +61,7 @@ public class ColorRamp
     {
         StopCount = stopCount;
         PrimaryIndex = primaryIndex;
-        var pc = defaults[primaryIndex];
+        Color pc = defaults[primaryIndex];
         Offsets = new (int, int, int)[stopCount];
         for (int i = 0; i < stopCount; i++)
             Offsets[i] = (defaults[i].R - pc.R, defaults[i].G - pc.G, defaults[i].B - pc.B);
@@ -245,7 +245,7 @@ public class EditorThemeData
     public EditorThemeData Clone()
     {
         var json = JsonSerializer.Serialize(this);
-        var clone = JsonSerializer.Deserialize<EditorThemeData>(json)!;
+        EditorThemeData clone = JsonSerializer.Deserialize<EditorThemeData>(json)!;
         clone.InitRamps();
         return clone;
     }
@@ -263,7 +263,7 @@ public class EditorThemeData
         try
         {
             var json = File.ReadAllText(path);
-            var data = JsonSerializer.Deserialize<EditorThemeData>(json);
+            EditorThemeData? data = JsonSerializer.Deserialize<EditorThemeData>(json);
             data?.InitRamps();
             return data;
         }

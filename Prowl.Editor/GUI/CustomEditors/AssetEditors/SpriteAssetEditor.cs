@@ -34,7 +34,7 @@ public class SpriteAssetEditor : AssetImporterEditor
     /// <summary>Draws the sprite preview + read-only stats + edit button. Reused for sprite sub-assets in the InspectorPanel.</summary>
     public static void DrawInspector(Paper paper, string id, Sprite sprite)
     {
-        var m = Origami.Current.Metrics;
+        OrigamiMetrics m = Origami.Current.Metrics;
 
         Texture2D? tex = sprite.Texture;
 
@@ -80,8 +80,8 @@ public class SpriteAssetEditor : AssetImporterEditor
     {
         // Checkerboard so alpha reads clearly.
         const float cell = 10f;
-        var ca = Color32.FromArgb(255, 44, 40, 54);
-        var cb = Color32.FromArgb(255, 34, 30, 44);
+        Vector.Color ca = Color32.FromArgb(255, 44, 40, 54);
+        Vector.Color cb = Color32.FromArgb(255, 34, 30, 44);
         int cols = (int)MathF.Ceiling(w / cell);
         int crows = (int)MathF.Ceiling(h / cell);
         for (int cy = 0; cy < crows; cy++)
@@ -119,7 +119,7 @@ public class SpriteAssetEditor : AssetImporterEditor
         // Pivot marker (normalized, bottom-left origin).
         float pvx = drawX + sprite.Pivot.X * drawW;
         float pvy = drawY + drawH - sprite.Pivot.Y * drawH;
-        var accent = EditorTheme.Purple400;
+        System.Drawing.Color accent = EditorTheme.Purple400;
         canvas.CircleFilled(pvx, pvy, 4f, Color32.FromArgb(accent.A, accent.R, accent.G, accent.B));
     }
 }

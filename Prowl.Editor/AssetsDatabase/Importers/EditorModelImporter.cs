@@ -41,37 +41,37 @@ public class EditorModelImporter : AssetImporter
             var importSettings = new ModelImporterSettings { TextureResolver = new EditorModelTextureResolver(ctx) };
             if (ctx.Settings != null)
             {
-                var s = ctx.Settings;
-                importSettings.GenerateNormals = !s.TryGet("generateNormals", out var gn) || gn.BoolValue;
-                importSettings.GenerateSmoothNormals = !s.TryGet("generateSmoothNormals", out var gsn) || gsn.BoolValue;
-                importSettings.SmoothNormalsAngleDeg = s.TryGet("smoothNormalsAngle", out var sna) ? sna.FloatValue : 80f;
-                importSettings.RecalculateNormals = s.TryGet("recalculateNormals", out var rn) && rn.BoolValue;
-                importSettings.CalculateTangentSpace = !s.TryGet("calculateTangents", out var ct) || ct.BoolValue;
-                importSettings.UnitScale = s.TryGet("unitScale", out var us) ? us.FloatValue : 1.0f;
-                importSettings.ImportMaterials = !s.TryGet("importMaterials", out var im) || im.BoolValue;
-                importSettings.ImportAnimations = !s.TryGet("importAnimations", out var ia) || ia.BoolValue;
-                importSettings.ImportBlendShapes = !s.TryGet("importBlendShapes", out var ibs) || ibs.BoolValue;
-                importSettings.OptimizeMeshes = s.TryGet("optimizeMeshes", out var om) && om.BoolValue;
-                importSettings.OptimizeHierarchy = s.TryGet("optimizeHierarchy", out var oh) && oh.BoolValue;
-                importSettings.PreserveNodeNames = SplitNodeNames(s.TryGet("preserveNodeNames", out var pnn) ? pnn.StringValue : null);
-                importSettings.StrictValidation = s.TryGet("strictValidation", out var sv) && sv.BoolValue;
-                importSettings.SceneIndex = s.TryGet("sceneIndex", out var si) ? si.IntValue : -1;
-                importSettings.ImportCameras = !s.TryGet("importCameras", out var ic) || ic.BoolValue;
-                importSettings.ImportLights = !s.TryGet("importLights", out var il) || il.BoolValue;
-                importSettings.LoopAnimations = !s.TryGet("loopAnimations", out var la) || la.BoolValue;
-                importSettings.RigType = (ModelRigType)(s.TryGet("rigType", out var rt) ? rt.IntValue : (int)ModelRigType.Generic);
-                importSettings.AnimationSampleRate = s.TryGet("animationSampleRate", out var asr) ? asr.FloatValue : 30f;
+                EchoObject s = ctx.Settings;
+                importSettings.GenerateNormals = !s.TryGet("generateNormals", out EchoObject? gn) || gn.BoolValue;
+                importSettings.GenerateSmoothNormals = !s.TryGet("generateSmoothNormals", out EchoObject? gsn) || gsn.BoolValue;
+                importSettings.SmoothNormalsAngleDeg = s.TryGet("smoothNormalsAngle", out EchoObject? sna) ? sna.FloatValue : 80f;
+                importSettings.RecalculateNormals = s.TryGet("recalculateNormals", out EchoObject? rn) && rn.BoolValue;
+                importSettings.CalculateTangentSpace = !s.TryGet("calculateTangents", out EchoObject? ct) || ct.BoolValue;
+                importSettings.UnitScale = s.TryGet("unitScale", out EchoObject? us) ? us.FloatValue : 1.0f;
+                importSettings.ImportMaterials = !s.TryGet("importMaterials", out EchoObject? im) || im.BoolValue;
+                importSettings.ImportAnimations = !s.TryGet("importAnimations", out EchoObject? ia) || ia.BoolValue;
+                importSettings.ImportBlendShapes = !s.TryGet("importBlendShapes", out EchoObject? ibs) || ibs.BoolValue;
+                importSettings.OptimizeMeshes = s.TryGet("optimizeMeshes", out EchoObject? om) && om.BoolValue;
+                importSettings.OptimizeHierarchy = s.TryGet("optimizeHierarchy", out EchoObject? oh) && oh.BoolValue;
+                importSettings.PreserveNodeNames = SplitNodeNames(s.TryGet("preserveNodeNames", out EchoObject? pnn) ? pnn.StringValue : null);
+                importSettings.StrictValidation = s.TryGet("strictValidation", out EchoObject? sv) && sv.BoolValue;
+                importSettings.SceneIndex = s.TryGet("sceneIndex", out EchoObject? si) ? si.IntValue : -1;
+                importSettings.ImportCameras = !s.TryGet("importCameras", out EchoObject? ic) || ic.BoolValue;
+                importSettings.ImportLights = !s.TryGet("importLights", out EchoObject? il) || il.BoolValue;
+                importSettings.LoopAnimations = !s.TryGet("loopAnimations", out EchoObject? la) || la.BoolValue;
+                importSettings.RigType = (ModelRigType)(s.TryGet("rigType", out EchoObject? rt) ? rt.IntValue : (int)ModelRigType.Generic);
+                importSettings.AnimationSampleRate = s.TryGet("animationSampleRate", out EchoObject? asr) ? asr.FloatValue : 30f;
                 importSettings.ClipOverrides = ModelImportOverrides.ReadClips(s);
                 importSettings.MaterialResolver = new ExtractedMaterialResolver(s);
                 importSettings.HumanoidBoneMap = ModelImportOverrides.ReadHumanoidMap(s);
                 // Off by default (slow; some models ship their own UV2). The importer runs the
                 // unwrap in its post-process so the baked UV2 is captured before serialization.
-                importSettings.GenerateLightmapUVs = s.TryGet("generateLightmapUVs", out var glu) && glu.BoolValue;
+                importSettings.GenerateLightmapUVs = s.TryGet("generateLightmapUVs", out EchoObject? glu) && glu.BoolValue;
             }
 
             // 1. Import creates live meshes, materials, animations, GO hierarchy (+ UV2 if enabled).
             var importer = new ModelImporter();
-            var data = importer.Import(new FileInfo(ctx.AbsolutePath), importSettings);
+            ModelImportResult data = importer.Import(new FileInfo(ctx.AbsolutePath), importSettings);
 
             // 2. Register sub-assets assigns deterministic GUIDs immediately
             // Order: the model file has no stable per-mesh key of its own, and it is read front to back.
@@ -107,9 +107,9 @@ public class EditorModelImporter : AssetImporter
                 // every time and every instance in the project would lose its overrides on any reimport.
                 StabilizeIdentities(data.RootGO);
 
-                var goSerCtx = ImportHelper.CreateTrackingContext(out var goDependencies);
+                SerializationContext goSerCtx = ImportHelper.CreateTrackingContext(out HashSet<Guid>? goDependencies);
                 prefab.GameObjectData = Serializer.Serialize(typeof(object), data.RootGO, goSerCtx);
-                foreach (var dep in goDependencies)
+                foreach (Guid dep in goDependencies)
                     ctx.AddDependency(dep);
             }
 
@@ -219,7 +219,7 @@ internal sealed class EditorModelTextureResolver : IModelTextureResolver
         }
 
         string relativePath = Path.GetRelativePath(_assetsRoot, sourcePath).Replace('\\', '/');
-        var entry = _db.GetEntry(relativePath);
+        AssetEntry? entry = _db.GetEntry(relativePath);
         if (entry == null)
         {
             Debug.LogWarning($"[Clay] External texture '{sourcePath}' (resolved to '{relativePath}') has no " +

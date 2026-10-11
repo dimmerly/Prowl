@@ -17,7 +17,7 @@ internal static class CommandBufferPool
 
     public static CommandBuffer Rent(string? name)
     {
-        if (s_free.TryDequeue(out var cmd))
+        if (s_free.TryDequeue(out CommandBuffer? cmd))
         {
             System.Threading.Interlocked.Decrement(ref s_count);
             cmd.OnRent(name);

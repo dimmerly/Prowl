@@ -94,7 +94,7 @@ public class PrefabTests : EditorTestHarness
     private void SetSceneCurrent(params GameObject[] instances)
     {
         var scene = new Scene();
-        foreach (var i in instances) scene.Add(i);
+        foreach (GameObject i in instances) scene.Add(i);
         Scene.Load(scene);
         Scene.ProcessPendingLoad();
     }
@@ -112,15 +112,15 @@ public class PrefabTests : EditorTestHarness
         child.SetParent(root);
         Guid g = CreatePrefabAsset(root, "Child.prefab");
 
-        var instance = Inst(g);
-        var comp = instance.Children[0].GetComponent<OverrideComp>()!;
+        GameObject instance = Inst(g);
+        OverrideComp comp = instance.Children[0].GetComponent<OverrideComp>()!;
         comp.A = 42;
         PrefabUtility.RecordComponentOverrides(instance.Children[0], comp);
         SetSceneCurrent(instance);
 
         PrefabUtility.ApplyOverrides(Scene.Current!.RootObjects.First().Children[0]);
 
-        var fresh = GameObject.InstantiateDetached(((PrefabAsset)AssetDatabase.Get(g)!))!;
+        GameObject fresh = GameObject.InstantiateDetached(((PrefabAsset)AssetDatabase.Get(g)!))!;
         Assert.Equal("Root", fresh.Name);
         Assert.Single(fresh.Children);
         Assert.Equal(42, fresh.Children[0].GetComponent<OverrideComp>()!.A);
@@ -133,11 +133,11 @@ public class PrefabTests : EditorTestHarness
         root.AddComponent<OverrideComp>().A = 1;
         Guid g = CreatePrefabAsset(root, "Bake.prefab");
 
-        var instance = Inst(g);
+        GameObject instance = Inst(g);
         instance.Name = "PlacedInstance";
         instance.Transform.Position = new Float3(10, 20, 30);
         instance.Transform.LocalScale = new Float3(3, 3, 3);
-        var comp = instance.GetComponent<OverrideComp>()!;
+        OverrideComp comp = instance.GetComponent<OverrideComp>()!;
         comp.A = 99;
         PrefabUtility.RecordComponentOverrides(instance, comp);
         SetSceneCurrent(instance);
@@ -145,7 +145,7 @@ public class PrefabTests : EditorTestHarness
         PrefabUtility.ApplyOverrides(Scene.Current!.RootObjects.First());
 
         // Name and placement are per-instance; only the real override reaches the asset.
-        var fresh = GameObject.InstantiateDetached(((PrefabAsset)AssetDatabase.Get(g)!))!;
+        GameObject fresh = GameObject.InstantiateDetached(((PrefabAsset)AssetDatabase.Get(g)!))!;
         Assert.Equal("Root", fresh.Name);
         Assert.Equal(0.0, fresh.Transform.Position.X, 3);
         Assert.Equal(1.0, fresh.Transform.LocalScale.X, 3);
@@ -185,7 +185,7 @@ public class PrefabTests : EditorTestHarness
         Inst(inner).SetParent(outerSource);
         Guid outer = WritePrefabFileRaw(outerSource, "Outer.prefab");
 
-        var instance = Inst(outer);
+        GameObject instance = Inst(outer);
         SetSceneCurrent(instance);
 
         PrefabUtility.UnpackPrefabInstance(instance);
@@ -208,7 +208,7 @@ public class PrefabTests : EditorTestHarness
         new GameObject("Child").SetParent(root);
         Guid g = CreatePrefabAsset(root, "Br.prefab");
 
-        var instance = Inst(g);
+        GameObject instance = Inst(g);
         SetSceneCurrent(instance);
 
         PrefabUtility.UnpackPrefabInstance(instance.Children[0]);
@@ -232,13 +232,13 @@ public class PrefabTests : EditorTestHarness
         root.AddComponent<OverrideComp>().A = 1;
         Guid g = CreatePrefabAsset(root, "En.prefab");
 
-        var instance = Inst(g);
+        GameObject instance = Inst(g);
         instance.Enabled = false;
         PrefabUtility.RecordGameObjectOverrides(instance);
         SetSceneCurrent(instance);
 
         PrefabUtility.RefreshAllInstances(g);
-        var refreshed = Scene.Current!.RootObjects.First();
+        GameObject refreshed = Scene.Current!.RootObjects.First();
         Assert.False(refreshed.Enabled);
 
         PrefabUtility.RevertSingleOverride(refreshed, PrefabUtility.GetOverridePath(refreshed, "Enabled"));
@@ -257,8 +257,8 @@ public class PrefabTests : EditorTestHarness
         root.AddComponent<OverrideComp>().A = 1;
         Guid g = CreatePrefabAsset(root, "CompEn.prefab");
 
-        var instance = Inst(g);
-        var comp = instance.GetComponent<OverrideComp>()!;
+        GameObject instance = Inst(g);
+        OverrideComp comp = instance.GetComponent<OverrideComp>()!;
         comp.Enabled = false;
         PrefabUtility.RecordComponentOverrides(instance, comp);
         Assert.True(PrefabUtility.IsPropertyOverridden(instance, PrefabUtility.GetOverridePath(instance, comp, "_enabled")));
@@ -266,7 +266,7 @@ public class PrefabTests : EditorTestHarness
 
         PrefabUtility.RefreshAllInstances(g);
 
-        var refreshed = Scene.Current!.RootObjects.First().GetComponent<OverrideComp>()!;
+        OverrideComp refreshed = Scene.Current!.RootObjects.First().GetComponent<OverrideComp>()!;
         Assert.False(refreshed.Enabled);
         // The raw field write must not leave the component still registered as enabled.
         Assert.False(refreshed.EnabledInHierarchy);
@@ -279,8 +279,8 @@ public class PrefabTests : EditorTestHarness
         root.AddComponent<OverrideComp>().A = 1;
         Guid g = CreatePrefabAsset(root, "Ident.prefab");
 
-        var instance = Inst(g);
-        var comp = instance.GetComponent<OverrideComp>()!;
+        GameObject instance = Inst(g);
+        OverrideComp comp = instance.GetComponent<OverrideComp>()!;
 
         // Identifiers are regenerated per deserialization, so instance and source always differ.
         PrefabUtility.RecordComponentOverrides(instance, comp);
@@ -299,18 +299,18 @@ public class PrefabTests : EditorTestHarness
         root.AddComponent<RefHolderComp>();
         Guid g = CreatePrefabAsset(root, "Ref.prefab");
 
-        var instance = Inst(g);
+        GameObject instance = Inst(g);
         var target = new GameObject("SceneTarget");
         SetSceneCurrent(instance, target);
 
-        var comp = instance.GetComponent<RefHolderComp>()!;
+        RefHolderComp comp = instance.GetComponent<RefHolderComp>()!;
         comp.Target = target;
         PrefabUtility.RecordComponentOverrides(instance, comp);
         Assert.True(PrefabUtility.IsPropertyOverridden(instance, PrefabUtility.GetOverridePath(instance, comp, "Target")));
 
         PrefabUtility.RefreshAllInstances(g);
 
-        var refreshed = Scene.Current!.RootObjects.First(o => o.Name == "Root").GetComponent<RefHolderComp>()!;
+        RefHolderComp refreshed = Scene.Current!.RootObjects.First(o => o.Name == "Root").GetComponent<RefHolderComp>()!;
         Assert.Same(target, refreshed.Target);
     }
 
@@ -321,14 +321,14 @@ public class PrefabTests : EditorTestHarness
         root.AddComponent<RefHolderComp>();
         Guid g = CreatePrefabAsset(root, "RefApply.prefab");
 
-        var instance = Inst(g);
+        GameObject instance = Inst(g);
         var target = new GameObject("SceneTarget");
         SetSceneCurrent(instance, target);
 
-        var comp = instance.GetComponent<RefHolderComp>()!;
+        RefHolderComp comp = instance.GetComponent<RefHolderComp>()!;
         comp.Target = target;
         PrefabUtility.RecordComponentOverrides(instance, comp);
-        var ov = instance.PrefabOverrides.First(o => o.Path == PrefabUtility.GetOverridePath(instance, comp, "Target"));
+        PropertyOverride ov = instance.PrefabOverrides.First(o => o.Path == PrefabUtility.GetOverridePath(instance, comp, "Target"));
 
         PrefabUtility.ApplySingleOverride(instance, ov.Path);
 
@@ -360,11 +360,11 @@ public class PrefabTests : EditorTestHarness
         root.AddComponent<RefHolderComp>();
         Guid g = CreatePrefabAsset(root, "EmbedApply.prefab");
 
-        var instance = Inst(g);
+        GameObject instance = Inst(g);
         var target = new GameObject("ExternalTarget");
         SetSceneCurrent(instance, target);
 
-        var comp = instance.GetComponent<RefHolderComp>()!;
+        RefHolderComp comp = instance.GetComponent<RefHolderComp>()!;
         comp.Target = target;
         PrefabUtility.RecordComponentOverrides(instance, comp);
 
@@ -385,7 +385,7 @@ public class PrefabTests : EditorTestHarness
         Guid g = CreatePrefabAsset(root, path);
 
         instance = Inst(g);
-        var comp = instance.GetComponent<OverrideComp>()!;
+        OverrideComp comp = instance.GetComponent<OverrideComp>()!;
         comp.A = 99;
         PrefabUtility.RecordComponentOverrides(instance, comp);
         SetSceneCurrent(instance);
@@ -406,7 +406,7 @@ public class PrefabTests : EditorTestHarness
         Assert.Equal(5, GameObject.InstantiateDetached(((PrefabAsset)AssetDatabase.Get(g)!))!.GetComponent<OverrideComp>()!.A);
 
         // ...and the instance keeps the local edit that was applied away.
-        var live = Scene.Current!.RootObjects.First();
+        GameObject live = Scene.Current!.RootObjects.First();
         Assert.Single(live.PrefabOverrides);
         Assert.Equal(99, live.GetComponent<OverrideComp>()!.A);
     }
@@ -424,7 +424,7 @@ public class PrefabTests : EditorTestHarness
         Undo.PerformUndo();
 
         Assert.Equal(5, GameObject.InstantiateDetached(((PrefabAsset)AssetDatabase.Get(g)!))!.GetComponent<OverrideComp>()!.A);
-        var live = Scene.Current!.RootObjects.First();
+        GameObject live = Scene.Current!.RootObjects.First();
         Assert.Single(live.PrefabOverrides);
         Assert.Equal(99, live.GetComponent<OverrideComp>()!.A);
     }
@@ -456,15 +456,15 @@ public class PrefabTests : EditorTestHarness
         root.AddComponent<DerivedStateComp>().Source = 1;
         Guid g = CreatePrefabAsset(root, "Derived.prefab");
 
-        var instance = Inst(g);
-        var comp = instance.GetComponent<DerivedStateComp>()!;
+        GameObject instance = Inst(g);
+        DerivedStateComp comp = instance.GetComponent<DerivedStateComp>()!;
         comp.Source = 21;
         PrefabUtility.RecordComponentOverrides(instance, comp);
         SetSceneCurrent(instance);
 
         PrefabUtility.RefreshAllInstances(g);
 
-        var refreshed = Scene.Current!.RootObjects.First().GetComponent<DerivedStateComp>()!;
+        DerivedStateComp refreshed = Scene.Current!.RootObjects.First().GetComponent<DerivedStateComp>()!;
         Assert.Equal(21, refreshed.Source);
         Assert.Equal(42, refreshed.Derived); // stale would be 2, from the source value
     }
@@ -476,8 +476,8 @@ public class PrefabTests : EditorTestHarness
         root.AddComponent<DerivedStateComp>().Source = 1;
         Guid g = CreatePrefabAsset(root, "DerivedRevert.prefab");
 
-        var instance = Inst(g);
-        var comp = instance.GetComponent<DerivedStateComp>()!;
+        GameObject instance = Inst(g);
+        DerivedStateComp comp = instance.GetComponent<DerivedStateComp>()!;
         comp.Source = 21;
         PrefabUtility.RecordComponentOverrides(instance, comp);
         SetSceneCurrent(instance);
@@ -499,8 +499,8 @@ public class PrefabTests : EditorTestHarness
         root.AddComponent<ListComp>().Values = [1, 2, 3];
         Guid g = CreatePrefabAsset(root, "List.prefab");
 
-        var instance = Inst(g);
-        var comp = instance.GetComponent<ListComp>()!;
+        GameObject instance = Inst(g);
+        ListComp comp = instance.GetComponent<ListComp>()!;
 
         // Equal contents in a different list instance must not read as an override.
         comp.Values = [1, 2, 3];
@@ -523,7 +523,7 @@ public class PrefabTests : EditorTestHarness
         new GameObject("Child").SetParent(root);
         Guid g = CreatePrefabAsset(root, "Flags.prefab");
 
-        var instance = Inst(g);
+        GameObject instance = Inst(g);
         instance.HideFlags = HideFlags.NoGizmos;
         instance.Children[0].HideFlags = HideFlags.NoGizmos;
         instance.IsStatic = true;
@@ -532,7 +532,7 @@ public class PrefabTests : EditorTestHarness
 
         PrefabUtility.RefreshAllInstances(g);
 
-        var refreshed = Scene.Current!.RootObjects.First();
+        GameObject refreshed = Scene.Current!.RootObjects.First();
         Assert.Equal(HideFlags.NoGizmos, refreshed.HideFlags);
         Assert.Equal(HideFlags.NoGizmos, refreshed.Children[0].HideFlags);
         Assert.True(refreshed.IsStatic);
@@ -545,8 +545,8 @@ public class PrefabTests : EditorTestHarness
         new GameObject("Child").SetParent(root);
         Guid g = CreatePrefabAsset(root, "Sel.prefab");
 
-        var a = Inst(g);
-        var b = Inst(g);
+        GameObject a = Inst(g);
+        GameObject b = Inst(g);
         var unrelated = new GameObject("Unrelated");
         SetSceneCurrent(a, b, unrelated);
 
@@ -582,8 +582,8 @@ public class PrefabTests : EditorTestHarness
         child.SetParent(root);
         Guid g = CreatePrefabAsset(root, "Stale.prefab");
 
-        var instance = Inst(g);
-        var comp = instance.Children[0].GetComponent<OverrideComp>()!;
+        GameObject instance = Inst(g);
+        OverrideComp comp = instance.Children[0].GetComponent<OverrideComp>()!;
         comp.A = 50;
         PrefabUtility.RecordComponentOverrides(instance.Children[0], comp);
         // Captured now: once the source drops the child there is nothing left to build it from.
@@ -597,7 +597,7 @@ public class PrefabTests : EditorTestHarness
         Assets.Reimport(g);
         PrefabUtility.RefreshAllInstances(g);
 
-        var live = Scene.Current!.RootObjects.First();
+        GameObject live = Scene.Current!.RootObjects.First();
         Assert.Single(live.PrefabOverrides);
         Assert.False(PrefabUtility.IsOverrideResolvable(live, childPath));
 
@@ -614,8 +614,8 @@ public class PrefabTests : EditorTestHarness
         root.AddComponent<OverrideComp>().A = 5;
         Guid g = CreatePrefabAsset(root, "RemoveUndo.prefab");
 
-        var instance = Inst(g);
-        var comp = instance.GetComponent<OverrideComp>()!;
+        GameObject instance = Inst(g);
+        OverrideComp comp = instance.GetComponent<OverrideComp>()!;
         comp.A = 99;
         PrefabUtility.RecordComponentOverrides(instance, comp);
         SetSceneCurrent(instance);
@@ -665,11 +665,11 @@ public class PrefabTests : EditorTestHarness
     public void RefreshInstancesIn_KeepsWhatTheInstanceOverrode()
     {
         var root = new GameObject("Root");
-        var comp = root.AddComponent<OverrideComp>();
+        OverrideComp comp = root.AddComponent<OverrideComp>();
         comp.A = 1; comp.B = 1;
         Guid g = CreatePrefabAsset(root, "ShelvedOv.prefab");
 
-        var instance = Inst(g);
+        GameObject instance = Inst(g);
         Scene open = LoadSceneWith(instance);
         instance.GetComponent<OverrideComp>()!.B = 99;
         PrefabUtility.ReconcileInstance(instance);
@@ -681,7 +681,7 @@ public class PrefabTests : EditorTestHarness
         Scene shipped = ReadSavedScene(saved);
         PrefabUtility.RefreshInstancesIn(shipped);
 
-        var live = shipped.RootObjects.First().GetComponent<OverrideComp>()!;
+        OverrideComp live = shipped.RootObjects.First().GetComponent<OverrideComp>()!;
         Assert.Equal(77, live.A);   // followed the prefab
         Assert.Equal(99, live.B);   // kept its own
     }
@@ -693,14 +693,14 @@ public class PrefabTests : EditorTestHarness
         root.AddComponent<OverrideComp>().A = 5;
         Guid g = CreatePrefabAsset(root, "Ship.prefab");
 
-        var instance = Inst(g);
-        var comp = instance.GetComponent<OverrideComp>()!;
+        GameObject instance = Inst(g);
+        OverrideComp comp = instance.GetComponent<OverrideComp>()!;
         comp.A = 12345;
         PrefabUtility.RecordComponentOverrides(instance, comp);
 
         var scene = new Scene();
         scene.Add(instance);
-        var echo = Serializer.Serialize(typeof(object), scene);
+        EchoObject echo = Serializer.Serialize(typeof(object), scene);
 
         Assert.True(Build.BuildPipeline.StripEditorOnlyPrefabData(echo));
 
@@ -755,13 +755,13 @@ public class PrefabTests : EditorTestHarness
         // back to it. For a real model the file would be the .obj/.fbx itself.
         GetPrefab(g)!.InstanceType = PrefabInstanceType.Model;
 
-        var instance = Inst(g);
-        var comp = instance.GetComponent<OverrideComp>()!;
+        GameObject instance = Inst(g);
+        OverrideComp comp = instance.GetComponent<OverrideComp>()!;
         comp.A = 99;
         PrefabUtility.RecordComponentOverrides(instance, comp);
         SetSceneCurrent(instance);
 
-        var live = Scene.Current!.RootObjects.First();
+        GameObject live = Scene.Current!.RootObjects.First();
         PrefabUtility.ApplyOverrides(live);
         PrefabUtility.ApplySingleOverride(live, live.PrefabOverrides.First().Path);
 
@@ -782,7 +782,7 @@ public class PrefabTests : EditorTestHarness
         root.AddComponent<OverrideComp>().A = 1;
         Guid g = CreatePrefabAsset(root, "Live.prefab");
 
-        var instance = Inst(g);
+        GameObject instance = Inst(g);
         SetSceneCurrent(instance);
 
         // Stands in for changing a model's import settings: the asset's contents change and it is
@@ -806,7 +806,7 @@ public class PrefabTests : EditorTestHarness
     /// </summary>
     private GameObject ReopenAfterPrefabChangedWhileClosed(Guid prefabGuid, string path, int newValue)
     {
-        var instance = Inst(prefabGuid);
+        GameObject instance = Inst(prefabGuid);
         SetSceneCurrent(instance);
         Guid sceneGuid = CreateSceneAsset(Scene.Current!, "Closed.scene");
 
@@ -825,7 +825,7 @@ public class PrefabTests : EditorTestHarness
         root.AddComponent<OverrideComp>().A = 1;
         Guid g = CreatePrefabAsset(root, "Closed.prefab");
 
-        var live = ReopenAfterPrefabChangedWhileClosed(g, "Closed.prefab", 77);
+        GameObject live = ReopenAfterPrefabChangedWhileClosed(g, "Closed.prefab", 77);
 
         // The import notification only reaches the scene that was open at the time, so opening a
         // scene has to catch it up on whatever changed while it was closed.
@@ -839,7 +839,7 @@ public class PrefabTests : EditorTestHarness
         root.AddComponent<OverrideComp>().A = 1;
         Guid g = CreatePrefabAsset(root, "ClosedOv.prefab");
 
-        var live = ReopenAfterPrefabChangedWhileClosed(g, "ClosedOv.prefab", 77);
+        GameObject live = ReopenAfterPrefabChangedWhileClosed(g, "ClosedOv.prefab", 77);
 
         // What a scene save does before writing. Comparison cannot tell a stale instance from an
         // edited one, so a stale instance here would pin the prefab's own change as an override and
@@ -852,12 +852,12 @@ public class PrefabTests : EditorTestHarness
     public void PrefabChangedWhileTheSceneWasClosed_KeepsTheInstancesOwnOverride()
     {
         var root = new GameObject("Root");
-        var comp = root.AddComponent<OverrideComp>();
+        OverrideComp comp = root.AddComponent<OverrideComp>();
         comp.A = 1; comp.B = 1;
         Guid g = CreatePrefabAsset(root, "ClosedKeep.prefab");
 
-        var instance = Inst(g);
-        var instanceComp = instance.GetComponent<OverrideComp>()!;
+        GameObject instance = Inst(g);
+        OverrideComp instanceComp = instance.GetComponent<OverrideComp>()!;
         instanceComp.B = 99;
         PrefabUtility.RecordComponentOverrides(instance, instanceComp);
         SetSceneCurrent(instance);
@@ -869,7 +869,7 @@ public class PrefabTests : EditorTestHarness
         Scene.Load(Scene.Instantiate(AssetDatabase.Load<SceneAsset>(sceneGuid)!));
         Scene.ProcessPendingLoad();
 
-        var live = Scene.Current!.RootObjects.First().GetComponent<OverrideComp>()!;
+        OverrideComp live = Scene.Current!.RootObjects.First().GetComponent<OverrideComp>()!;
         Assert.Equal(77, live.A);   // followed the prefab
         Assert.Equal(99, live.B);   // kept what the instance overrode
     }
@@ -887,20 +887,20 @@ public class PrefabTests : EditorTestHarness
         child.SetParent(root);
         Guid g = CreatePrefabAsset(root, "Added.prefab");
 
-        var instance = Inst(g);
+        GameObject instance = Inst(g);
         instance.AddComponent<VecComp>().V = new Float3(5, 6, 7);
         instance.Children[0].AddComponent<VecComp>().V = new Float3(1, 2, 3);
         SetSceneCurrent(instance);
 
         PrefabUtility.RefreshAllInstances(g);
 
-        var refreshed = Scene.Current!.RootObjects.First();
-        var added = refreshed.GetComponent<VecComp>();
+        GameObject refreshed = Scene.Current!.RootObjects.First();
+        VecComp? added = refreshed.GetComponent<VecComp>();
         Assert.NotNull(added);
         Assert.Equal(5.0, added!.V.X, 3);
 
         // Added components on children survive too, not just on the instance root.
-        var childAdded = refreshed.Children[0].GetComponent<VecComp>();
+        VecComp? childAdded = refreshed.Children[0].GetComponent<VecComp>();
         Assert.NotNull(childAdded);
         Assert.Equal(1.0, childAdded!.V.X, 3);
 
@@ -915,7 +915,7 @@ public class PrefabTests : EditorTestHarness
         root.AddComponent<OverrideComp>().A = 1;
         Guid g = CreatePrefabAsset(root, "AddedReimport.prefab");
 
-        var instance = Inst(g);
+        GameObject instance = Inst(g);
         instance.AddComponent<VecComp>().V = new Float3(9, 0, 0);
         SetSceneCurrent(instance);
 
@@ -926,7 +926,7 @@ public class PrefabTests : EditorTestHarness
             Serializer.Serialize(typeof(object), newSource).WriteToString());
         Assets.Reimport(g);
 
-        var refreshed = Scene.Current!.RootObjects.First();
+        GameObject refreshed = Scene.Current!.RootObjects.First();
         Assert.Equal(5, refreshed.GetComponent<OverrideComp>()!.A);   // source change picked up
         Assert.NotNull(refreshed.GetComponent<VecComp>());            // instance addition kept
     }
@@ -942,12 +942,12 @@ public class PrefabTests : EditorTestHarness
         root.AddComponent<OverrideComp>().A = 1;
         Guid g = CreatePrefabAsset(root, "Silent.prefab");
 
-        var instance = Inst(g);
+        GameObject instance = Inst(g);
         SetSceneCurrent(instance);
 
         // Straight at the component, as a scene tool or a script would, then reported the way the
         // editor's change hook reports it - no inspector involved.
-        var comp = Scene.Current!.RootObjects.First().GetComponent<OverrideComp>()!;
+        OverrideComp comp = Scene.Current!.RootObjects.First().GetComponent<OverrideComp>()!;
         comp.A = 77;
         PrefabUtility.NotifyEdited(comp);
 
@@ -963,7 +963,7 @@ public class PrefabTests : EditorTestHarness
         root.AddComponent<OverrideComp>().A = 1;
         Guid g = CreatePrefabAsset(root, "SilentApply.prefab");
 
-        var instance = Inst(g);
+        GameObject instance = Inst(g);
         SetSceneCurrent(instance);
         Scene.Current!.RootObjects.First().GetComponent<OverrideComp>()!.A = 55;
 
@@ -982,11 +982,11 @@ public class PrefabTests : EditorTestHarness
         child.SetParent(root);
         Guid g = CreatePrefabAsset(root, "SilentChild.prefab");
 
-        var instance = Inst(g);
+        GameObject instance = Inst(g);
         SetSceneCurrent(instance);
 
         // Nothing drew this child and nothing reported the edit.
-        var live = Scene.Current!.RootObjects.First();
+        GameObject live = Scene.Current!.RootObjects.First();
         live.Children[0].GetComponent<OverrideComp>()!.A = 33;
         Assert.Empty(live.PrefabOverrides);
 
@@ -1009,8 +1009,8 @@ public class PrefabTests : EditorTestHarness
         root.AddComponent<OverrideComp>().A = 1;
         Guid g = CreatePrefabAsset(root, "Play.prefab");
 
-        var instance = Inst(g);
-        var comp = instance.GetComponent<OverrideComp>()!;
+        GameObject instance = Inst(g);
+        OverrideComp comp = instance.GetComponent<OverrideComp>()!;
         comp.A = 77;
         PrefabUtility.RecordComponentOverrides(instance, comp);
         SetSceneCurrent(instance);
@@ -1040,7 +1040,7 @@ public class PrefabTests : EditorTestHarness
         root.AddComponent<OverrideComp>().A = 1;
         Guid g = CreatePrefabAsset(root, "PlayStale.prefab");
 
-        var instance = Inst(g);
+        GameObject instance = Inst(g);
         SetSceneCurrent(instance);
 
         // Reading the prefab once before play starts is what fills the comparison baseline.
@@ -1132,7 +1132,7 @@ public class PrefabTests : EditorTestHarness
     public void CreatedInstance_CarriesTheIdentitiesItWasWrittenUnder()
     {
         var root = new GameObject("Root");
-        var comp = root.AddComponent<OverrideComp>();
+        OverrideComp comp = root.AddComponent<OverrideComp>();
         var child = new GameObject("Child");
         child.SetParent(root);
 
@@ -1149,7 +1149,7 @@ public class PrefabTests : EditorTestHarness
     public void CreatedInstance_RecordsAnOverrideOnItsRoot()
     {
         var root = new GameObject("Root");
-        var comp = root.AddComponent<OverrideComp>();
+        OverrideComp comp = root.AddComponent<OverrideComp>();
         comp.A = 1;
         Guid g = CreatePrefabAsset(root, "MadeOv.prefab");
 
@@ -1162,7 +1162,7 @@ public class PrefabTests : EditorTestHarness
 
         // And it holds up: the refresh replays recorded overrides and drops everything else.
         PrefabUtility.RefreshAllInstances(g);
-        var live = Scene.Current!.RootObjects.First();
+        GameObject live = Scene.Current!.RootObjects.First();
         Assert.Equal(42, live.GetComponent<OverrideComp>()!.A);
         Assert.False(live.Enabled);
     }
@@ -1171,7 +1171,7 @@ public class PrefabTests : EditorTestHarness
     public void CreatedInstance_CanApplyARootEditBackToThePrefab()
     {
         var root = new GameObject("Root");
-        var comp = root.AddComponent<OverrideComp>();
+        OverrideComp comp = root.AddComponent<OverrideComp>();
         comp.A = 1;
         Guid g = CreatePrefabAsset(root, "MadeApply.prefab");
 
@@ -1189,7 +1189,7 @@ public class PrefabTests : EditorTestHarness
     public void CreatedInstance_CanRevertARootEdit()
     {
         var root = new GameObject("Root");
-        var comp = root.AddComponent<OverrideComp>();
+        OverrideComp comp = root.AddComponent<OverrideComp>();
         comp.A = 1;
         Guid g = CreatePrefabAsset(root, "MadeRevert.prefab");
 
@@ -1199,7 +1199,7 @@ public class PrefabTests : EditorTestHarness
 
         PrefabUtility.RevertSingleOverride(root, root.PrefabOverrides[0].Path);
 
-        var live = Scene.Current!.RootObjects.First();
+        GameObject live = Scene.Current!.RootObjects.First();
         Assert.Equal(1, live.GetComponent<OverrideComp>()!.A);
         Assert.Empty(live.PrefabOverrides);
     }
@@ -1225,7 +1225,7 @@ public class PrefabTests : EditorTestHarness
     public void UndoingAnUnpack_RestoresAnInstanceThatStillAddressesItsPrefab()
     {
         var root = new GameObject("Root");
-        var comp = root.AddComponent<OverrideComp>();
+        OverrideComp comp = root.AddComponent<OverrideComp>();
         comp.A = 1;
         Guid g = CreatePrefabAsset(root, "MadeUnpack.prefab");
         Guid stampedSource = root.SourceIdentifier;
@@ -1269,7 +1269,7 @@ public class PrefabTests : EditorTestHarness
     private Guid MakePrefab(int a, int b, string path)
     {
         var root = new GameObject("Root");
-        var c = root.AddComponent<OverrideComp>();
+        OverrideComp c = root.AddComponent<OverrideComp>();
         c.A = a; c.B = b;
         return CreatePrefabAsset(root, path);
     }
@@ -1289,8 +1289,8 @@ public class PrefabTests : EditorTestHarness
         child.SetParent(root);
         Guid g = CreatePrefabAsset(root, "P.prefab");
 
-        var instance = Instantiate(g);
-        var instChild = instance.Children[0];
+        GameObject instance = Instantiate(g);
+        GameObject instChild = instance.Children[0];
 
         Assert.True(PrefabUtility.IsInstanceRoot(instance));
         Assert.False(PrefabUtility.IsInstanceRoot(instChild));
@@ -1300,7 +1300,7 @@ public class PrefabTests : EditorTestHarness
     [Fact]
     public void NestedPrefabRoot_Detection()
     {
-        var instance = Instantiate(MakePrefab(1, 1, "P.prefab"));
+        GameObject instance = Instantiate(MakePrefab(1, 1, "P.prefab"));
         // Simulate a nested prefab: a child belonging to a different prefab asset.
         var nested = new GameObject("Nested");
         nested.PrefabAssetId = Guid.NewGuid();
@@ -1318,8 +1318,8 @@ public class PrefabTests : EditorTestHarness
     [Fact]
     public void RecordComponentOverrides_RecordsChangedField()
     {
-        var instance = Instantiate(MakePrefab(5, 5, "P.prefab"));
-        var comp = instance.GetComponent<OverrideComp>()!;
+        GameObject instance = Instantiate(MakePrefab(5, 5, "P.prefab"));
+        OverrideComp comp = instance.GetComponent<OverrideComp>()!;
         comp.A = 99;
 
         PrefabUtility.RecordComponentOverrides(instance, comp);
@@ -1331,8 +1331,8 @@ public class PrefabTests : EditorTestHarness
     [Fact]
     public void RecordComponentOverrides_NoChange_NoOverride()
     {
-        var instance = Instantiate(MakePrefab(5, 5, "P.prefab"));
-        var comp = instance.GetComponent<OverrideComp>()!;
+        GameObject instance = Instantiate(MakePrefab(5, 5, "P.prefab"));
+        OverrideComp comp = instance.GetComponent<OverrideComp>()!;
 
         PrefabUtility.RecordComponentOverrides(instance, comp);
 
@@ -1342,8 +1342,8 @@ public class PrefabTests : EditorTestHarness
     [Fact]
     public void RecordComponentOverrides_RevertingValue_RemovesOverride()
     {
-        var instance = Instantiate(MakePrefab(5, 5, "P.prefab"));
-        var comp = instance.GetComponent<OverrideComp>()!;
+        GameObject instance = Instantiate(MakePrefab(5, 5, "P.prefab"));
+        OverrideComp comp = instance.GetComponent<OverrideComp>()!;
 
         comp.A = 99;
         PrefabUtility.RecordComponentOverrides(instance, comp);
@@ -1358,7 +1358,7 @@ public class PrefabTests : EditorTestHarness
     public void RecordGameObjectOverrides_TagIndexSurvivesARefresh()
     {
         Guid g = MakePrefab(5, 5, "P.prefab");
-        var instance = Instantiate(g);
+        GameObject instance = Instantiate(g);
         SetSceneCurrent(instance);
 
         instance.TagIndex = 3;
@@ -1376,7 +1376,7 @@ public class PrefabTests : EditorTestHarness
     public void RecordGameObjectOverrides_IgnoresName()
     {
         Guid g = MakePrefab(5, 5, "P.prefab");
-        var instance = Instantiate(g);
+        GameObject instance = Instantiate(g);
         SetSceneCurrent(instance);
 
         instance.Name = "Renamed";
@@ -1398,15 +1398,15 @@ public class PrefabTests : EditorTestHarness
     public void ApplyOverrides_WritesChangeBackToPrefabSource()
     {
         Guid g = MakePrefab(5, 5, "P.prefab");
-        var instance = Instantiate(g);
-        var comp = instance.GetComponent<OverrideComp>()!;
+        GameObject instance = Instantiate(g);
+        OverrideComp comp = instance.GetComponent<OverrideComp>()!;
         comp.A = 99;
         PrefabUtility.RecordComponentOverrides(instance, comp);
 
         PrefabUtility.ApplyOverrides(instance);
 
         // A freshly instantiated copy now reflects the applied value.
-        var fresh = GameObject.InstantiateDetached(((PrefabAsset)AssetDatabase.Get(g)!))!;
+        GameObject fresh = GameObject.InstantiateDetached(((PrefabAsset)AssetDatabase.Get(g)!))!;
         Assert.Equal(99, fresh.GetComponent<OverrideComp>()!.A);
         Assert.False(PrefabUtility.HasAnyOverrides(instance)); // overrides cleared after apply
     }
@@ -1415,22 +1415,22 @@ public class PrefabTests : EditorTestHarness
     public void RevertOverrides_RestoresInstanceToSource()
     {
         Guid g = MakePrefab(5, 5, "P.prefab");
-        var instance = Instantiate(g);
+        GameObject instance = Instantiate(g);
         instance.GetComponent<OverrideComp>()!.A = 99;
         SetSceneCurrent(instance);
 
         PrefabUtility.RevertOverrides(instance);
 
         // RevertOverrides swaps in a fresh copy from the prefab; find it in the scene.
-        var current = Scene.Current!.RootObjects.First();
+        GameObject current = Scene.Current!.RootObjects.First();
         Assert.Equal(5, current.GetComponent<OverrideComp>()!.A);
     }
 
     [Fact]
     public void RevertSingleOverride_ResetsFieldAndClearsOverride()
     {
-        var instance = Instantiate(MakePrefab(5, 5, "P.prefab"));
-        var comp = instance.GetComponent<OverrideComp>()!;
+        GameObject instance = Instantiate(MakePrefab(5, 5, "P.prefab"));
+        OverrideComp comp = instance.GetComponent<OverrideComp>()!;
         comp.A = 99;
         PrefabUtility.RecordComponentOverrides(instance, comp);
 
@@ -1514,15 +1514,15 @@ public class PrefabTests : EditorTestHarness
     public void ApplySingleOverride_UpdatesSourceForThatField()
     {
         Guid g = MakePrefab(5, 5, "P.prefab");
-        var instance = Instantiate(g);
-        var comp = instance.GetComponent<OverrideComp>()!;
+        GameObject instance = Instantiate(g);
+        OverrideComp comp = instance.GetComponent<OverrideComp>()!;
         comp.A = 99;
         PrefabUtility.RecordComponentOverrides(instance, comp);
-        var ov = instance.PrefabOverrides.First(o => o.Path == PrefabUtility.GetOverridePath(instance, comp, "A"));
+        PropertyOverride ov = instance.PrefabOverrides.First(o => o.Path == PrefabUtility.GetOverridePath(instance, comp, "A"));
 
         PrefabUtility.ApplySingleOverride(instance, ov.Path);
 
-        var fresh = GameObject.InstantiateDetached(((PrefabAsset)AssetDatabase.Get(g)!))!;
+        GameObject fresh = GameObject.InstantiateDetached(((PrefabAsset)AssetDatabase.Get(g)!))!;
         Assert.Equal(99, fresh.GetComponent<OverrideComp>()!.A);
     }
 
@@ -1534,8 +1534,8 @@ public class PrefabTests : EditorTestHarness
     public void RefreshAllInstances_KeepsOverride_PicksUpSourceChange()
     {
         Guid g = MakePrefab(1, 1, "P.prefab");
-        var instance = Instantiate(g);
-        var comp = instance.GetComponent<OverrideComp>()!;
+        GameObject instance = Instantiate(g);
+        OverrideComp comp = instance.GetComponent<OverrideComp>()!;
         comp.A = 99;                                   // local override on A
         PrefabUtility.RecordComponentOverrides(instance, comp);
         SetSceneCurrent(instance);
@@ -1545,7 +1545,7 @@ public class PrefabTests : EditorTestHarness
 
         PrefabUtility.RefreshAllInstances(g);
 
-        var refreshed = Scene.Current!.RootObjects.First().GetComponent<OverrideComp>()!;
+        OverrideComp refreshed = Scene.Current!.RootObjects.First().GetComponent<OverrideComp>()!;
         Assert.Equal(99, refreshed.A); // override preserved
         Assert.Equal(2, refreshed.B);  // source change picked up
     }
@@ -1557,7 +1557,7 @@ public class PrefabTests : EditorTestHarness
     [Fact]
     public void UnpackPrefabInstance_ClearsPrefabData()
     {
-        var instance = Instantiate(MakePrefab(5, 5, "P.prefab"));
+        GameObject instance = Instantiate(MakePrefab(5, 5, "P.prefab"));
         Assert.True(instance.IsPrefabInstance);
 
         PrefabUtility.UnpackPrefabInstance(instance);
@@ -1622,18 +1622,18 @@ public class PrefabTests : EditorTestHarness
         // Two components referencing each other must both rewire to the instance copies (and not
         // infinite-loop). Regression lock for the Components-before-Children deserialize ordering fix.
         var root = new GameObject("Root");
-        var r1 = root.AddComponent<RefComp>();
+        RefComp r1 = root.AddComponent<RefComp>();
         var child = new GameObject("Child");
-        var r2 = child.AddComponent<RefComp>();
+        RefComp r2 = child.AddComponent<RefComp>();
         child.SetParent(root);
         r1.Other = r2;
         r2.Other = r1; // cycle
 
         Guid g = CreatePrefabAsset(root, "Cycle.prefab");
-        var instance = Instantiate(g);
+        GameObject instance = Instantiate(g);
 
-        var i1 = instance.GetComponent<RefComp>()!;
-        var i2 = instance.Children[0].GetComponent<RefComp>()!;
+        RefComp i1 = instance.GetComponent<RefComp>()!;
+        RefComp i2 = instance.Children[0].GetComponent<RefComp>()!;
         Assert.Same(i2, i1.Other);
         Assert.Same(i1, i2.Other);
     }
@@ -1652,7 +1652,7 @@ public class PrefabTests : EditorTestHarness
         child.Enabled = false;
 
         Guid g = CreatePrefabAsset(root, "Disabled.prefab");
-        var instance = Instantiate(g);
+        GameObject instance = Instantiate(g);
 
         Assert.False(instance.Children[0].Enabled);
         Assert.False(instance.GetComponent<OverrideComp>()!.Enabled);
@@ -1661,7 +1661,7 @@ public class PrefabTests : EditorTestHarness
     [Fact]
     public void EmptyPrefab_Instantiates()
     {
-        var instance = Instantiate(CreatePrefabAsset(new GameObject("Empty"), "Empty.prefab"));
+        GameObject instance = Instantiate(CreatePrefabAsset(new GameObject("Empty"), "Empty.prefab"));
 
         Assert.Equal("Empty", instance.Name);
         Assert.Empty(instance.GetComponents<Component>());
@@ -1696,7 +1696,7 @@ public class PrefabTests : EditorTestHarness
         nestedChild.SetParent(nested);
 
         Guid outerId = WritePrefabFileRaw(root, "Outer.prefab");
-        var instance = Instantiate(outerId);
+        GameObject instance = Instantiate(outerId);
 
         // An asset written before flattening was enforced loads as one tree: the whole hierarchy is
         // the outer prefab's, with nothing pointing back at the prefab it was nested from.
@@ -1713,17 +1713,17 @@ public class PrefabTests : EditorTestHarness
     public void IntraPrefabReference_RewiresToInstanceCopy()
     {
         var root = new GameObject("Root");
-        var refComp = root.AddComponent<RefComp>();
+        RefComp refComp = root.AddComponent<RefComp>();
         var child = new GameObject("Child");
-        var target = child.AddComponent<OverrideComp>();
+        OverrideComp target = child.AddComponent<OverrideComp>();
         child.SetParent(root);
         refComp.Other = target; // points at a component elsewhere in the same prefab
 
         Guid g = CreatePrefabAsset(root, "Ref.prefab");
-        var instance = Instantiate(g);
+        GameObject instance = Instantiate(g);
 
-        var instRef = instance.GetComponent<RefComp>()!;
-        var instTarget = instance.Children[0].GetComponent<OverrideComp>()!;
+        RefComp instRef = instance.GetComponent<RefComp>()!;
+        OverrideComp instTarget = instance.Children[0].GetComponent<OverrideComp>()!;
 
         // The reference must rewire to the INSTANCE's copy, not dangle at the source / null.
         Assert.NotNull(instRef.Other);
@@ -1741,15 +1741,15 @@ public class PrefabTests : EditorTestHarness
         root.AddComponent<VecComp>().V = new Float3(1, 2, 3);
         Guid g = CreatePrefabAsset(root, "Vec.prefab");
 
-        var instance = Instantiate(g);
-        var comp = instance.GetComponent<VecComp>()!;
+        GameObject instance = Instantiate(g);
+        VecComp comp = instance.GetComponent<VecComp>()!;
         comp.V = new Float3(9, 9, 9);
 
         PrefabUtility.RecordComponentOverrides(instance, comp);
         Assert.True(PrefabUtility.IsPropertyOverridden(instance, PrefabUtility.GetOverridePath(instance, comp, "V")));
 
         PrefabUtility.ApplyOverrides(instance);
-        var fresh = GameObject.InstantiateDetached(((PrefabAsset)AssetDatabase.Get(g)!))!;
+        GameObject fresh = GameObject.InstantiateDetached(((PrefabAsset)AssetDatabase.Get(g)!))!;
         Assert.Equal(9.0, fresh.GetComponent<VecComp>()!.V.X, 3);
     }
 
@@ -1765,10 +1765,10 @@ public class PrefabTests : EditorTestHarness
         root.AddComponent<VecComp>().V = Float3.Zero;
         Guid g = CreatePrefabAsset(root, "Multi.prefab");
 
-        var instance = Instantiate(g);
+        GameObject instance = Instantiate(g);
         SetSceneCurrent(instance);
 
-        var vec = instance.GetComponent<VecComp>()!;
+        VecComp vec = instance.GetComponent<VecComp>()!;
         vec.V = new Float3(5, 0, 0);
         PrefabUtility.RecordComponentOverrides(instance, vec);
 
@@ -1790,14 +1790,14 @@ public class PrefabTests : EditorTestHarness
         var root = new GameObject("Root");
         var child = new GameObject("Child");
         var grand = new GameObject("Grand");
-        var gc = grand.AddComponent<OverrideComp>();
+        OverrideComp gc = grand.AddComponent<OverrideComp>();
         gc.A = 1; gc.B = 1;
         child.SetParent(root);
         grand.SetParent(child);
         Guid g = CreatePrefabAsset(root, "Deep.prefab");
 
-        var instance = Instantiate(g);
-        var instGrandComp = instance.Children[0].Children[0].GetComponent<OverrideComp>()!;
+        GameObject instance = Instantiate(g);
+        OverrideComp instGrandComp = instance.Children[0].Children[0].GetComponent<OverrideComp>()!;
         instGrandComp.A = 99;
         PrefabUtility.RecordComponentOverrides(instance.Children[0].Children[0], instGrandComp);
         SetSceneCurrent(instance);
@@ -1807,7 +1807,7 @@ public class PrefabTests : EditorTestHarness
 
         PrefabUtility.RefreshAllInstances(g);
 
-        var refreshed = Scene.Current!.RootObjects.First().Children[0].Children[0].GetComponent<OverrideComp>()!;
+        OverrideComp refreshed = Scene.Current!.RootObjects.First().Children[0].Children[0].GetComponent<OverrideComp>()!;
         Assert.Equal(99, refreshed.A); // override preserved
         Assert.Equal(2, refreshed.B);  // source change picked up
     }
@@ -1820,11 +1820,11 @@ public class PrefabTests : EditorTestHarness
     public void MultipleInstances_KeepIndependentOverrides_OnRefresh()
     {
         var root = new GameObject("Root");
-        var c = root.AddComponent<OverrideComp>(); c.A = 1; c.B = 1;
+        OverrideComp c = root.AddComponent<OverrideComp>(); c.A = 1; c.B = 1;
         Guid g = CreatePrefabAsset(root, "P.prefab");
 
-        var i1 = Instantiate(g);
-        var i2 = Instantiate(g);
+        GameObject i1 = Instantiate(g);
+        GameObject i2 = Instantiate(g);
         i1.GetComponent<OverrideComp>()!.A = 10;
         i2.GetComponent<OverrideComp>()!.A = 20;
         PrefabUtility.RecordComponentOverrides(i1, i1.GetComponent<OverrideComp>()!);
@@ -1856,7 +1856,7 @@ public class PrefabTests : EditorTestHarness
         root.AddComponent<OverrideComp>().A = 5;
         Guid g = CreatePrefabAsset(root, "P.prefab");
 
-        var instance = Instantiate(g);
+        GameObject instance = Instantiate(g);
         instance.Transform.Position = new Float3(10, 0, 0);
         instance.Name = "PlacedInstance";
         instance.GetComponent<OverrideComp>()!.A = 99;
@@ -1864,7 +1864,7 @@ public class PrefabTests : EditorTestHarness
 
         PrefabUtility.RevertOverrides(instance);
 
-        var current = Scene.Current!.RootObjects.First();
+        GameObject current = Scene.Current!.RootObjects.First();
         Assert.Equal(5, current.GetComponent<OverrideComp>()!.A); // field reverted
         Assert.Equal("PlacedInstance", current.Name);             // name preserved
         Assert.Equal(10.0, current.Transform.Position.X, 3);      // transform preserved
@@ -1878,7 +1878,7 @@ public class PrefabTests : EditorTestHarness
     public void MovingAChild_IsRecordedAndSurvivesARefresh()
     {
         Guid g = MakeNestedPrefab("ChildMove.prefab");
-        var instance = Inst(g);
+        GameObject instance = Inst(g);
         LoadSceneWith(instance);
 
         instance.Children[0].Transform.LocalPosition = new Float3(5, 0, 0);
@@ -1894,14 +1894,14 @@ public class PrefabTests : EditorTestHarness
     public void MovingAChild_CanBeReverted()
     {
         Guid g = MakeNestedPrefab("ChildRevert.prefab");
-        var instance = Inst(g);
+        GameObject instance = Inst(g);
         LoadSceneWith(instance);
 
         instance.Children[0].Transform.LocalPosition = new Float3(5, 0, 0);
         PrefabUtility.ReconcileInstance(instance);
         PrefabUtility.RevertOverrides(instance);
 
-        var live = Scene.Current!.RootObjects.First();
+        GameObject live = Scene.Current!.RootObjects.First();
         Assert.Equal(0.0, live.Children[0].Transform.LocalPosition.X, 3);
         Assert.Empty(live.PrefabOverrides);
     }
@@ -1923,7 +1923,7 @@ public class PrefabTests : EditorTestHarness
     public void AChildTheInstanceMoved_KeepsItsPlaceWhileTheRestFollowsThePrefab()
     {
         Guid g = MakeNestedPrefab("ChildMix.prefab");
-        var instance = Inst(g);
+        GameObject instance = Inst(g);
         LoadSceneWith(instance);
 
         instance.Children[0].Transform.LocalPosition = new Float3(5, 0, 0);
@@ -1935,7 +1935,7 @@ public class PrefabTests : EditorTestHarness
             s.Children[0].Transform.LocalScale = new Float3(2, 2, 2);
         });
 
-        var child = Scene.Current!.RootObjects.First().Children[0];
+        GameObject child = Scene.Current!.RootObjects.First().Children[0];
         Assert.Equal(5.0, child.Transform.LocalPosition.X, 3);  // what the instance said
         Assert.Equal(2.0, child.Transform.LocalScale.X, 3);     // what the prefab said
     }
@@ -1944,8 +1944,8 @@ public class PrefabTests : EditorTestHarness
     public void OneInstanceMovingAChild_LeavesTheOtherAlone()
     {
         Guid g = MakeNestedPrefab("ChildAlone.prefab");
-        var a = Inst(g);
-        var b = Inst(g);
+        GameObject a = Inst(g);
+        GameObject b = Inst(g);
         LoadSceneWith(a, b);
 
         a.Children[0].Transform.LocalPosition = new Float3(5, 0, 0);
@@ -1964,7 +1964,7 @@ public class PrefabTests : EditorTestHarness
     public void RenamingAChild_IsRecorded_WhileTheRootsOwnNameIsNot()
     {
         Guid g = MakeNestedPrefab("ChildName.prefab");
-        var instance = Inst(g);
+        GameObject instance = Inst(g);
         LoadSceneWith(instance);
 
         instance.Name = "Placed";
@@ -1975,7 +1975,7 @@ public class PrefabTests : EditorTestHarness
         Assert.Single(instance.PrefabOverrides.Where(o => o.Path.EndsWith("/$/Name")));
 
         PrefabUtility.RefreshAllInstances(g);
-        var live = Scene.Current!.RootObjects.First();
+        GameObject live = Scene.Current!.RootObjects.First();
         Assert.Equal("Placed", live.Name);
         Assert.Equal("Renamed", live.Children[0].Name);
     }
@@ -1999,13 +1999,13 @@ public class PrefabTests : EditorTestHarness
     public void DescribeOverrides_NamesTheObjectComponentAndMember()
     {
         Guid g = MakeNestedPrefab("Describe.prefab");
-        var instance = Inst(g);
+        GameObject instance = Inst(g);
         LoadSceneWith(instance);
 
         instance.Children[0].GetComponent<OverrideComp>()!.A = 42;
         PrefabUtility.ReconcileInstance(instance);
 
-        var described = Assert.Single(PrefabUtility.DescribeOverrides(instance));
+        PrefabUtility.OverrideDescription described = Assert.Single(PrefabUtility.DescribeOverrides(instance));
         Assert.Equal("Child", described.ObjectName);
         Assert.Equal(nameof(OverrideComp), described.ComponentName);
         Assert.Equal("A", described.MemberName);
@@ -2021,7 +2021,7 @@ public class PrefabTests : EditorTestHarness
     public void DescribeOverrides_MarksAnEntryThatAddressesNothing()
     {
         Guid g = MakeNestedPrefab("DescribeBroken.prefab");
-        var instance = Inst(g);
+        GameObject instance = Inst(g);
         LoadSceneWith(instance);
 
         instance.PrefabOverrides.Add(new PropertyOverride
@@ -2030,7 +2030,7 @@ public class PrefabTests : EditorTestHarness
             Value = Serializer.Serialize(typeof(int), 1)
         });
 
-        var described = Assert.Single(PrefabUtility.DescribeOverrides(instance));
+        PrefabUtility.OverrideDescription described = Assert.Single(PrefabUtility.DescribeOverrides(instance));
         Assert.False(described.Resolvable);
     }
 
@@ -2038,13 +2038,13 @@ public class PrefabTests : EditorTestHarness
     public void DescribeOverrides_GroupsAGameObjectLevelOverrideUnderTheObject()
     {
         Guid g = MakeNestedPrefab("DescribeGo.prefab");
-        var instance = Inst(g);
+        GameObject instance = Inst(g);
         LoadSceneWith(instance);
 
         instance.Children[0].Enabled = false;
         PrefabUtility.ReconcileInstance(instance);
 
-        var described = Assert.Single(PrefabUtility.DescribeOverrides(instance));
+        PrefabUtility.OverrideDescription described = Assert.Single(PrefabUtility.DescribeOverrides(instance));
         Assert.Equal("Child", described.Group);   // no component, so the object is the whole heading
         Assert.Equal("Enabled", described.MemberName);
     }
@@ -2056,7 +2056,7 @@ public class PrefabTests : EditorTestHarness
         root.AddComponent<LooseComp>().Held = new LooseEquality { Value = 1 };
         Guid g = CreatePrefabAsset(root, "Loose.prefab");
 
-        var instance = Inst(g);
+        GameObject instance = Inst(g);
         LoadSceneWith(instance);
 
         instance.GetComponent<LooseComp>()!.Held = new LooseEquality { Value = 2 };
@@ -2078,20 +2078,20 @@ public class PrefabTests : EditorTestHarness
     public void DescribeAdditions_FindsAddedComponentsAndObjects()
     {
         Guid g = MakeNestedPrefab("Additions.prefab");
-        var instance = Inst(g);
+        GameObject instance = Inst(g);
         LoadSceneWith(instance);
 
         instance.Children[0].AddComponent<VecComp>();
         var added = new GameObject("Extra");
         added.SetParent(instance);
 
-        var describedAdditions = PrefabUtility.DescribeAdditions(instance);
+        List<PrefabUtility.AdditionDescription> describedAdditions = PrefabUtility.DescribeAdditions(instance);
         Assert.Equal(2, describedAdditions.Count);
 
-        var component = describedAdditions.Single(a => !a.IsWholeObject);
+        PrefabUtility.AdditionDescription component = describedAdditions.Single(a => !a.IsWholeObject);
         Assert.Equal("Child > VecComp", component.Label);
 
-        var whole = describedAdditions.Single(a => a.IsWholeObject);
+        PrefabUtility.AdditionDescription whole = describedAdditions.Single(a => a.IsWholeObject);
         Assert.Equal("Extra", whole.Label);
 
         // What the prefab provides is not an addition, however much of it there is.
@@ -2102,11 +2102,11 @@ public class PrefabTests : EditorTestHarness
     public void RemoveAddition_TakesAnAddedComponentBackOut()
     {
         Guid g = MakeNestedPrefab("AddRemove.prefab");
-        var instance = Inst(g);
+        GameObject instance = Inst(g);
         LoadSceneWith(instance);
 
         instance.AddComponent<VecComp>();
-        var addition = PrefabUtility.DescribeAdditions(instance).Single(a => !a.IsWholeObject);
+        PrefabUtility.AdditionDescription addition = PrefabUtility.DescribeAdditions(instance).Single(a => !a.IsWholeObject);
 
         PrefabUtility.RemoveAddition(instance, addition);
 
@@ -2118,21 +2118,21 @@ public class PrefabTests : EditorTestHarness
     public void ApplyAddition_PutsAnAddedComponentIntoThePrefab()
     {
         Guid g = MakeNestedPrefab("AddApplyComp.prefab");
-        var instance = Inst(g);
+        GameObject instance = Inst(g);
         LoadSceneWith(instance);
 
         instance.AddComponent<VecComp>().V = new Float3(1, 2, 3);
-        var addition = PrefabUtility.DescribeAdditions(instance).Single(a => !a.IsWholeObject);
+        PrefabUtility.AdditionDescription addition = PrefabUtility.DescribeAdditions(instance).Single(a => !a.IsWholeObject);
 
         PrefabUtility.ApplyAddition(instance, addition);
 
         // In the prefab now, with the values it was given.
-        var fresh = Inst(g);
+        GameObject fresh = Inst(g);
         Assert.NotNull(fresh.GetComponent<VecComp>());
         Assert.Equal(1.0, fresh.GetComponent<VecComp>()!.V.X, 3);
 
         // And the instance stops carrying it as its own, so a refresh does not hand it a second copy.
-        var live = Scene.Current!.RootObjects.First();
+        GameObject live = Scene.Current!.RootObjects.First();
         Assert.Empty(PrefabUtility.DescribeAdditions(live));
         Assert.Single(live.GetComponents<VecComp>());
 
@@ -2144,21 +2144,21 @@ public class PrefabTests : EditorTestHarness
     public void ApplyAddition_PutsAnAddedObjectIntoThePrefab()
     {
         Guid g = MakeNestedPrefab("AddApplyObj.prefab");
-        var instance = Inst(g);
+        GameObject instance = Inst(g);
         LoadSceneWith(instance);
 
         var added = new GameObject("Extra");
         added.AddComponent<VecComp>().V = new Float3(4, 5, 6);
         added.SetParent(instance);
 
-        var addition = PrefabUtility.DescribeAdditions(instance).Single(a => a.IsWholeObject);
+        PrefabUtility.AdditionDescription addition = PrefabUtility.DescribeAdditions(instance).Single(a => a.IsWholeObject);
         PrefabUtility.ApplyAddition(instance, addition);
 
-        var fresh = Inst(g);
-        var freshChild = fresh.Children.Single(c => c.Name == "Extra");
+        GameObject fresh = Inst(g);
+        GameObject freshChild = fresh.Children.Single(c => c.Name == "Extra");
         Assert.Equal(4.0, freshChild.GetComponent<VecComp>()!.V.X, 3);
 
-        var live = Scene.Current!.RootObjects.First();
+        GameObject live = Scene.Current!.RootObjects.First();
         Assert.Empty(PrefabUtility.DescribeAdditions(live));
 
         PrefabUtility.RefreshAllInstances(g);
@@ -2169,7 +2169,7 @@ public class PrefabTests : EditorTestHarness
     public void ApplyAddition_WithAnotherAdditionBesideIt_AppliesTheRightOne()
     {
         Guid g = MakeNestedPrefab("AddApplyTwo.prefab");
-        var instance = Inst(g);
+        GameObject instance = Inst(g);
         LoadSceneWith(instance);
 
         // Two added objects, and only the second one applied. The prefab then has one child the
@@ -2180,11 +2180,11 @@ public class PrefabTests : EditorTestHarness
         second.AddComponent<VecComp>().V = new Float3(7, 0, 0);
         second.SetParent(instance);
 
-        var addition = PrefabUtility.DescribeAdditions(instance).Single(a => a.ObjectName == "SecondAdded");
+        PrefabUtility.AdditionDescription addition = PrefabUtility.DescribeAdditions(instance).Single(a => a.ObjectName == "SecondAdded");
         PrefabUtility.ApplyAddition(instance, addition);
         PrefabUtility.RefreshAllInstances(g);
 
-        var live = Scene.Current!.RootObjects.First();
+        GameObject live = Scene.Current!.RootObjects.First();
         Assert.Equal(7.0, live.Children.Single(c => c.Name == "SecondAdded").GetComponent<VecComp>()!.V.X, 3);
 
         // The one that was not applied is untouched and still the instance's own.
@@ -2192,7 +2192,7 @@ public class PrefabTests : EditorTestHarness
         Assert.Equal("FirstAdded", Assert.Single(PrefabUtility.DescribeAdditions(live)).ObjectName);
 
         // And the prefab took only what it was given.
-        var fresh = Inst(g);
+        GameObject fresh = Inst(g);
         Assert.DoesNotContain(fresh.Children, c => c.Name == "FirstAdded");
         Assert.Contains(fresh.Children, c => c.Name == "SecondAdded");
     }
@@ -2201,8 +2201,8 @@ public class PrefabTests : EditorTestHarness
     public void ApplyAddition_LeavesOtherInstancesToTheRefresh()
     {
         Guid g = MakeNestedPrefab("AddApplyMany.prefab");
-        var a = Inst(g);
-        var b = Inst(g);
+        GameObject a = Inst(g);
+        GameObject b = Inst(g);
         LoadSceneWith(a, b);
 
         a.AddComponent<VecComp>();
@@ -2221,10 +2221,10 @@ public class PrefabTests : EditorTestHarness
     public void RevertComponentOverrides_TakesBackThatComponentAndLeavesTheRest()
     {
         Guid g = MakeNestedPrefab("RevertComp.prefab");
-        var instance = Inst(g);
+        GameObject instance = Inst(g);
         LoadSceneWith(instance);
 
-        var rootComp = instance.GetComponent<OverrideComp>()!;
+        OverrideComp rootComp = instance.GetComponent<OverrideComp>()!;
         rootComp.A = 42;
         rootComp.B = 43;
         instance.Children[0].GetComponent<OverrideComp>()!.A = 99;
@@ -2243,10 +2243,10 @@ public class PrefabTests : EditorTestHarness
     public void RevertComponentOverrides_IsOneUndoStep()
     {
         Guid g = MakeNestedPrefab("RevertCompUndo.prefab");
-        var instance = Inst(g);
+        GameObject instance = Inst(g);
         LoadSceneWith(instance);
 
-        var comp = instance.GetComponent<OverrideComp>()!;
+        OverrideComp comp = instance.GetComponent<OverrideComp>()!;
         comp.A = 42;
         comp.B = 43;
         PrefabUtility.ReconcileInstance(instance);
@@ -2255,7 +2255,7 @@ public class PrefabTests : EditorTestHarness
         PrefabUtility.RevertComponentOverrides(instance, comp);
         Undo.PerformUndo();
 
-        var live = Scene.Current!.RootObjects.First().GetComponent<OverrideComp>()!;
+        OverrideComp live = Scene.Current!.RootObjects.First().GetComponent<OverrideComp>()!;
         Assert.Equal(42, live.A);
         Assert.Equal(43, live.B);
         Assert.Equal(2, Scene.Current!.RootObjects.First().PrefabOverrides.Count);
@@ -2266,17 +2266,17 @@ public class PrefabTests : EditorTestHarness
     public void ApplyComponentOverrides_PushesOnlyThatComponentToThePrefab()
     {
         Guid g = MakeNestedPrefab("ApplyComp.prefab");
-        var instance = Inst(g);
+        GameObject instance = Inst(g);
         LoadSceneWith(instance);
 
-        var rootComp = instance.GetComponent<OverrideComp>()!;
+        OverrideComp rootComp = instance.GetComponent<OverrideComp>()!;
         rootComp.A = 42;
         instance.Children[0].GetComponent<OverrideComp>()!.A = 99;
         PrefabUtility.ReconcileInstance(instance);
 
         PrefabUtility.ApplyComponentOverrides(instance, rootComp);
 
-        var fresh = Inst(g);
+        GameObject fresh = Inst(g);
         Assert.Equal(42, fresh.GetComponent<OverrideComp>()!.A);
         Assert.Equal(2, fresh.Children[0].GetComponent<OverrideComp>()!.A);   // still the prefab's
     }
@@ -2285,7 +2285,7 @@ public class PrefabTests : EditorTestHarness
     public void ResetComponentToDefaults_PutsBackWhatANewOneWouldHold()
     {
         var go = new GameObject("Plain");
-        var comp = go.AddComponent<OverrideComp>();
+        OverrideComp comp = go.AddComponent<OverrideComp>();
         comp.A = 42;
         comp.B = 43;
         LoadSceneWith(go);
@@ -2305,7 +2305,7 @@ public class PrefabTests : EditorTestHarness
     public void ResetComponentToDefaults_KeepsTheComponentsIdentity()
     {
         var go = new GameObject("Plain");
-        var comp = go.AddComponent<OverrideComp>();
+        OverrideComp comp = go.AddComponent<OverrideComp>();
         comp.A = 42;
         LoadSceneWith(go);
 
@@ -2326,11 +2326,11 @@ public class PrefabTests : EditorTestHarness
     public void SetPropertyModifications_RebuildsOnlyTheInstanceItWasHanded()
     {
         Guid g = MakeNestedPrefab("SetOnly.prefab");
-        var a = Inst(g);
-        var b = Inst(g);
+        GameObject a = Inst(g);
+        GameObject b = Inst(g);
         LoadSceneWith(a, b);
 
-        var bComp = b.GetComponent<OverrideComp>()!;
+        OverrideComp bComp = b.GetComponent<OverrideComp>()!;
         bComp.A = 5;
         PrefabUtility.RecordComponentOverrides(b, bComp);
 
@@ -2361,7 +2361,7 @@ public class PrefabTests : EditorTestHarness
     public void SetPropertyModifications_IsUndoable()
     {
         Guid g = MakeNestedPrefab("SetUndo.prefab");
-        var instance = Inst(g);
+        GameObject instance = Inst(g);
         LoadSceneWith(instance);
 
         Undo.Clear();
@@ -2376,7 +2376,7 @@ public class PrefabTests : EditorTestHarness
 
         Undo.PerformUndo();
 
-        var live = Scene.Current!.RootObjects.First();
+        GameObject live = Scene.Current!.RootObjects.First();
         Assert.Empty(live.PrefabOverrides);
         Assert.Equal(1, live.GetComponent<OverrideComp>()!.A);
     }
@@ -2395,7 +2395,7 @@ public class PrefabTests : EditorTestHarness
         child.SetParent(stray);
         LoadSceneWith(stray);
 
-        var warnings = CaptureWarnings(() =>
+        List<string> warnings = CaptureWarnings(() =>
             Assert.True(PrefabUtility.ConnectGameObjectToPrefab(stray, g)));
 
         Assert.Contains(warnings, w => w.Contains("VecComp"));
@@ -2420,7 +2420,7 @@ public class PrefabTests : EditorTestHarness
             Assert.True(PrefabEditingMode.IsEditing);
 
             // Something the session adds that answers to another prefab.
-            var editingRoot = Scene.Current!.RootObjects.First(go => !go.HideFlags.HasFlag(HideFlags.HideAndDontSave));
+            GameObject editingRoot = Scene.Current!.RootObjects.First(go => !go.HideFlags.HasFlag(HideFlags.HideAndDontSave));
             Inst(inner).SetParent(editingRoot);
 
             Assert.True(PrefabEditingMode.Save());
@@ -2474,10 +2474,10 @@ public class PrefabTests : EditorTestHarness
     public void RedoingASingleRevert_DoesNotPushAnotherUndoStep()
     {
         Guid g = MakeNestedPrefab("RedoRevert.prefab");
-        var instance = Inst(g);
+        GameObject instance = Inst(g);
         LoadSceneWith(instance);
 
-        var comp = instance.GetComponent<OverrideComp>()!;
+        OverrideComp comp = instance.GetComponent<OverrideComp>()!;
         comp.A = 42;
         PrefabUtility.RecordComponentOverrides(instance, comp);
         string path = PrefabUtility.GetOverridePath(instance, comp, "A");
@@ -2529,11 +2529,11 @@ public class PrefabTests : EditorTestHarness
         File.WriteAllText(AssetAbsolutePath("Shift.prefab"), echo.WriteToString());
         Guid g = Assets.ImportFile("Shift.prefab");
 
-        var instance = GameObject.InstantiateDetached(GetPrefab(g)!)!;
+        GameObject instance = GameObject.InstantiateDetached(GetPrefab(g)!)!;
         Assert.Equal(2, instance.GetComponents<Component>().Count());
 
         // Each component's source identity is its own, not the one belonging to the entry before it.
-        var written = EchoObject.ReadFromString(File.ReadAllText(AssetAbsolutePath("Shift.prefab")))
+        List<EchoObject> written = EchoObject.ReadFromString(File.ReadAllText(AssetAbsolutePath("Shift.prefab")))
             .Get("Components")!.List;
 
         foreach (Component live in instance.GetComponents<Component>())
@@ -2549,8 +2549,8 @@ public class PrefabTests : EditorTestHarness
     {
         Guid g = MakeNestedPrefab("Ident.prefab");
 
-        var a = Inst(g);
-        var b = Inst(g);
+        GameObject a = Inst(g);
+        GameObject b = Inst(g);
 
         // Preserving identifiers through the load is an internal step, not something the caller sees.
         Assert.NotEqual(a.Identifier, b.Identifier);
@@ -2570,7 +2570,7 @@ public class PrefabTests : EditorTestHarness
     public void ApplyingLeavesNoTemporaryFileBehind()
     {
         Guid g = MakeNestedPrefab("Atomic.prefab");
-        var instance = Inst(g);
+        GameObject instance = Inst(g);
         LoadSceneWith(instance);
 
         instance.GetComponent<OverrideComp>()!.A = 42;
@@ -2588,15 +2588,15 @@ public class PrefabTests : EditorTestHarness
         root.AddComponent<RefHolderComp>();
         Guid g = CreatePrefabAsset(root, "Dropped.prefab");
 
-        var instance = Inst(g);
+        GameObject instance = Inst(g);
         var target = new GameObject("SceneTarget");
         SetSceneCurrent(instance, target);
 
-        var comp = instance.GetComponent<RefHolderComp>()!;
+        RefHolderComp comp = instance.GetComponent<RefHolderComp>()!;
         comp.Target = target;
         PrefabUtility.RecordComponentOverrides(instance, comp);
 
-        var warnings = CaptureWarnings(() =>
+        List<string> warnings = CaptureWarnings(() =>
             PrefabUtility.ApplySingleOverride(instance, PrefabUtility.GetOverridePath(instance, comp, "Target")));
 
         // The reference cannot go into the asset, and the author has to be told rather than finding
@@ -2612,7 +2612,7 @@ public class PrefabTests : EditorTestHarness
     public void AComponentThePrefabProvides_CannotBeRemovedFromAnInstance()
     {
         Guid g = MakeNestedPrefab("Locked.prefab");
-        var instance = Inst(g);
+        GameObject instance = Inst(g);
         LoadSceneWith(instance);
 
         instance.RemoveComponent(instance.GetComponent<OverrideComp>()!);
@@ -2626,7 +2626,7 @@ public class PrefabTests : EditorTestHarness
     public void AComponentTheInstanceAdded_CanBeRemovedFromIt()
     {
         Guid g = MakeNestedPrefab("LockedAdd.prefab");
-        var instance = Inst(g);
+        GameObject instance = Inst(g);
         LoadSceneWith(instance);
 
         instance.AddComponent<VecComp>();
@@ -2639,7 +2639,7 @@ public class PrefabTests : EditorTestHarness
     public void UnpackingAnInstance_LetsItsComponentsBeRemoved()
     {
         Guid g = MakeNestedPrefab("LockedUnpack.prefab");
-        var instance = Inst(g);
+        GameObject instance = Inst(g);
         LoadSceneWith(instance);
 
         PrefabUtility.UnpackPrefabInstance(instance);
@@ -2652,7 +2652,7 @@ public class PrefabTests : EditorTestHarness
     public void ThePrefabDroppingAComponent_StillRemovesItFromInstances()
     {
         Guid g = MakeNestedPrefab("LockedDrop.prefab");
-        var instance = Inst(g);
+        GameObject instance = Inst(g);
         LoadSceneWith(instance);
 
         // The guard is about what the instance may do, not about what the prefab may do to it.
@@ -2675,9 +2675,9 @@ public class PrefabTests : EditorTestHarness
         child.SetParent(root);
         Guid g = CreatePrefabAsset(root, "C.prefab");
 
-        var instance = Instantiate(g);
-        var childGo = instance.Children[0];
-        var comp = childGo.GetComponent<OverrideComp>()!;
+        GameObject instance = Instantiate(g);
+        GameObject childGo = instance.Children[0];
+        OverrideComp comp = childGo.GetComponent<OverrideComp>()!;
         comp.A = 99;
 
         PrefabUtility.RecordComponentOverrides(childGo, comp);
@@ -2696,8 +2696,8 @@ public class PrefabTests : EditorTestHarness
         child.SetParent(root);
         Guid g = CreatePrefabAsset(root, "C.prefab");
 
-        var instance = Instantiate(g);
-        var comp = instance.Children[0].GetComponent<OverrideComp>()!;
+        GameObject instance = Instantiate(g);
+        OverrideComp comp = instance.Children[0].GetComponent<OverrideComp>()!;
         comp.A = 99;
         PrefabUtility.RecordComponentOverrides(instance.Children[0], comp);
 
@@ -2716,8 +2716,8 @@ public class PrefabTests : EditorTestHarness
         root.AddComponent<VecComp>().V = Float3.Zero;  // c1
         Guid g = CreatePrefabAsset(root, "Stale.prefab");
 
-        var instance = Instantiate(g);
-        var vec = instance.GetComponent<VecComp>()!;
+        GameObject instance = Instantiate(g);
+        VecComp vec = instance.GetComponent<VecComp>()!;
         vec.V = new Float3(7, 0, 0);
         PrefabUtility.RecordComponentOverrides(instance, vec); // records an override on the VecComp
         SetSceneCurrent(instance);
@@ -2727,7 +2727,7 @@ public class PrefabTests : EditorTestHarness
 
         PrefabUtility.RefreshAllInstances(g); // stale override must be skipped, not crash/mis-apply
 
-        var refreshed = Scene.Current!.RootObjects.First();
+        GameObject refreshed = Scene.Current!.RootObjects.First();
         Assert.NotNull(refreshed.GetComponent<OverrideComp>());
         Assert.Null(refreshed.GetComponent<VecComp>());
     }
@@ -2739,12 +2739,12 @@ public class PrefabTests : EditorTestHarness
         root.AddComponent<OverrideComp>().A = 1;
         Guid g = CreatePrefabAsset(root, "P.prefab");
 
-        var instance = Instantiate(g);
+        GameObject instance = Instantiate(g);
         // Add a new component BEFORE the original in the list by adding then reordering.
-        var added = instance.AddComponent<VecComp>();
+        VecComp added = instance.AddComponent<VecComp>();
         added.SetSiblingIndex(0); // now [VecComp, OverrideComp] -> OverrideComp shifted to c1
 
-        var original = instance.GetComponent<OverrideComp>()!;
+        OverrideComp original = instance.GetComponent<OverrideComp>()!;
         original.A = 42;
 
         PrefabUtility.RecordComponentOverrides(instance, original);
@@ -2763,7 +2763,7 @@ public class PrefabTests : EditorTestHarness
     private Scene LoadSceneWith(params GameObject[] objects)
     {
         var scene = new Scene();
-        foreach (var o in objects) scene.Add(o);
+        foreach (GameObject o in objects) scene.Add(o);
         Scene.Load(scene);
         Scene.ProcessPendingLoad();
         return Scene.Current!;
@@ -2773,7 +2773,7 @@ public class PrefabTests : EditorTestHarness
     private Guid MakeNestedPrefab(string path)
     {
         var root = new GameObject("Root");
-        var rootComp = root.AddComponent<OverrideComp>();
+        OverrideComp rootComp = root.AddComponent<OverrideComp>();
         rootComp.A = 1; rootComp.B = 1;
 
         var child = new GameObject("Child");
@@ -2791,11 +2791,11 @@ public class PrefabTests : EditorTestHarness
     public void TheInstanceObjectsAreTheSameObjectsAfterwards()
     {
         Guid g = MakeNestedPrefab("Id.prefab");
-        var instance = Inst(g);
+        GameObject instance = Inst(g);
         LoadSceneWith(instance);
 
-        var child = instance.Children[0];
-        var component = instance.GetComponent<OverrideComp>()!;
+        GameObject child = instance.Children[0];
+        OverrideComp component = instance.GetComponent<OverrideComp>()!;
         Guid instanceId = instance.Identifier;
         Guid componentId = component.Identifier;
 
@@ -2817,9 +2817,9 @@ public class PrefabTests : EditorTestHarness
     public void ReferencesIntoTheInstanceStillPointAtIt()
     {
         Guid g = MakeNestedPrefab("Refs.prefab");
-        var instance = Inst(g);
+        GameObject instance = Inst(g);
         var holder = new GameObject("Holder");
-        var link = holder.AddComponent<LinkComp>();
+        LinkComp link = holder.AddComponent<LinkComp>();
         LoadSceneWith(instance, holder);
 
         link.Target = instance.Children[0];
@@ -2837,7 +2837,7 @@ public class PrefabTests : EditorTestHarness
     public void TheSelectionIsUntouched()
     {
         Guid g = MakeNestedPrefab("Sel.prefab");
-        var instance = Inst(g);
+        GameObject instance = Inst(g);
         LoadSceneWith(instance);
 
         Selection.Clear();
@@ -2858,7 +2858,7 @@ public class PrefabTests : EditorTestHarness
         Guid g = MakeNestedPrefab("Place.prefab");
         var parent = new GameObject("Parent");
         var before = new GameObject("Before");
-        var instance = Inst(g);
+        GameObject instance = Inst(g);
         var after = new GameObject("After");
         LoadSceneWith(parent, before, after);
 
@@ -2881,7 +2881,7 @@ public class PrefabTests : EditorTestHarness
     public void ChangedValuesFollowThePrefab()
     {
         Guid g = MakeNestedPrefab("Values.prefab");
-        var instance = Inst(g);
+        GameObject instance = Inst(g);
         LoadSceneWith(instance);
 
         EditPrefabSource(g, "Values.prefab", src =>
@@ -2899,7 +2899,7 @@ public class PrefabTests : EditorTestHarness
     public void AComponentAddedToThePrefabAppears()
     {
         Guid g = MakeNestedPrefab("AddComp.prefab");
-        var instance = Inst(g);
+        GameObject instance = Inst(g);
         LoadSceneWith(instance);
 
         Assert.Null(instance.GetComponent<VecComp>());
@@ -2907,7 +2907,7 @@ public class PrefabTests : EditorTestHarness
         EditPrefabSource(g, "AddComp.prefab", src => src.AddComponent<VecComp>().V = new Float3(1, 2, 3));
         PrefabUtility.RefreshAllInstances(g);
 
-        var added = instance.GetComponent<VecComp>();
+        VecComp? added = instance.GetComponent<VecComp>();
         Assert.NotNull(added);
         Assert.Equal(1.0, added!.V.X, 3);
         // It belongs to the prefab, so it is tracked as such rather than looking instance-added.
@@ -2918,7 +2918,7 @@ public class PrefabTests : EditorTestHarness
     public void AComponentRemovedFromThePrefabGoes()
     {
         Guid g = MakeNestedPrefab("DelComp.prefab");
-        var instance = Inst(g);
+        GameObject instance = Inst(g);
         LoadSceneWith(instance);
 
         EditPrefabSource(g, "DelComp.prefab", src => src.RemoveComponent(src.GetComponent<OverrideComp>()!));
@@ -2933,7 +2933,7 @@ public class PrefabTests : EditorTestHarness
     public void AChildAddedToThePrefabAppears()
     {
         Guid g = MakeNestedPrefab("AddChild.prefab");
-        var instance = Inst(g);
+        GameObject instance = Inst(g);
         LoadSceneWith(instance);
 
         EditPrefabSource(g, "AddChild.prefab", src =>
@@ -2944,7 +2944,7 @@ public class PrefabTests : EditorTestHarness
         });
         PrefabUtility.RefreshAllInstances(g);
 
-        var extra = instance.Children.FirstOrDefault(c => c.Name == "Extra");
+        GameObject? extra = instance.Children.FirstOrDefault(c => c.Name == "Extra");
         Assert.NotNull(extra);
         Assert.Equal(4.0, extra!.GetComponent<VecComp>()!.V.X, 3);
         Assert.Same(instance, extra.Parent);
@@ -2957,7 +2957,7 @@ public class PrefabTests : EditorTestHarness
     public void AChildRemovedFromThePrefabGoes()
     {
         Guid g = MakeNestedPrefab("DelChild.prefab");
-        var instance = Inst(g);
+        GameObject instance = Inst(g);
         LoadSceneWith(instance);
 
         // The source tree is detached, so unparenting is what takes the child out of the prefab.
@@ -2975,7 +2975,7 @@ public class PrefabTests : EditorTestHarness
             new GameObject(name).SetParent(root);
         Guid g = CreatePrefabAsset(root, "Order.prefab");
 
-        var instance = Inst(g);
+        GameObject instance = Inst(g);
         LoadSceneWith(instance);
         Assert.Equal("A,B,C", string.Join(",", instance.Children.Select(c => c.Name)));
 
@@ -2995,9 +2995,9 @@ public class PrefabTests : EditorTestHarness
         child.SetParent(root); grand.SetParent(child);
         Guid g = CreatePrefabAsset(root, "Deep.prefab");
 
-        var instance = Inst(g);
+        GameObject instance = Inst(g);
         LoadSceneWith(instance);
-        var grandInstance = instance.Children[0].Children[0];
+        GameObject grandInstance = instance.Children[0].Children[0];
 
         EditPrefabSource(g, "Deep.prefab", src => src.Children[0].Children[0].GetComponent<OverrideComp>()!.A = 12);
         PrefabUtility.RefreshAllInstances(g);
@@ -3014,15 +3014,15 @@ public class PrefabTests : EditorTestHarness
     public void OverriddenValuesAreKeptWhileTherestFollowsThePrefab()
     {
         Guid g = MakeNestedPrefab("Ovr.prefab");
-        var instance = Inst(g);
-        var comp = instance.GetComponent<OverrideComp>()!;
+        GameObject instance = Inst(g);
+        OverrideComp comp = instance.GetComponent<OverrideComp>()!;
         comp.A = 99;
         PrefabUtility.RecordComponentOverrides(instance, comp);
         LoadSceneWith(instance);
 
         EditPrefabSource(g, "Ovr.prefab", src =>
         {
-            var c = src.GetComponent<OverrideComp>()!;
+            OverrideComp c = src.GetComponent<OverrideComp>()!;
             c.A = 5;  // overridden on the instance, so it must not win
             c.B = 7;  // not overridden, so it must
         });
@@ -3036,10 +3036,10 @@ public class PrefabTests : EditorTestHarness
     public void ComponentsAndChildrenTheInstanceAddedAreLeftAlone()
     {
         Guid g = MakeNestedPrefab("Added.prefab");
-        var instance = Inst(g);
+        GameObject instance = Inst(g);
         LoadSceneWith(instance);
 
-        var addedComponent = instance.AddComponent<VecComp>();
+        VecComp addedComponent = instance.AddComponent<VecComp>();
         addedComponent.V = new Float3(5, 5, 5);
 
         var addedChild = new GameObject("InstanceChild");
@@ -3060,7 +3060,7 @@ public class PrefabTests : EditorTestHarness
     public void PerInstanceStateIsKept()
     {
         Guid g = MakeNestedPrefab("PerInst.prefab");
-        var instance = Inst(g);
+        GameObject instance = Inst(g);
         LoadSceneWith(instance);
 
         instance.Name = "Placed";
@@ -3081,12 +3081,12 @@ public class PrefabTests : EditorTestHarness
     public void SeveralInstancesKeepTheirOwnOverrides()
     {
         Guid g = MakeNestedPrefab("Many.prefab");
-        var a = Inst(g);
-        var b = Inst(g);
+        GameObject a = Inst(g);
+        GameObject b = Inst(g);
         LoadSceneWith(a, b);
 
-        var ca = a.GetComponent<OverrideComp>()!;
-        var cb = b.GetComponent<OverrideComp>()!;
+        OverrideComp ca = a.GetComponent<OverrideComp>()!;
+        OverrideComp cb = b.GetComponent<OverrideComp>()!;
         ca.A = 10; PrefabUtility.RecordComponentOverrides(a, ca);
         cb.A = 20; PrefabUtility.RecordComponentOverrides(b, cb);
 
@@ -3114,13 +3114,13 @@ public class PrefabTests : EditorTestHarness
             Serializer.Serialize(typeof(object), outerSource).WriteToString());
         Guid outer = Assets.ImportFile("Outer.prefab");
 
-        var instance = Inst(outer);
+        GameObject instance = Inst(outer);
         LoadSceneWith(instance);
 
         // Prefabs do not nest, so the once-nested object is ordinary content of the outer prefab and
         // an edit to it is an ordinary override on this instance.
-        var child = instance.Children[0];
-        var childComp = child.GetComponent<OverrideComp>()!;
+        GameObject child = instance.Children[0];
+        OverrideComp childComp = child.GetComponent<OverrideComp>()!;
         childComp.A = 77;
         PrefabUtility.RecordComponentOverrides(child, childComp);
 
@@ -3138,10 +3138,10 @@ public class PrefabTests : EditorTestHarness
     public void ReimportUpdatesInstancesWithoutReplacingThem()
     {
         Guid g = MakeNestedPrefab("Reimport.prefab");
-        var instance = Inst(g);
+        GameObject instance = Inst(g);
         LoadSceneWith(instance);
 
-        var comp = instance.GetComponent<OverrideComp>()!;
+        OverrideComp comp = instance.GetComponent<OverrideComp>()!;
 
         // No explicit refresh call: the import notification drives it.
         EditPrefabSource(g, "Reimport.prefab", src => src.GetComponent<OverrideComp>()!.B = 11);
@@ -3161,7 +3161,7 @@ public class PrefabTests : EditorTestHarness
         child.AddComponent<OverrideComp>().A = 3;
         child.SetParent(root);
 
-        var link = root.AddComponent<LinkComp>();
+        LinkComp link = root.AddComponent<LinkComp>();
         link.Target = child;
         link.Component = child.GetComponent<OverrideComp>();
 
@@ -3511,7 +3511,7 @@ public class PrefabTests : EditorTestHarness
     private static Scene SaveAndReload(Scene scene)
     {
         EchoObject echo = Serializer.Serialize(typeof(object), scene);
-        var reloaded = Serializer.Deserialize<Scene>(echo)!;
+        Scene reloaded = Serializer.Deserialize<Scene>(echo)!;
         Scene.Load(reloaded);
         Scene.ProcessPendingLoad();
         return Scene.Current!;
@@ -3689,7 +3689,7 @@ public class PrefabTests : EditorTestHarness
         Assert.True(PrefabUtility.SaveAsPrefabAssetAndConnect(source, relativePath));
         Assets.Refresh();
 
-        var entry = EditorAssetBackend.Instance!.GetEntry(relativePath);
+        AssetEntry? entry = EditorAssetBackend.Instance!.GetEntry(relativePath);
         Assert.NotNull(entry);
         return entry!.Guid;
     }
@@ -3842,7 +3842,7 @@ public class PrefabTests : EditorTestHarness
         Guid inner = AuthorLeaf("In_Inner", 7);
 
         var outerRoot = new GameObject("In_Outer");
-        var link = outerRoot.AddComponent<LinkComp>();
+        LinkComp link = outerRoot.AddComponent<LinkComp>();
         GameObject placed = Inst(inner);
         placed.SetParent(outerRoot);
         link.Target = placed;
@@ -4057,7 +4057,7 @@ public class PrefabTests : EditorTestHarness
         Scene scene = LoadSceneWith(instance);
 
         EchoObject echo = Serializer.Serialize(typeof(object), scene);
-        var reloaded = Serializer.Deserialize<Scene>(echo)!;
+        Scene reloaded = Serializer.Deserialize<Scene>(echo)!;
         Scene.Load(reloaded);
         Scene.ProcessPendingLoad();
 
@@ -4334,7 +4334,7 @@ public class PrefabTests : EditorTestHarness
 
         // The asset exists and holds the content.
         Assets.Refresh();
-        var entry = EditorAssetBackend.Instance!.GetEntry("Api_Save.prefab");
+        AssetEntry? entry = EditorAssetBackend.Instance!.GetEntry("Api_Save.prefab");
         Assert.NotNull(entry);
         Assert.Equal(5, Inst(entry!.Guid).GetComponent<OverrideComp>()!.A);
 
@@ -4941,7 +4941,7 @@ public class PrefabTests : EditorTestHarness
             ScaleOffset = new Float4(0.5f, 0.5f, 0.25f, 0.75f)
         };
 
-        var reloaded = Serializer.Deserialize<Scene>(Serializer.Serialize(typeof(object), scene)!)!;
+        Scene reloaded = Serializer.Deserialize<Scene>(Serializer.Serialize(typeof(object), scene)!)!;
         try
         {
             GameObject restored = reloaded.RootObjects.First(o => o.Name == "Baked");
@@ -5015,7 +5015,7 @@ public class PrefabTests : EditorTestHarness
         Assert.NotEqual(Guid.Empty, rootSource);
 
         EchoObject saved = Serializer.Serialize(typeof(object), Scene.Current!)!;
-        var reloaded = Serializer.Deserialize<Scene>(saved)!;
+        Scene reloaded = Serializer.Deserialize<Scene>(saved)!;
         try
         {
             GameObject restored = reloaded.RootObjects.First(go => go.PrefabAssetId == guid);
@@ -5189,7 +5189,7 @@ public class PrefabTests : EditorTestHarness
         PrefabUtility.ReconcileInstance(a);
         PrefabUtility.ReconcileInstance(b);
 
-        var described = PrefabUtility.DescribeOverrides(b).Single(d => d.ComponentName == nameof(OverrideComp));
+        PrefabUtility.OverrideDescription described = PrefabUtility.DescribeOverrides(b).Single(d => d.ComponentName == nameof(OverrideComp));
 
         Assert.Equal(b.Children[0].GetComponent<OverrideComp>()!.Identifier, described.ComponentIdentifier);
         Assert.NotEqual(a.Children[0].GetComponent<OverrideComp>()!.Identifier, described.ComponentIdentifier);
@@ -5279,7 +5279,7 @@ public class PrefabTests : EditorTestHarness
 
         // A build reads a scene off disk while some other scene is open.
         LoadSceneWith(new GameObject("Elsewhere"));
-        var copy = Serializer.Deserialize<Scene>(saved)!;
+        Scene copy = Serializer.Deserialize<Scene>(saved)!;
         try
         {
             PrefabUtility.RefreshInstancesIn(copy);
@@ -5311,7 +5311,7 @@ public class PrefabTests : EditorTestHarness
 
         // Both links survive: what an object is an instance of is observable at runtime, so a player
         // must not disagree with play mode about it.
-        var reloaded = Serializer.Deserialize<Scene>(echo)!;
+        Scene reloaded = Serializer.Deserialize<Scene>(echo)!;
         try
         {
             Assert.Contains(reloaded.AllObjects, o => o.PrefabAssetId == outer);
@@ -5399,7 +5399,7 @@ public class PrefabTests : EditorTestHarness
         LoadSceneWith(instance);
 
         instance.AddComponent<VecComp>();
-        var addition = PrefabUtility.DescribeAdditions(instance).First();
+        PrefabUtility.AdditionDescription addition = PrefabUtility.DescribeAdditions(instance).First();
 
         Undo.Clear();
         PrefabUtility.ApplyAddition(instance, addition);

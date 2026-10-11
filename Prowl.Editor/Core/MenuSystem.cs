@@ -53,14 +53,14 @@ public static class MenuRegistry
         Func<bool>? isEnabled = null, Func<string>? dynamicLabel = null, string icon = "")
     {
         var segments = path.Split('/');
-        var current = _rootMenus;
+        List<AppMenuItem> current = _rootMenus;
 
         for (int i = 0; i < segments.Length; i++)
         {
             string seg = segments[i];
             bool isLast = i == segments.Length - 1;
 
-            var existing = current.FirstOrDefault(m => m.Label == seg && !m.IsSeparator);
+            AppMenuItem? existing = current.FirstOrDefault(m => m.Label == seg && !m.IsSeparator);
 
             if (isLast)
             {
@@ -101,11 +101,11 @@ public static class MenuRegistry
     public static void RegisterSeparator(string parentPath)
     {
         var segments = parentPath.Split('/');
-        var current = _rootMenus;
+        List<AppMenuItem> current = _rootMenus;
 
         foreach (var seg in segments)
         {
-            var existing = current.FirstOrDefault(m => m.Label == seg && !m.IsSeparator);
+            AppMenuItem? existing = current.FirstOrDefault(m => m.Label == seg && !m.IsSeparator);
             if (existing == null) return;
             current = existing.SubItems;
         }
@@ -118,16 +118,16 @@ public static class MenuRegistry
     {
         if (string.IsNullOrEmpty(icon)) return;
         var segments = path.Split('/');
-        var current = _rootMenus;
+        List<AppMenuItem> current = _rootMenus;
 
         for (int i = 0; i < segments.Length - 1; i++)
         {
-            var node = current.FirstOrDefault(m => m.Label == segments[i] && !m.IsSeparator);
+            AppMenuItem? node = current.FirstOrDefault(m => m.Label == segments[i] && !m.IsSeparator);
             if (node == null) return;
             current = node.SubItems;
         }
 
-        var target = current.FirstOrDefault(m => m.Label == segments[segments.Length - 1] && !m.IsSeparator);
+        AppMenuItem? target = current.FirstOrDefault(m => m.Label == segments[segments.Length - 1] && !m.IsSeparator);
         if (target != null) target.Icon = icon;
     }
 

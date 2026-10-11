@@ -42,7 +42,7 @@ public class TagsAndLayersSettings : ProjectSettingsBase
 
     public override void OnGUI(Paper paper, float width)
     {
-        var font = EditorTheme.DefaultFont;
+        Scribe.FontFile? font = EditorTheme.DefaultFont;
         if (font == null) return;
 
         // Tags section

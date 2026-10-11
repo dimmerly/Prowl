@@ -64,14 +64,14 @@ public class PreferencesPanel : DockPanel
 
     public override void OnGUI(Paper paper, float width, float height)
     {
-        var font = EditorTheme.DefaultFont;
+        Scribe.FontFile? font = EditorTheme.DefaultFont;
         if (font == null) return;
 
-        var settings = EditorSettings.Instance;
+        EditorSettings settings = EditorSettings.Instance;
 
         using (paper.Row("pref_root").Width(width).Height(height).Clip().Enter())
         {
-            var cats = Cats.Select(c => (c.id, Loc.Get(c.label), c.icon)).ToArray();
+            (string id, string, string icon)[] cats = Cats.Select(c => (c.id, Loc.Get(c.label), c.icon)).ToArray();
             float side = EditorGUI.Sidebar(paper, "pref_side", cats, TabId(_tab), c => _tab = ParseTab(c));
             paper.Box("pref_vdiv").Width(1).BackgroundColor(EditorTheme.BorderSoft).IsNotInteractable();
 
@@ -186,7 +186,7 @@ public class PreferencesPanel : DockPanel
 
     private void DrawTheme(Paper paper, Scribe.FontFile font, EditorSettings s, float w, float h)
     {
-        var theme = s.Theme;
+        EditorThemeData theme = s.Theme;
 
         const float railW = 152f;
         const float previewW = 250f;
@@ -259,7 +259,7 @@ public class PreferencesPanel : DockPanel
     // Footer shown on every category: Reset (left), Import / Export / Apply (right).
     private void DrawThemeFooter(Paper paper, Scribe.FontFile font, EditorSettings s, EditorThemeData theme, float h)
     {
-        var semi = EditorTheme.FontSemiBold ?? font;
+        Scribe.FontFile semi = EditorTheme.FontSemiBold ?? font;
         using (paper.Row("pref_theme_footer").Height(h).Padding(PAD * 2, PAD * 2, 0, 0).Gap(SP * 2).Enter())
         {
             EditorGUI.Chip(paper, "pref_ft_reset", $"{EditorIcons.RotateLeft}  {Loc.Get("pref.reset_default")}", () => s.ResetTheme());
@@ -353,7 +353,7 @@ public class PreferencesPanel : DockPanel
         EditorGUI.SectionHeader(paper, "pref_pr_hdr", Loc.Get("pref.builtin_themes"), first: true, compact: true);
         PresetGrid(paper, "pref_pr", ThemePresets.All.Length, i =>
         {
-            var p = ThemePresets.All[i];
+            ThemePreset p = ThemePresets.All[i];
             bool on = string.Equals(theme.Name, p.Name, StringComparison.OrdinalIgnoreCase);
             PresetCard(paper, font, $"pref_pr_c{i}", p.Name, on, () => ApplyPreset(s, p), id =>
             {
@@ -372,7 +372,7 @@ public class PreferencesPanel : DockPanel
         EditorGUI.SectionHeader(paper, "pref_ly_hdr", Loc.Get("pref.builtin_layouts"), compact: true);
         PresetGrid(paper, "pref_ly", _layouts.Length, i =>
         {
-            var l = _layouts[i];
+            LayoutPreset l = _layouts[i];
             PresetCard(paper, font, $"pref_ly_c{i}", l.Name, l.Matches(theme), () => ApplyLayout(s, l), id =>
             {
                 float pillRound = l.Roundness * 0.6f;
@@ -406,7 +406,7 @@ public class PreferencesPanel : DockPanel
 
     private static void PresetCard(Paper paper, Scribe.FontFile font, string id, string name, bool on, Action onClick, Action<string> drawSwatch)
     {
-        var card = paper.Column(id).Height(UnitValue.Auto).Rounded(Origami.Current.Metrics.ContainerRounding)
+        ElementBuilder card = paper.Column(id).Height(UnitValue.Auto).Rounded(Origami.Current.Metrics.ContainerRounding)
             .Padding(PAD, PAD, PAD, PAD).Gap(SP * 1.5f)
             .BackgroundColor(on ? EditorTheme.Selected : EditorTheme.Glass)
             .BorderColor(on ? EditorTheme.Accent : EditorTheme.BorderSoft).BorderWidth(on ? 2 : 1)
@@ -686,7 +686,7 @@ public class PreferencesPanel : DockPanel
 
     private void DrawShortcuts(Paper paper, Scribe.FontFile font, float w)
     {
-        var m = Origami.Current.Metrics;
+        OrigamiMetrics m = Origami.Current.Metrics;
 
         // Handle rebinding input each frame
         if (_rebindingId != null)
@@ -742,7 +742,7 @@ public class PreferencesPanel : DockPanel
 
         // Group by category
         string? lastCategory = null;
-        foreach (var shortcut in ShortcutManager.GetAllShortcuts())
+        foreach (ShortcutDefinition shortcut in ShortcutManager.GetAllShortcuts())
         {
             // Filter by search
             if (!EditorUtils.MatchesSearch(shortcut.DisplayName, _shortcutSearch) &&

@@ -7,6 +7,7 @@ using Prowl.Runtime.Resources;
 using Prowl.Vector;
 
 using Silk.NET.Core.Native;
+using Silk.NET.Maths;
 using Silk.NET.OpenGL;
 
 namespace Prowl.Runtime;
@@ -429,7 +430,7 @@ public static unsafe class Graphics
                 }
                 if (job.Cmd == null) { job.Waited?.Done.Set(); continue; }
 
-                var cmd = job.Cmd;
+                CommandBuffer cmd = job.Cmd;
                 bool pushed = PushCBDebugGroup(cmd.Name);
                 try { Executor.Execute(cmd); }
                 catch (Exception ex)
@@ -538,7 +539,7 @@ public static unsafe class Graphics
     /// <summary>Synchronous texture read-back. Blocks until the destination is filled.</summary>
     public static unsafe void GetTexImage(GraphicsTexture texture, int mip, void* data)
     {
-        using var cmd = GetCommandBuffer("Texture.GetTexImage");
+        using CommandBuffer cmd = GetCommandBuffer("Texture.GetTexImage");
         cmd.EncodeGetTextureDataPtr(texture, mip, (nint)data);
         SubmitAndWait(cmd);
     }
@@ -546,7 +547,7 @@ public static unsafe class Graphics
     /// <summary>Synchronous read-back of one cubemap face's mip level. Blocks until filled.</summary>
     public static void GetTexImageCubeFace(GraphicsTexture texture, int face, int mip, byte[] destination)
     {
-        using var cmd = GetCommandBuffer("Texture.GetTexImageCubeFace");
+        using CommandBuffer cmd = GetCommandBuffer("Texture.GetTexImageCubeFace");
         cmd.EncodeGetTextureCubeFaceData(texture, face, mip, destination);
         SubmitAndWait(cmd);
     }
@@ -555,7 +556,7 @@ public static unsafe class Graphics
     {
         int size = data != null ? (int)(width * height * BytesPerPixel(texture)) : 0;
         ReadOnlySpan<byte> span = data != null ? new ReadOnlySpan<byte>(data, size) : ReadOnlySpan<byte>.Empty;
-        using var cmd = GetCommandBuffer("Texture.TexImage2D");
+        using CommandBuffer cmd = GetCommandBuffer("Texture.TexImage2D");
         cmd.EncodeAllocateTexture2D(texture, mip, width, height, border, span);
         Submit(cmd);
     }
@@ -565,7 +566,7 @@ public static unsafe class Graphics
         if (data == null) return;
         int size = (int)(width * height * BytesPerPixel(texture));
         var span = new ReadOnlySpan<byte>(data, size);
-        using var cmd = GetCommandBuffer("Texture.TexSubImage2D");
+        using CommandBuffer cmd = GetCommandBuffer("Texture.TexSubImage2D");
         cmd.EncodeUpdateTexture2D(texture, mip, x, y, width, height, span);
         Submit(cmd);
     }
@@ -576,7 +577,7 @@ public static unsafe class Graphics
     {
         int byteSize = data != null ? (int)(size * size * BytesPerPixel(texture)) : 0;
         ReadOnlySpan<byte> span = data != null ? new ReadOnlySpan<byte>(data, byteSize) : ReadOnlySpan<byte>.Empty;
-        using var cmd = GetCommandBuffer("Texture.TexImageCubeFace");
+        using CommandBuffer cmd = GetCommandBuffer("Texture.TexImageCubeFace");
         cmd.EncodeAllocateTextureCubeFace(texture, face, mip, size, span);
         Submit(cmd);
     }
@@ -585,7 +586,7 @@ public static unsafe class Graphics
     {
         int size = data != null ? (int)(width * height * depth * BytesPerPixel(texture)) : 0;
         ReadOnlySpan<byte> span = data != null ? new ReadOnlySpan<byte>(data, size) : ReadOnlySpan<byte>.Empty;
-        using var cmd = GetCommandBuffer("Texture.TexImage3D");
+        using CommandBuffer cmd = GetCommandBuffer("Texture.TexImage3D");
         cmd.EncodeAllocateTexture3D(texture, level, width, height, depth, span);
         Submit(cmd);
     }
@@ -595,7 +596,7 @@ public static unsafe class Graphics
         if (data == null) return;
         int size = (int)(width * height * depth * BytesPerPixel(texture));
         var span = new ReadOnlySpan<byte>(data, size);
-        using var cmd = GetCommandBuffer("Texture.TexSubImage3D");
+        using CommandBuffer cmd = GetCommandBuffer("Texture.TexSubImage3D");
         cmd.EncodeUpdateTexture3D(texture, level, x, y, z, width, height, depth, span);
         Submit(cmd);
     }
@@ -614,7 +615,7 @@ public static unsafe class Graphics
             throw new InvalidOperationException("No graphical framebuffer is available.");
         }
 
-        var size = Window.InternalWindow.FramebufferSize;
+        Vector2D<int> size = Window.InternalWindow.FramebufferSize;
         int width = size.X;
         int height = size.Y;
         if (width is < 1 or > 16_384 || height is < 1 or > 16_384)
@@ -635,7 +636,7 @@ public static unsafe class Graphics
         }
 
         var texture = new Texture2D((uint)width, (uint)height, false, TextureImageFormat.Color4b);
-        using (var cmd = GetCommandBuffer("Screenshot"))
+        using (CommandBuffer cmd = GetCommandBuffer("Screenshot"))
         {
             cmd.EncodeScreenshot(texture.Handle, width, height);
             SubmitAndWait(cmd);
@@ -669,7 +670,7 @@ public static unsafe class Graphics
 
     private static void EncodeOneOp(Action<CommandBuffer> encode, string name)
     {
-        using var cmd = GetCommandBuffer(name);
+        using CommandBuffer cmd = GetCommandBuffer(name);
         encode(cmd);
         Submit(cmd);
     }

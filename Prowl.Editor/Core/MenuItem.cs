@@ -68,7 +68,7 @@ public sealed class MenuItemAttribute : Attribute
 
     internal static void Scan(MethodInfo method)
     {
-        foreach (var attr in method.GetCustomAttributes<MenuItemAttribute>())
+        foreach (MenuItemAttribute attr in method.GetCustomAttributes<MenuItemAttribute>())
         {
             if (attr.IsValidate)
             {
@@ -136,7 +136,7 @@ public sealed class MenuItemAttribute : Attribute
         var branchOrder = new List<string>();
         var branches = new Dictionary<string, List<Entry>>(StringComparer.Ordinal);
 
-        foreach (var e in all)
+        foreach (Entry e in all)
         {
             if (!e.Path.StartsWith(prefix, StringComparison.Ordinal)) continue;
             string rest = e.Path.Substring(prefix.Length);
@@ -152,13 +152,13 @@ public sealed class MenuItemAttribute : Attribute
         }
 
         var items = new List<(int Priority, Entry? Leaf, string? Branch)>();
-        foreach (var leaf in leaves) items.Add((leaf.Priority, leaf, null));
+        foreach (Entry leaf in leaves) items.Add((leaf.Priority, leaf, null));
         foreach (var key in branchOrder) items.Add((branches[key].Min(e => e.Priority), null, key));
         items.Sort((a, b) => a.Priority.CompareTo(b.Priority));
 
         for (int i = 0; i < items.Count; i++)
         {
-            var (_, leaf, branch) = items[i];
+            (int _, Entry? leaf, string? branch) = items[i];
 
             bool wantsSep = leaf?.Separator ?? false;
             if (branch != null)
@@ -169,11 +169,11 @@ public sealed class MenuItemAttribute : Attribute
 
             if (leaf != null)
             {
-                var validator = _validators.TryGetValue(leaf.Path, out var v) ? v : null;
+                Func<bool>? validator = _validators.TryGetValue(leaf.Path, out Func<bool>? v) ? v : null;
                 Func<bool>? isChecked = null;
                 if (typeof(DockPanel).IsAssignableFrom(leaf.DeclaringType))
                 {
-                    var t = leaf.DeclaringType;
+                    Type t = leaf.DeclaringType;
                     isChecked = () => EditorApplication.Instance?.IsPanelOpen(t) ?? false;
                 }
                 MenuRegistry.Register(leaf.Path, leaf.Action, isChecked: isChecked, isEnabled: validator, icon: leaf.Icon);
@@ -205,7 +205,7 @@ public sealed class MenuItemAttribute : Attribute
         var branchOrder = new List<string>();
         var branches = new Dictionary<string, List<Entry>>(StringComparer.Ordinal);
 
-        foreach (var e in entries)
+        foreach (Entry e in entries)
         {
             string rest = e.Path.Substring(prefix.Length);
             int slash = rest.IndexOf('/');
@@ -220,13 +220,13 @@ public sealed class MenuItemAttribute : Attribute
         }
 
         var items = new List<(int Priority, Entry? Leaf, string? Branch)>();
-        foreach (var leaf in leaves) items.Add((leaf.Priority, leaf, null));
+        foreach (Entry leaf in leaves) items.Add((leaf.Priority, leaf, null));
         foreach (var key in branchOrder) items.Add((branches[key].Min(e => e.Priority), null, key));
         items.Sort((a, b) => a.Priority.CompareTo(b.Priority));
 
         for (int i = 0; i < items.Count; i++)
         {
-            var (_, leaf, branch) = items[i];
+            (int _, Entry? leaf, string? branch) = items[i];
 
             bool wantsSep = leaf?.Separator ?? false;
             if (branch != null)
@@ -236,12 +236,12 @@ public sealed class MenuItemAttribute : Attribute
 
             if (leaf != null)
             {
-                var validator = _validators.TryGetValue(leaf.Path, out var v) ? v : null;
+                Func<bool>? validator = _validators.TryGetValue(leaf.Path, out Func<bool>? v) ? v : null;
                 builder.Item(leaf.Path.Substring(prefix.Length), leaf.Action, enabled: validator?.Invoke() ?? true, icon: leaf.Icon);
             }
             else if (branch != null)
             {
-                var list = branches[branch];
+                List<Entry> list = branches[branch];
                 string subPrefix = prefix + branch + "/";
                 string icon = list.OrderBy(e => e.Priority).Select(e => e.Icon).FirstOrDefault(ic => !string.IsNullOrEmpty(ic)) ?? "";
                 builder.Submenu(branch, sub => BuildLevel(sub, list, subPrefix), icon);

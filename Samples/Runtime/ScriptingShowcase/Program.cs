@@ -146,7 +146,7 @@ public sealed class ScriptingShowcaseGame : StationGame
         Header(paper, font, "Lamp");
         if (_lamp.IsValid())
         {
-            var probe = _lamp.GetComponent<LifecycleProbe>()!;
+            LifecycleProbe probe = _lamp.GetComponent<LifecycleProbe>()!;
             Toggle(paper, font, "GameObject enabled", _lamp.Enabled, v => _lamp.Enabled = v);
             Toggle(paper, font, "Probe component enabled", probe.Enabled, v => probe.Enabled = v);
             Toggle(paper, font, "Parent enabled", _lifecycleParent.Enabled, v => _lifecycleParent.Enabled = v);
@@ -188,7 +188,7 @@ public sealed class ScriptingShowcaseGame : StationGame
         _moon.SetParent(_planet);
         _moon.Transform.LocalPosition = new Float3(1.1f, 0f, 0f);
 
-        var trail = Add(new GameObject("Moon Trail")).AddComponent<Trail>();
+        Trail trail = Add(new GameObject("Moon Trail")).AddComponent<Trail>();
         trail.Target = _moon.Transform;
         trail.Color = new Color(0.6f, 0.75f, 1f, 1f);
     }
@@ -347,13 +347,13 @@ public sealed class ScriptingShowcaseGame : StationGame
         scaled.AddComponent<Spin>().DegreesPerSecond = new Float3(0f, 90f, 0f);
 
         GameObject unscaled = Add(Model("Unscaled Spinner", Mesh.CreateCube(Float3.One), Lit(new Color(0.01f, 0.1f, 0.6f, 1f)), c + new Float3(4f, 1.5f, 0f)));
-        var unscaledSpin = unscaled.AddComponent<Spin>();
+        Spin unscaledSpin = unscaled.AddComponent<Spin>();
         unscaledSpin.DegreesPerSecond = new Float3(0f, 90f, 0f);
         unscaledSpin.Unscaled = true;
 
         GameObject ball = Add(Model("Ball", Mesh.CreateSphere(0.4f, 12, 18), Lit(new Color(0.9f, 0.9f, 0.9f, 1f), 1f, 0.2f), c + new Float3(0f, 4f, 0f)));
         ball.AddComponent<SphereCollider>().Radius = 0.4f;
-        var body = ball.AddComponent<Rigidbody3D>();
+        Rigidbody3D body = ball.AddComponent<Rigidbody3D>();
         body.Restitution = 1f;
         body.LinearDamping = 0f;
 

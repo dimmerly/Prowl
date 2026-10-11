@@ -8,6 +8,8 @@ using System.Linq;
 using Prowl.PaperUI;
 using Prowl.Vector;
 
+using Silk.NET.Maths;
+
 namespace Prowl.Runtime.GUI;
 
 /// <summary>
@@ -63,7 +65,7 @@ public static class PaperInputBridge
     /// </summary>
     private static Float2 ApplyPointerWrap(Paper paper, Float2 pointerPos)
     {
-        var size = Window.Size;
+        Vector2D<int> size = Window.Size;
         if (!paper.TryWrapPointer(pointerPos, size.X, size.Y, out Float2 wrapped))
             return pointerPos;
 

@@ -37,7 +37,7 @@ public class GraphicsBuffer : IDisposable
         SizeInBytes = (uint)initialData.Length;
         Handle = 0;
 
-        using var cmd = Graphics.GetCommandBuffer("GraphicsBuffer.Create");
+        using CommandBuffer cmd = Graphics.GetCommandBuffer("GraphicsBuffer.Create");
         cmd.EncodeCreateBuffer(this, dynamic, initialData);
         Graphics.Submit(cmd);
     }
@@ -74,7 +74,7 @@ public class GraphicsBuffer : IDisposable
         // Queue the GL delete so it runs after any encoded use of this buffer that
         // hasn't executed yet. Sync submit makes it immediate; render-thread mode
         // makes it deferred but still ordered.
-        using var cmd = Graphics.GetCommandBuffer("GraphicsBuffer.Dispose");
+        using CommandBuffer cmd = Graphics.GetCommandBuffer("GraphicsBuffer.Dispose");
         cmd.EncodeDisposeBuffer(this);
         Graphics.Submit(cmd);
     }

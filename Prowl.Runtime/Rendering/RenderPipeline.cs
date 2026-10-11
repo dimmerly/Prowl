@@ -573,7 +573,7 @@ public abstract class RenderPipeline : EngineObject
             if (culledRenderableIndices != null && culledRenderableIndices[i])
                 continue;
 
-            var renderable = renderables[i];
+            IRenderable renderable = renderables[i];
             float distSq = Float3.DistanceSquared(renderable.GetPosition(), cameraPosition);
             _sortPairs.Add((renderable, distSq));
         }
@@ -828,7 +828,7 @@ public abstract class RenderPipeline : EngineObject
 
                 // Found matching pass - add to appropriate batch
                 // Batch key: (material hash, pass index, mesh) ensures each pass gets its own batch
-                var batchKey = (materialHash, passIndex, mesh);
+                (ulong materialHash, int passIndex, Mesh mesh) batchKey = (materialHash, passIndex, mesh);
                 if (batchLookup.TryGetValue(batchKey, out int batchIndex) && (!preserveOrder || batchIndex == batches.Count - 1))
                 {
                     // Batch already exists - add this object to it
@@ -1019,7 +1019,7 @@ public abstract class RenderPipeline : EngineObject
 
                 if (subIdx >= 0 && subIdx < subMeshCount)
                 {
-                    var sub = mesh.GetSubMesh(subIdx);
+                    SubMeshDescriptor sub = mesh.GetSubMesh(subIdx);
                     cmd.DrawIndexed(vao, sub.Topology, (uint)sub.IndexCount, (uint)sub.IndexStart, 0, i32);
                 }
                 else
@@ -1152,7 +1152,7 @@ public abstract class RenderPipeline : EngineObject
         int subIdx = renderable.GetSubMeshIndex();
         if (subIdx >= 0 && subIdx < mesh.SubMeshCount)
         {
-            var sub = mesh.GetSubMesh(subIdx);
+            SubMeshDescriptor sub = mesh.GetSubMesh(subIdx);
             cmd.DrawIndexedInstanced(vao, sub.Topology, (uint)sub.IndexCount, (uint)instanceCount, (uint)sub.IndexStart, 0, useIndex32);
         }
         else

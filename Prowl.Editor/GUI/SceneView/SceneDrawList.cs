@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 
 using Prowl.Quill;
+using Prowl.Scribe;
 using Prowl.Vector;
 
 using GizmoDraw3D = Prowl.OrigamiUI.Gizmo.GizmoDraw3D;
@@ -205,7 +206,7 @@ public sealed class SceneDrawList
 
     private void DrawPoly(in Command cmd, in Stroke3D stroke, bool filled)
     {
-        var span = _points.GetRange(cmd.PointStart, cmd.PointCount);
+        List<Float3> span = _points.GetRange(cmd.PointStart, cmd.PointCount);
         if (filled) _draw.Polygon(span, stroke);
         else if (cmd.Closed) _draw.Polyline(Close(span), stroke);
         else _draw.Polyline(span, stroke);
@@ -278,7 +279,7 @@ public sealed class SceneDrawList
         Float2? p = _ctx.WorldToScreen(cmd.A);
         if (p is null || string.IsNullOrEmpty(cmd.Text)) return;
 
-        var font = Theming.EditorTheme.DefaultFont;
+        FontFile? font = Theming.EditorTheme.DefaultFont;
         if (font == null) return;
         canvas.DrawText(cmd.Text, (float)p.Value.X, (float)p.Value.Y, cmd.Color, LabelPixelSize, font);
     }

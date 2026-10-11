@@ -40,7 +40,7 @@ public static class AssetCreateMenu
         }
 
         // Roots only, so a prefab of a parent is not immediately torn apart by making one of its child.
-        foreach (var go in GameObjectClipboard.FilterToRoots(selected))
+        foreach (GameObject go in GameObjectClipboard.FilterToRoots(selected))
             CreatePrefabIn(go, GetCurrentFolder());
     }
 
@@ -93,7 +93,7 @@ public static class AssetCreateMenu
         try
         {
             object? instance = entry.Factory != null ? entry.Factory() : Activator.CreateInstance(entry.Type);
-            var echo = Prowl.Echo.Serializer.Serialize(typeof(object), instance);
+            EchoObject echo = Prowl.Echo.Serializer.Serialize(typeof(object), instance);
             if (echo != null) File.WriteAllText(filePath, echo.WriteToString());
             EditorAssetBackend.Instance?.InvalidateFolderIndex();
             Debug.Log($"Created {entry.Name}: {name}");
@@ -108,7 +108,7 @@ public static class AssetCreateMenu
     /// </summary>
     public static string GetCurrentFolder()
     {
-        var selected = Selection.GetActiveAs<ContentItem>();
+        ContentItem? selected = Selection.GetActiveAs<ContentItem>();
         if (selected != null && selected.IsFolder)
             return selected.RelativePath;
         return ProjectPanel.Instance?.CurrentFolder ?? "";

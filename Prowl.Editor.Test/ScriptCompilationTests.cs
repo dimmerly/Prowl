@@ -36,7 +36,7 @@ public class ScriptCompilationTests : EditorTestHarness
         WriteScript(Path.Combine("Editor", "EditorThing.cs"),
             "public class EditorThing { public static int Read() => GameThing.Value; }");
 
-        var result = ScriptCompiler.CompileAll(Project);
+        ScriptCompiler.CompileResult result = ScriptCompiler.CompileAll(Project);
         Assert.True(result.Success, $"Compile failed:\n{result.Errors}\n{result.Output}");
 
         var game = Assembly.Load(File.ReadAllBytes(Project.GameAssemblyPath));
@@ -55,7 +55,7 @@ public class ScriptCompilationTests : EditorTestHarness
         WriteScript("GameThing.cs", "public class GameThing { public static int Read() => EditorThing.Value; }");
         WriteScript(Path.Combine("Editor", "EditorThing.cs"), "public class EditorThing { public static int Value => 1; }");
 
-        var result = ScriptCompiler.CompileAll(Project);
+        ScriptCompiler.CompileResult result = ScriptCompiler.CompileAll(Project);
 
         Assert.False(result.Success, "Game code must not be able to reference editor-only types.");
     }
@@ -66,7 +66,7 @@ public class ScriptCompilationTests : EditorTestHarness
         WriteScript("PlayComponent.cs", "using Prowl.Runtime; public class PlayComponent : Component { }");
         WriteScript(Path.Combine("Editor", "EditorOnlyTool.cs"), "public class EditorOnlyTool { public static int X => 1; }");
 
-        var compile = ScriptCompiler.CompileAll(Project);
+        ScriptCompiler.CompileResult compile = ScriptCompiler.CompileAll(Project);
         Assert.True(compile.Success, $"Compile failed:\n{compile.Errors}");
         Assert.True(File.Exists(Project.EditorAssemblyPath), "Editor assembly should be produced for editing.");
 
@@ -99,16 +99,16 @@ public class ScriptCompilationTests : EditorTestHarness
     public void Recompile_Unchanged_IsSkipped()
     {
         WriteScript("Stable.cs", "public static class Stable { public static int V() => 1; }");
-        var first = ScriptCompiler.CompileAll(Project);
+        ScriptCompiler.CompileResult first = ScriptCompiler.CompileAll(Project);
         Assert.True(first.Success);
         Assert.True(first.RequiresReload);
 
-        var second = ScriptCompiler.CompileAll(Project);
+        ScriptCompiler.CompileResult second = ScriptCompiler.CompileAll(Project);
         Assert.True(second.Success);
         Assert.False(second.RequiresReload);
 
         WriteScript("Stable.cs", "public static class Stable { public static int V() => 2; }");
-        var third = ScriptCompiler.CompileAll(Project);
+        ScriptCompiler.CompileResult third = ScriptCompiler.CompileAll(Project);
         Assert.True(third.Success);
         Assert.True(third.RequiresReload);
     }
@@ -136,21 +136,21 @@ public class ScriptCompilationTests : EditorTestHarness
             }
             """);
 
-        var compile = ScriptCompiler.CompileAll(Project);
+        ScriptCompiler.CompileResult compile = ScriptCompiler.CompileAll(Project);
         Assert.True(compile.Success, $"Compile failed:\n{compile.Errors}\n{compile.Output}");
 
         var editor = Assembly.Load(File.ReadAllBytes(Project.EditorAssemblyPath));
 
         // (DockPanel matched by name to avoid a compile dependency on Prowl.PaperUI in the test project.)
-        var window = editor.GetTypes()
+        Type? window = editor.GetTypes()
             .Where(t => !t.IsAbstract && DerivesFromDockPanel(t))
             .SingleOrDefault(t => t.Name == "MyTestWindow");
 
         Assert.NotNull(window);
 
-        var openMethod = window!.GetMethod("Open", BindingFlags.NonPublic | BindingFlags.Static);
+        MethodInfo? openMethod = window!.GetMethod("Open", BindingFlags.NonPublic | BindingFlags.Static);
         Assert.NotNull(openMethod);
-        var attr = openMethod!.GetCustomAttribute<MenuItemAttribute>();
+        MenuItemAttribute? attr = openMethod!.GetCustomAttribute<MenuItemAttribute>();
         Assert.NotNull(attr);
         Assert.Equal("Test/MyTestWindow", attr!.Path);
     }
@@ -161,7 +161,7 @@ public class ScriptCompilationTests : EditorTestHarness
     {
         WriteScript(Path.Combine("R&D", "Tool.cs"), "public class Tool { }");
 
-        var result = ScriptCompiler.CompileAll(Project);
+        ScriptCompiler.CompileResult result = ScriptCompiler.CompileAll(Project);
 
         Assert.Null(Record.Exception(() => XDocument.Load(Project.GameCsprojPath))); // well-formed XML
         Assert.True(result.Success, $"Compile failed:\n{result.Errors}");
@@ -179,7 +179,7 @@ public class ScriptCompilationTests : EditorTestHarness
             File.WriteAllText(Path.Combine(proj.AssetsPath, "UsesEngine.cs"),
                 "using Prowl.OrigamiUI; public class UsesEngine { public static System.Type T() => typeof(DockPanel); }");
 
-            var result = ScriptCompiler.CompileAll(proj);
+            ScriptCompiler.CompileResult result = ScriptCompiler.CompileAll(proj);
             Assert.True(result.Success, $"Engine references were dropped for a prefix-colliding project name:\n{result.Errors}");
         }
         finally { TryDeleteDir(parent); }
@@ -198,7 +198,7 @@ public class ScriptCompilationTests : EditorTestHarness
         Directory.CreateDirectory(Path.GetDirectoryName(to)!);
         File.Move(from, to);
 
-        var result = ScriptCompiler.CompileAll(Project);
+        ScriptCompiler.CompileResult result = ScriptCompiler.CompileAll(Project);
         Assert.True(result.Success, $"Compile failed:\n{result.Errors}");
         Assert.True(result.RequiresReload, "A moved script changes the unit's file set, so it must rebuild.");
 
@@ -234,7 +234,7 @@ public class ScriptCompilationTests : EditorTestHarness
 
     private static bool DerivesFromDockPanel(Type t)
     {
-        for (var b = t.BaseType; b != null; b = b.BaseType)
+        for (Type? b = t.BaseType; b != null; b = b.BaseType)
             if (b.Name == "DockPanel")
                 return true;
         return false;

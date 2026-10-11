@@ -30,7 +30,7 @@ public class NavMeshCollectorTests : RuntimeTestBase
         Scene scene = CreateScene(enable: true);
         GameObject floor = CreateGameObject("Floor");
         scene.Add(floor);
-        var box = floor.AddComponent<BoxCollider>();
+        BoxCollider box = floor.AddComponent<BoxCollider>();
         box.Size = new Float3(20, 1, 20);
         floor.Transform.Position = new Float3(0, -0.5f, 0); // top surface at y=0
 
@@ -95,7 +95,7 @@ public class NavMeshCollectorTests : RuntimeTestBase
         Scene scene = CreateScene(enable: true);
         GameObject go = CreateGameObject("Plane");
         scene.Add(go);
-        var renderer = go.AddComponent<MeshRenderer>();
+        MeshRenderer renderer = go.AddComponent<MeshRenderer>();
         renderer.Mesh = Mesh.CreateCube(new Float3(10, 0.2f, 10));
         go.Transform.Position = new Float3(100, 0, 100);
 
@@ -122,7 +122,7 @@ public class NavMeshCollectorTests : RuntimeTestBase
         Scene scene = CreateScene(enable: true);
         GameObject ramp = CreateGameObject("Floor");
         scene.Add(ramp);
-        var box = ramp.AddComponent<BoxCollider>();
+        BoxCollider box = ramp.AddComponent<BoxCollider>();
         box.Size = new Float3(20, 1, 6);
         // 45° yaw (FromEuler takes degrees): the walkable strip runs diagonally.
         ramp.Transform.Rotation = Quaternion.FromEuler(new Float3(0, 45f, 0));
@@ -192,7 +192,7 @@ public class NavMeshCollectorTests : RuntimeTestBase
         scene.Add(agent);
         agent.Transform.Position = standing + new Float3(0, 1, 0);
         agent.AddComponent<NavMeshAgent>();
-        var body = agent.AddComponent<BoxCollider>();
+        BoxCollider body = agent.AddComponent<BoxCollider>();
         body.Size = new Float3(2, 2, 2);
 
         List<NavMeshGeometrySource> sources = [];
@@ -236,7 +236,7 @@ public class NavMeshCollectorTests : RuntimeTestBase
                     data.SetHeight(x, z, normalizedHeight(x * cell, z * cell));
         }
 
-        var terrain = go.AddComponent<TerrainComponent>();
+        TerrainComponent terrain = go.AddComponent<TerrainComponent>();
         terrain.Data = data;
         go.AddComponent<TerrainCollider>();
         return terrain;
@@ -507,7 +507,7 @@ public class NavMeshCollectorTests : RuntimeTestBase
 
         GameObject surfaceGo = CreateGameObject("NavMeshSurface");
         scene.Add(surfaceGo);
-        var surface = surfaceGo.AddComponent<NavMeshSurface>();
+        NavMeshSurface surface = surfaceGo.AddComponent<NavMeshSurface>();
         ApplyFastBakeSettings(surface);
         Assert.True(surface.BuildNavMesh());
         Tick(scene, 2);

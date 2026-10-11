@@ -134,7 +134,7 @@ public static class Program
                 break;
         }
 
-        using var client = Connect(projectPath, timeout);
+        using HttpClient client = Connect(projectPath, timeout);
         if (request == null) return await ListAsync(client, json);
 
         request.TimeoutSeconds = timeout;
@@ -149,7 +149,7 @@ public static class Program
 
     private static HttpClient Connect(string? projectPath, int timeout)
     {
-        var lockFile = FindEditor(projectPath);
+        CliLockFile lockFile = FindEditor(projectPath);
         var client = new HttpClient(new HttpClientHandler { UseProxy = false })
         {
             BaseAddress = new Uri($"http://127.0.0.1:{lockFile.Port}"),
@@ -166,7 +166,7 @@ public static class Program
             ? [new DirectoryInfo(Path.GetFullPath(projectPath))]
             : Ancestors(new DirectoryInfo(Directory.GetCurrentDirectory()));
 
-        foreach (var dir in candidates)
+        foreach (DirectoryInfo dir in candidates)
         {
             string path = Path.Combine(dir.FullName, "Library", CliProtocol.LockFileName);
             if (!File.Exists(path)) continue;
@@ -207,7 +207,7 @@ public static class Program
 
     private static async Task<int> ListAsync(HttpClient client, bool json)
     {
-        var response = await SendAsync(() => client.GetAsync(CliProtocol.CommandsPath));
+        HttpResponseMessage response = await SendAsync(() => client.GetAsync(CliProtocol.CommandsPath));
         string body = await response.Content.ReadAsStringAsync();
         if (!response.IsSuccessStatusCode) return PrintFailure(body, json);
 
@@ -217,14 +217,14 @@ public static class Program
             return ExitOk;
         }
 
-        var commands = TryDeserialize<List<CliCommandInfo>>(body);
+        List<CliCommandInfo>? commands = TryDeserialize<List<CliCommandInfo>>(body);
         if (commands == null) return PrintFailure(body, json);
 
         int width = commands.Count == 0 ? 0 : commands.Max(c => c.Name.Length);
-        foreach (var command in commands)
+        foreach (CliCommandInfo command in commands)
         {
             Console.WriteLine($"{command.Name.PadRight(width)}  {command.Description}");
-            foreach (var arg in command.Args)
+            foreach (CliArgInfo arg in command.Args)
             {
                 string label = arg.Required ? $"<{arg.Name}>" : $"[--{arg.Name}]";
                 string extra = arg.Required ? arg.Type : $"{arg.Type}, default {arg.Default ?? "null"}";
@@ -238,11 +238,11 @@ public static class Program
     private static async Task<int> RunCommandAsync(HttpClient client, CliRunRequest request, bool json)
     {
         var content = new StringContent(JsonSerializer.Serialize(request, CliProtocol.Json), Encoding.UTF8, "application/json");
-        var response = await SendAsync(() => client.PostAsync(CliProtocol.RunPath, content));
+        HttpResponseMessage response = await SendAsync(() => client.PostAsync(CliProtocol.RunPath, content));
         string body = await response.Content.ReadAsStringAsync();
         if (!response.IsSuccessStatusCode) return PrintFailure(body, json);
 
-        var result = TryDeserialize<CliRunResponse>(body);
+        CliRunResponse? result = TryDeserialize<CliRunResponse>(body);
         if (result == null) return PrintFailure(body, json);
 
         if (json)
@@ -251,7 +251,7 @@ public static class Program
             return result.Ok ? ExitOk : ExitError;
         }
 
-        foreach (var log in result.Logs)
+        foreach (CliLogLine log in result.Logs)
             Console.Error.WriteLine($"[{log.Severity}] {log.Message}");
 
         if (!result.Ok)

@@ -411,7 +411,7 @@ public static class RuntimeUtils
 
     public static IEnumerable<Type> GetTypesWithAttribute<T>()
     {
-        var assemblies = AssemblySource();
+        IEnumerable<Assembly> assemblies = AssemblySource();
         foreach (Assembly assembly in assemblies)
             foreach (Type type in GetLoadableTypes(assembly))
                 if (type.GetCustomAttributes(typeof(T), true).Length > 0)

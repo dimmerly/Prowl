@@ -11,6 +11,7 @@ using Prowl.PaperUI;
 using Prowl.PaperUI.LayoutEngine;
 using Prowl.Runtime;
 using Prowl.Runtime.Resources;
+using Prowl.Scribe;
 using Prowl.Vector;
 
 using FillMethod = Prowl.Runtime.UI.FillMethod;
@@ -25,7 +26,7 @@ public class UIImageEditor : CustomEditor
     public override void OnGUI(Paper paper, string id, object target)
     {
         var img = (UIImage)target;
-        var font = EditorTheme.DefaultFont;
+        FontFile? font = EditorTheme.DefaultFont;
         if (font == null) return;
 
         Undo.Snapshot(img);
@@ -100,10 +101,10 @@ public class UIImageEditor : CustomEditor
     private static void DrawPreview(Paper paper, string id, UIImage img)
     {
         const float size = 128f;
-        var sprite = img.Sprite;
+        Sprite? sprite = img.Sprite;
         Texture2D spriteTex = sprite.IsValid() ? sprite.Texture : null;
-        var tex = spriteTex.IsValid() ? spriteTex : UIImage.defaultTexture;
-        var color = img.Color;
+        Texture2D tex = spriteTex.IsValid() ? spriteTex : UIImage.defaultTexture;
+        Color color = img.Color;
 
         // Aspect of the drawn region: the sprite's rect when available, else the texture.
         float srcW = sprite != null ? sprite.Rect.Width : tex.Width;
@@ -228,8 +229,8 @@ public class UIImageEditor : CustomEditor
         EditorGUI.Row(paper, id, string.Empty, () =>
             Origami.Button(paper, $"{id}_b", "Set Native Size", () =>
             {
-                var go = img.GameObject;
-                var rt = go.IsValid() ? go.RectTransform : null;
+                GameObject go = img.GameObject;
+                RectTransform? rt = go.IsValid() ? go.RectTransform : null;
                 if (rt == null) return;
                 Undo.Snapshot(rt);
 
@@ -259,7 +260,7 @@ public class UIImageEditor : CustomEditor
 
         EditorGUI.Row(paper, id, "Fill Origin", () =>
         {
-            var group = Origami.ButtonGroup(paper, $"{id}_g", origin, v => img.FillOrigin = v)
+            ButtonGroupBuilder group = Origami.ButtonGroup(paper, $"{id}_g", origin, v => img.FillOrigin = v)
                 .Height(EditorTheme.RowHeight).FullWidth();
 
             switch (img.FillMethod)

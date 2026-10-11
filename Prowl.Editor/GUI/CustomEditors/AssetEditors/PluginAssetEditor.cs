@@ -86,7 +86,7 @@ public class PluginAssetEditor : ImportSettingsEditor
 
         if (isNative)
         {
-            var cpu = ParseCpu(s.TryGet(PluginInfo.Keys.Cpu, out var c) ? c.StringValue : "x64");
+            PluginCpu cpu = ParseCpu(s.TryGet(PluginInfo.Keys.Cpu, out EchoObject? c) ? c.StringValue : "x64");
             EditorGUI.Row(paper, $"{id}_cpu", "CPU", () =>
                 Origami.EnumDropdown(paper, $"{id}_cpu_v", cpu,
                     v => s[PluginInfo.Keys.Cpu] = new EchoObject(v.ToString())).Show());
@@ -99,7 +99,7 @@ public class PluginAssetEditor : ImportSettingsEditor
     private static void PlatformToggle(Paper paper, string id, string label, EchoObject s, string key)
         => Origami.Checkbox(paper, id, Bool(s, key), v => s[key] = new EchoObject(v)).LabelRight(label).Show();
 
-    private static bool Bool(EchoObject s, string key) => s.TryGet(key, out var t) && t.BoolValue;
+    private static bool Bool(EchoObject s, string key) => s.TryGet(key, out EchoObject? t) && t.BoolValue;
 
     private static PluginCpu ParseCpu(string raw) => raw.ToLowerInvariant() switch
     {

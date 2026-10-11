@@ -36,7 +36,7 @@ public class NavMeshLinkTests : RuntimeTestBase
 
         GameObject surfaceGo = CreateGameObject("NavMeshSurface");
         scene.Add(surfaceGo);
-        var surface = surfaceGo.AddComponent<NavMeshSurface>();
+        NavMeshSurface surface = surfaceGo.AddComponent<NavMeshSurface>();
         ApplyFastBakeSettings(surface);
         return (scene, surface);
     }
@@ -45,7 +45,7 @@ public class NavMeshLinkTests : RuntimeTestBase
     {
         GameObject linkGo = CreateGameObject("Link");
         scene.Add(linkGo);
-        var link = linkGo.AddComponent<NavMeshLink>();
+        NavMeshLink link = linkGo.AddComponent<NavMeshLink>();
         link.StartPoint = new Float3(-3, 0, 0); // on island A
         link.EndPoint = new Float3(3, 0, 0);    // on island B
         link.Width = width;
@@ -267,7 +267,7 @@ public class NavMeshLinkTests : RuntimeTestBase
         GameObject crate = CreateGameObject("Crate");
         scene.Add(crate);
         crate.Transform.Position = new Float3(-7, 1, 2.5f);
-        var obstacle = crate.AddComponent<NavMeshObstacle>();
+        NavMeshObstacle obstacle = crate.AddComponent<NavMeshObstacle>();
         obstacle.Size = new Float3(2, 3, 2);
 
         bool carved = false;
@@ -435,7 +435,7 @@ public class NavMeshLinkTests : RuntimeTestBase
         Assert.NotEmpty(baked.Links);
 
         Prowl.Echo.EchoObject echo = Prowl.Echo.Serializer.Serialize(typeof(object), baked);
-        var loaded = Prowl.Echo.Serializer.Deserialize<Runtime.NavMeshData>(echo);
+        NavMeshData? loaded = Prowl.Echo.Serializer.Deserialize<Runtime.NavMeshData>(echo);
         Assert.NotNull(loaded);
         Assert.Equal(baked.Links.Count, loaded!.Links.Count);
 
@@ -518,7 +518,7 @@ public class NavMeshLinkTests : RuntimeTestBase
         scene.Add(agentGo);
         // Inside the trigger radius (radius * 2.25) of the link's start at x = -3.
         agentGo.Transform.Position = new Float3(-3.6f, 0, 0);
-        var agent = agentGo.AddComponent<NavMeshAgent>();
+        NavMeshAgent agent = agentGo.AddComponent<NavMeshAgent>();
         agent.Speed = 6f;
         agent.Acceleration = 100f;
         agent.Separation = false;
@@ -569,7 +569,7 @@ public class NavMeshLinkTests : RuntimeTestBase
         GameObject agentGo = CreateGameObject("Agent");
         scene.Add(agentGo);
         agentGo.Transform.Position = new Float3(-8, 0, 0);
-        var agent = agentGo.AddComponent<NavMeshAgent>();
+        NavMeshAgent agent = agentGo.AddComponent<NavMeshAgent>();
         agent.Speed = 6f;
         agent.Acceleration = 100f;
         agent.Separation = false;
@@ -634,7 +634,7 @@ public class NavMeshLinkTests : RuntimeTestBase
         GameObject agentGo = CreateGameObject("Agent");
         scene.Add(agentGo);
         agentGo.Transform.Position = new Float3(-8, 0, 0);
-        var agent = agentGo.AddComponent<NavMeshAgent>();
+        NavMeshAgent agent = agentGo.AddComponent<NavMeshAgent>();
         agent.Speed = 6f;
         agent.Acceleration = 100f;
         agent.Separation = false;

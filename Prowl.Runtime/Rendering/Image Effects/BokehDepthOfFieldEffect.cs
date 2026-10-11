@@ -96,7 +96,7 @@ public sealed class BokehDepthOfFieldEffect : ImageEffect
         _mat.SetFloat("_Downscale", downscale);
         _mat.SetFloat("_MaxCoC", Math.Max(0f, MaxBlurRadius) * 0.01f * fullHeight / downscale);
 
-        using var cmd = Graphics.GetCommandBuffer("BokehDoF");
+        using CommandBuffer cmd = Graphics.GetCommandBuffer("BokehDoF");
 
         // Focus: ease the 1x1 focus distance toward this frame's target. A camera cut starts fresh.
         if (!context.Camera.HasPreviousViewProjectionMatrix) _focusValid = false;

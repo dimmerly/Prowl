@@ -19,7 +19,7 @@ internal static class RasterStateApply
 {
     public static void Apply(in RasterizerState state)
     {
-        var gl = Graphics.GL;
+        GL gl = Graphics.GL;
 
         // Depth
         if (state.DepthTest) gl.Enable(EnableCap.DepthTest);

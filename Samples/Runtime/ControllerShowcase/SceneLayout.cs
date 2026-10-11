@@ -997,7 +997,7 @@ public static class SceneLayout
     /// <summary>A kinematic body, moved through its velocity by a script so what rides it is carried along.</summary>
     private static void Kinematic(GameObject go)
     {
-        var body = go.AddComponent<Rigidbody3D>();
+        Rigidbody3D body = go.AddComponent<Rigidbody3D>();
         body.MotionType = Jitter2.Dynamics.MotionType.Kinematic;
         body.AffectedByGravity = false;
     }

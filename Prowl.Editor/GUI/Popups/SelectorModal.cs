@@ -76,7 +76,7 @@ public static class SelectorModal
     {
         if (!_handle.IsOpen) return;
 
-        var font = EditorTheme.DefaultFont;
+        Scribe.FontFile? font = EditorTheme.DefaultFont;
         if (font == null) return;
 
         // Modal window (backdrop handled by modal stack)
@@ -179,7 +179,7 @@ public static class SelectorModal
 
     private static void DrawSceneTab(Paper paper, Prowl.Scribe.FontFile font, float height)
     {
-        var scene = Runtime.Resources.Scene.Current;
+        Scene scene = Runtime.Resources.Scene.Current;
         if (scene == null)
         {
             paper.Box("sel_scene_empty").Height(40)
@@ -207,7 +207,7 @@ public static class SelectorModal
                 .OnClick(0, (_, _) => { _callback?.Invoke(null); Close(); });
 
             int idx = 0;
-            foreach (var go in scene.AllObjects)
+            foreach (GameObject go in scene.AllObjects)
             {
                 if (go.HideFlags.HasFlag(HideFlags.Hide) || go.HideFlags.HasFlag(HideFlags.HideAndDontSave))
                     continue;
@@ -229,7 +229,7 @@ public static class SelectorModal
                 else if (isComponent)
                 {
                     // List matching components
-                    foreach (var comp in go.GetComponents<Component>())
+                    foreach (Component comp in go.GetComponents<Component>())
                     {
                         if (!_targetType.IsAssignableFrom(comp.GetType())) continue;
 
@@ -297,7 +297,7 @@ public static class SelectorModal
 
     private static void DrawAssetsTab(Paper paper, Prowl.Scribe.FontFile font, float height)
     {
-        var db = EditorAssetBackend.Instance;
+        EditorAssetBackend? db = EditorAssetBackend.Instance;
         if (db == null)
         {
             paper.Box("sel_asset_empty").Height(40)
@@ -308,8 +308,8 @@ public static class SelectorModal
         }
 
         // Exact then prefix matches sort ahead so the closest ones survive the cap.
-        var all = db.FindAllOfType(_targetType);
-        var matches = string.IsNullOrEmpty(_searchText)
+        IEnumerable<(Guid guid, string name, string parentPath, Type assetType)> all = db.FindAllOfType(_targetType);
+        IEnumerable<(Guid guid, string name, string parentPath, Type assetType)> matches = string.IsNullOrEmpty(_searchText)
             ? all
             : all.Where(i => i.name.Contains(_searchText, StringComparison.OrdinalIgnoreCase))
                  .OrderBy(i => i.name.Equals(_searchText, StringComparison.OrdinalIgnoreCase) ? 0
@@ -356,7 +356,7 @@ public static class SelectorModal
                         for (int j = 0; j < cols && i + j < items.Count; j++)
                         {
                             int idx = i + j;
-                            var (guid, name, parentPath, assetType) = items[idx];
+                            (Guid guid, string? name, string? parentPath, Type? assetType) = items[idx];
                             DrawAssetGridItem(paper, font, $"sel_a_{idx}", guid, name, cellSize, labelH, totalCellH);
                         }
                     }
@@ -369,7 +369,7 @@ public static class SelectorModal
     private static void DrawAssetGridItem(Paper paper, Prowl.Scribe.FontFile font,
         string id, Guid guid, string name, float cellSize, float labelH, float totalCellH)
     {
-        var thumbTex = EditorAssetBackend.Instance?.GetThumbnailTexture(guid);
+        Texture2D? thumbTex = EditorAssetBackend.Instance?.GetThumbnailTexture(guid);
 
         using (paper.Column(id)
             .Width(cellSize).Height(totalCellH)
@@ -377,7 +377,7 @@ public static class SelectorModal
             .Rounded(Origami.Current.Metrics.Rounding)
             .OnClick(guid, (g, _) =>
             {
-                var asset = Runtime.AssetDatabase.Get(g);
+                Asset? asset = Runtime.AssetDatabase.Get(g);
                 _callback?.Invoke(asset);
                 Close();
             })

@@ -148,7 +148,7 @@ public static class NavMeshGeometryCollector
 
     private static NavMeshModifier? ValidModifier(GameObject go, int agentTypeId)
     {
-        var modifier = go.GetComponent<NavMeshModifier>();
+        NavMeshModifier? modifier = go.GetComponent<NavMeshModifier>();
         return modifier.IsValid() && modifier!.EnabledInHierarchy && modifier.AffectsAgentType(agentTypeId)
             ? modifier : null;
     }

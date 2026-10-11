@@ -78,7 +78,7 @@ public class BuildSettingsPanel : DockPanel
 
     public override void OnGUI(Paper paper, float width, float height)
     {
-        var font = EditorTheme.DefaultFont;
+        FontFile? font = EditorTheme.DefaultFont;
         if (font == null) return;
 
         _buildSettings ??= EditorRegistries.GetSettings<BuildSettings>();
@@ -136,7 +136,7 @@ public class BuildSettingsPanel : DockPanel
                 .Padding(8, 8, 8, 8)
                 .Body(() =>
                 {
-                    var scenes = _buildSettings.Scenes;
+                    List<SceneBuildEntry> scenes = _buildSettings.Scenes;
                     if (scenes.Count == 0)
                     {
                         paper.Box("bp_scenes_empty").Height(40).Margin(6, 6, 6, 0).IsNotInteractable()
@@ -147,7 +147,7 @@ public class BuildSettingsPanel : DockPanel
                     }
 
                     // Container element that holds the drag state + per-row layout positions.
-                    var listEl = paper.CurrentParent;
+                    ElementHandle listEl = paper.CurrentParent;
 
                     int buildIndex = 0;
                     for (int i = 0; i < scenes.Count; i++)
@@ -159,9 +159,9 @@ public class BuildSettingsPanel : DockPanel
     private void DrawSceneRow(Paper paper, FontFile font, List<SceneBuildEntry> scenes, int i, int buildIndex, ElementHandle listEl)
     {
         int idx = i;
-        var scene = scenes[i];
+        SceneBuildEntry scene = scenes[i];
         bool on = scene.Enabled;
-        var mono = EditorTheme.FontMono ?? font;
+        FontFile mono = EditorTheme.FontMono ?? font;
 
         // The scene GUID is a stable per-row key so Paper element identity survives reorders.
         string sk = scene.SceneGuid.ToString();
@@ -173,7 +173,7 @@ public class BuildSettingsPanel : DockPanel
 
         const float rowH = 28f;
 
-        var rowB = paper.Row($"bp_sc_{sk}").Height(rowH).Rounded(Origami.Current.Metrics.Rounding).Margin(0, 0, 0, 3)
+        ElementBuilder rowB = paper.Row($"bp_sc_{sk}").Height(rowH).Rounded(Origami.Current.Metrics.Rounding).Margin(0, 0, 0, 3)
             .Padding(8, 4, 0, 0).Gap(8)
             .BackgroundColor(beingDragged || on ? EditorTheme.Selected : Color.Transparent)
             .Hovered.BackgroundColor(on ? EditorTheme.Selected : EditorTheme.Hover).End();
@@ -181,7 +181,7 @@ public class BuildSettingsPanel : DockPanel
         // Record this row's centre-Y each frame so the drag can pick the nearest drop target.
         rowB.OnPostLayout(idx, (rowIndex, _, r) =>
         {
-            var cys = paper.GetElementStorage<List<float>>(listEl, "rowCys", null!);
+            List<float> cys = paper.GetElementStorage<List<float>>(listEl, "rowCys", null!);
             if (cys == null) { cys = new List<float>(); paper.SetElementStorage(listEl, "rowCys", cys); }
             while (cys.Count <= rowIndex) cys.Add(0f);
             cys[rowIndex] = (float)(r.Min.Y + r.Size.Y * 0.5f);
@@ -189,7 +189,7 @@ public class BuildSettingsPanel : DockPanel
 
         using (rowB.Enter())
         {
-            var grip = paper.Box($"bp_sc_{sk}_grip").Width(12).Text(EditorIcons.Grip, font).TextColor(beingDragged ? EditorTheme.Ink500 : EditorTheme.Ink300)
+            ElementBuilder grip = paper.Box($"bp_sc_{sk}_grip").Width(12).Text(EditorIcons.Grip, font).TextColor(beingDragged ? EditorTheme.Ink500 : EditorTheme.Ink300)
                 .Hovered.TextColor(EditorTheme.Ink500).End()
                 .FontSize(EditorTheme.FontSizeSmall).Alignment(TextAlignment.MiddleCenter);
 
@@ -197,7 +197,7 @@ public class BuildSettingsPanel : DockPanel
                 .OnDragging(sk, (k, _) =>
                 {
                     int cur = scenes.FindIndex(s => s.SceneGuid.ToString() == k);
-                    var cys = paper.GetElementStorage<List<float>>(listEl, "rowCys", null!);
+                    List<float> cys = paper.GetElementStorage<List<float>>(listEl, "rowCys", null!);
                     if (cur < 0 || cys == null) return;
 
                     float py = (float)paper.PointerPos.Y;
@@ -248,21 +248,21 @@ public class BuildSettingsPanel : DockPanel
     private static void MoveScene(List<SceneBuildEntry> scenes, int from, int to)
     {
         if (from == to || from < 0 || from >= scenes.Count || to < 0 || to >= scenes.Count) return;
-        var v = scenes[from];
+        SceneBuildEntry v = scenes[from];
         scenes.RemoveAt(from);
         scenes.Insert(to, v);
     }
 
     private void AddOpenScene()
     {
-        var db = EditorAssetBackend.Instance;
+        EditorAssetBackend? db = EditorAssetBackend.Instance;
         if (EditorSceneManager.CurrentScenePath == null && !Application.IsPlaying)
         {
             EditorApplication.PromptSaveAs(AddOpenScene);
             return;
         }
 
-        var entry = EditorSceneManager.CurrentScenePath != null ? db?.GetEntry(EditorSceneManager.CurrentScenePath) : null;
+        AssetEntry? entry = EditorSceneManager.CurrentScenePath != null ? db?.GetEntry(EditorSceneManager.CurrentScenePath) : null;
         if (entry == null)
         {
             Toasts.Warning(Loc.Get("build.toast_not_saved"), Loc.Get("build.toast_not_saved_msg"));
@@ -331,7 +331,7 @@ public class BuildSettingsPanel : DockPanel
                 // Per-platform profile fields (preserved from original behaviour).
                 if (_selectedIndex >= 0 && _selectedIndex < _buildPlatforms.Count)
                 {
-                    var profile = _buildSettings.GetOrCreateProfile(_buildPlatforms[_selectedIndex].BuildPipelineType);
+                    PlatformBuildProfile profile = _buildSettings.GetOrCreateProfile(_buildPlatforms[_selectedIndex].BuildPipelineType);
                     if (profile != null)
                     {
                         EditorGUI.SectionHeader(paper, "bp_prof_h", _buildPlatforms[_selectedIndex].Name, first: true);
@@ -404,7 +404,7 @@ public class BuildSettingsPanel : DockPanel
         bool selectable = slot.realIndex >= 0;
         bool sel = selectable && _selectedIndex == slot.realIndex;
 
-        var card = paper.Column($"bp_card_{cell}").MinHeight(78)
+        ElementBuilder card = paper.Column($"bp_card_{cell}").MinHeight(78)
             .Rounded(Origami.Current.Metrics.ContainerRounding).Padding(6, 6, 11, 11).Gap(6)
             .BackgroundColor(sel ? EditorTheme.Selected : EditorTheme.Glass)
             .BorderColor(sel ? EditorTheme.Accent : EditorTheme.BorderSoft).BorderWidth(1);
@@ -449,7 +449,7 @@ public class BuildSettingsPanel : DockPanel
     {
         paper.Box("bp_ftr_top").Width(width).Height(1).BackgroundColor(EditorTheme.BorderSoft).IsNotInteractable();
 
-        var mono = EditorTheme.FontMono ?? font;
+        FontFile mono = EditorTheme.FontMono ?? font;
 
         int enabled = _buildSettings.Scenes.Count(s => s.Enabled);
         string platName = _selectedIndex >= 0 && _selectedIndex < _buildPlatforms.Count
@@ -485,7 +485,7 @@ public class BuildSettingsPanel : DockPanel
 
     private static void HeaderStrip(Paper paper, string id, string title, FontFile font, Action drawAction)
     {
-        var semi = EditorTheme.FontSemiBold ?? font;
+        FontFile semi = EditorTheme.FontSemiBold ?? font;
 
         using (paper.Row(id).Height(HeaderH).Padding(14, 14, 0, 0).Gap(8).Enter())
         {

@@ -146,9 +146,9 @@ public static class EditorRegistries
         _defaultFileIcon = EditorIcons.File;
         _doubleClickHandlers.Clear();
 
-        foreach (var del in _sceneSavedCallbacks) EditorSceneManager.OnSceneSaved -= del;
+        foreach (Action del in _sceneSavedCallbacks) EditorSceneManager.OnSceneSaved -= del;
         _sceneSavedCallbacks.Clear();
-        foreach (var del in _undoRedoCallbacks) Undo.OnUndoRedo -= del;
+        foreach (Action del in _undoRedoCallbacks) Undo.OnUndoRedo -= del;
         _undoRedoCallbacks.Clear();
 
         _initOnLoadMethods.Clear();
@@ -162,9 +162,9 @@ public static class EditorRegistries
 
         RegisterBuiltInFileIcons();
 
-        var methodFlags = BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic;
+        BindingFlags methodFlags = BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic;
 
-        foreach (var type in EditorUtils.GetAllTypes())
+        foreach (Type type in EditorUtils.GetAllTypes())
         {
             // A single type/method with unresolvable reflection metadata (e.g. an attribute referencing
             // a mismatched assembly version - seen from test-host assemblies like
@@ -185,7 +185,7 @@ public static class EditorRegistries
                 ScanAssetMenuEntry(type);
                 ScanBuildTargetProvider(type);
 
-                foreach (var method in type.GetMethods(methodFlags))
+                foreach (MethodInfo method in type.GetMethods(methodFlags))
                 {
                     MenuItemAttribute.Scan(method);
                     CliCommands.Scan(method);
@@ -218,10 +218,10 @@ public static class EditorRegistries
         _dropHandlers.Sort((a, b) => a.Order.CompareTo(b.Order));
         _settingsEntries.Sort((a, b) => a.Order.CompareTo(b.Order));
 
-        foreach (var del in _sceneSavedCallbacks) EditorSceneManager.OnSceneSaved += del;
-        foreach (var del in _undoRedoCallbacks) Undo.OnUndoRedo += del;
+        foreach (Action del in _sceneSavedCallbacks) EditorSceneManager.OnSceneSaved += del;
+        foreach (Action del in _undoRedoCallbacks) Undo.OnUndoRedo += del;
 
-        foreach (var m in _initOnLoadMethods)
+        foreach (MethodInfo m in _initOnLoadMethods)
         {
             try { m.Invoke(null, null); }
             catch (Exception ex) { Debug.LogError($"[InitializeOnLoad] {m.DeclaringType?.Name}.{m.Name}: {ex.InnerException?.Message ?? ex.Message}"); }
@@ -235,28 +235,28 @@ public static class EditorRegistries
     private static void ScanCustomEditor(Type type)
     {
         if (!typeof(CustomEditor).IsAssignableFrom(type) || type.IsAbstract) return;
-        var target = type.GetCustomAttribute<CustomEditorAttribute>()?.TargetType;
+        Type? target = type.GetCustomAttribute<CustomEditorAttribute>()?.TargetType;
         if (target != null) _customEditorTypes[target] = type;
     }
 
     private static void ScanAnimationNodeEditor(Type type)
     {
         if (!typeof(AnimationNodeEditor).IsAssignableFrom(type) || type.IsAbstract) return;
-        foreach (var attr in type.GetCustomAttributes<AnimationNodeEditorAttribute>())
+        foreach (AnimationNodeEditorAttribute attr in type.GetCustomAttributes<AnimationNodeEditorAttribute>())
             _animationNodeEditorTypes[attr.NodeType] = type;
     }
 
     private static void ScanPropertyEditor(Type type)
     {
         if (!typeof(PropertyEditor).IsAssignableFrom(type) || type.IsAbstract) return;
-        var target = type.GetCustomAttribute<CustomPropertyEditorAttribute>()?.TargetType;
+        Type? target = type.GetCustomAttribute<CustomPropertyEditorAttribute>()?.TargetType;
         if (target != null) _propertyEditorTypes[target] = type;
     }
 
     private static void ScanAssetEditor(Type type)
     {
         if (!typeof(AssetImporterEditor).IsAssignableFrom(type) || type.IsAbstract) return;
-        var target = type.GetCustomAttribute<CustomAssetEditorAttribute>()?.TargetType;
+        Type? target = type.GetCustomAttribute<CustomAssetEditorAttribute>()?.TargetType;
         if (target == null) return;
 
         // An editor may target an importer rather than an asset type, for formats whose main asset is
@@ -271,7 +271,7 @@ public static class EditorRegistries
     private static void ScanImporter(Type type)
     {
         if (!typeof(AssetImporter).IsAssignableFrom(type) || type.IsAbstract) return;
-        var attr = type.GetCustomAttribute<ImporterForAttribute>();
+        ImporterForAttribute? attr = type.GetCustomAttribute<ImporterForAttribute>();
         if (attr == null) return;
         _importersByName[type.Name] = type;
         foreach (var ext in attr.Extensions)
@@ -280,7 +280,7 @@ public static class EditorRegistries
 
     private static void ScanComponentIcon(Type type)
     {
-        var attr = type.GetCustomAttribute<ComponentIconAttribute>(inherit: false);
+        ComponentIconAttribute? attr = type.GetCustomAttribute<ComponentIconAttribute>(inherit: false);
         if (attr != null && !string.IsNullOrEmpty(attr.Icon))
             _componentIcons[type] = attr.Icon;
     }
@@ -288,7 +288,7 @@ public static class EditorRegistries
     private static void ScanThumbnailGenerator(Type type)
     {
         if (type.IsAbstract || !typeof(IThumbnailGenerator).IsAssignableFrom(type)) return;
-        var attr = type.GetCustomAttribute<CustomThumbnailGeneratorAttribute>();
+        CustomThumbnailGeneratorAttribute? attr = type.GetCustomAttribute<CustomThumbnailGeneratorAttribute>();
         if (attr == null) return;
         try { _thumbnailGenerators[attr.TargetType] = (IThumbnailGenerator)Activator.CreateInstance(type)!; }
         catch { }
@@ -298,8 +298,8 @@ public static class EditorRegistries
     {
         if (type.IsAbstract || !typeof(SceneTool).IsAssignableFrom(type)) return;
 
-        var global = type.GetCustomAttribute<GlobalSceneToolAttribute>();
-        var scoped = type.GetCustomAttribute<ComponentSceneToolAttribute>();
+        GlobalSceneToolAttribute? global = type.GetCustomAttribute<GlobalSceneToolAttribute>();
+        ComponentSceneToolAttribute? scoped = type.GetCustomAttribute<ComponentSceneToolAttribute>();
         if (global == null && scoped == null) return;
 
         try
@@ -321,7 +321,7 @@ public static class EditorRegistries
     private static void ScanSceneDropHandler(Type type)
     {
         if (type.IsAbstract || !typeof(ISceneDropHandler).IsAssignableFrom(type)) return;
-        var attr = type.GetCustomAttribute<SceneDropHandlerAttribute>();
+        SceneDropHandlerAttribute? attr = type.GetCustomAttribute<SceneDropHandlerAttribute>();
         if (attr == null) return;
         try
         {
@@ -341,7 +341,7 @@ public static class EditorRegistries
     private static void ScanProjectSettings(Type type)
     {
         if (type.IsAbstract || !typeof(ProjectSettingsBase).IsAssignableFrom(type)) return;
-        var attr = type.GetCustomAttribute<ProjectSettingsAttribute>();
+        ProjectSettingsAttribute? attr = type.GetCustomAttribute<ProjectSettingsAttribute>();
         if (attr == null) return;
         try
         {
@@ -399,7 +399,7 @@ public static class EditorRegistries
     private static void ScanAssetMenuEntry(Type type)
     {
         if (type.IsAbstract || !typeof(EngineObject).IsAssignableFrom(type)) return;
-        var attr = type.GetCustomAttribute<CreateAssetMenuAttribute>();
+        CreateAssetMenuAttribute? attr = type.GetCustomAttribute<CreateAssetMenuAttribute>();
         if (attr == null) return;
         var entry = new AssetMenuEntry
         {
@@ -423,7 +423,7 @@ public static class EditorRegistries
 
     private static void ScanScriptTemplate(MethodInfo method)
     {
-        var attr = method.GetCustomAttribute<ScriptTemplateAttribute>();
+        ScriptTemplateAttribute? attr = method.GetCustomAttribute<ScriptTemplateAttribute>();
         if (attr == null) return;
         if (method.ReturnType != typeof(string) || method.GetParameters() is not { Length: 1 } p || p[0].ParameterType != typeof(string))
         {
@@ -440,7 +440,7 @@ public static class EditorRegistries
 
     private static void ScanFileIconMethod(MethodInfo method)
     {
-        foreach (var attr in method.GetCustomAttributes<FileIconAttribute>())
+        foreach (FileIconAttribute attr in method.GetCustomAttributes<FileIconAttribute>())
         {
             if (method.ReturnType != typeof(string) || method.GetParameters().Length != 0) continue;
             try
@@ -462,10 +462,10 @@ public static class EditorRegistries
 
     private static void ScanDoubleClickHandler(MethodInfo method)
     {
-        foreach (var attr in method.GetCustomAttributes<AssetDoubleClickHandlerAttribute>())
+        foreach (AssetDoubleClickHandlerAttribute attr in method.GetCustomAttributes<AssetDoubleClickHandlerAttribute>())
         {
             if (method.ReturnType != typeof(bool)) continue;
-            var pars = method.GetParameters();
+            ParameterInfo[] pars = method.GetParameters();
             if (pars.Length != 2 || pars[0].ParameterType != typeof(string) || pars[1].ParameterType != typeof(Guid)) continue;
             try
             {
@@ -509,8 +509,8 @@ public static class EditorRegistries
     /// <summary>A new instance of the editor registered for an animation graph node type or one it derives from, or null for none.</summary>
     public static AnimationNodeEditor? CreateAnimationNodeEditor(Type nodeType)
     {
-        for (var t = nodeType; t != null; t = t.BaseType)
-            if (_animationNodeEditorTypes.TryGetValue(t, out var editorType))
+        for (Type? t = nodeType; t != null; t = t.BaseType)
+            if (_animationNodeEditorTypes.TryGetValue(t, out Type? editorType))
                 return TryCreate(editorType, out AnimationNodeEditor? editor) ? editor : null;
         return null;
     }
@@ -551,9 +551,9 @@ public static class EditorRegistries
     {
         if (!string.IsNullOrEmpty(entry.ImporterType))
         {
-            if (_assetEditorByImporterCache.TryGetValue(entry.ImporterType, out var cached)) return cached;
+            if (_assetEditorByImporterCache.TryGetValue(entry.ImporterType, out AssetImporterEditor? cached)) return cached;
 
-            if (_assetEditorTypesByImporter.TryGetValue(entry.ImporterType, out var editorType))
+            if (_assetEditorTypesByImporter.TryGetValue(entry.ImporterType, out Type? editorType))
             {
                 if (TryCreate(editorType, out AssetImporterEditor? editor))
                     return _assetEditorByImporterCache[entry.ImporterType] = editor!;
@@ -567,32 +567,32 @@ public static class EditorRegistries
 
     private static T? LookupEditor<T>(Type targetType, Dictionary<Type, Type> types, Dictionary<Type, T> cache, bool checkInterfaces = false) where T : class
     {
-        if (cache.TryGetValue(targetType, out var cached)) return cached;
-        for (var t = targetType; t != null; t = t.BaseType)
+        if (cache.TryGetValue(targetType, out T? cached)) return cached;
+        for (Type? t = targetType; t != null; t = t.BaseType)
         {
-            if (!types.TryGetValue(t, out var editorType)) continue;
+            if (!types.TryGetValue(t, out Type? editorType)) continue;
             return TryCreate(editorType, out T? made) ? cache[targetType] = made! : null;
         }
         if (checkInterfaces)
-            foreach (var iface in targetType.GetInterfaces())
-                if (types.TryGetValue(iface, out var editorType))
+            foreach (Type iface in targetType.GetInterfaces())
+                if (types.TryGetValue(iface, out Type? editorType))
                     return TryCreate(editorType, out T? made) ? cache[targetType] = made! : null;
         return null;
     }
 
     public static AssetImporter? GetImporter(string extension)
     {
-        if (_importersByExt.TryGetValue(NormalizeExt(extension), out var type))
+        if (_importersByExt.TryGetValue(NormalizeExt(extension), out Type? type))
             return TryCreate(type, out AssetImporter? importer) ? importer : null;
         return null;
     }
 
     public static string GetImporterTypeName(string extension)
-        => _importersByExt.TryGetValue(NormalizeExt(extension), out var type) ? type.Name : "DefaultImporter";
+        => _importersByExt.TryGetValue(NormalizeExt(extension), out Type? type) ? type.Name : "DefaultImporter";
 
     public static AssetImporter? CreateImporterByName(string typeName)
     {
-        if (_importersByName.TryGetValue(typeName, out var type))
+        if (_importersByName.TryGetValue(typeName, out Type? type))
             return TryCreate(type, out AssetImporter? importer) ? importer : null;
         return null;
     }
@@ -604,15 +604,15 @@ public static class EditorRegistries
 
     public static string GetComponentIcon(Type componentType)
     {
-        for (var cur = componentType; cur != null && cur != typeof(object); cur = cur.BaseType)
+        for (Type? cur = componentType; cur != null && cur != typeof(object); cur = cur.BaseType)
             if (_componentIcons.TryGetValue(cur, out var icon)) return icon;
         return EditorIcons.PuzzlePiece;
     }
 
     public static IThumbnailGenerator? GetThumbnailGenerator(Type type)
     {
-        if (_thumbnailGenerators.TryGetValue(type, out var gen)) return gen;
-        for (var t = type.BaseType; t != null && t != typeof(object); t = t.BaseType)
+        if (_thumbnailGenerators.TryGetValue(type, out IThumbnailGenerator? gen)) return gen;
+        for (Type? t = type.BaseType; t != null && t != typeof(object); t = t.BaseType)
             if (_thumbnailGenerators.TryGetValue(t, out gen)) return gen;
         return null;
     }
@@ -631,7 +631,7 @@ public static class EditorRegistries
         int bestDistance = int.MaxValue;
 
         // _dropHandlers is sorted by Order, so a strict improvement keeps the first of equal matches.
-        foreach (var entry in _dropHandlers)
+        foreach (DropHandlerEntry entry in _dropHandlers)
         {
             if (!entry.AssetType.IsAssignableFrom(assetType)) continue;
 
@@ -650,7 +650,7 @@ public static class EditorRegistries
     private static int InheritanceDistance(Type type, Type ancestor)
     {
         int steps = 0;
-        for (var t = type; t != null; t = t.BaseType, steps++)
+        for (Type? t = type; t != null; t = t.BaseType, steps++)
             if (t == ancestor) return steps;
 
         return ancestor.IsInterface ? int.MaxValue - 1 : int.MaxValue;
@@ -663,13 +663,13 @@ public static class EditorRegistries
     /// <summary> Returns the registered settings instance of the specified type. If the registry has not been initialized, triggers initialization. Falls back to a transient default with a warning if the type is not registered. </summary>
     public static T GetSettings<T>() where T : ProjectSettingsBase
     {
-        foreach (var entry in _settingsEntries)
+        foreach (SettingsEntry entry in _settingsEntries)
             if (entry.Instance is T t) return t;
 
         if (!_initialized)
         {
             Initialize();
-            foreach (var entry in _settingsEntries)
+            foreach (SettingsEntry entry in _settingsEntries)
                 if (entry.Instance is T t) return t;
         }
 
@@ -680,21 +680,21 @@ public static class EditorRegistries
     /// <summary> Saves all registered project settings entries to YAML files in the project settings directory. </summary>
     public static void SaveSettings()
     {
-        var project = Project.Current;
+        Project? project = Project.Current;
         if (project == null) return;
         Directory.CreateDirectory(project.ProjectSettingsPath);
-        foreach (var entry in _settingsEntries) SaveSettings(entry);
+        foreach (SettingsEntry entry in _settingsEntries) SaveSettings(entry);
     }
 
     /// <summary> Saves a single settings entry to a YAML file named after the entry in the project settings directory. </summary>
     public static void SaveSettings(SettingsEntry entry)
     {
-        var project = Project.Current;
+        Project? project = Project.Current;
         if (project == null) return;
         string path = Path.Combine(project.ProjectSettingsPath, $"{entry.Name}.yaml");
         try
         {
-            var echo = Prowl.Echo.Serializer.Serialize(entry.Instance, TypeMode.Auto);
+            EchoObject echo = Prowl.Echo.Serializer.Serialize(entry.Instance, TypeMode.Auto);
             File.WriteAllText(path, echo.WriteToYaml());
         }
         catch (Exception ex) { Debug.LogError($"Failed to save settings '{entry.Name}': {ex.Message}"); }
@@ -703,16 +703,16 @@ public static class EditorRegistries
     /// <summary> Resets all settings entries to their defaults and loads saved values from disk. Called when a project is opened. </summary>
     public static void OnProjectOpened()
     {
-        foreach (var entry in _settingsEntries)
+        foreach (SettingsEntry entry in _settingsEntries)
             entry.Instance.ResetToDefaults();
         LoadSettings();
     }
 
     private static void LoadSettings()
     {
-        var project = Project.Current;
+        Project? project = Project.Current;
         if (project == null) return;
-        foreach (var entry in _settingsEntries)
+        foreach (SettingsEntry entry in _settingsEntries)
         {
             string yamlPath = Path.Combine(project.ProjectSettingsPath, $"{entry.Name}.yaml");
             bool loaded = false;
@@ -737,10 +737,10 @@ public static class EditorRegistries
 
     internal static void CopySettingsFields(object source, object target)
     {
-        var type = source.GetType();
-        foreach (var field in type.GetFields(BindingFlags.Public | BindingFlags.Instance))
+        Type type = source.GetType();
+        foreach (FieldInfo field in type.GetFields(BindingFlags.Public | BindingFlags.Instance))
             field.SetValue(target, field.GetValue(source));
-        foreach (var prop in type.GetProperties(BindingFlags.Public | BindingFlags.Instance))
+        foreach (PropertyInfo prop in type.GetProperties(BindingFlags.Public | BindingFlags.Instance))
             if (prop.CanRead && prop.CanWrite)
                 prop.SetValue(target, prop.GetValue(source));
     }
@@ -808,7 +808,7 @@ public static class EditorRegistries
     public static bool DispatchDoubleClick(string relativePath, Guid guid)
     {
         string ext = Path.GetExtension(relativePath ?? "").ToLowerInvariant();
-        if (_doubleClickHandlers.TryGetValue(ext, out var handler))
+        if (_doubleClickHandlers.TryGetValue(ext, out AssetDoubleClickHandler? handler))
         {
             try { return handler(relativePath!, guid); }
             catch (Exception ex) { Debug.LogError($"EditorRegistries: double-click handler for {ext} threw: {ex.Message}"); }

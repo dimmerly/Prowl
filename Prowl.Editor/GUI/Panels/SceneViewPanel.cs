@@ -7,6 +7,7 @@ using Prowl.Editor.GUI;
 using Prowl.Editor.GUI.SceneView;
 using Prowl.Editor.Theming;
 using Prowl.OrigamiUI;
+using Prowl.OrigamiUI.Gizmo;
 using Prowl.PaperUI;
 using Prowl.PaperUI.LayoutEngine;
 using Prowl.Rosetta;
@@ -75,7 +76,7 @@ public class SceneViewPanel : DockPanel
 
     public override void OnGUI(Paper paper, float width, float height)
     {
-        var font = EditorTheme.DefaultFont;
+        Scribe.FontFile? font = EditorTheme.DefaultFont;
         if (font == null) return;
 
         if (_editorCamera == null)
@@ -122,7 +123,7 @@ public class SceneViewPanel : DockPanel
 
                 if (_editorCamera != null)
                 {
-                    var cam = _editorCamera;
+                    EditorCamera cam = _editorCamera;
                     b.Header(Loc.Get("scene.camera"));
                     b.Custom(p => DrawCameraSettings(p, cam));
                 }
@@ -155,7 +156,7 @@ public class SceneViewPanel : DockPanel
     // navigation controls own.
     private static void DrawCameraSettings(Paper paper, EditorCamera cam)
     {
-        var font = EditorTheme.DefaultFont;
+        Scribe.FontFile? font = EditorTheme.DefaultFont;
         if (font == null) return;
 
         CameraRow(paper, font, "sv_cam_proj", Loc.Get("scene.camera_orthographic"), () =>
@@ -212,7 +213,7 @@ public class SceneViewPanel : DockPanel
             if (!SceneToolManager.AnyOverridesToolStrip())
                 DrawDefaultToolbar(paper, font);
 
-            foreach (var tool in SceneToolManager.Live)
+            foreach (SceneTool tool in SceneToolManager.Live)
             {
                 _toolContext.CurrentTool = tool;
                 tool.OnToolStripGUI(_toolContext, paper, $"sv_tool_{tool.GetType().Name}");
@@ -276,8 +277,8 @@ public class SceneViewPanel : DockPanel
         uint rtHeight = (uint)MathF.Max(1, height);
         _editorCamera.EnsureRenderTarget(rtWidth, rtHeight);
 
-        var scene = Scene.Current;
-        var rt = _editorCamera.RenderTarget;
+        Scene scene = Scene.Current;
+        RenderTexture? rt = _editorCamera.RenderTarget;
 
         if (scene == null)
         {
@@ -321,7 +322,7 @@ public class SceneViewPanel : DockPanel
         {
             // Everything interactive in the viewport registers a control with the same context, so
             // the nearest one to the cursor wins rather than an editor claiming the whole frame.
-            var cam = _editorCamera.Camera;
+            Camera cam = _editorCamera.Camera;
             if (cam != null)
             {
                 // Both paper.PointerPos and _viewportAbsoluteRect are in Paper-logical space.
@@ -424,7 +425,7 @@ public class SceneViewPanel : DockPanel
                     // (by tools, by handles, and by the viewport itself).
                     paper.DrawForeground(ref handle, (canvas2, r2) =>
                     {
-                        foreach (var overlayTool in SceneToolManager.Live)
+                        foreach (SceneTool overlayTool in SceneToolManager.Live)
                         {
                             _toolContext.CurrentTool = overlayTool;
                             try { overlayTool.OnDrawOverlay(_toolContext, canvas2); }
@@ -450,15 +451,15 @@ public class SceneViewPanel : DockPanel
                 {
                     // Shared with HierarchyPanel so the viewport enforces the same prefab
                     // structural-child protection and undo registration as the Hierarchy's Delete.
-                    foreach (var go in HierarchyPanel.ExcludeNestedSelections(Selection.GetSelected<GameObject>().ToList()))
+                    foreach (GameObject go in HierarchyPanel.ExcludeNestedSelections(Selection.GetSelected<GameObject>().ToList()))
                         HierarchyPanel.DeleteGameObject(go);
                     Selection.Clear();
                     EditorSceneManager.MarkDirty();
                 }
                 else if (ShortcutManager.IsPressed("Scene/Duplicate"))
                 {
-                    var dupes = GameObjectClipboard.Duplicate(Selection.GetSelected<GameObject>().ToList());
-                    foreach (var d in dupes) Undo.RegisterCreatedObject(d, "Duplicate");
+                    List<GameObject> dupes = GameObjectClipboard.Duplicate(Selection.GetSelected<GameObject>().ToList());
+                    foreach (GameObject d in dupes) Undo.RegisterCreatedObject(d, "Duplicate");
                 }
                 else if (ShortcutManager.IsPressed("Scene/Copy"))
                 {
@@ -466,8 +467,8 @@ public class SceneViewPanel : DockPanel
                 }
                 else if (ShortcutManager.IsPressed("Scene/Paste"))
                 {
-                    var pasted = GameObjectClipboard.Paste();
-                    foreach (var p in pasted) Undo.RegisterCreatedObject(p, "Paste");
+                    List<GameObject> pasted = GameObjectClipboard.Paste();
+                    foreach (GameObject p in pasted) Undo.RegisterCreatedObject(p, "Paste");
                 }
 
                 // Gizmo tool switching
@@ -485,7 +486,7 @@ public class SceneViewPanel : DockPanel
             if (isHovered && DragDrop.IsDraggingType<AssetDragPayload>())
             {
                 var dragPayload = (AssetDragPayload)DragDrop.Payload!;
-                var handler = EditorRegistries.FindSceneDropHandler(dragPayload.AssetType);
+                ISceneDropHandler? handler = EditorRegistries.FindSceneDropHandler(dragPayload.AssetType);
 
                 if (handler != null)
                 {
@@ -506,7 +507,7 @@ public class SceneViewPanel : DockPanel
                 // The active tool sees the drop first, so a tool can accept assets its own way
                 // (a material onto a face, say) before the generic handlers spawn an object.
                 bool consumedByTool = false;
-                foreach (var dropTool in SceneToolManager.Live)
+                foreach (SceneTool dropTool in SceneToolManager.Live)
                 {
                     _toolContext.CurrentTool = dropTool;
                     if (!dropTool.OnAssetDropped(_toolContext, assetDrop)) continue;
@@ -519,7 +520,7 @@ public class SceneViewPanel : DockPanel
                     return;
                 }
 
-                var handler = EditorRegistries.FindSceneDropHandler(assetDrop.AssetType);
+                ISceneDropHandler? handler = EditorRegistries.FindSceneDropHandler(assetDrop.AssetType);
                 if (handler != null)
                 {
                     // Convert Paper-space pointer to viewport-local using the cached viewport
@@ -552,16 +553,16 @@ public class SceneViewPanel : DockPanel
 
     internal static GameObject? PickObjectAt(Scene scene, EditorCamera camera, Float2 screenPos, Float2 panelSize)
     {
-        var ray = camera.ScreenPointToRay(screenPos, panelSize);
+        Ray ray = camera.ScreenPointToRay(screenPos, panelSize);
 
         GameObject? bestHit = null;
         float bestDist = float.MaxValue;
 
-        foreach (var go in scene.ActiveObjects)
+        foreach (GameObject go in scene.ActiveObjects)
         {
             if (go.HideFlags.HasFlag(HideFlags.Hide)) continue;
 
-            var meshRenderer = go.GetComponent<MeshRenderer>();
+            MeshRenderer? meshRenderer = go.GetComponent<MeshRenderer>();
             if (meshRenderer != null && meshRenderer.EnabledInHierarchy && meshRenderer.Raycast(ray, out float dist))
             {
                 if (dist < bestDist) { bestDist = dist; bestHit = go; }
@@ -647,7 +648,7 @@ public class SceneViewPanel : DockPanel
         bool additive = _handles.Shift || _handles.Ctrl;
         if (!additive) Selection.Clear();
 
-        foreach (var go in scene.ActiveObjects)
+        foreach (GameObject go in scene.ActiveObjects)
         {
             if (go.HideFlags.HasFlag(HideFlags.Hide)) continue;
             if (!TryGetSelectionAnchor(go, out Float3 anchor)) continue;
@@ -665,7 +666,7 @@ public class SceneViewPanel : DockPanel
     /// <summary>The point a marquee tests against: renderer bounds centre, else the transform.</summary>
     private static bool TryGetSelectionAnchor(GameObject go, out Float3 anchor)
     {
-        var mr = go.GetComponent<MeshRenderer>();
+        MeshRenderer? mr = go.GetComponent<MeshRenderer>();
         if (mr != null && mr.EnabledInHierarchy && mr.Mesh != null)
         {
             AABB b = mr.Mesh.bounds;
@@ -673,7 +674,7 @@ public class SceneViewPanel : DockPanel
             return true;
         }
 
-        var smr = go.GetComponent<SkinnedMeshRenderer>();
+        SkinnedMeshRenderer? smr = go.GetComponent<SkinnedMeshRenderer>();
         if (smr != null && smr.EnabledInHierarchy && smr.SharedMesh != null)
         {
             AABB b = smr.SharedMesh.bounds;
@@ -688,7 +689,7 @@ public class SceneViewPanel : DockPanel
 
     private void PickObject(Scene scene, Float2 screenPos, Float2 panelSize)
     {
-        var bestHit = PickObjectAt(scene, _editorCamera!, screenPos, panelSize);
+        GameObject? bestHit = PickObjectAt(scene, _editorCamera!, screenPos, panelSize);
 
         if (bestHit != null)
         {
@@ -709,7 +710,7 @@ public class SceneViewPanel : DockPanel
     public override bool SerializeState(System.Text.Json.Nodes.JsonObject state)
     {
         if (_editorCamera == null) return false;
-        var p = _editorCamera.Position;
+        Float3 p = _editorCamera.Position;
         state["px"] = p.X; state["py"] = p.Y; state["pz"] = p.Z;
         state["yaw"] = _editorCamera.Yaw;
         state["pitch"] = _editorCamera.Pitch;
@@ -755,18 +756,18 @@ public class SceneViewPanel : DockPanel
     /// </summary>
     internal static Float3 GetDropPosition(Scene scene, EditorCamera camera, Float2 screenPos, Float2 panelSize)
     {
-        var ray = camera.ScreenPointToRay(screenPos, panelSize);
+        Ray ray = camera.ScreenPointToRay(screenPos, panelSize);
 
         // Try raycasting against scene objects first
         float bestDist = float.MaxValue;
         Float3 bestPos = Float3.Zero;
         bool hit = false;
 
-        foreach (var go in scene.ActiveObjects)
+        foreach (GameObject go in scene.ActiveObjects)
         {
             if (go.HideFlags.HasFlag(HideFlags.Hide)) continue;
 
-            var meshRenderer = go.GetComponent<MeshRenderer>();
+            MeshRenderer? meshRenderer = go.GetComponent<MeshRenderer>();
             if (meshRenderer != null && meshRenderer.Raycast(ray, out float dist))
             {
                 if (dist < bestDist)
@@ -842,17 +843,17 @@ public class SceneViewPanel : DockPanel
     private static void CollectRendererBounds(GameObject go, ref Float3 min, ref Float3 max, ref bool found)
     {
         // Check MeshRenderer
-        var mr = go.GetComponent<MeshRenderer>();
+        MeshRenderer? mr = go.GetComponent<MeshRenderer>();
         if (mr != null && mr.Mesh != null)
             ExpandBounds(mr.Mesh.bounds, go.Transform.LocalToWorldMatrix, ref min, ref max, ref found);
 
         // Check SkinnedMeshRenderer
-        var smr = go.GetComponent<SkinnedMeshRenderer>();
+        SkinnedMeshRenderer? smr = go.GetComponent<SkinnedMeshRenderer>();
         if (smr != null && smr.SharedMesh != null)
             ExpandBounds(smr.SharedMesh.bounds, go.Transform.LocalToWorldMatrix, ref min, ref max, ref found);
 
         // Recurse into children
-        foreach (var child in go.Children)
+        foreach (GameObject child in go.Children)
             CollectRendererBounds(child, ref min, ref max, ref found);
     }
 
@@ -910,12 +911,12 @@ public class SceneViewPanel : DockPanel
 
         // Only show gizmo when GameObjects are selected
         IEnumerable<GameObject> selectedObjects = _gizmoSelection ?? Selection.GetSelected<GameObject>();
-        var selectedGOs = selectedObjects.GetEnumerator();
+        IEnumerator<GameObject> selectedGOs = selectedObjects.GetEnumerator();
         if (!selectedGOs.MoveNext()) return;
 
         _gizmoActive = true;
 
-        var firstGO = selectedGOs.Current;
+        GameObject firstGO = selectedGOs.Current;
         if (firstGO == null) return;
 
         // Create gizmo if needed
@@ -932,7 +933,7 @@ public class SceneViewPanel : DockPanel
         {
             center = Float3.Zero;
             int count = 0;
-            foreach (var go in selectedObjects)
+            foreach (GameObject go in selectedObjects)
             {
                 center += go.Transform.Position;
                 count++;
@@ -950,8 +951,8 @@ public class SceneViewPanel : DockPanel
             : Gizmo.TransformGizmo.GizmoOrientation.Global;
 
         // Update gizmo use absolute screen rect so coordinates match DrawForeground
-        var cam = _editorCamera.Camera;
-        var camGo = cam.GameObject;
+        Camera cam = _editorCamera.Camera;
+        GameObject camGo = cam.GameObject;
 
         _transformGizmo.UpdateCamera(_handles.Viewport, cam.ViewMatrix, cam.ProjectionMatrix,
             camGo.Transform.Up, camGo.Transform.Forward, camGo.Transform.Right, camGo.Transform.Position);
@@ -969,7 +970,7 @@ public class SceneViewPanel : DockPanel
         _transformGizmo.IsMouseDown = _handles.TryBeginDrag(control);
         _transformGizmo.IsMouseUp = _handles.PrimaryUp;
 
-        var result = _transformGizmo.Update(_handles.MouseRay, _handles.MousePosition, _handles.Blocked);
+        GizmoResult? result = _transformGizmo.Update(_handles.MouseRay, _handles.MousePosition, _handles.Blocked);
 
         // IsOver is fresh from the Update above. Guarded on Blocked because the gizmo only clears its
         // hover inside the un-blocked branch, so a blocked frame would leave IsOver latched on.
@@ -998,7 +999,7 @@ public class SceneViewPanel : DockPanel
 
         if (result.HasValue && dragging && _gizmoTargets is { } targets)
         {
-            var r = result.Value;
+            GizmoResult r = result.Value;
 
             // Decide once, on the first actual transform change. Clicking a handle creates no copy.
             bool changed = (r.TranslationDelta is { } move && !move.Equals(Float3.Zero)) ||
@@ -1010,7 +1011,7 @@ public class SceneViewPanel : DockPanel
                 if (_handles.Shift)
                 {
                     Undo.EndContinuous();
-                    var copies = GameObjectClipboard.Duplicate(targets);
+                    List<GameObject> copies = GameObjectClipboard.Duplicate(targets);
                     if (copies.Count > 0)
                     {
                         // Keep selected descendants represented in the copied pivot selection.
@@ -1026,7 +1027,7 @@ public class SceneViewPanel : DockPanel
                         {
                             _gizmoSelection = selection.Select(FindCopy).ToArray();
                             Selection.Clear();
-                            foreach (var go in _gizmoSelection) Selection.AddToSelection(go);
+                            foreach (GameObject go in _gizmoSelection) Selection.AddToSelection(go);
                         }
                         _gizmoTargets = targets = copies.ToArray();
                         _gizmoDuplicated = true;
@@ -1039,7 +1040,7 @@ public class SceneViewPanel : DockPanel
 
             if (r.TranslationDelta is { } delta)
             {
-                foreach (var go in targets)
+                foreach (GameObject go in targets)
                     if (go.IsValid()) go.Transform.Position += delta;
             }
 
@@ -1047,14 +1048,14 @@ public class SceneViewPanel : DockPanel
             if (r.RotationDelta.HasValue && r.RotationAxis.HasValue)
             {
                 var rotDelta = Quaternion.AxisAngle(r.RotationAxis.Value, r.RotationDelta.Value);
-                foreach (var go in targets)
+                foreach (GameObject go in targets)
                     go.Transform.Rotation = rotDelta * go.Transform.Rotation;
             }
 
             // Apply scale
             if (r.ScaleDelta.HasValue)
             {
-                foreach (var go in targets)
+                foreach (GameObject go in targets)
                     go.Transform.LocalScale *= r.ScaleDelta.Value;
             }
 
@@ -1131,7 +1132,7 @@ public class SceneViewPanel : DockPanel
                 bool clicked = Input.GetMouseButtonDown(0);
                 Float2 mousePos = paper.PointerPos;
 
-                bool axisPicked = _viewManipulator.Update(canvas, mousePos, clicked && mayClick, !mayClick, out var newForward);
+                bool axisPicked = _viewManipulator.Update(canvas, mousePos, clicked && mayClick, !mayClick, out Float3 newForward);
 
                 // Clicking the widget itself rather than one of its axes swaps the projection, which
                 // is the other thing an orientation gizmo is conventionally good for.

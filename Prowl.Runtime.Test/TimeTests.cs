@@ -22,8 +22,8 @@ public class TimeTests
     public void NestedFreezes_EndingOutOfOrder_RestoreNormalTime()
     {
         var time = new TimeData();
-        var first = time.AddModifier(0f);
-        var second = time.AddModifier(0f);
+        TimeScaleModifier first = time.AddModifier(0f);
+        TimeScaleModifier second = time.AddModifier(0f);
 
         first.Remove();
         Assert.Equal(0f, time.EffectiveTimeScale);
@@ -36,7 +36,7 @@ public class TimeTests
     public void Remove_Twice_DoesNothing()
     {
         var time = new TimeData();
-        var modifier = time.AddModifier(0.5f);
+        TimeScaleModifier modifier = time.AddModifier(0.5f);
         time.AddModifier(0.5f);
 
         modifier.Remove();

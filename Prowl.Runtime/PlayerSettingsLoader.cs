@@ -4,6 +4,7 @@ using System.IO;
 
 using Prowl.Echo;
 using Prowl.Runtime.Audio;
+using Prowl.Runtime.Resources;
 
 namespace Prowl.Runtime;
 
@@ -52,14 +53,14 @@ public static class PlayerSettingsLoader
     /// <summary>How long unused assets stay loaded, and how much memory they may use.</summary>
     private static void ApplyAssetConfig(string dir)
     {
-        var settings = Read(dir, PlayerSettingsFiles.Assets);
+        EchoObject? settings = Read(dir, PlayerSettingsFiles.Assets);
         if (settings == null) return;
 
         try
         {
-            if (settings.TryGet("GracePeriodSeconds", out var grace))
+            if (settings.TryGet("GracePeriodSeconds", out EchoObject? grace))
                 AssetDatabase.GracePeriod = TimeSpan.FromSeconds(grace!.FloatValue);
-            if (settings.TryGet("MemoryBudgetMB", out var budget))
+            if (settings.TryGet("MemoryBudgetMB", out EchoObject? budget))
                 AssetDatabase.MemoryBudget = (long)budget!.IntValue * 1024 * 1024;
         }
         catch (Exception ex) { Debug.LogWarning($"[PlayerSettings] Failed to apply asset config: {ex.Message}"); }
@@ -67,30 +68,30 @@ public static class PlayerSettingsLoader
 
     private static void ApplyPhysics(string dir)
     {
-        var settings = Read(dir, PlayerSettingsFiles.Physics);
+        EchoObject? settings = Read(dir, PlayerSettingsFiles.Physics);
         if (settings == null) return;
 
         try
         {
-            float gx = settings.TryGet("GravityX", out var gxp) ? gxp!.FloatValue : 0;
-            float gy = settings.TryGet("GravityY", out var gyp) ? gyp!.FloatValue : -9.81f;
-            float gz = settings.TryGet("GravityZ", out var gzp) ? gzp!.FloatValue : 0;
-            int solverIter = settings.TryGet("SolverIterations", out var si) ? si!.IntValue : 12;
-            int relaxIter = settings.TryGet("RelaxIterations", out var ri) ? ri!.IntValue : 4;
-            int subSteps = settings.TryGet("SubSteps", out var ss) ? ss!.IntValue : 3;
-            bool sleep = !settings.TryGet("AllowSleep", out var sl) || sl!.BoolValue;
-            bool mt = !settings.TryGet("UseMultithreading", out var mtp) || mtp!.BoolValue;
-            bool sync = !settings.TryGet("AutoSyncTransforms", out var st) || st!.BoolValue;
+            float gx = settings.TryGet("GravityX", out EchoObject? gxp) ? gxp!.FloatValue : 0;
+            float gy = settings.TryGet("GravityY", out EchoObject? gyp) ? gyp!.FloatValue : -9.81f;
+            float gz = settings.TryGet("GravityZ", out EchoObject? gzp) ? gzp!.FloatValue : 0;
+            int solverIter = settings.TryGet("SolverIterations", out EchoObject? si) ? si!.IntValue : 12;
+            int relaxIter = settings.TryGet("RelaxIterations", out EchoObject? ri) ? ri!.IntValue : 4;
+            int subSteps = settings.TryGet("SubSteps", out EchoObject? ss) ? ss!.IntValue : 3;
+            bool sleep = !settings.TryGet("AllowSleep", out EchoObject? sl) || sl!.BoolValue;
+            bool mt = !settings.TryGet("UseMultithreading", out EchoObject? mtp) || mtp!.BoolValue;
+            bool sync = !settings.TryGet("AutoSyncTransforms", out EchoObject? st) || st!.BoolValue;
 
             // Advanced settings
-            bool determ = settings.TryGet("EnhancedDeterminism", out var dt) && dt!.BoolValue;
-            bool persistThreads = settings.TryGet("ThreadModel", out var tmp)
+            bool determ = settings.TryGet("EnhancedDeterminism", out EchoObject? dt) && dt!.BoolValue;
+            bool persistThreads = settings.TryGet("ThreadModel", out EchoObject? tmp)
                 && tmp!.IntValue == (int)PhysicsThreadModel.Persistent;
-            bool auxcp = !settings.TryGet("EnableAuxiliaryContactPoints", out var ax) || ax!.BoolValue;
-            bool persistManifold = !settings.TryGet("PersistentContactManifold", out var pm) || pm!.BoolValue;
-            float specRelax = settings.TryGet("SpeculativeRelaxationFactor", out var sr) ? sr!.FloatValue : 0.9f;
+            bool auxcp = !settings.TryGet("EnableAuxiliaryContactPoints", out EchoObject? ax) || ax!.BoolValue;
+            bool persistManifold = !settings.TryGet("PersistentContactManifold", out EchoObject? pm) || pm!.BoolValue;
+            float specRelax = settings.TryGet("SpeculativeRelaxationFactor", out EchoObject? sr) ? sr!.FloatValue : 0.9f;
 
-            var scene = Resources.Scene.Current;
+            Scene scene = Resources.Scene.Current;
             if (scene != null)
             {
                 scene.Physics.Gravity = new Vector.Float3(gx, gy, gz);
@@ -108,12 +109,12 @@ public static class PlayerSettingsLoader
             }
 
             // Collision matrix (uint[] serializes as a compound holding an "array" list)
-            if (settings.TryGet("CollisionMatrixRows", out var cmProp) && cmProp!.TryGet("array", out var rows)
+            if (settings.TryGet("CollisionMatrixRows", out EchoObject? cmProp) && cmProp!.TryGet("array", out EchoObject? rows)
                 && rows!.TagType == EchoType.List)
             {
                 var packed = new uint[CollisionMatrix.LayerCount];
                 int i = 0;
-                foreach (var row in rows.List)
+                foreach (EchoObject row in rows.List)
                 {
                     if (i >= packed.Length) break;
                     packed[i++] = row.UIntValue;
@@ -129,19 +130,19 @@ public static class PlayerSettingsLoader
 
     private static void ApplyAudio(string dir)
     {
-        var settings = Read(dir, PlayerSettingsFiles.Audio);
+        EchoObject? settings = Read(dir, PlayerSettingsFiles.Audio);
         if (settings == null) return;
 
         try
         {
-            float vol = settings.TryGet("GlobalVolume", out var v) ? v!.FloatValue : 1f;
+            float vol = settings.TryGet("GlobalVolume", out EchoObject? v) ? v!.FloatValue : 1f;
             AudioContext.MasterVolume = vol;
 
             // Reopens the device only if the project asked for a format other than the one the game
             // loop opened it with.
-            int rate = settings.TryGet("SampleRate", out var r) ? r!.IntValue : AudioContext.SampleRate;
-            int channels = settings.TryGet("Channels", out var c) ? c!.IntValue : AudioContext.Channels;
-            int buffer = settings.TryGet("BufferSize", out var b) ? b!.IntValue : AudioContext.PeriodSizeInFrames;
+            int rate = settings.TryGet("SampleRate", out EchoObject? r) ? r!.IntValue : AudioContext.SampleRate;
+            int channels = settings.TryGet("Channels", out EchoObject? c) ? c!.IntValue : AudioContext.Channels;
+            int buffer = settings.TryGet("BufferSize", out EchoObject? b) ? b!.IntValue : AudioContext.PeriodSizeInFrames;
 
             if (rate > 0 && channels > 0 && buffer > 0)
                 AudioContext.Restart((uint)rate, (uint)channels, (uint)buffer);
@@ -154,14 +155,14 @@ public static class PlayerSettingsLoader
     /// <summary>Sets the XR render scale and starts XR when the project asks a built player to, which needs the window up.</summary>
     private static void ApplyXR(string dir)
     {
-        var settings = Read(dir, PlayerSettingsFiles.XR);
+        EchoObject? settings = Read(dir, PlayerSettingsFiles.XR);
         if (settings == null) return;
 
         try
         {
-            if (settings.TryGet("RenderScale", out var scale)) XR.RenderScale = scale!.FloatValue;
-            bool start = settings.TryGet("StartInPlayer", out var sp) && sp!.BoolValue;
-            var origin = settings.TryGet("TrackingOrigin", out var to) ? (XRTrackingOrigin)to!.LongValue : XRTrackingOrigin.Floor;
+            if (settings.TryGet("RenderScale", out EchoObject? scale)) XR.RenderScale = scale!.FloatValue;
+            bool start = settings.TryGet("StartInPlayer", out EchoObject? sp) && sp!.BoolValue;
+            XRTrackingOrigin origin = settings.TryGet("TrackingOrigin", out EchoObject? to) ? (XRTrackingOrigin)to!.LongValue : XRTrackingOrigin.Floor;
             if (start) XR.Start(origin);
         }
         catch (Exception ex) { Debug.LogWarning($"[PlayerSettings] Failed to apply XR: {ex.Message}"); }
@@ -169,14 +170,14 @@ public static class PlayerSettingsLoader
 
     private static void ApplyTime(string dir)
     {
-        var settings = Read(dir, PlayerSettingsFiles.Time);
+        EchoObject? settings = Read(dir, PlayerSettingsFiles.Time);
         if (settings == null) return;
 
         try
         {
-            float fixedDt = settings.TryGet("FixedTimestep", out var ft) ? ft!.FloatValue : 1f / 60f;
-            float timeScale = settings.TryGet("DefaultTimeScale", out var ts) ? ts!.FloatValue : 1f;
-            int maxIter = settings.TryGet("MaxFixedIterations", out var mi) ? mi!.IntValue : 3;
+            float fixedDt = settings.TryGet("FixedTimestep", out EchoObject? ft) ? ft!.FloatValue : 1f / 60f;
+            float timeScale = settings.TryGet("DefaultTimeScale", out EchoObject? ts) ? ts!.FloatValue : 1f;
+            int maxIter = settings.TryGet("MaxFixedIterations", out EchoObject? mi) ? mi!.IntValue : 3;
 
             Time.FixedDeltaTime = fixedDt;
             Time.TimeScale = timeScale;
@@ -188,15 +189,15 @@ public static class PlayerSettingsLoader
 
     private static void ApplyTagsAndLayers(string dir)
     {
-        var settings = Read(dir, PlayerSettingsFiles.TagsAndLayers);
+        EchoObject? settings = Read(dir, PlayerSettingsFiles.TagsAndLayers);
         if (settings == null) return;
 
         try
         {
-            if (settings.TryGet("Tags", out var tagsProp) && Serializer.Deserialize<List<string>>(tagsProp) is { Count: > 0 } tags)
+            if (settings.TryGet("Tags", out EchoObject? tagsProp) && Serializer.Deserialize<List<string>>(tagsProp) is { Count: > 0 } tags)
                 TagLayerManager.tags = tags;
 
-            if (settings.TryGet("Layers", out var layersProp) && Serializer.Deserialize<string[]>(layersProp) is { } layers)
+            if (settings.TryGet("Layers", out EchoObject? layersProp) && Serializer.Deserialize<string[]>(layersProp) is { } layers)
                 Array.Copy(layers, TagLayerManager.layers, Math.Min(layers.Length, TagLayerManager.layers.Length));
 
             Debug.Log("[PlayerSettings] Tags & Layers applied.");
@@ -207,27 +208,27 @@ public static class PlayerSettingsLoader
     /// <summary>The navigation tables and world settings, which a navmesh world reads as its surfaces and agents register.</summary>
     private static void ApplyNavigation(string dir)
     {
-        var settings = Read(dir, PlayerSettingsFiles.Navigation);
+        EchoObject? settings = Read(dir, PlayerSettingsFiles.Navigation);
         if (settings == null) return;
 
         try
         {
-            List<string>? names = settings.TryGet("AreaNames", out var namesProp) ? Serializer.Deserialize<List<string>>(namesProp) : null;
-            List<float>? costs = settings.TryGet("AreaCosts", out var costsProp) ? Serializer.Deserialize<List<float>>(costsProp) : null;
+            List<string>? names = settings.TryGet("AreaNames", out EchoObject? namesProp) ? Serializer.Deserialize<List<string>>(namesProp) : null;
+            List<float>? costs = settings.TryGet("AreaCosts", out EchoObject? costsProp) ? Serializer.Deserialize<List<float>>(costsProp) : null;
             if (names?.Count > 0 || costs?.Count > 0)
             {
                 NavMeshAreas.ApplyTable(names ?? [], costs ?? []);
                 Debug.Log("[PlayerSettings] Navigation areas applied.");
             }
 
-            if (settings.TryGet("AgentTypes", out var typesProp)
+            if (settings.TryGet("AgentTypes", out EchoObject? typesProp)
                 && Serializer.Deserialize<List<NavMeshAgentType>>(typesProp) is { Count: > 0 } types)
             {
                 NavMeshAgentTypes.ApplyTable(types);
                 Debug.Log($"[PlayerSettings] Navigation agent types applied ({types.Count}).");
             }
 
-            if (settings.TryGet("World", out var worldProp)
+            if (settings.TryGet("World", out EchoObject? worldProp)
                 && Serializer.Deserialize<NavMeshWorldSettings>(worldProp) is { } world)
                 NavMeshWorld.ApplyProjectSettings(world);
         }

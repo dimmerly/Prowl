@@ -41,10 +41,10 @@ public static class CliRefs
         text = text.Trim();
         if (text.Length == 0) throw new CliException("Empty ref.");
 
-        var suffix = s_componentSuffix.Match(text);
+        Match suffix = s_componentSuffix.Match(text);
         if (suffix.Success && LooksLikeSceneRef(text[..suffix.Index]))
         {
-            var go = ResolveGameObject(text[..suffix.Index]);
+            GameObject go = ResolveGameObject(text[..suffix.Index]);
             int index = suffix.Groups["index"].Success ? int.Parse(suffix.Groups["index"].Value) : 0;
             return Component(go, suffix.Groups["type"].Value, index);
         }
@@ -61,7 +61,7 @@ public static class CliRefs
         if (Guid.TryParse(guidText, out Guid guid))
         {
             if (FindInScene(guid) is { } sceneObject) return sceneObject;
-            var asset = LoadAsset(guid);
+            Asset? asset = LoadAsset(guid);
             return asset.IsValid() ? asset : throw new CliException($"Nothing in the scene or the asset database has id {guid}.");
         }
 
@@ -71,7 +71,7 @@ public static class CliRefs
     private static EngineObject? FindInScene(Guid id)
     {
         if (Scene.Current.IsNotValid()) return null;
-        var found = Scene.Current.FindObjectByIdentifier<EngineObject>(id);
+        EngineObject? found = Scene.Current.FindObjectByIdentifier<EngineObject>(id);
         return found.IsValid() ? found : null;
     }
 
@@ -109,7 +109,7 @@ public static class CliRefs
         {
             string name = segment;
             int? index = null;
-            var indexed = s_indexedName.Match(segment);
+            Match indexed = s_indexedName.Match(segment);
             if (indexed.Success)
             {
                 name = indexed.Groups["name"].Value;
@@ -211,10 +211,10 @@ public static class CliRefs
             path = path[..hash];
         }
 
-        var entry = Assets.GetEntry(path) ?? throw new CliException($"No asset at '{path}'. Paths are relative to the Assets folder.");
+        AssetEntry entry = Assets.GetEntry(path) ?? throw new CliException($"No asset at '{path}'. Paths are relative to the Assets folder.");
         if (subName == null) return entry.Guid;
 
-        var sub = entry.SubAssets.FirstOrDefault(s => s.Name == subName)
+        SubAssetEntry sub = entry.SubAssets.FirstOrDefault(s => s.Name == subName)
             ?? throw new CliException($"'{path}' has no sub asset '{subName}'. It has: {string.Join(", ", entry.SubAssets.Select(s => s.Name))}.");
         return sub.Guid;
     }
@@ -222,7 +222,7 @@ public static class CliRefs
     public static Asset ResolveAsset(string text)
     {
         Guid guid = ResolveAssetGuid(text);
-        var asset = LoadAsset(guid);
+        Asset? asset = LoadAsset(guid);
         return asset.IsValid() ? asset : throw new CliException($"Asset {guid} could not be loaded.");
     }
 
@@ -235,7 +235,7 @@ public static class CliRefs
     public static string PathOf(GameObject go)
     {
         var names = new List<string>();
-        for (var current = go; current != null; current = current.Parent)
+        for (GameObject? current = go; current != null; current = current.Parent)
         {
             IEnumerable<GameObject> siblings = current.Parent.IsValid() ? current.Parent.Children
                 : current.Scene.IsValid() ? current.Scene.RootObjects : [current];
@@ -272,7 +272,7 @@ public static class CliRefs
         string? path = EditorAssetBackend.Instance?.GuidToPath(guid);
         if (path == null && EditorAssetBackend.Instance?.TryGetParentGuid(guid, out Guid parent) == true)
         {
-            var sub = Assets.GetSubAssets(parent).FirstOrDefault(s => s.Guid == guid);
+            SubAssetEntry? sub = Assets.GetSubAssets(parent).FirstOrDefault(s => s.Guid == guid);
             path = $"{Assets.GuidToPath(parent)}#{sub?.Name}";
         }
         return new JsonObject { ["guid"] = guid.ToString(), ["path"] = path, ["type"] = type?.Name };
@@ -287,7 +287,7 @@ public static class CliRefs
     {
         EchoObject root = Serialize(target);
         EchoObject node = Navigate(root, ParsePath(path), path);
-        var json = EchoToJson(node);
+        JsonNode? json = EchoToJson(node);
         if (path.Length == 0 && json is JsonObject fields)
             foreach (string hidden in s_hiddenFields) fields.Remove(hidden);
         return json;
@@ -312,7 +312,7 @@ public static class CliRefs
             });
 
         var result = new JsonObject();
-        foreach (var (path, _) in values) result[path] = GetFields(target, path);
+        foreach ((string? path, string _) in values) result[path] = GetFields(target, path);
         return result;
     }
 
@@ -329,9 +329,9 @@ public static class CliRefs
 
         EchoObject root = Serialize(target);
         var topFields = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-        foreach (var (path, json) in values)
+        foreach ((string? path, string? json) in values)
         {
-            var segments = ParsePath(path);
+            List<Segment> segments = ParsePath(path);
             if (segments.Count == 0) throw new CliException("Give a field path, for example speed or settings.radius.");
             if (KeyFor(Unwrap(root), segments[0].Name) == null)
                 throw new CliException($"{target.GetType().Name} has no field '{segments[0].Name}'. Fields: {string.Join(", ", FieldNames(Unwrap(root)).Where(f => !s_hiddenFields.Contains(f)))}.");
@@ -358,7 +358,7 @@ public static class CliRefs
 
         foreach (string topField in topFields)
         {
-            var field = FindField(type, topField) ?? throw new CliException($"{type.Name} has no field '{topField}'.");
+            FieldInfo field = FindField(type, topField) ?? throw new CliException($"{type.Name} has no field '{topField}'.");
             field.SetValue(target, field.GetValue(temp));
         }
 
@@ -372,7 +372,7 @@ public static class CliRefs
 
     private static EchoObject Serialize(object target)
     {
-        var context = target is EngineObject and not Asset
+        SerializationContext context = target is EngineObject and not Asset
             ? new SerializationContext { ExternalReferences = new SceneReferenceResolver(target) }
             : new SerializationContext();
         return Serializer.Serialize(target.GetType(), target, context);
@@ -385,7 +385,7 @@ public static class CliRefs
         var segments = new List<Segment>();
         foreach (string part in path.Split('.', StringSplitOptions.RemoveEmptyEntries))
         {
-            var match = Regex.Match(part, @"^(?<name>[^\[]+)(?<indices>(\[\d+\])*)$");
+            Match match = Regex.Match(part, @"^(?<name>[^\[]+)(?<indices>(\[\d+\])*)$");
             if (!match.Success) throw new CliException($"Bad field path '{path}'.");
             var indices = Regex.Matches(match.Groups["indices"].Value, @"\d+").Select(m => int.Parse(m.Value)).ToList();
             segments.Add(new Segment(match.Groups["name"].Value, indices.Count > 0 ? indices[0] : null));
@@ -398,9 +398,9 @@ public static class CliRefs
     {
         while (node.TagType == EchoType.Compound)
         {
-            if (node.TryGet("$value", out var value) && node.Contains("$type")) node = value!;
-            else if (node.TryGet("$v", out var compact) && node.Contains("$t")) node = compact!;
-            else if (node.TryGet("$values", out var values)) node = values!;
+            if (node.TryGet("$value", out EchoObject? value) && node.Contains("$type")) node = value!;
+            else if (node.TryGet("$v", out EchoObject? compact) && node.Contains("$t")) node = compact!;
+            else if (node.TryGet("$values", out EchoObject? values)) node = values!;
             else break;
         }
         return node;
@@ -409,7 +409,7 @@ public static class CliRefs
     private static EchoObject Navigate(EchoObject root, List<Segment> segments, string path)
     {
         EchoObject node = root;
-        foreach (var segment in segments)
+        foreach (Segment segment in segments)
         {
             node = Unwrap(node);
             if (segment.Name.Length > 0) node = Child(node, segment.Name, path);
@@ -421,12 +421,12 @@ public static class CliRefs
     private static void Replace(EchoObject root, List<Segment> segments, EchoObject value, string path)
     {
         EchoObject parent = Navigate(root, segments.Take(segments.Count - 1).ToList(), path);
-        var last = segments[^1];
+        Segment last = segments[^1];
         parent = Unwrap(parent);
 
         if (last.Index is { } index)
         {
-            var list = Unwrap(last.Name.Length > 0 ? Child(parent, last.Name, path) : parent);
+            EchoObject list = Unwrap(last.Name.Length > 0 ? Child(parent, last.Name, path) : parent);
             Element(list, index, path);
             list.List[index] = value;
         }
@@ -462,7 +462,7 @@ public static class CliRefs
         const BindingFlags flags = BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.DeclaredOnly;
         for (Type? t = type; t != null && t != typeof(object); t = t.BaseType)
         {
-            var field = t.GetField(name, flags) ?? t.GetFields(flags).FirstOrDefault(f => f.Name.Equals(name, StringComparison.OrdinalIgnoreCase));
+            FieldInfo? field = t.GetField(name, flags) ?? t.GetFields(flags).FirstOrDefault(f => f.Name.Equals(name, StringComparison.OrdinalIgnoreCase));
             if (field != null) return field;
         }
         return null;
@@ -473,12 +473,12 @@ public static class CliRefs
     {
         Type type = target.GetType();
         object? value = target;
-        foreach (var segment in segments)
+        foreach (Segment segment in segments)
         {
             if (segment.Name.Length > 0)
             {
                 Type owner = value?.GetType() ?? type;
-                var field = FindField(owner, segment.Name) ?? throw new CliException($"{owner.Name} has no field '{segment.Name}' ({path}).");
+                FieldInfo field = FindField(owner, segment.Name) ?? throw new CliException($"{owner.Name} has no field '{segment.Name}' ({path}).");
                 type = field.FieldType;
                 value = value != null ? field.GetValue(value) : null;
             }
@@ -535,7 +535,7 @@ public static class CliRefs
             node = JsonValue.Create(json);
         }
 
-        if (node is JsonObject { Count: 1 } refObject && refObject.TryGetPropertyValue("ref", out var refValue) && refValue is JsonValue)
+        if (node is JsonObject { Count: 1 } refObject && refObject.TryGetPropertyValue("ref", out JsonNode? refValue) && refValue is JsonValue)
             node = refValue;
 
         if (node is JsonValue v && v.TryGetValue(out string? text))
@@ -601,7 +601,7 @@ public static class CliRefs
 
         if (typeof(Asset).IsAssignableFrom(type))
         {
-            var asset = ResolveAsset(text);
+            Asset asset = ResolveAsset(text);
             return type.IsInstanceOfType(asset) ? asset : throw new CliException($"'{text}' is a {asset.GetType().Name}, the field wants a {type.Name}.");
         }
 
@@ -632,18 +632,18 @@ public static class CliRefs
             case EchoType.Null: return null;
             case EchoType.List:
                 var array = new JsonArray();
-                foreach (var item in node.List) array.Add(EchoToJson(item));
+                foreach (EchoObject item in node.List) array.Add(EchoToJson(item));
                 return array;
             case EchoType.Compound:
-                if (node.TryGet("$v", out var compact) && node.Contains("$t")) return EchoToJson(compact!);
-                if (node.TryGet("$value", out var wrapped) && node.Contains("$type")) return EchoToJson(wrapped!);
-                if (node.TryGet("$values", out var items)) return EchoToJson(items!);
-                if (node.TryGet("$extern", out var key)) return SceneLink(key!);
-                if (node.TryGet("$asset", out var asset) && Guid.TryParse(asset!.StringValue, out Guid assetId)) return AssetLink(assetId);
-                if (node.TryGet("$assetRef", out var assetRef) && Guid.TryParse(assetRef!.StringValue, out Guid refId)) return assetRef.StringValue == Guid.Empty.ToString() ? null : AssetLink(refId);
+                if (node.TryGet("$v", out EchoObject? compact) && node.Contains("$t")) return EchoToJson(compact!);
+                if (node.TryGet("$value", out EchoObject? wrapped) && node.Contains("$type")) return EchoToJson(wrapped!);
+                if (node.TryGet("$values", out EchoObject? items)) return EchoToJson(items!);
+                if (node.TryGet("$extern", out EchoObject? key)) return SceneLink(key!);
+                if (node.TryGet("$asset", out EchoObject? asset) && Guid.TryParse(asset!.StringValue, out Guid assetId)) return AssetLink(assetId);
+                if (node.TryGet("$assetRef", out EchoObject? assetRef) && Guid.TryParse(assetRef!.StringValue, out Guid refId)) return assetRef.StringValue == Guid.Empty.ToString() ? null : AssetLink(refId);
 
                 var obj = new JsonObject();
-                foreach (var (name, child) in node.Tags)
+                foreach ((string? name, EchoObject? child) in node.Tags)
                 {
                     if (name == "$id") continue;
                     obj[name == "$type" ? "$type" : name] = name == "$type" ? ShortTypeName(child.StringValue) : EchoToJson(child);
@@ -667,7 +667,7 @@ public static class CliRefs
 
     private static JsonNode AssetLink(Guid id)
     {
-        var summary = AssetSummary(id, AssetDatabase.GetAssetType(id));
+        JsonObject summary = AssetSummary(id, AssetDatabase.GetAssetType(id));
         return new JsonObject { ["ref"] = summary["path"]?.GetValue<string>() ?? "#" + id, ["guid"] = id.ToString(), ["type"] = summary["type"]?.DeepClone() };
     }
 
@@ -732,7 +732,7 @@ public static class CliEdit
     /// </summary>
     public static void EditAsset(Asset asset, string description, Action change)
     {
-        var assets = CliRefs.Assets;
+        EditorAssetBackend assets = CliRefs.Assets;
         Guid ownerId = assets.TryGetParentGuid(asset.AssetID, out Guid parent) ? parent : asset.AssetID;
         Asset owner = AssetDatabase.Get(ownerId) is { } found && found.IsValid() ? found : asset;
         EchoObject before = assets.SerializeForSave(owner) ?? throw new CliException($"'{owner.Name}' could not be read to save it.");

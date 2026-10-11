@@ -4,6 +4,7 @@
 
 using Prowl.Echo;
 using Prowl.Editor.Importers;
+using Prowl.Editor.Navigation;
 using Prowl.Runtime;
 using Prowl.Runtime.Resources;
 
@@ -191,7 +192,7 @@ public class AssetDatabaseTests : EditorTestHarness
         holder.AddComponent<MaterialHolder>().Material = material;
 
         EchoObject echo = Serializer.Serialize(typeof(object), holder);
-        var copy = Serializer.Deserialize<GameObject>(echo)!;
+        GameObject copy = Serializer.Deserialize<GameObject>(echo)!;
 
         Assert.Same(material, copy.GetComponent<MaterialHolder>()!.Material);
     }
@@ -559,7 +560,7 @@ public class AssetDatabaseTests : EditorTestHarness
         CreateScene("Good.scene");
         File.WriteAllText(AssetAbsolutePath("Bad.throwtest"), "junk");
 
-        var ex = Record.Exception(() => ReopenDatabase());
+        Exception ex = Record.Exception(() => ReopenDatabase());
 
         Assert.Null(ex);
         Assert.NotEqual(Guid.Empty, Assets.PathToGuid("Good.scene"));
@@ -578,7 +579,7 @@ public class AssetDatabaseTests : EditorTestHarness
 
         CreateMaterial("B.mat");
 
-        var files = Assets.GetFolderFiles("");
+        IReadOnlyList<EditorAssetBackend.FileRecord> files = Assets.GetFolderFiles("");
         Assert.Contains(files, f => f.Name == "B.mat");
     }
 
@@ -586,7 +587,7 @@ public class AssetDatabaseTests : EditorTestHarness
     public void GetFolderFiles_TrailingSlash_StillFindsFiles()
     {
         CreateScene("Sub/S.scene");
-        var files = Assets.GetFolderFiles("Sub/");
+        IReadOnlyList<EditorAssetBackend.FileRecord> files = Assets.GetFolderFiles("Sub/");
         Assert.Contains(files, f => f.Name == "S.scene");
     }
 
@@ -603,7 +604,7 @@ public class AssetDatabaseTests : EditorTestHarness
         go.AddComponent<MaterialHolder>().Material = material;
         Guid prefabGuid = CreatePrefabAsset(go, "Holder.prefab");
 
-        var entry = Assets.GetEntry(prefabGuid)!;
+        AssetEntry entry = Assets.GetEntry(prefabGuid)!;
         Assert.Contains(material.AssetID, entry.Dependencies);
         Assert.DoesNotContain(material.AssetID, entry.SoftDependencies);
     }
@@ -617,7 +618,7 @@ public class AssetDatabaseTests : EditorTestHarness
         go.AddComponent<AssetRefComponent>().Ref = new AssetRef<SceneAsset>(sceneGuid);
         Guid prefabGuid = CreatePrefabAsset(go, "Holder.prefab");
 
-        var entry = Assets.GetEntry(prefabGuid)!;
+        AssetEntry entry = Assets.GetEntry(prefabGuid)!;
         Assert.Contains(sceneGuid, entry.SoftDependencies);
         Assert.DoesNotContain(sceneGuid, entry.Dependencies);
     }
@@ -650,15 +651,15 @@ public class AssetDatabaseTests : EditorTestHarness
     public void Scene_RecordsItsPrefabInstances_AsEditorEdges()
     {
         Guid prefabGuid = CreatePrefabAsset(new GameObject("P"), "P.prefab");
-        var instance = GameObject.Instantiate(GetPrefab(prefabGuid)!)!;
-        var scene = instance.Scene!;
+        GameObject instance = GameObject.Instantiate(GetPrefab(prefabGuid)!)!;
+        Scene scene = instance.Scene!;
         scene.Remove(instance);
 
         var holder = new Scene();
         holder.Add(instance);
         Guid sceneGuid = CreateSceneAsset(holder, "Main.scene");
 
-        var entry = Assets.GetEntry(sceneGuid)!;
+        AssetEntry entry = Assets.GetEntry(sceneGuid)!;
         Assert.Contains(prefabGuid, entry.EditorDependencies);
         Assert.DoesNotContain(prefabGuid, entry.Dependencies);
         Assert.DoesNotContain(prefabGuid, Assets.Dependencies.GetDependencies(sceneGuid));
@@ -684,7 +685,7 @@ public class AssetDatabaseTests : EditorTestHarness
     [Fact]
     public void ASubAsset_LoadsOnItsOwn_AndRefillsOnReimport()
     {
-        var (texGuid, spriteGuid) = CreateTextureWithSprite("Sprite.png");
+        (Guid texGuid, Guid spriteGuid) = CreateTextureWithSprite("Sprite.png");
 
         Sprite sprite = AssetDatabase.Load<Sprite>(spriteGuid)!;
         Assert.True(sprite.IsLoaded);
@@ -700,7 +701,7 @@ public class AssetDatabaseTests : EditorTestHarness
     [Fact]
     public void ASubAssetAReimportDrops_IsMissing()
     {
-        var (texGuid, spriteGuid) = CreateTextureWithSprite("Sprite.png");
+        (Guid texGuid, Guid spriteGuid) = CreateTextureWithSprite("Sprite.png");
         Sprite sprite = AssetDatabase.Load<Sprite>(spriteGuid)!;
 
         TextureSpriteMeta.Save(texGuid, new SpriteImportSettings { Mode = SpriteMode.None });
@@ -719,7 +720,7 @@ public class AssetDatabaseTests : EditorTestHarness
         TestImages.WriteSolidPng(AssetAbsolutePath("Grass.png"), 4, 1, 2, 3);
         Guid guid = Assets.ImportFile("Grass.png");
         byte[] image = File.ReadAllBytes(AssetAbsolutePath("Grass.png"));
-        var texture = AssetDatabase.Load<Texture2D>(guid)!;
+        Texture2D texture = AssetDatabase.Load<Texture2D>(guid)!;
 
         Assert.False(Assets.SaveAsset(texture));
         Assert.Equal(image, File.ReadAllBytes(AssetAbsolutePath("Grass.png")));
@@ -758,7 +759,7 @@ public class AssetDatabaseTests : EditorTestHarness
         Guid guid = Assets.ImportFile("Baked.navmesh");
         Assert.NotEqual(Guid.Empty, guid);
 
-        var loaded = AssetDatabase.Load<NavMeshData>(guid);
+        NavMeshData? loaded = AssetDatabase.Load<NavMeshData>(guid);
         Assert.NotNull(loaded);
         Assert.Equal(baked!.CacheLayers.Count, loaded!.CacheLayers.Count);
 
@@ -778,7 +779,7 @@ public class AssetDatabaseTests : EditorTestHarness
         Assert.NotEqual(Guid.Empty, guid);
 
         var go = new GameObject("Surface");
-        var surface = go.AddComponent<NavMeshSurface>();
+        NavMeshSurface surface = go.AddComponent<NavMeshSurface>();
 
         // No asset yet: the first bake picks a name from the scene and agent type.
         Assert.EndsWith(".navmesh", Navigation.NavMeshBakeService.BakePath(surface));
@@ -805,12 +806,12 @@ public class AssetDatabaseTests : EditorTestHarness
         {
             var original = new GameObject("Original");
             scene.Add(original);
-            var originalSurface = original.AddComponent<NavMeshSurface>();
+            NavMeshSurface originalSurface = original.AddComponent<NavMeshSurface>();
             originalSurface.NavMeshData = AssetDatabase.Get<NavMeshData>(guid);
 
             var duplicate = new GameObject("Duplicate");
             scene.Add(duplicate);
-            var duplicateSurface = duplicate.AddComponent<NavMeshSurface>();
+            NavMeshSurface duplicateSurface = duplicate.AddComponent<NavMeshSurface>();
             duplicateSurface.NavMeshData = AssetDatabase.Get<NavMeshData>(guid);
 
             Assert.NotEqual("Shared.navmesh", Navigation.NavMeshBakeService.BakePath(duplicateSurface));
@@ -839,12 +840,12 @@ public class AssetDatabaseTests : EditorTestHarness
 
             var go = new GameObject("Surface");
             scene.Add(go);
-            var surface = go.AddComponent<NavMeshSurface>();
+            NavMeshSurface surface = go.AddComponent<NavMeshSurface>();
             surface.UseGeometry = NavMeshCollectGeometry.PhysicsColliders;
             surface.BuildOverrides.OverrideVoxelSize = true;
             surface.BuildOverrides.VoxelSize = 0.25f;
 
-            var bake = Navigation.NavMeshBakeService.Instance;
+            NavMeshBakeService bake = Navigation.NavMeshBakeService.Instance;
             Assert.True(bake.Start(surface));
             Assert.Same(surface, bake.TargetSurface);
 

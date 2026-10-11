@@ -210,7 +210,7 @@ public class PaperRenderer : ICanvasRenderer
 
         if (_blurMat.IsNotValid()) _blurMat = new Resources.Material(Shader.LoadDefault(DefaultShader.UI));
 
-        using var cmd = Graphics.GetCommandBuffer("Paper UI");
+        using CommandBuffer cmd = Graphics.GetCommandBuffer("Paper UI");
 
         cmd.SetRasterState(state);
         cmd.SetShader(_shaderProgram);

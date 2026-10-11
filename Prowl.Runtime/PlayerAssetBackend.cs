@@ -101,12 +101,12 @@ public class PlayerAssetBackend : AssetBackend, IDisposable
     {
         lock (_pakLock)
         {
-            foreach (var pak in _pakArchives)
+            foreach (ZipArchive pak in _pakArchives)
             {
-                var entry = pak.GetEntry(entryName);
+                ZipArchiveEntry? entry = pak.GetEntry(entryName);
                 if (entry == null) continue;
 
-                using var stream = entry.Open();
+                using Stream stream = entry.Open();
                 using var ms = new MemoryStream();
                 stream.CopyTo(ms);
                 return ms.ToArray();
@@ -117,8 +117,8 @@ public class PlayerAssetBackend : AssetBackend, IDisposable
 
     private static byte[]? LoadFromEmbedded(string resourceName)
     {
-        var assembly = Assembly.GetEntryAssembly() ?? Assembly.GetExecutingAssembly();
-        using var stream = assembly.GetManifestResourceStream(resourceName);
+        Assembly assembly = Assembly.GetEntryAssembly() ?? Assembly.GetExecutingAssembly();
+        using Stream? stream = assembly.GetManifestResourceStream(resourceName);
         if (stream == null) return null;
         using var ms = new MemoryStream();
         stream.CopyTo(ms);
@@ -156,8 +156,8 @@ public class PlayerAssetBackend : AssetBackend, IDisposable
 
     private void LoadManifestFromEmbedded()
     {
-        var assembly = Assembly.GetEntryAssembly() ?? Assembly.GetExecutingAssembly();
-        using var stream = assembly.GetManifestResourceStream("Assets._manifest.bin");
+        Assembly assembly = Assembly.GetEntryAssembly() ?? Assembly.GetExecutingAssembly();
+        using Stream? stream = assembly.GetManifestResourceStream("Assets._manifest.bin");
         if (stream == null) { Debug.LogError("[PlayerAssetBackend] Embedded manifest not found."); return; }
 
         using var reader = new BinaryReader(stream);
@@ -173,12 +173,12 @@ public class PlayerAssetBackend : AssetBackend, IDisposable
             return;
         }
 
-        if (echo.TryGet("defaultScene", out var dsTag) && Guid.TryParse(dsTag!.StringValue, out var ds))
+        if (echo.TryGet("defaultScene", out EchoObject? dsTag) && Guid.TryParse(dsTag!.StringValue, out Guid ds))
             DefaultSceneGuid = ds;
 
-        if (echo.TryGet("assets", out var assetsTag) && assetsTag!.TagType == EchoType.Compound)
-            foreach (var (key, tag) in assetsTag.Tags)
-                if (Guid.TryParse(key, out var guid) && tag.TagType == EchoType.Compound)
+        if (echo.TryGet("assets", out EchoObject? assetsTag) && assetsTag!.TagType == EchoType.Compound)
+            foreach ((string? key, EchoObject? tag) in assetsTag.Tags)
+                if (Guid.TryParse(key, out Guid guid) && tag.TagType == EchoType.Compound)
                     _entries[guid] = new Entry
                     {
                         File = tag.Get("file")?.StringValue ?? $"{guid}.asset",
@@ -189,10 +189,10 @@ public class PlayerAssetBackend : AssetBackend, IDisposable
                         Soft = ReadGuids(tag.Get("soft")),
                     };
 
-        if (echo.TryGet("resources", out var resTag) && resTag!.TagType == EchoType.List)
-            foreach (var item in resTag.List)
-                if (item.TryGet("path", out var path) && item.TryGet("guid", out var guidTag) && Guid.TryParse(guidTag!.StringValue, out var guid))
-                    _resources.Add(new ResourceEntry(path!.StringValue, guid, item.TryGet("type", out var type) ? type!.StringValue : ""));
+        if (echo.TryGet("resources", out EchoObject? resTag) && resTag!.TagType == EchoType.List)
+            foreach (EchoObject item in resTag.List)
+                if (item.TryGet("path", out EchoObject? path) && item.TryGet("guid", out EchoObject? guidTag) && Guid.TryParse(guidTag!.StringValue, out Guid guid))
+                    _resources.Add(new ResourceEntry(path!.StringValue, guid, item.TryGet("type", out EchoObject? type) ? type!.StringValue : ""));
     }
 
     private static Guid[] ReadGuids(EchoObject? list)
@@ -208,7 +208,7 @@ public class PlayerAssetBackend : AssetBackend, IDisposable
     {
         lock (_pakLock)
         {
-            foreach (var pak in _pakArchives) pak.Dispose();
+            foreach (ZipArchive pak in _pakArchives) pak.Dispose();
             _pakArchives.Clear();
         }
     }

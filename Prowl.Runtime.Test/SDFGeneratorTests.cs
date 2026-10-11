@@ -68,7 +68,7 @@ public class SDFGeneratorTests(ITestOutputHelper output)
 
     private void Check(Mesh mesh, Func<Float3, bool> inside, Int3 size, Float3 origin, float cell)
     {
-        var surface = SDFGenerator.Surface.From(mesh)!;
+        SDFGenerator.Surface surface = SDFGenerator.Surface.From(mesh)!;
         float[] field = SDFGenerator.ComputeDistances(surface, origin, cell, size);
 
         // Away from the surface a voxel can miss its true closest triangle for one a little further, so a distance may
@@ -113,7 +113,7 @@ public class SDFGeneratorTests(ITestOutputHelper output)
     {
         Mesh left = Mesh.CreateCube(new Float3(1f, 2f, 1f));
         Mesh right = Mesh.CreateCube(new Float3(1f, 0.6f, 2f));
-        var vertices = left.Vertices!.Select(v => v + new Float3(-1f, 0f, 0f))
+        Float3[] vertices = left.Vertices!.Select(v => v + new Float3(-1f, 0f, 0f))
             .Concat(right.Vertices!.Select(v => v + new Float3(1f, -0.5f, 0.3f))).ToArray();
         var indices = left.Indices!.Concat(right.Indices!.Select(i => i + (uint)left.Vertices!.Length)).ToArray();
         var both = new Mesh { Vertices = vertices, Indices = indices };
@@ -150,7 +150,7 @@ public class SDFGeneratorTests(ITestOutputHelper output)
         }
         var open = new Mesh { Vertices = v, Indices = kept.ToArray() };
 
-        var surface = SDFGenerator.Surface.From(open)!;
+        SDFGenerator.Surface surface = SDFGenerator.Surface.From(open)!;
         int res = 24;
         Float3 origin = new(-1.2f);
         float cell = 2.4f / res;
@@ -174,7 +174,7 @@ public class SDFGeneratorTests(ITestOutputHelper output)
             Vertices = [new(-1f, 0f, -1f), new(1f, 0f, -1f), new(1f, 0f, 1f), new(-1f, 0f, 1f)],
             Indices = [0, 2, 1, 0, 3, 2],
         };
-        var surface = SDFGenerator.Surface.From(quad)!;
+        SDFGenerator.Surface surface = SDFGenerator.Surface.From(quad)!;
         float[] field = SDFGenerator.ComputeDistances(surface, new Float3(-1.5f), 3f / 20, new Int3(20, 20, 20));
         Assert.DoesNotContain(field, value => value < 0f);
     }

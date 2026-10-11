@@ -235,7 +235,7 @@ public class DriveConstraint : PhysicsConstraint
 
         public static void Prepare(ref ConstraintData constraint, in TimeStep timeStep)
         {
-            ref var data = ref Unsafe.As<ConstraintData, DriveData>(ref constraint);
+            ref DriveData data = ref Unsafe.As<ConstraintData, DriveData>(ref constraint);
             ref RigidBodyData body1 = ref data.Body1.Data;
             ref RigidBodyData body2 = ref data.Body2.Data;
             float h = timeStep.SubstepDt;
@@ -271,7 +271,7 @@ public class DriveConstraint : PhysicsConstraint
 
         public static void Iterate(ref ConstraintData constraint, in TimeStep timeStep)
         {
-            ref var data = ref Unsafe.As<ConstraintData, DriveData>(ref constraint);
+            ref DriveData data = ref Unsafe.As<ConstraintData, DriveData>(ref constraint);
             ref RigidBodyData body1 = ref data.Body1.Data;
             ref RigidBodyData body2 = ref data.Body2.Data;
             float h = timeStep.SubstepDt;

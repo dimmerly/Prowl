@@ -1137,7 +1137,7 @@ public class ParticleSystemComponent : Component
 
         Float4x4 previousSimToWorld = _simToWorld;
         GameObject? custom = SimulationSpace == SimulationSpace.Custom && CustomSimulationSpace.IsValid() ? CustomSimulationSpace : null;
-        var key = (SimulationSpace, ScalingMode, custom);
+        (SimulationSpace SimulationSpace, ParticleScalingMode ScalingMode, GameObject? custom) key = (SimulationSpace, ScalingMode, custom);
 
         // The transform the simulation space follows, with the scale it uses. Null for world space.
         Transform? space = SimulationSpace == SimulationSpace.Local ? t : custom.IsValid() ? custom.Transform : null;

@@ -41,18 +41,18 @@ public class TextureImporter : AssetImporter
     public override bool Import(ImportContext ctx)
     {
         // Settings are guaranteed to have defaults merged by EditorAssetDatabase.RunImport
-        bool generateMipmaps = ctx.Settings?.TryGet("generateMipmaps", out var mipTag) == true && mipTag.BoolValue;
+        bool generateMipmaps = ctx.Settings?.TryGet("generateMipmaps", out EchoObject? mipTag) == true && mipTag.BoolValue;
 
         // Load texture WITHOUT mipmaps first we'll generate them after applying settings
         var texture = Texture2D.FromFile(ctx.AbsolutePath, false);
         texture.Name = ctx.FileName;
 
         // Read filter/wrap settings (defaults merged by RunImport)
-        var minFilter = ctx.Settings?.TryGet("minFilter", out var minTag2) == true
+        TextureMin minFilter = ctx.Settings?.TryGet("minFilter", out EchoObject? minTag2) == true
             ? (TextureMin)minTag2.IntValue : (generateMipmaps ? TextureMin.LinearMipmapLinear : TextureMin.Linear);
-        var magFilter = ctx.Settings?.TryGet("magFilter", out var magTag) == true
+        TextureMag magFilter = ctx.Settings?.TryGet("magFilter", out EchoObject? magTag) == true
             ? (TextureMag)magTag.IntValue : TextureMag.Linear;
-        var wrapMode = ctx.Settings?.TryGet("wrapMode", out var wrapTag) == true
+        TextureWrap wrapMode = ctx.Settings?.TryGet("wrapMode", out EchoObject? wrapTag) == true
             ? (TextureWrap)wrapTag.IntValue : TextureWrap.Repeat;
 
         // Generate mipmaps if requested (must happen before setting mipmap filters)
@@ -79,10 +79,10 @@ public class TextureImporter : AssetImporter
         SpriteImportSettings spriteSettings = TextureSpriteMeta.ReadFrom(ctx.Settings);
         if (spriteSettings.Mode != SpriteMode.None)
         {
-            foreach (var kv in spriteSettings.SecondaryTextures)
+            foreach (KeyValuePair<string, Texture2D> kv in spriteSettings.SecondaryTextures)
                 if (kv.Value is not null) ctx.AddDependency(kv.Value.AssetID);
 
-            foreach (var (slice, sprite) in SpriteBuilder.Build(texture, spriteSettings))
+            foreach ((SpriteSliceData? slice, Sprite? sprite) in SpriteBuilder.Build(texture, spriteSettings))
                 ctx.AddSubAsset(slice.Name, sprite, SpriteBuilder.IdentityOf(spriteSettings, slice));
         }
 
@@ -233,7 +233,7 @@ public static class TextureSpriteMeta
         {
             try
             {
-                var ctx = ImportHelper.CreateTrackingContext(out _);
+                SerializationContext ctx = ImportHelper.CreateTrackingContext(out _);
                 SpriteImportSettings? parsed = Serializer.Deserialize<SpriteImportSettings>(echo, ctx);
                 if (parsed != null) return parsed;
 
@@ -779,7 +779,7 @@ public static class SpriteBuilder
         if (s.GenerateTightMesh && alpha != null && rect.Width > 0 && rect.Height > 0)
         {
             byte[] rectAlpha = ExtractRectAlpha(alpha, texW, texH, rect);
-            var traced = SpriteMeshTracer.Generate(rectAlpha, rect.Width, rect.Height,
+            SpriteMeshTracer.TracedMesh traced = SpriteMeshTracer.Generate(rectAlpha, rect.Width, rect.Height,
                 s.TightMeshAlphaThreshold, s.TightMeshDetail);
             sprite.BuildTightGeometry(traced, texW, texH);
         }

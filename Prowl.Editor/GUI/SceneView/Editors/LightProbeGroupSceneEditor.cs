@@ -89,7 +89,7 @@ public class LightProbeGroupSceneEditor : SceneTool
         // --- Per-probe click selection ---
         // Each probe registers its own control, so probes arbitrate against the move handle and
         // against every other handle in the viewport rather than the editor claiming the frame.
-        var l2w = _group.Transform.LocalToWorldMatrix;
+        Float4x4 l2w = _group.Transform.LocalToWorldMatrix;
         ControlID hitId = ControlID.None;
         int hitIndex = -1;
         for (int i = 0; i < _group.ProbePositions.Count; i++)
@@ -129,7 +129,7 @@ public class LightProbeGroupSceneEditor : SceneTool
     public override void OnToolStripGUI(SceneToolContext ctx, Paper paper, string id)
     {
         if (_group == null) return;
-        var font = Theming.EditorTheme.DefaultFont!;
+        Scribe.FontFile font = Theming.EditorTheme.DefaultFont!;
 
         ToolBtn(paper, $"{id}_add", EditorIcons.Plus, font, AddProbe);
         ToolBtn(paper, $"{id}_dup", EditorIcons.Clone, font, () => { if (_selection.Count > 0) DuplicateSelected(); });
@@ -213,8 +213,8 @@ public class LightProbeGroupSceneEditor : SceneTool
 
     private void ApplyWorldDelta(Float3 worldDelta)
     {
-        var l2w = _group!.Transform.LocalToWorldMatrix;
-        var w2l = _group.Transform.WorldToLocalMatrix;
+        Float4x4 l2w = _group!.Transform.LocalToWorldMatrix;
+        Float4x4 w2l = _group.Transform.WorldToLocalMatrix;
         foreach (int i in _selection)
         {
             Float3 world = Float4x4.TransformPoint(_group.ProbePositions[i], l2w) + worldDelta;
@@ -224,7 +224,7 @@ public class LightProbeGroupSceneEditor : SceneTool
 
     private Float3 SelectionCentroidWorld()
     {
-        var l2w = _group!.Transform.LocalToWorldMatrix;
+        Float4x4 l2w = _group!.Transform.LocalToWorldMatrix;
         Float3 sum = Float3.Zero;
         foreach (int i in _selection) sum += Float4x4.TransformPoint(_group.ProbePositions[i], l2w);
         return sum / _selection.Count;
@@ -233,7 +233,7 @@ public class LightProbeGroupSceneEditor : SceneTool
     private void DrawProbes()
     {
         if (_group == null) return;
-        var l2w = _group.Transform.LocalToWorldMatrix;
+        Float4x4 l2w = _group.Transform.LocalToWorldMatrix;
         var selColor = new Color(0.3f, 0.6f, 1f, 1f);
         foreach (int i in _selection)
         {

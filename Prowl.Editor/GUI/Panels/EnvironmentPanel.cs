@@ -49,12 +49,12 @@ public class EnvironmentPanel : DockPanel
 
     public override void OnGUI(Paper paper, float width, float height)
     {
-        var font = EditorTheme.DefaultFont;
+        Scribe.FontFile? font = EditorTheme.DefaultFont;
         if (font == null) return;
 
         _bake.Poll();
 
-        var scene = Scene.Current;
+        Scene scene = Scene.Current;
         if (scene == null)
         {
             paper.Box("env_noscene").Height(30)
@@ -65,7 +65,7 @@ public class EnvironmentPanel : DockPanel
 
         using (paper.Row("env_root").Width(width).Height(height).Clip().Enter())
         {
-            var cats = Cats.Select(c => (c.id, Loc.Get(c.label), c.icon)).ToArray();
+            (string id, string, string icon)[] cats = Cats.Select(c => (c.id, Loc.Get(c.label), c.icon)).ToArray();
             float side = EditorGUI.Sidebar(paper, "env_side", cats, _cat, c => _cat = c);
             paper.Box("env_vdiv").Width(1).BackgroundColor(EditorTheme.BorderSoft).IsNotInteractable();
 
@@ -89,7 +89,7 @@ public class EnvironmentPanel : DockPanel
     {
         EditorGUI.SectionHeader(paper, $"{id}_h", Loc.Get("env.skybox"), first: true);
 
-        var sky = scene.Skybox;
+        Scene.SkyboxParams sky = scene.Skybox;
         void Dirty() { scene.Skybox = sky; EditorSceneManager.MarkDirty(); }
 
         EditorGUI.SettingsRow(paper, $"{id}_mode", Loc.Get("env.mode"), () =>
@@ -129,7 +129,7 @@ public class EnvironmentPanel : DockPanel
     {
         EditorGUI.SectionHeader(paper, $"{id}_h", Loc.Get("env.fog"), first: true);
 
-        var fog = scene.Fog;
+        Scene.FogParams fog = scene.Fog;
         void Dirty() { scene.Fog = fog; EditorSceneManager.MarkDirty(); }
 
         EditorGUI.SettingsRow(paper, $"{id}_mode", Loc.Get("env.mode"), () =>
@@ -162,7 +162,7 @@ public class EnvironmentPanel : DockPanel
     {
         EditorGUI.SectionHeader(paper, $"{id}_h", Loc.Get("env.ambient_lighting"), first: true);
 
-        var ambient = scene.Ambient;
+        Scene.AmbientLightParams ambient = scene.Ambient;
         void Dirty() { scene.Ambient = ambient; EditorSceneManager.MarkDirty(); }
 
         EditorGUI.SettingsRow(paper, $"{id}_mode", Loc.Get("env.mode"), () =>
@@ -190,7 +190,7 @@ public class EnvironmentPanel : DockPanel
         // IsBaking alone doesn't say WHICH scene it's for - only one bake can run at a time, so
         // switching to a different scene while it's in flight must not show this scene as baking too.
         bool baking = _bake.IsBaking && _bake.TargetScene == scene;
-        var s = scene.LightmapBake;
+        Scene.LightmapBakeSettings s = scene.LightmapBake;
         void Touch() { scene.LightmapBake = s; EditorSceneManager.MarkDirty(); }
 
         EditorGUI.SectionHeader(paper, $"{id}_h_res", Loc.Get("game.resolution"), first: true);
@@ -226,8 +226,8 @@ public class EnvironmentPanel : DockPanel
     private void DrawBakeCard(Paper paper, string id, Scribe.FontFile font, Scene scene,
         Scene.LightmapBakeSettings s, bool baking)
     {
-        var m = Origami.Current.Metrics;
-        var semi = EditorTheme.FontSemiBold ?? font;
+        OrigamiMetrics m = Origami.Current.Metrics;
+        Scribe.FontFile semi = EditorTheme.FontSemiBold ?? font;
         bool hasBaked = LightmapBakeService.HasBakedData(scene);
 
         using (paper.Column($"{id}_card").Height(UnitValue.Auto).Margin(m.PaddingLarge, m.PaddingLarge, 16, 0)
@@ -276,7 +276,7 @@ public class EnvironmentPanel : DockPanel
 
     private static void ChipButton(Paper paper, string id, string label, Action onClick)
     {
-        var font = EditorTheme.DefaultFont;
+        Scribe.FontFile? font = EditorTheme.DefaultFont;
         paper.Box(id).Width(UnitValue.Auto).Height(34).Rounded(Origami.Current.Metrics.Rounding).Padding(14, 14, 0, 0)
             .BackgroundColor(EditorTheme.Glass).BorderColor(EditorTheme.BorderSoft).BorderWidth(1)
             .Hovered.BorderColor(EditorTheme.BorderStrong).End()

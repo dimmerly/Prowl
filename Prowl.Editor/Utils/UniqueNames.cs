@@ -81,7 +81,7 @@ public static class UniqueNames
 
         var taken = new HashSet<string>(StringComparer.Ordinal);
         IEnumerable<GameObject> siblings = parent != null ? parent.Children : scene.RootObjects;
-        foreach (var s in siblings)
+        foreach (GameObject s in siblings)
             taken.Add(s.Name);
 
         return MakeUnique(desired, name => taken.Contains(name));

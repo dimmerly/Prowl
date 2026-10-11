@@ -28,7 +28,7 @@ public class LightProbeGroupEditor : CustomEditor
     public override void OnGUI(Paper paper, string id, object target)
     {
         var grp = (LightProbeGroup)target;
-        var font = EditorTheme.DefaultFont;
+        Scribe.FontFile? font = EditorTheme.DefaultFont;
         if (font == null) return;
 
         paper.Box($"{id}_count").Height(EditorTheme.RowHeight)

@@ -1,6 +1,7 @@
 // This file is part of the Prowl Game Engine
 // Licensed under the MIT License. See the LICENSE file in the project root for details.
 
+using Prowl.Runtime.Resources;
 using Prowl.Vector;
 
 using Xunit;
@@ -18,8 +19,8 @@ public class HierarchyTests : RuntimeTestBase
     [Fact]
     public void SetParent_SetsParentAndRegistersChild()
     {
-        var parent = CreateGameObject("Parent");
-        var child = CreateGameObject("Child");
+        GameObject parent = CreateGameObject("Parent");
+        GameObject child = CreateGameObject("Child");
 
         bool ok = child.SetParent(parent);
 
@@ -32,8 +33,8 @@ public class HierarchyTests : RuntimeTestBase
     [Fact]
     public void SetParent_Null_Unparents()
     {
-        var parent = CreateGameObject("Parent");
-        var child = CreateGameObject("Child");
+        GameObject parent = CreateGameObject("Parent");
+        GameObject child = CreateGameObject("Child");
         child.SetParent(parent);
 
         child.SetParent(null!);
@@ -45,8 +46,8 @@ public class HierarchyTests : RuntimeTestBase
     [Fact]
     public void SetParent_SameParent_ReturnsTrue_NoDuplicate()
     {
-        var parent = CreateGameObject("Parent");
-        var child = CreateGameObject("Child");
+        GameObject parent = CreateGameObject("Parent");
+        GameObject child = CreateGameObject("Child");
         child.SetParent(parent);
 
         bool ok = child.SetParent(parent);
@@ -58,7 +59,7 @@ public class HierarchyTests : RuntimeTestBase
     [Fact]
     public void SetParent_Self_ReturnsFalse()
     {
-        var go = CreateGameObject();
+        GameObject go = CreateGameObject();
 
         Assert.False(go.SetParent(go));
         Assert.Null(go.Parent);
@@ -67,8 +68,8 @@ public class HierarchyTests : RuntimeTestBase
     [Fact]
     public void SetParent_Descendant_ReturnsFalse_PreventsCycle()
     {
-        var parent = CreateGameObject("Parent");
-        var child = CreateGameObject("Child");
+        GameObject parent = CreateGameObject("Parent");
+        GameObject child = CreateGameObject("Child");
         child.SetParent(parent);
 
         // Re-parenting the parent under its own child would create a cycle.
@@ -82,9 +83,9 @@ public class HierarchyTests : RuntimeTestBase
     [Fact]
     public void SetParent_Reparent_RemovesFromOldParent()
     {
-        var p1 = CreateGameObject("P1");
-        var p2 = CreateGameObject("P2");
-        var child = CreateGameObject("Child");
+        GameObject p1 = CreateGameObject("P1");
+        GameObject p2 = CreateGameObject("P2");
+        GameObject child = CreateGameObject("Child");
 
         child.SetParent(p1);
         child.SetParent(p2);
@@ -99,9 +100,9 @@ public class HierarchyTests : RuntimeTestBase
     [Fact]
     public void SetParent_WorldPositionStays_PreservesWorldPosition()
     {
-        var parent = CreateGameObject("Parent");
+        GameObject parent = CreateGameObject("Parent");
         parent.Transform.Position = new Float3(10, 0, 0);
-        var child = CreateGameObject("Child");
+        GameObject child = CreateGameObject("Child");
         child.Transform.Position = new Float3(0, 0, 0);
 
         child.SetParent(parent, worldPositionStays: true);
@@ -113,9 +114,9 @@ public class HierarchyTests : RuntimeTestBase
     [Fact]
     public void SetParent_WorldPositionStaysFalse_KeepsLocalPosition()
     {
-        var parent = CreateGameObject("Parent");
+        GameObject parent = CreateGameObject("Parent");
         parent.Transform.Position = new Float3(10, 0, 0);
-        var child = CreateGameObject("Child");
+        GameObject child = CreateGameObject("Child");
         child.Transform.LocalPosition = new Float3(0, 0, 0);
 
         child.SetParent(parent, worldPositionStays: false);
@@ -129,13 +130,13 @@ public class HierarchyTests : RuntimeTestBase
     [Fact]
     public void SetParent_AcrossScenes_MovesChildToParentScene()
     {
-        var scene1 = CreateScene();
-        var scene2 = CreateScene();
+        Scene scene1 = CreateScene();
+        Scene scene2 = CreateScene();
 
-        var child = CreateGameObject("Child");
+        GameObject child = CreateGameObject("Child");
         scene1.Add(child);
 
-        var parent = CreateGameObject("Parent");
+        GameObject parent = CreateGameObject("Parent");
         scene2.Add(parent);
 
         child.SetParent(parent);
@@ -149,8 +150,8 @@ public class HierarchyTests : RuntimeTestBase
     [Fact]
     public void IsChildOf_And_IsParentOf_AreConsistent()
     {
-        var parent = CreateGameObject("Parent");
-        var child = CreateGameObject("Child");
+        GameObject parent = CreateGameObject("Parent");
+        GameObject child = CreateGameObject("Child");
         child.SetParent(parent);
 
         Assert.True(child.IsChildOf(parent));
@@ -162,9 +163,9 @@ public class HierarchyTests : RuntimeTestBase
     [Fact]
     public void IsChildOf_DeepDescendant_ReturnsTrue()
     {
-        var root = CreateGameObject("Root");
-        var mid = CreateGameObject("Mid");
-        var leaf = CreateGameObject("Leaf");
+        GameObject root = CreateGameObject("Root");
+        GameObject mid = CreateGameObject("Mid");
+        GameObject leaf = CreateGameObject("Leaf");
         mid.SetParent(root);
         leaf.SetParent(mid);
 
@@ -175,8 +176,8 @@ public class HierarchyTests : RuntimeTestBase
     [Fact]
     public void IsChildOrSameTransform_HandlesSelfAndDescendants()
     {
-        var parent = CreateGameObject("Parent");
-        var child = CreateGameObject("Child");
+        GameObject parent = CreateGameObject("Parent");
+        GameObject child = CreateGameObject("Child");
         child.SetParent(parent);
 
         Assert.True(GameObject.IsChildOrSameTransform(parent, parent));
@@ -189,10 +190,10 @@ public class HierarchyTests : RuntimeTestBase
     [Fact]
     public void GetChildrenDeep_ReturnsAllDescendants()
     {
-        var root = CreateGameObject("Root");
-        var a = CreateGameObject("A");
-        var b = CreateGameObject("B");
-        var grandchild = CreateGameObject("Grandchild");
+        GameObject root = CreateGameObject("Root");
+        GameObject a = CreateGameObject("A");
+        GameObject b = CreateGameObject("B");
+        GameObject grandchild = CreateGameObject("Grandchild");
         a.SetParent(root);
         b.SetParent(root);
         grandchild.SetParent(a);
@@ -210,10 +211,10 @@ public class HierarchyTests : RuntimeTestBase
     [Fact]
     public void SiblingIndex_GetAndSet()
     {
-        var parent = CreateGameObject("Parent");
-        var a = CreateGameObject("A");
-        var b = CreateGameObject("B");
-        var c = CreateGameObject("C");
+        GameObject parent = CreateGameObject("Parent");
+        GameObject a = CreateGameObject("A");
+        GameObject b = CreateGameObject("B");
+        GameObject c = CreateGameObject("C");
         a.SetParent(parent);
         b.SetParent(parent);
         c.SetParent(parent);
@@ -230,7 +231,7 @@ public class HierarchyTests : RuntimeTestBase
     [Fact]
     public void GetSiblingIndex_NoParent_ReturnsNull()
     {
-        var go = CreateGameObject();
+        GameObject go = CreateGameObject();
         Assert.Null(go.GetSiblingIndex());
     }
 
@@ -239,13 +240,13 @@ public class HierarchyTests : RuntimeTestBase
     [Fact]
     public void IndexPath_RoundTrips()
     {
-        var root = CreateGameObject("Root");
-        var a = CreateGameObject("A");
-        var grandchild = CreateGameObject("Grandchild");
+        GameObject root = CreateGameObject("Root");
+        GameObject a = CreateGameObject("A");
+        GameObject grandchild = CreateGameObject("Grandchild");
         a.SetParent(root);
         grandchild.SetParent(a);
 
-        var path = root.GetIndexPathOfChild(grandchild);
+        List<int> path = root.GetIndexPathOfChild(grandchild);
 
         Assert.Equal([0, 0], path);
         Assert.Same(grandchild, root.GetChildAtIndexPath(path));
@@ -256,9 +257,9 @@ public class HierarchyTests : RuntimeTestBase
     [Fact]
     public void FindChildByIdentifier_DeepVsShallow()
     {
-        var root = CreateGameObject("Root");
-        var child = CreateGameObject("Child");
-        var grandchild = CreateGameObject("Grandchild");
+        GameObject root = CreateGameObject("Root");
+        GameObject child = CreateGameObject("Child");
+        GameObject grandchild = CreateGameObject("Grandchild");
         child.SetParent(root);
         grandchild.SetParent(child);
 
@@ -272,8 +273,8 @@ public class HierarchyTests : RuntimeTestBase
     [Fact]
     public void EnabledInHierarchy_FollowsParentState()
     {
-        var parent = CreateGameObject("Parent");
-        var child = CreateGameObject("Child");
+        GameObject parent = CreateGameObject("Parent");
+        GameObject child = CreateGameObject("Child");
         child.SetParent(parent);
 
         Assert.True(child.EnabledInHierarchy);
@@ -289,8 +290,8 @@ public class HierarchyTests : RuntimeTestBase
     [Fact]
     public void EnabledInHierarchy_ChildDisabled_DoesNotAffectParent()
     {
-        var parent = CreateGameObject("Parent");
-        var child = CreateGameObject("Child");
+        GameObject parent = CreateGameObject("Parent");
+        GameObject child = CreateGameObject("Child");
         child.SetParent(parent);
 
         child.Enabled = false;
@@ -302,8 +303,8 @@ public class HierarchyTests : RuntimeTestBase
     [Fact]
     public void EnabledInHierarchy_DisabledChildStaysDisabled_WhenParentReEnabled()
     {
-        var parent = CreateGameObject("Parent");
-        var child = CreateGameObject("Child");
+        GameObject parent = CreateGameObject("Parent");
+        GameObject child = CreateGameObject("Child");
         child.SetParent(parent);
 
         child.Enabled = false;

@@ -61,7 +61,7 @@ public sealed class BuildExecutor
         ArgumentNullException.ThrowIfNull(context);
 
         var stopwatch = Stopwatch.StartNew();
-        var graph = pipeline.CreateStageGraph(context.Request);
+        StageGraph graph = pipeline.CreateStageGraph(context.Request);
 
         var completed = new HashSet<BuildStage>();
         int operationsRun = 0;
@@ -73,7 +73,7 @@ public sealed class BuildExecutor
             if (ready.Count == 0) break; // construction proves this cannot be a cycle
 
             // An exclusive stage owns the machine, so it never shares a wave with anything else.
-            var wave = ready.Any(n => n.Resources == StageResources.Exclusive)
+            List<StageNode> wave = ready.Any(n => n.Resources == StageResources.Exclusive)
                 ? [ready.First(n => n.Resources == StageResources.Exclusive)]
                 : ready;
 
@@ -82,12 +82,12 @@ public sealed class BuildExecutor
             // Stages in a wave share no dependency, so they overlap. This is the reason the graph is a
             // graph rather than a list: running them one after another would order them correctly and
             // waste the machine doing it.
-            var results = await Task.WhenAll(wave.Select(node =>
+            StageResult[] results = await Task.WhenAll(wave.Select(node =>
                 RunStageAsync(pipeline, node, context, ct))).ConfigureAwait(false);
 
             operationsRun += results.Sum(r => r.Operations);
 
-            foreach (var node in wave)
+            foreach (StageNode? node in wave)
             {
                 completed.Add(node.Stage);
                 _onProgress?.Invoke(node.Stage, completed.Count, graph.Nodes.Count);
@@ -140,7 +140,7 @@ public sealed class BuildExecutor
 
         async Task PlanAndRunAsync()
         {
-            await foreach (var operation in pipeline.PlanStageAsync(node.Stage, context, ct).WithCancellation(ct))
+            await foreach (BuildOperation? operation in pipeline.PlanStageAsync(node.Stage, context, ct).WithCancellation(ct))
             {
                 if (node.OnFailure == StageFailurePolicy.FailFast && Volatile.Read(ref failed) > 0)
                     break;
@@ -180,8 +180,8 @@ public sealed class BuildExecutor
                 EnsureDirectory(copy.Destination);
                 await AtomicAsync(copy.Destination, async (temp, token) =>
                 {
-                    await using var source = File.OpenRead(copy.Source);
-                    await using var destination = File.Create(temp);
+                    await using FileStream source = File.OpenRead(copy.Source);
+                    await using FileStream destination = File.Create(temp);
                     await source.CopyToAsync(destination, token).ConfigureAwait(false);
                 }, ct).ConfigureAwait(false);
                 break;
@@ -190,8 +190,8 @@ public sealed class BuildExecutor
                 EnsureDirectory(write.Destination);
                 await AtomicAsync(write.Destination, async (temp, token) =>
                 {
-                    await using var content = await write.Open(token).ConfigureAwait(false);
-                    await using var destination = File.Create(temp);
+                    await using Stream content = await write.Open(token).ConfigureAwait(false);
+                    await using FileStream destination = File.Create(temp);
                     await content.CopyToAsync(destination, token).ConfigureAwait(false);
                 }, ct).ConfigureAwait(false);
                 break;

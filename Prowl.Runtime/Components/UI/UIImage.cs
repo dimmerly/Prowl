@@ -84,7 +84,7 @@ public class UIImage : Graphic
     private Sprite? Spr => _sprite;
 
     /// <summary>The source texture bound for drawing: the sprite's texture, or null when no sprite is set.</summary>
-    private Texture2D? SourceTexture { get { var s = Spr; return s is { IsLoaded: true } ? s.Texture : null; } }
+    private Texture2D? SourceTexture { get { Sprite? s = Spr; return s is { IsLoaded: true } ? s.Texture : null; } }
 
     /// <summary>A sprite is assigned but it (or its texture) is still loading, so this image drew nothing.</summary>
     public override bool IsContentPending => _sprite is not null && SourceTexture is null;
@@ -175,7 +175,7 @@ public class UIImage : Graphic
 
     public override void GenerateMesh(UIMeshBuilder b, in UIContext ctx)
     {
-        var rt = GameObject.RectTransform;
+        RectTransform? rt = GameObject.RectTransform;
         if (rt is null) return;
         Rect r = rt.ComputedRect;
         if (r.Size.X <= 0 || r.Size.Y <= 0) return;
@@ -201,7 +201,7 @@ public class UIImage : Graphic
         // Fit the source aspect inside the rect (letterbox), centered, when requested.
         if (_preserveAspect)
         {
-            var (sw, sh) = SourceSize;
+            (float sw, float sh) = SourceSize;
             local = FitAspect(local, sw, sh);
         }
 
@@ -261,7 +261,7 @@ public class UIImage : Graphic
         // Tile at the sprite's native pixel size in the RectTransform's pixel space.
         // NOTE: Border-aware tiling (keeping the sprite's 9-slice edges un-tiled) is not done yet;
         // Tiled currently repeats the whole sprite rect.
-        var (sw, sh) = SourceSize;
+        (float sw, float sh) = SourceSize;
         if (sw <= 0f || sh <= 0f)
         {
             b.AddQuad(local, tinted, Float2.Zero, Float2.One);
@@ -291,7 +291,7 @@ public class UIImage : Graphic
 
     private Float4 ComputeUVBorder()
     {
-        var (sw, sh) = SourceSize;
+        (float sw, float sh) = SourceSize;
         if (sw <= 0f || sh <= 0f) return Float4.Zero;
         Float4 border = EffectiveBorder;
         return new Float4(
@@ -303,7 +303,7 @@ public class UIImage : Graphic
 
     public override void PopulateProperties(PropertyState p, in UIContext _)
     {
-        var srcTex = SourceTexture;
+        Texture2D? srcTex = SourceTexture;
         p.SetTexture("_MainTex", srcTex.IsValid() ? srcTex : defaultTexture);
         // The tint (and CanvasGroup alpha) is already baked into the vertex color in GenerateMesh,
         // and the shader computes texture * vColor * _MainColor - so _MainColor must stay white or

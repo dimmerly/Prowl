@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 
 using Prowl.Echo;
@@ -28,9 +29,9 @@ public class MeshImporter : AssetImporter
             string text = File.ReadAllText(ctx.AbsolutePath);
             var echo = EchoObject.ReadFromString(text);
 
-            var serCtx = ImportHelper.CreateTrackingContext(out var dependencies);
+            SerializationContext serCtx = ImportHelper.CreateTrackingContext(out HashSet<Guid>? dependencies);
 
-            var mesh = Serializer.Deserialize<Mesh>(echo, serCtx);
+            Mesh? mesh = Serializer.Deserialize<Mesh>(echo, serCtx);
             if (mesh == null)
             {
                 Debug.LogError($"Failed to deserialize mesh: {ctx.AbsolutePath}");
@@ -40,7 +41,7 @@ public class MeshImporter : AssetImporter
             mesh.Name = ctx.FileName;
             ctx.SetMainAsset(mesh);
 
-            foreach (var dep in dependencies)
+            foreach (Guid dep in dependencies)
                 ctx.AddDependency(dep);
 
             MeshFeatureImporter.GenerateAll([mesh], ctx.Settings, ctx, ["main"]);

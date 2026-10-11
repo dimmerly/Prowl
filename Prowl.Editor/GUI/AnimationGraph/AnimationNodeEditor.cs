@@ -385,7 +385,7 @@ public sealed class AnimationNodeCard
             {
                 // Every row keeps its drags to itself, so working a control never drags the node,
                 // while the gaps between rows still pick the card up.
-                var line = ctx.Control(paper.Row(ctx.Id("row" + i)).Width(UnitValue.Stretch()).Height(rows[i].Height)
+                ElementBuilder line = ctx.Control(paper.Row(ctx.Id("row" + i)).Width(UnitValue.Stretch()).Height(rows[i].Height)
                     .Margin(0, 0, 0, Gap).AlignItems(LayoutAlignment.Center));
 
                 using (line.Enter())
@@ -404,7 +404,7 @@ public sealed class AnimationNodeCard
     /// <summary>A label at the start of a row.</summary>
     public static void Label(Paper paper, string id, string text)
     {
-        var font = EditorTheme.DefaultFont;
+        Scribe.FontFile? font = EditorTheme.DefaultFont;
         if (font == null) return;
 
         paper.Box(id).Width(LabelWidth).Height(UnitValue.Stretch()).IsNotInteractable()
@@ -447,13 +447,13 @@ public sealed class AnimationNodeCard
         switch (setting.Kind)
         {
             case NodeValueKind.Number:
-                var number = Origami.NumericField<float>(paper, id, value.Number, v => editing.Edit(edit, () => value.Number = v, false));
+                NumericFieldBuilder<float> number = Origami.NumericField<float>(paper, id, value.Number, v => editing.Edit(edit, () => value.Number = v, false));
                 if (dragLabel != null) number.DraggableLabel(dragLabel, EditorTheme.Ink400);
                 number.Width(UnitValue.Stretch()).Height(RowHeight).Show();
                 return;
 
             case NodeValueKind.Integer:
-                var integer = Origami.NumericField<int>(paper, id, value.Integer, v => editing.Edit(edit, () => value.Integer = v, false));
+                NumericFieldBuilder<int> integer = Origami.NumericField<int>(paper, id, value.Integer, v => editing.Edit(edit, () => value.Integer = v, false));
                 if (dragLabel != null) integer.DraggableLabel(dragLabel, EditorTheme.Ink400);
                 integer.Width(UnitValue.Stretch()).Height(RowHeight).Show();
                 return;

@@ -3,6 +3,7 @@ using System.IO;
 
 using Prowl.Echo;
 using Prowl.Editor.GUI;
+using Prowl.Editor.Importers;
 using Prowl.Editor.Projects;
 using Prowl.Editor.Theming;
 using Prowl.OrigamiUI;
@@ -10,6 +11,8 @@ using Prowl.PaperUI;
 using Prowl.PaperUI.LayoutEngine;
 using Prowl.Runtime;
 using Prowl.Runtime.Resources;
+using Prowl.Scribe;
+using Prowl.Vector;
 using Prowl.Vector.Spatial;
 
 namespace Prowl.Editor.Inspector;
@@ -42,9 +45,9 @@ public class TextureAssetEditor : ImportSettingsEditor
 
     public override void OnGUI(Paper paper, string id, AssetEntry entry, EngineObject? asset)
     {
-        var font = EditorTheme.DefaultFont;
+        FontFile? font = EditorTheme.DefaultFont;
         if (font == null) return;
-        var m = Origami.Current.Metrics;
+        OrigamiMetrics m = Origami.Current.Metrics;
         Texture2D? tex = asset as Texture2D;
 
         if (tex.IsValid())
@@ -59,8 +62,8 @@ public class TextureAssetEditor : ImportSettingsEditor
                 {
                     // Checkerboard so texture alpha reads clearly.
                     const float cell = 10f;
-                    var ca = Prowl.Vector.Color32.FromArgb(255, 44, 40, 54);
-                    var cb = Prowl.Vector.Color32.FromArgb(255, 34, 30, 44);
+                    Color ca = Prowl.Vector.Color32.FromArgb(255, 44, 40, 54);
+                    Color cb = Prowl.Vector.Color32.FromArgb(255, 34, 30, 44);
                     int cols = (int)MathF.Ceiling((float)r.Size.X / cell);
                     int crows = (int)MathF.Ceiling((float)r.Size.Y / cell);
                     for (int cy = 0; cy < crows; cy++)
@@ -108,23 +111,23 @@ public class TextureAssetEditor : ImportSettingsEditor
 
         EditorGUI.SectionHeader(paper, $"{id}_settings_hdr", "Import Settings", first: tex.IsNotValid());
 
-        bool genMips = settings.TryGet("generateMipmaps", out var mipTag) && mipTag.BoolValue;
+        bool genMips = settings.TryGet("generateMipmaps", out EchoObject? mipTag) && mipTag.BoolValue;
         EditorGUI.SettingsToggle(paper, $"{id}_mips", "Generate Mipmaps", genMips,
             v => { settings["generateMipmaps"] = new EchoObject(v); }, separator: false);
 
-        var currentMin = settings.TryGet("minFilter", out var minTag)
+        TextureMin currentMin = settings.TryGet("minFilter", out EchoObject? minTag)
             ? (TextureMin)minTag.IntValue : TextureMin.LinearMipmapLinear;
         EditorGUI.Row(paper, $"{id}_min", "Min Filter", () =>
             Origami.EnumDropdown(paper, $"{id}_min_v", currentMin,
                 v => { settings["minFilter"] = new EchoObject((int)v); }).Show());
 
-        var currentMag = settings.TryGet("magFilter", out var magTag)
+        TextureMag currentMag = settings.TryGet("magFilter", out EchoObject? magTag)
             ? (TextureMag)magTag.IntValue : TextureMag.Linear;
         EditorGUI.Row(paper, $"{id}_mag", "Mag Filter", () =>
             Origami.EnumDropdown(paper, $"{id}_mag_v", currentMag,
                 v => { settings["magFilter"] = new EchoObject((int)v); }).Show());
 
-        var currentWrap = settings.TryGet("wrapMode", out var wrapTag)
+        TextureWrap currentWrap = settings.TryGet("wrapMode", out EchoObject? wrapTag)
             ? (TextureWrap)wrapTag.IntValue : TextureWrap.Repeat;
         EditorGUI.Row(paper, $"{id}_wrap", "Wrap Mode", () =>
             Origami.EnumDropdown(paper, $"{id}_wrap_v", currentWrap,
@@ -132,7 +135,7 @@ public class TextureAssetEditor : ImportSettingsEditor
 
         // Sprite settings: mode + a button to open the full Sprite Editor, which edits the shared sprite
         // object. Fold any edit of it back into the compound so the inspector's diff can see it.
-        var spriteTarget = Importers.SpriteEditRegistry.Get(entry.Guid);
+        SpriteEditTarget spriteTarget = Importers.SpriteEditRegistry.Get(entry.Guid);
         if (spriteTarget.Dirty) FoldSpriteSettings(entry, settings);
         Origami.Header(paper, $"{id}_sprite_hdr", "Sprite").Show();
         EditorGUI.Row(paper, $"{id}_spmode", "Sprite Mode", () =>

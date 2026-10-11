@@ -152,11 +152,11 @@ public class Project
         try
         {
             using var doc = JsonDocument.Parse(File.ReadAllText(prowlFiles[0]));
-            if (doc.RootElement.TryGetProperty("name", out var nameProp))
+            if (doc.RootElement.TryGetProperty("name", out JsonElement nameProp))
                 name = nameProp.GetString() ?? name;
-            if (doc.RootElement.TryGetProperty("version", out var versionProp))
+            if (doc.RootElement.TryGetProperty("version", out JsonElement versionProp))
                 version = versionProp.GetString() ?? "";
-            if (doc.RootElement.TryGetProperty("appliedSteps", out var stepsProp) && stepsProp.TryGetInt32(out int steps))
+            if (doc.RootElement.TryGetProperty("appliedSteps", out JsonElement stepsProp) && stepsProp.TryGetInt32(out int steps))
                 appliedSteps = steps;
         }
         catch { }

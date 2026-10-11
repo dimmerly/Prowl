@@ -64,7 +64,7 @@ public static class ChunkPlanner
 
         void Claim(IEnumerable<Guid> assets, string chunk)
         {
-            foreach (var guid in assets)
+            foreach (Guid guid in assets)
             {
                 if (!shipped.Contains(guid)) continue;
 
@@ -78,17 +78,17 @@ public static class ChunkPlanner
             }
         }
 
-        foreach (var scene in scenes)
+        foreach (Guid scene in scenes)
             Claim(ClosureOf(dependencies, [scene], subAssets), SceneChunkName(scene));
 
         if (resources.Count > 0)
             Claim(ClosureOf(dependencies, resources, subAssets), ResourcesChunk);
 
-        foreach (var guid in contested)
+        foreach (Guid guid in contested)
             owners[guid] = SharedChunk;
 
         // Anything shipped that no entry point reached still has to go somewhere.
-        foreach (var guid in shipped)
+        foreach (Guid guid in shipped)
             owners.TryAdd(guid, CommonChunk);
 
         return owners
@@ -107,8 +107,8 @@ public static class ChunkPlanner
         IReadOnlyCollection<Guid> roots,
         IReadOnlyDictionary<Guid, IReadOnlyList<Guid>> subAssets)
     {
-        var closure = dependencies.GetTransitiveDependencies(roots);
-        foreach (var root in roots)
+        HashSet<Guid> closure = dependencies.GetTransitiveDependencies(roots);
+        foreach (Guid root in roots)
             closure.Add(root);
 
         int previous;
@@ -117,9 +117,9 @@ public static class ChunkPlanner
             previous = closure.Count;
 
             var discovered = new List<Guid>();
-            foreach (var guid in closure)
-                if (subAssets.TryGetValue(guid, out var subs))
-                    foreach (var sub in subs)
+            foreach (Guid guid in closure)
+                if (subAssets.TryGetValue(guid, out IReadOnlyList<Guid>? subs))
+                    foreach (Guid sub in subs)
                         if (!closure.Contains(sub))
                             discovered.Add(sub);
 

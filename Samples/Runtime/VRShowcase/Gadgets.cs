@@ -249,7 +249,7 @@ public sealed class ZipHook : Component
         _joint.Transform.LocalPosition = Float3.Zero;
         _joint.Transform.LocalRotation = Quaternion.Identity;
 
-        var slide = _joint.AddComponent<PointOnLineConstraint>();
+        PointOnLineConstraint slide = _joint.AddComponent<PointOnLineConstraint>();
         slide.LineAxis = line.Direction;
         slide.Anchor1 = Float3.Zero;
         slide.Anchor2 = Hook;

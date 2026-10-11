@@ -236,7 +236,7 @@ public class AnimationGraphTests : RuntimeTestBase
         spine.SetParent(hips, false);
         scene.Add(root);
 
-        var animator = root.AddComponent<Animator>();
+        Animator animator = root.AddComponent<Animator>();
         animator.Avatar = avatar;
         animator.Graph = asset;
 
@@ -485,7 +485,7 @@ public class AnimationGraphTests : RuntimeTestBase
         Update(scene, 2);
 
         AnimationGraph old = animator.Graph!;
-        var saved = Serializer.Deserialize<AnimationGraph>(Serializer.Serialize(typeof(object), old))!;
+        AnimationGraph saved = Serializer.Deserialize<AnimationGraph>(Serializer.Serialize(typeof(object), old))!;
         saved.Find("blend")!.Inputs[2].Value = 2f;
         animator.Graph = saved;
 
@@ -499,7 +499,7 @@ public class AnimationGraphTests : RuntimeTestBase
     {
         (Scene scene, Animator animator, GameObject _) = BlendGraph(1f);
         Update(scene, 2);
-        var before = animator.GraphInstance;
+        AnimationGraphInstance? before = animator.GraphInstance;
 
         animator.Graph!.Invalidate();
         Update(scene, 1);
@@ -877,7 +877,7 @@ public class AnimationGraphTests : RuntimeTestBase
 
         Assert.NotSame(a, b);
         Assert.Same(a, asset.Compile(first));
-        Assert.True(asset.TryGetCompiledMaps(a!, out var nodes, out _));
+        Assert.True(asset.TryGetCompiledMaps(a!, out IReadOnlyDictionary<string, int>? nodes, out _));
         Assert.True(nodes.ContainsKey("pose"));
         Assert.True(asset.TryGetCompiledMaps(b!, out _, out _));
 
@@ -905,9 +905,9 @@ public class AnimationGraphTests : RuntimeTestBase
 
         AnimationGraph asset = animator.Graph!;
         AnimationGraphInstance instance = animator.GraphInstance!;
-        Assert.True(asset.TryGetCompiledMaps(instance.Graph, out var nodes, out _));
+        Assert.True(asset.TryGetCompiledMaps(instance.Graph, out IReadOnlyDictionary<string, int>? nodes, out _));
 
-        var blend = Assert.IsAssignableFrom<IBlendWeights>(instance.TryGetNodeInstance(nodes["blend"]));
+        IBlendWeights blend = Assert.IsAssignableFrom<IBlendWeights>(instance.TryGetNodeInstance(nodes["blend"]));
         Assert.Equal(0.75f, blend.WeightOf(nodes["low"]), 2);
         Assert.Equal(0.25f, blend.WeightOf(nodes["high"]), 2);
         Assert.Equal(0f, blend.WeightOf(nodes["speed"]), 3);

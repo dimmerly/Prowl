@@ -180,7 +180,7 @@ public sealed class PhysicsHand : Component
     public static PhysicsHand Create(XRHand side, Transform origin, VRBody body, Color skin)
     {
         var go = new GameObject(side + " Hand");
-        var rigidbody = go.AddComponent<Rigidbody3D>();
+        Rigidbody3D rigidbody = go.AddComponent<Rigidbody3D>();
         rigidbody.Mass = HandMass;
         rigidbody.AffectedByGravity = false;
         rigidbody.Friction = 0.8f;
@@ -189,7 +189,7 @@ public sealed class PhysicsHand : Component
         rigidbody.EnableSpeculativeContacts = true;
         go.AddComponent<MeleeWeapon>().MinSpeed = 2.5f;
 
-        var hand = go.AddComponent<PhysicsHand>();
+        PhysicsHand hand = go.AddComponent<PhysicsHand>();
         hand.Hand = side;
         hand.Origin = origin;
         hand.Body = body;
@@ -766,10 +766,10 @@ public sealed class PhysicsHand : Component
         _grip.SetParent(GameObject);
         _grip.Transform.LocalPosition = Float3.Zero;
 
-        var socket = _grip.AddComponent<BallSocketConstraint>();
+        BallSocketConstraint socket = _grip.AddComponent<BallSocketConstraint>();
         socket.Anchor = GripLocal;
         socket.ConnectedBody = anchor;
-        var angle = _grip.AddComponent<FixedAngleConstraint>();
+        FixedAngleConstraint angle = _grip.AddComponent<FixedAngleConstraint>();
         angle.ConnectedBody = anchor;
         _grip.Enabled = true;
 
@@ -931,7 +931,7 @@ public sealed class PhysicsHand : Component
             Float3 axis = Float3.Normalize(end - start);
             float half = Float3.Length(end - start) * 0.5f;
 
-            var line = _grip.AddComponent<PointOnLineConstraint>();
+            PointOnLineConstraint line = _grip.AddComponent<PointOnLineConstraint>();
             line.LineAxis = axis;
             line.Anchor1 = (start + end) * 0.5f;
             line.Anchor2 = GripLocal;
@@ -939,13 +939,13 @@ public sealed class PhysicsHand : Component
             line.MaxDistance = half;
             line.ConnectedBody = _rigidbody;
 
-            var twist = _grip.AddComponent<HingeAngleConstraint>();
+            HingeAngleConstraint twist = _grip.AddComponent<HingeAngleConstraint>();
             twist.HingeAxis = axis;
             twist.ConnectedBody = _rigidbody;
         }
         else
         {
-            var socket = _grip.AddComponent<BallSocketConstraint>();
+            BallSocketConstraint socket = _grip.AddComponent<BallSocketConstraint>();
             socket.Anchor = Quaternion.Inverse(item.Rotation) * (grip - item.Position);
             socket.ConnectedBody = _rigidbody;
             _grip.AddComponent<FixedAngleConstraint>().ConnectedBody = _rigidbody;

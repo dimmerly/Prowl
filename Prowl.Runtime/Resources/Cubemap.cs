@@ -161,7 +161,7 @@ public sealed class Cubemap : Texture, ISerializable
     {
         EnsureLoaded();
         int key = ((layer * 6 + face) * 64 + mip) * 2 + (withDepth ? 1 : 0);
-        if (_faceTargets.TryGetValue(key, out var fb) && !fb.IsDisposed)
+        if (_faceTargets.TryGetValue(key, out GraphicsFrameBuffer? fb) && !fb.IsDisposed)
             return fb;
 
         uint s = MipSize(mip);
@@ -203,7 +203,7 @@ public sealed class Cubemap : Texture, ISerializable
     {
         if (_faceTargets != null)
         {
-            foreach (var fb in _faceTargets.Values)
+            foreach (GraphicsFrameBuffer fb in _faceTargets.Values)
                 fb?.Dispose();
             _faceTargets.Clear();
         }

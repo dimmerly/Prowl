@@ -297,7 +297,7 @@ public class AssetSourceTests : RuntimeTestBase
         {
             string path = request.RequestUri!.AbsolutePath.TrimStart('/');
             Asked.Add(path);
-            var response = files.TryGetValue(path, out string? text)
+            HttpResponseMessage response = files.TryGetValue(path, out string? text)
                 ? new HttpResponseMessage(HttpStatusCode.OK) { Content = new StringContent(text) }
                 : new HttpResponseMessage(HttpStatusCode.NotFound);
             return Task.FromResult(response);

@@ -91,14 +91,14 @@ public static class LightmapUVGenerator
         // that are continuous within a chart weld, while corners across a seam stay split.
         var map = new Dictionary<(int orig, int qu, int qv), uint>(verts.Length * 2);
         var newVerts = new List<Float3>(verts.Length);
-        var newNormals = normals != null ? new List<Float3>(verts.Length) : null;
-        var newUV = uv != null ? new List<Float2>(verts.Length) : null;
+        List<Float3>? newNormals = normals != null ? new List<Float3>(verts.Length) : null;
+        List<Float2>? newUV = uv != null ? new List<Float2>(verts.Length) : null;
         var newUV2 = new List<Float2>(verts.Length);
-        var newTangents = tangents != null ? new List<Float4>(verts.Length) : null;
-        var newColors = colors != null ? new List<Color>(verts.Length) : null;
-        var newColors32 = colors32 != null ? new List<Color32>(verts.Length) : null;
-        var newBoneIdx = boneIdx != null ? new List<Float4>(verts.Length) : null;
-        var newBoneW = boneW != null ? new List<Float4>(verts.Length) : null;
+        List<Float4>? newTangents = tangents != null ? new List<Float4>(verts.Length) : null;
+        List<Color>? newColors = colors != null ? new List<Color>(verts.Length) : null;
+        List<Color32>? newColors32 = colors32 != null ? new List<Color32>(verts.Length) : null;
+        List<Float4>? newBoneIdx = boneIdx != null ? new List<Float4>(verts.Length) : null;
+        List<Float4>? newBoneW = boneW != null ? new List<Float4>(verts.Length) : null;
         var newIndices = new uint[indices.Length];
 
         const double Q = 65536.0;
@@ -107,7 +107,7 @@ public static class LightmapUVGenerator
         {
             int orig = (int)indices[corner];
             Double2 uvd = perCorner[corner];
-            var key = (orig, (int)Math.Round(uvd.X * Q), (int)Math.Round(uvd.Y * Q));
+            (int orig, int, int) key = (orig, (int)Math.Round(uvd.X * Q), (int)Math.Round(uvd.Y * Q));
 
             if (!map.TryGetValue(key, out uint ni))
             {

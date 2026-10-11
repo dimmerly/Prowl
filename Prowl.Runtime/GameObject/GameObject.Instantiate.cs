@@ -109,7 +109,7 @@ public partial class GameObject
         if (go.IsPrefabInstance && go.PrefabAssetId != prefabAssetId)
             return; // a nested instance, with a link of its own
 
-        var link = go.EnsurePrefabLink();
+        PrefabLink link = go.EnsurePrefabLink();
         link.AssetId = prefabAssetId;
         link.SourceIdentifier = go.Identifier;
         go.SetIdentifier(Guid.NewGuid());
@@ -171,7 +171,7 @@ public partial class GameObject
     /// than as an offset from the parent. Off by default, so the prefab lands where the parent is.</param>
     public static GameObject? Instantiate(PrefabAsset prefab, GameObject? parent, bool worldPositionStays = false)
     {
-        var instance = Instantiate(prefab, parent.IsValid() ? parent!.Scene : Scene.Current);
+        GameObject? instance = Instantiate(prefab, parent.IsValid() ? parent!.Scene : Scene.Current);
         if (instance == null) return null;
 
         if (parent.IsValid())
@@ -183,7 +183,7 @@ public partial class GameObject
     /// <summary>Spawn a prefab into a specific scene.</summary>
     public static GameObject? Instantiate(PrefabAsset prefab, Scene? scene)
     {
-        var instance = InstantiateDetached(prefab);
+        GameObject? instance = InstantiateDetached(prefab);
         if (instance == null) return null; // InstantiateDetached already reported why
 
         return AddToScene(instance, scene);
@@ -192,7 +192,7 @@ public partial class GameObject
     /// <summary>Spawn a prefab into a specific scene at a world position and rotation.</summary>
     public static GameObject? Instantiate(PrefabAsset prefab, Scene? scene, Float3 position, Quaternion rotation)
     {
-        var instance = InstantiateDetached(prefab);
+        GameObject? instance = InstantiateDetached(prefab);
         if (instance == null) return null;
 
         // Placed before the object enters the scene, so anything reacting to OnEnable sees where it
@@ -214,13 +214,13 @@ public partial class GameObject
     /// <summary>Copy an existing GameObject to a world position and rotation.</summary>
     public static GameObject? Instantiate(GameObject original, Float3 position, Quaternion rotation)
     {
-        var clone = Clone(original);
+        GameObject? clone = Clone(original);
         if (clone == null) return null;
 
         clone.Transform.Position = position;
         clone.Transform.Rotation = rotation;
 
-        var scene = original.Scene;
+        Scene? scene = original.Scene;
         return AddToScene(clone, scene.IsValid() ? scene : Scene.Current);
     }
 
@@ -228,7 +228,7 @@ public partial class GameObject
     public static GameObject? Instantiate(GameObject original, GameObject? parent, bool worldPositionStays = false)
     {
         Scene? target = parent.IsValid() ? parent!.Scene : (original.IsValid() ? original.Scene : null);
-        var clone = Instantiate(original, target);
+        GameObject? clone = Instantiate(original, target);
         if (clone == null) return null;
 
         if (parent.IsValid())
@@ -240,7 +240,7 @@ public partial class GameObject
     /// <summary>Copy an existing GameObject into a specific scene.</summary>
     public static GameObject? Instantiate(GameObject original, Scene? scene)
     {
-        var clone = Clone(original);
+        GameObject? clone = Clone(original);
         return clone == null ? null : AddToScene(clone, scene);
     }
 

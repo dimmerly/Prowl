@@ -37,9 +37,9 @@ public static class BuildProfileDrawers
     /// <summary>Draws the profile, walking up its base types so a subclass falls back to its parent's drawer.</summary>
     public static void Draw(Paper paper, PlatformBuildProfile profile)
     {
-        for (var type = profile.GetType(); type != null; type = type.BaseType)
+        for (Type? type = profile.GetType(); type != null; type = type.BaseType)
         {
-            if (!s_drawers.TryGetValue(type, out var drawer)) continue;
+            if (!s_drawers.TryGetValue(type, out IBuildProfileDrawer? drawer)) continue;
             drawer.OnGUI(paper, profile);
             return;
         }

@@ -157,7 +157,7 @@ public sealed class PhysicsShowcaseGame : StationGame
     {
         GameObject go = Model(name, mesh, Lit(color, 0f, 0.5f).Emissive(color, 0f), position);
         go.Transform.Rotation = rotation;
-        var rb = go.AddComponent<Rigidbody3D>();
+        Rigidbody3D rb = go.AddComponent<Rigidbody3D>();
         rb.Mass = mass;
         go.AddComponent<ImpactFlash>();
         return rb;
@@ -283,13 +283,13 @@ public sealed class PhysicsShowcaseGame : StationGame
                 break;
             case Shape.Capsule:
                 rb = Body("Capsule", Mesh.CreateCapsule(0.3f, 1.3f), color, position, RandomRotation());
-                var capsule = rb.GameObject.AddComponent<CapsuleCollider>();
+                CapsuleCollider capsule = rb.GameObject.AddComponent<CapsuleCollider>();
                 capsule.Radius = 0.3f;
                 capsule.Height = 1.3f;
                 break;
             case Shape.Cylinder:
                 rb = Body("Cylinder", Mesh.CreateCylinder(0.4f, 0.8f, 20), color, position, RandomRotation());
-                var cylinder = rb.GameObject.AddComponent<CylinderCollider>();
+                CylinderCollider cylinder = rb.GameObject.AddComponent<CylinderCollider>();
                 cylinder.Radius = 0.4f;
                 cylinder.Height = 0.8f;
                 break;
@@ -300,7 +300,7 @@ public sealed class PhysicsShowcaseGame : StationGame
                 cone.Transform.Position = position;
                 cone.Transform.Rotation = RandomRotation();
                 rb = cone.AddComponent<Rigidbody3D>();
-                var coneCollider = cone.AddComponent<ConeCollider>();
+                ConeCollider coneCollider = cone.AddComponent<ConeCollider>();
                 coneCollider.Radius = 0.5f;
                 coneCollider.Height = 1f;
                 GameObject visual = Model("Visual", Mesh.CreateCone(0.5f, 1f, 20), Lit(color, 0f, 0.5f).Emissive(color, 0f), Float3.Zero);
@@ -312,7 +312,7 @@ public sealed class PhysicsShowcaseGame : StationGame
             default:
                 Mesh rock = RockMesh(0.55f, _rng.Next(1000));
                 rb = Body("Rock", rock, color, position, RandomRotation(), 2f);
-                var rockCollider = rb.GameObject.AddComponent<MeshCollider>();
+                MeshCollider rockCollider = rb.GameObject.AddComponent<MeshCollider>();
                 rockCollider.Convex = true;
                 rockCollider.Mesh = rock;
                 break;
@@ -464,7 +464,7 @@ public sealed class PhysicsShowcaseGame : StationGame
     {
         Mesh rock = RockMesh(Range(0.4f, 0.7f), _rng.Next(1000));
         Rigidbody3D rb = Body("Rock", rock, new Color(0.12f, 0.11f, 0.1f, 1f), _bowlCenter + new Float3(Range(-4f, 4f), Range(5f, 8f), Range(-4f, 4f)), RandomRotation(), 3f);
-        var collider = rb.GameObject.AddComponent<MeshCollider>();
+        MeshCollider collider = rb.GameObject.AddComponent<MeshCollider>();
         collider.Convex = true;
         collider.Mesh = rock;
         Add(rb.GameObject);
@@ -527,7 +527,7 @@ public sealed class PhysicsShowcaseGame : StationGame
         Static("Gantry Post", new Float3(0.3f, 6f, 0.3f), c + new Float3(1.35f, 3f, 0f));
 
         _paddle = Crate(c + new Float3(-3f, 4.9f, 0f), new Float3(0.9f, 1.8f, 0.1f), Teal, 2f);
-        var universal = _paddle.GameObject.AddComponent<UniversalJoint>();
+        UniversalJoint universal = _paddle.GameObject.AddComponent<UniversalJoint>();
         universal.Anchor = new Float3(0f, 0.9f, 0f);
         universal.Axis1 = Float3.UnitX;
         universal.Axis2 = Float3.UnitZ;
@@ -536,10 +536,10 @@ public sealed class PhysicsShowcaseGame : StationGame
         for (int i = 0; i < 12; i++)
         {
             Rigidbody3D link = Body("Link", Mesh.CreateCapsule(0.09f, 0.42f, 8, 2), new Color(0.3f, 0.3f, 0.32f, 1f), c + new Float3(0f, 5.6f - i * 0.42f, 0f), Quaternion.Identity, 0.3f);
-            var collider = link.GameObject.AddComponent<CapsuleCollider>();
+            CapsuleCollider collider = link.GameObject.AddComponent<CapsuleCollider>();
             collider.Radius = 0.09f;
             collider.Height = 0.42f;
-            var socket = link.GameObject.AddComponent<BallSocketConstraint>();
+            BallSocketConstraint socket = link.GameObject.AddComponent<BallSocketConstraint>();
             socket.Anchor = new Float3(0f, 0.21f, 0f);
             if (i > 0) socket.ConnectedBody = previous;
             Add(link.GameObject);
@@ -574,14 +574,14 @@ public sealed class PhysicsShowcaseGame : StationGame
             plank.LinearDamping = 0.05f;
             plank.AngularDamping = 0.05f;
 
-            var hinge = plank.GameObject.AddComponent<HingeJoint>();
+            HingeJoint hinge = plank.GameObject.AddComponent<HingeJoint>();
             hinge.Anchor = new Float3(-span * 0.5f, 0f, 0f);
             hinge.Axis = Float3.UnitZ;
             if (lastPlank.IsValid()) hinge.ConnectedBody = lastPlank;
 
             if (i == Planks - 1)
             {
-                var end = plank.GameObject.AddComponent<HingeJoint>();
+                HingeJoint end = plank.GameObject.AddComponent<HingeJoint>();
                 end.Anchor = new Float3(span * 0.5f, 0f, 0f);
                 end.Axis = Float3.UnitZ;
             }
@@ -630,7 +630,7 @@ public sealed class PhysicsShowcaseGame : StationGame
         // Windmill: hub plus four blades as child colliders of one body.
         Static("Windmill Tower", new Float3(0.6f, 4.4f, 0.6f), c + new Float3(-7f, 2.2f, 0.4f), material: _stone);
         _windmill = Body("Rotor", Mesh.CreateCylinder(0.35f, 0.4f, 16), new Color(0.2f, 0.2f, 0.22f, 1f), c + new Float3(-7f, 4.6f, -0.2f), Quaternion.FromEuler(new Float3(90f, 0f, 0f)), 20f);
-        var hub = _windmill.GameObject.AddComponent<CylinderCollider>();
+        CylinderCollider hub = _windmill.GameObject.AddComponent<CylinderCollider>();
         hub.Radius = 0.35f;
         hub.Height = 0.4f;
         for (int i = 0; i < 4; i++)
@@ -655,11 +655,11 @@ public sealed class PhysicsShowcaseGame : StationGame
         Static("Elevator Shaft", new Float3(0.3f, 6f, 0.3f), c + new Float3(1.6f, 3f, 1.6f), material: _stone);
         _elevator = Crate(c + new Float3(0f, 0.25f, 0f), new Float3(2.6f, 0.2f, 2.6f), new Color(0.12f, 0.12f, 0.14f, 1f), 30f);
         _elevator.AffectedByGravity = false;
-        var line = _elevator.GameObject.AddComponent<PointOnLineConstraint>();
+        PointOnLineConstraint line = _elevator.GameObject.AddComponent<PointOnLineConstraint>();
         line.LineAxis = Float3.UnitY;
         line.Anchor2 = _elevator.Transform.Position;
         _elevator.GameObject.AddComponent<FixedAngleConstraint>();
-        var lift = _elevator.GameObject.AddComponent<LinearMotorConstraint>();
+        LinearMotorConstraint lift = _elevator.GameObject.AddComponent<LinearMotorConstraint>();
         lift.Axis1 = Float3.UnitY;
         lift.Axis2 = Float3.UnitY;
         lift.MaximumForce = 5000f;
@@ -673,14 +673,14 @@ public sealed class PhysicsShowcaseGame : StationGame
         // Arm hanging from a shoulder.
         Static("Shoulder", new Float3(0.5f, 0.5f, 0.5f), c + new Float3(7f, 4.5f, 0f), material: _stone);
         Rigidbody3D upper = Body("Upper Arm", Mesh.CreateCapsule(0.16f, 1.1f), Blue, c + new Float3(7f, 3.6f, 0f), Quaternion.Identity, 2f);
-        var upperCollider = upper.GameObject.AddComponent<CapsuleCollider>();
+        CapsuleCollider upperCollider = upper.GameObject.AddComponent<CapsuleCollider>();
         upperCollider.Radius = 0.16f;
         upperCollider.Height = 1.1f;
         upper.GameObject.AddComponent<BallSocketConstraint>().Anchor = new Float3(0f, 0.65f, 0f);
-        var cone = upper.GameObject.AddComponent<ConeLimitConstraint>();
+        ConeLimitConstraint cone = upper.GameObject.AddComponent<ConeLimitConstraint>();
         cone.Axis = Float3.UnitY;
         cone.MaxAngle = 50f;
-        var twist = upper.GameObject.AddComponent<TwistAngleConstraint>();
+        TwistAngleConstraint twist = upper.GameObject.AddComponent<TwistAngleConstraint>();
         twist.Axis1 = Float3.UnitY;
         twist.Axis2 = Float3.UnitY;
         twist.MinAngle = -20f;
@@ -688,7 +688,7 @@ public sealed class PhysicsShowcaseGame : StationGame
         Add(upper.GameObject);
 
         _forearm = Body("Forearm", Mesh.CreateCapsule(0.13f, 1f), Teal, c + new Float3(7f, 2.5f, 0f), Quaternion.Identity, 1.5f);
-        var forearmCollider = _forearm.GameObject.AddComponent<CapsuleCollider>();
+        CapsuleCollider forearmCollider = _forearm.GameObject.AddComponent<CapsuleCollider>();
         forearmCollider.Radius = 0.13f;
         forearmCollider.Height = 1f;
         _elbow = _forearm.GameObject.AddComponent<HingeJoint>();
@@ -743,7 +743,7 @@ public sealed class PhysicsShowcaseGame : StationGame
             float radius = i % 2 == 0 ? 4f : 5.5f;
             Float3 position = c + new Float3(-7f + MathF.Sin(angle) * radius, 1.25f, MathF.Cos(angle) * radius);
             GameObject pillar = Model("Pillar", Mesh.CreateCylinder(0.4f, 2.5f, 16), _stone, position);
-            var collider = pillar.AddComponent<CylinderCollider>();
+            CylinderCollider collider = pillar.AddComponent<CylinderCollider>();
             collider.Radius = 0.4f;
             collider.Height = 2.5f;
             Add(pillar);
@@ -754,7 +754,7 @@ public sealed class PhysicsShowcaseGame : StationGame
         Static("Lane", new Float3(0.2f, 0.4f, 12f), c + new Float3(0.2f, 0.2f, 2f), material: _stone);
         Rigidbody3D slider = Crate(c + new Float3(-1f, 0.6f, 3f), new Float3(1.2f), Red);
         slider.MotionType = Jitter2.Dynamics.MotionType.Kinematic;
-        var swing = slider.GameObject.AddComponent<Oscillate>();
+        Oscillate swing = slider.GameObject.AddComponent<Oscillate>();
         swing.Origin = slider.Transform.Position;
         swing.Offset = new Float3(2.5f, 0f, 0f);
 
@@ -796,7 +796,7 @@ public sealed class PhysicsShowcaseGame : StationGame
         float direction = MathF.Sign(low.X - rampTransform.Position.X);
         var pit = new GameObject("Recycler");
         pit.Transform.Position = new Float3(low.X + direction * 3f, 0.6f, c.Z);
-        var volume = pit.AddComponent<TriggerVolume>();
+        TriggerVolume volume = pit.AddComponent<TriggerVolume>();
         volume.Size = new Float3(2f, 1.2f, 4f);
         pit.AddComponent<Recycler>().Target = () => _releasePoint + new Float3(0f, 0f, Range(-0.8f, 0.8f));
         Add(pit);
@@ -826,7 +826,7 @@ public sealed class PhysicsShowcaseGame : StationGame
         var gate = new GameObject("Gate");
         gate.Transform.Position = at + up * 0.9f;
         gate.Transform.Rotation = rotation;
-        var volume = gate.AddComponent<TriggerVolume>();
+        TriggerVolume volume = gate.AddComponent<TriggerVolume>();
         volume.Size = new Float3(0.6f, 1.6f, 3.4f);
         TriggerGate counter = gate.AddComponent<TriggerGate>();
         counter.Glow = glow;

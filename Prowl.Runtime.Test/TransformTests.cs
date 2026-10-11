@@ -27,11 +27,11 @@ public class TransformTests : RuntimeTestBase
     [Fact]
     public void RotateAround_UsesDegrees()
     {
-        var t = NewTransform("orbit");
+        Transform t = NewTransform("orbit");
         t.Position = new Float3(1, 0, 0);
         t.RotateAround(new Float3(0, 0, 0), new Float3(0, 1, 0), 90f);
 
-        var p = t.Position;
+        Float3 p = t.Position;
         // A 90 degree orbit about Y maps (1,0,0) onto the Z axis with unit radius.
         Assert.True(Maths.Abs(p.X) < 0.01, $"X should be ~0 but was {p.X}");
         Assert.True(Maths.Abs(p.Y) < 0.01, $"Y should be ~0 but was {p.Y}");
@@ -43,7 +43,7 @@ public class TransformTests : RuntimeTestBase
     [Fact]
     public void NoParent_PositionEqualsLocalPosition()
     {
-        var t = NewTransform();
+        Transform t = NewTransform();
         t.LocalPosition = new Float3(3, 4, 5);
         AssertVec(new Float3(3, 4, 5), t.Position);
     }
@@ -51,7 +51,7 @@ public class TransformTests : RuntimeTestBase
     [Fact]
     public void IdentityAxes()
     {
-        var t = NewTransform();
+        Transform t = NewTransform();
         AssertVec(Float3.UnitX, t.Right);
         AssertVec(Float3.UnitY, t.Up);
         AssertVec(Float3.UnitZ, t.Forward);
@@ -60,13 +60,13 @@ public class TransformTests : RuntimeTestBase
     [Fact]
     public void TransformPoint_InverseTransformPoint_RoundTrip()
     {
-        var t = NewTransform();
+        Transform t = NewTransform();
         t.LocalPosition = new Float3(5, 2, 3);
         t.LocalRotation = Quaternion.AxisAngle(Float3.Normalize(new Float3(1, 1, 0)), 0.9f);
         t.LocalScale = new Float3(2, 1, 0.5f);
 
         var p = new Float3(1, 2, 3);
-        var back = t.InverseTransformPoint(t.TransformPoint(p));
+        Float3 back = t.InverseTransformPoint(t.TransformPoint(p));
 
         AssertVec(p, back, 3);
     }
@@ -75,19 +75,19 @@ public class TransformTests : RuntimeTestBase
     public void TransformDirection_IgnoresPositionAndScale()
     {
         var rot = Quaternion.AxisAngle(Float3.UnitY, 0.7f);
-        var t = NewTransform();
+        Transform t = NewTransform();
         t.LocalPosition = new Float3(100, 50, -20);
         t.LocalScale = new Float3(3, 3, 3);
         t.LocalRotation = rot;
 
-        var d = t.TransformDirection(Float3.UnitX);
+        Float3 d = t.TransformDirection(Float3.UnitX);
 
         // Scale must not leak in - a direction is rotation-only, so length stays 1 (a scaled impl
         // would give length 3). LengthSquared is an independent check, not derived from the Rotation getter.
         Assert.Equal(1.0, Float3.LengthSquared(d), 4);
 
         // Position must not leak in - a rotation-only transform yields the identical direction.
-        var rotationOnly = NewTransform("rotOnly");
+        Transform rotationOnly = NewTransform("rotOnly");
         rotationOnly.LocalRotation = rot;
         AssertVec(rotationOnly.TransformDirection(Float3.UnitX), d, 4);
 
@@ -98,7 +98,7 @@ public class TransformTests : RuntimeTestBase
     [Fact]
     public void InverseTransformDirection_RoundTrip()
     {
-        var t = NewTransform();
+        Transform t = NewTransform();
         t.LocalRotation = Quaternion.AxisAngle(Float3.Normalize(new Float3(0, 1, 1)), 1.1f);
         var d = Float3.Normalize(new Float3(1, 2, 3));
         AssertVec(d, t.InverseTransformDirection(t.TransformDirection(d)), 3);
@@ -107,7 +107,7 @@ public class TransformTests : RuntimeTestBase
     [Fact]
     public void TransformVector_IncludesScale()
     {
-        var t = NewTransform();
+        Transform t = NewTransform();
         t.LocalScale = new Float3(2, 3, 4);
         // No rotation: vector just scales component-wise.
         AssertVec(new Float3(2, 0, 0), t.TransformVector(Float3.UnitX), 4);
@@ -119,9 +119,9 @@ public class TransformTests : RuntimeTestBase
     [Fact]
     public void ChildWorldPosition_FollowsParentTranslation()
     {
-        var parent = NewTransform("Parent");
+        Transform parent = NewTransform("Parent");
         parent.LocalPosition = new Float3(10, 0, 0);
-        var child = NewTransform("Child");
+        Transform child = NewTransform("Child");
         child.SetParent(parent);
         child.LocalPosition = new Float3(1, 2, 3);
 
@@ -131,9 +131,9 @@ public class TransformTests : RuntimeTestBase
     [Fact]
     public void ChildWorldPosition_FollowsParentRotation()
     {
-        var parent = NewTransform("Parent");
+        Transform parent = NewTransform("Parent");
         parent.LocalRotation = Quaternion.AxisAngle(Float3.UnitY, 1.2f);
-        var child = NewTransform("Child");
+        Transform child = NewTransform("Child");
         child.SetParent(parent);
         child.LocalPosition = Float3.UnitX;
 
@@ -144,9 +144,9 @@ public class TransformTests : RuntimeTestBase
     [Fact]
     public void ChildLossyScale_MultipliesParentScale()
     {
-        var parent = NewTransform("Parent");
+        Transform parent = NewTransform("Parent");
         parent.LocalScale = new Float3(2, 2, 2);
-        var child = NewTransform("Child");
+        Transform child = NewTransform("Child");
         child.SetParent(parent);
         child.LocalScale = new Float3(3, 3, 3);
 
@@ -156,10 +156,10 @@ public class TransformTests : RuntimeTestBase
     [Fact]
     public void SetWorldPositionOnChild_PreservedOnReadback()
     {
-        var parent = NewTransform("Parent");
+        Transform parent = NewTransform("Parent");
         parent.LocalPosition = new Float3(10, 5, 0);
         parent.LocalRotation = Quaternion.AxisAngle(Float3.UnitY, 0.6f);
-        var child = NewTransform("Child");
+        Transform child = NewTransform("Child");
         child.SetParent(parent);
 
         child.Position = new Float3(1, 2, 3);
@@ -172,10 +172,10 @@ public class TransformTests : RuntimeTestBase
     [Fact]
     public void SetPositionAndRotation_WithParent_SetsWorldPose()
     {
-        var parent = NewTransform("Parent");
+        Transform parent = NewTransform("Parent");
         parent.LocalPosition = new Float3(10, 0, 0);
         parent.LocalRotation = Quaternion.AxisAngle(Float3.UnitY, 0.5f);
-        var child = NewTransform("Child");
+        Transform child = NewTransform("Child");
         child.SetParent(parent);
 
         var rot = Quaternion.AxisAngle(Float3.Normalize(new Float3(0, 1, 1)), 1.0f);
@@ -188,11 +188,11 @@ public class TransformTests : RuntimeTestBase
     [Fact]
     public void SetWorldTransform_WithParent_PreservesWorld()
     {
-        var parent = NewTransform("Parent");
+        Transform parent = NewTransform("Parent");
         parent.LocalPosition = new Float3(10, 0, 0);
         parent.LocalScale = new Float3(2, 2, 2);
         parent.LocalRotation = Quaternion.AxisAngle(Float3.UnitY, 0.4f);
-        var child = NewTransform("Child");
+        Transform child = NewTransform("Child");
         child.SetParent(parent);
 
         var rot = Quaternion.AxisAngle(Float3.Normalize(new Float3(1, 1, 0)), 0.8f);
@@ -208,7 +208,7 @@ public class TransformTests : RuntimeTestBase
     [Fact]
     public void LookAt_PointsForwardAtTarget()
     {
-        var t = NewTransform();
+        Transform t = NewTransform();
         t.LocalPosition = Float3.Zero;
         t.LookAt(new Float3(0, 0, 5));
         AssertVec(Float3.UnitZ, t.Forward, 3);
@@ -222,7 +222,7 @@ public class TransformTests : RuntimeTestBase
     [Fact]
     public void Version_IncrementsOnChange()
     {
-        var t = NewTransform();
+        Transform t = NewTransform();
         uint last = t.Version;
         t.LocalPosition = new Float3(1, 0, 0);
         Assert.NotEqual(last, t.Version);
@@ -235,9 +235,9 @@ public class TransformTests : RuntimeTestBase
     [Fact]
     public void Find_And_DeepFind_ByName()
     {
-        var root = NewTransform("Root");
-        var child = NewTransform("Child");
-        var grand = NewTransform("Grand");
+        Transform root = NewTransform("Root");
+        Transform child = NewTransform("Child");
+        Transform grand = NewTransform("Grand");
         child.SetParent(root);
         grand.SetParent(child);
 
@@ -249,9 +249,9 @@ public class TransformTests : RuntimeTestBase
     [Fact]
     public void IsChildOf_And_SiblingIndex()
     {
-        var root = NewTransform("Root");
-        var a = NewTransform("A");
-        var b = NewTransform("B");
+        Transform root = NewTransform("Root");
+        Transform a = NewTransform("A");
+        Transform b = NewTransform("B");
         a.SetParent(root);
         b.SetParent(root);
 
@@ -278,7 +278,7 @@ public class TransformTests : RuntimeTestBase
     [Fact]
     public void WorldMatrix_SelfMove_InvalidatesCache()
     {
-        var t = NewTransform("t");
+        Transform t = NewTransform("t");
         t.LocalPosition = new Float3(1, 2, 3);
         AssertVec(new Float3(1, 2, 3), WorldOrigin(t));
         AssertVec(new Float3(1, 2, 3), WorldOrigin(t)); // cache hit, same result
@@ -292,9 +292,9 @@ public class TransformTests : RuntimeTestBase
     [Fact]
     public void WorldMatrix_AncestorMove_InvalidatesChild()
     {
-        var parent = NewTransform("Parent");
+        Transform parent = NewTransform("Parent");
         parent.LocalPosition = new Float3(10, 0, 0);
-        var child = NewTransform("Child");
+        Transform child = NewTransform("Child");
         child.SetParent(parent, false);
         child.LocalPosition = new Float3(1, 2, 3);
 
@@ -308,9 +308,9 @@ public class TransformTests : RuntimeTestBase
     [Fact]
     public void WorldMatrix_RootMove_InvalidatesGrandchild()
     {
-        var root = NewTransform("Root");
-        var mid = NewTransform("Mid");
-        var leaf = NewTransform("Leaf");
+        Transform root = NewTransform("Root");
+        Transform mid = NewTransform("Mid");
+        Transform leaf = NewTransform("Leaf");
         mid.SetParent(root, false);
         leaf.SetParent(mid, false);
         root.LocalPosition = new Float3(0, 100, 0);
@@ -327,11 +327,11 @@ public class TransformTests : RuntimeTestBase
     [Fact]
     public void WorldMatrix_Reparent_InvalidatesCache()
     {
-        var a = NewTransform("A");
+        Transform a = NewTransform("A");
         a.LocalPosition = new Float3(10, 0, 0);
-        var b = NewTransform("B");
+        Transform b = NewTransform("B");
         b.LocalPosition = new Float3(100, 0, 0);
-        var child = NewTransform("Child");
+        Transform child = NewTransform("Child");
         child.SetParent(a, false);
         child.LocalPosition = new Float3(1, 0, 0);
 
@@ -345,9 +345,9 @@ public class TransformTests : RuntimeTestBase
     [Fact]
     public void WorldMatrix_ParentThenChildMove_Composes()
     {
-        var parent = NewTransform("Parent");
+        Transform parent = NewTransform("Parent");
         parent.LocalPosition = new Float3(10, 0, 0);
-        var child = NewTransform("Child");
+        Transform child = NewTransform("Child");
         child.SetParent(parent, false);
         child.LocalPosition = new Float3(1, 0, 0);
 
@@ -370,8 +370,8 @@ public class TransformTests : RuntimeTestBase
     [Fact]
     public void ParentRotateAxisAngle_MovesChildWorldPosition()
     {
-        var parent = NewTransform("Parent");
-        var child = NewTransform("Child");
+        Transform parent = NewTransform("Parent");
+        Transform child = NewTransform("Child");
         child.SetParent(parent, false);
         child.LocalPosition = new Float3(0, 0, 1);
 
@@ -379,7 +379,7 @@ public class TransformTests : RuntimeTestBase
 
         parent.Rotate(Float3.UnitY, 90f);
 
-        var after = child.Position;
+        Float3 after = child.Position;
         Assert.True(Float3.LengthSquared(after - new Float3(0, 0, 1)) > 0.25,
             $"Child world position must change when the parent spins, but stayed at {after}");
         // (0,0,1) turned 90 deg about Y lands on the X axis (handedness-agnostic: |X|~1, Y/Z ~0).
@@ -393,18 +393,18 @@ public class TransformTests : RuntimeTestBase
     [Fact]
     public void ParentRotateAround_OwnCentre_MovesChildWorldPosition()
     {
-        var parent = NewTransform("Parent");
+        Transform parent = NewTransform("Parent");
         parent.LocalPosition = new Float3(5, 0, 0);
-        var child = NewTransform("Child");
+        Transform child = NewTransform("Child");
         child.SetParent(parent, false);
         child.LocalPosition = new Float3(0, 0, 2);
 
-        var before = child.Position; // (5,0,2), primes caches
+        Float3 before = child.Position; // (5,0,2), primes caches
         AssertVec(new Float3(5, 0, 2), before);
 
         parent.RotateAround(parent.Position, Float3.UnitY, 90f);
 
-        var after = child.Position;
+        Float3 after = child.Position;
         Assert.True(Float3.LengthSquared(after - before) > 0.25,
             $"Child must orbit the parent's centre, but stayed at {after}");
         // Parent stays at (5,0,0); the (0,0,2) offset swings onto X, so world X = 5 +/- 2, Y/Z ~0.
@@ -418,13 +418,13 @@ public class TransformTests : RuntimeTestBase
     [Fact]
     public void RotateAxisAngle_UpdatesOwnTransformPoint()
     {
-        var t = NewTransform();
+        Transform t = NewTransform();
         var local = new Float3(0, 0, 1);
         AssertVec(local, t.TransformPoint(local)); // identity, primes cache
 
         t.Rotate(Float3.UnitY, 90f);
 
-        var world = t.TransformPoint(local);
+        Float3 world = t.TransformPoint(local);
         Assert.True(Maths.Abs(Maths.Abs(world.X) - 1f) < 0.01, $"|X| ~1 expected, got {world}");
         Assert.True(Maths.Abs(world.Z) < 0.01, $"Z ~0 expected, got {world}");
     }
@@ -434,7 +434,7 @@ public class TransformTests : RuntimeTestBase
     [Fact]
     public void RotateAxisAngle_KeepsMatrixConsistentWithRotationGetter()
     {
-        var t = NewTransform();
+        Transform t = NewTransform();
         t.LocalPosition = new Float3(2, 3, 4);
         _ = t.LocalToWorldMatrix; // prime the cache while rotation is still identity
 
@@ -449,12 +449,12 @@ public class TransformTests : RuntimeTestBase
     [Fact]
     public void RotateAxisAngle_SecondSpinAfterCacheBuild_IsNotDropped()
     {
-        var incremental = NewTransform("inc");
+        Transform incremental = NewTransform("inc");
         incremental.Rotate(Float3.UnitY, 45f);
         _ = incremental.LocalToWorldMatrix;    // build the cache at 45 deg
         incremental.Rotate(Float3.UnitY, 45f); // must invalidate that cache
 
-        var oneShot = NewTransform("one");
+        Transform oneShot = NewTransform("one");
         oneShot.Rotate(Float3.UnitY, 90f);
 
         AssertVec(WorldForward(oneShot), WorldForward(incremental), 3);
@@ -464,9 +464,9 @@ public class TransformTests : RuntimeTestBase
     [Fact]
     public void DeepChain_RotateRoot_MovesLeafWorldPosition()
     {
-        var root = NewTransform("Root");
-        var mid = NewTransform("Mid");
-        var leaf = NewTransform("Leaf");
+        Transform root = NewTransform("Root");
+        Transform mid = NewTransform("Mid");
+        Transform leaf = NewTransform("Leaf");
         mid.SetParent(root, false);
         leaf.SetParent(mid, false);
         leaf.LocalPosition = new Float3(0, 0, 3);
@@ -475,7 +475,7 @@ public class TransformTests : RuntimeTestBase
 
         root.Rotate(Float3.UnitY, 90f);
 
-        var after = leaf.Position;
+        Float3 after = leaf.Position;
         Assert.True(Maths.Abs(Maths.Abs(after.X) - 3f) < 0.01, $"|X| ~3 expected, got {after}");
         Assert.True(Maths.Abs(after.Z) < 0.01, $"Z ~0 expected, got {after}");
     }
@@ -485,8 +485,8 @@ public class TransformTests : RuntimeTestBase
     [Fact]
     public void ParentRotate_ThenChildLocalMove_Compose()
     {
-        var parent = NewTransform("Parent");
-        var child = NewTransform("Child");
+        Transform parent = NewTransform("Parent");
+        Transform child = NewTransform("Child");
         child.SetParent(parent, false);
         child.LocalPosition = new Float3(0, 0, 1);
 
@@ -495,7 +495,7 @@ public class TransformTests : RuntimeTestBase
         parent.Rotate(Float3.UnitY, 90f);
         child.LocalPosition = new Float3(0, 0, 2);
 
-        var after = child.Position;
+        Float3 after = child.Position;
         Assert.True(Maths.Abs(Maths.Abs(after.X) - 2f) < 0.01, $"|X| ~2 expected, got {after}");
         Assert.True(Maths.Abs(after.Y) < 0.01, $"Y ~0 expected, got {after}");
         Assert.True(Maths.Abs(after.Z) < 0.01, $"Z ~0 expected, got {after}");
@@ -506,7 +506,7 @@ public class TransformTests : RuntimeTestBase
     [Fact]
     public void RotateAndRotateAround_RegisterAsChanged()
     {
-        var t = NewTransform();
+        Transform t = NewTransform();
         uint watch = t.Version;
 
         t.Rotate(Float3.UnitY, 30f);
@@ -521,8 +521,8 @@ public class TransformTests : RuntimeTestBase
     [Fact]
     public void RotateEuler_AndAxisAngle_Agree()
     {
-        var byEuler = NewTransform("euler");
-        var byAxis = NewTransform("axis");
+        Transform byEuler = NewTransform("euler");
+        Transform byAxis = NewTransform("axis");
         byEuler.Rotate(new Float3(0, 90f, 0));
         byAxis.Rotate(Float3.UnitY, 90f);
 

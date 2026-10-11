@@ -80,7 +80,7 @@ public class EditorSettings
     /// <summary>Apply the current theme to EditorTheme's static fields.</summary>
     public void ApplyTheme()
     {
-        var t = Theme;
+        EditorThemeData t = Theme;
         t.InitRamps();
 
         // Origami's default theme is the base; this data is the customization overlaid on top of it
@@ -154,7 +154,7 @@ public class EditorSettings
             if (File.Exists(_filePath))
             {
                 var json = File.ReadAllText(_filePath);
-                var settings = JsonSerializer.Deserialize<EditorSettings>(json);
+                EditorSettings? settings = JsonSerializer.Deserialize<EditorSettings>(json);
                 if (settings != null)
                 {
                     settings.Theme.InitRamps();

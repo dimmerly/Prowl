@@ -71,7 +71,7 @@ public class EngineObjectTests
         var a = new TestEngineObject("same");
         var b = new TestEngineObject("same");
 
-        var alias = a;
+        TestEngineObject alias = a;
         Assert.True(a == alias);
         Assert.False(a == b);     // identical names, different instances
         Assert.True(a != b);
@@ -151,7 +151,7 @@ public class EngineObjectTests
         var parent = new GameObject("Parent");
         var child = new GameObject("Child");
         child.SetParent(parent);
-        var component = child.AddComponent<PlainComponent>();
+        PlainComponent component = child.AddComponent<PlainComponent>();
         var bystander = new GameObject("Bystander");
 
         parent.Destroy();

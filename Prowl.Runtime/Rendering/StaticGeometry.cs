@@ -514,7 +514,7 @@ public sealed class StaticGeometry : ISerializable
                     if (material == null) continue;
 
                     sourceData ??= Transform(mesh, source.World, attributes);
-                    var key = (attributes, material.GetStateHash(), lightmap, go.LayerIndex);
+                    (Attributes attributes, ulong, int lightmap, int LayerIndex) key = (attributes, material.GetStateHash(), lightmap, go.LayerIndex);
                     if (!groupLookup.TryGetValue(key, out int groupIndex))
                     {
                         groupIndex = _groups.Count;

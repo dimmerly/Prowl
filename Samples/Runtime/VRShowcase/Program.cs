@@ -156,7 +156,7 @@ public sealed partial class VRShowcaseGame : StationGame
         var head = new GameObject("Head") { Tag = "Main Camera" };
         head.SetParent(origin);
         head.Transform.LocalPosition = new Float3(0f, 1.65f, 0f);
-        var camera = head.AddComponent<Camera>();
+        Camera camera = head.AddComponent<Camera>();
         camera.HDR = true;
         camera.NearClipPlane = 0.05f;
         camera.FarClipPlane = 300f;
@@ -178,7 +178,7 @@ public sealed partial class VRShowcaseGame : StationGame
             return hand;
         }
 
-        var vrRig = rig.AddComponent<VRRig>();
+        VRRig vrRig = rig.AddComponent<VRRig>();
         vrRig.Body = body;
         vrRig.Origin = origin.Transform;
         vrRig.Head = head.Transform;
@@ -187,7 +187,7 @@ public sealed partial class VRShowcaseGame : StationGame
         Add(rig);
 
         var pointer = new GameObject("UI Pointer");
-        var uiPointer = pointer.AddComponent<UIPointer>();
+        UIPointer uiPointer = pointer.AddComponent<UIPointer>();
         uiPointer.LeftHand = vrRig.LeftHand;
         uiPointer.RightHand = vrRig.RightHand;
         Add(pointer);
@@ -241,7 +241,7 @@ public sealed partial class VRShowcaseGame : StationGame
     {
         GameObject go = Model(name, mesh, material, position);
         go.Transform.Rotation = rotation;
-        var body = go.AddComponent<Rigidbody3D>();
+        Rigidbody3D body = go.AddComponent<Rigidbody3D>();
         body.Mass = mass;
         body.EnableSpeculativeContacts = true;
         if (box.HasValue) go.AddComponent<BoxCollider>().Size = box.Value;
@@ -361,11 +361,11 @@ public sealed partial class VRShowcaseGame : StationGame
     private void Platform(string name, Float3 size, Float3 from, Float3 to, float speed, float pause)
     {
         GameObject platform = Block(name, size, Lit(Teal, 0f, 0.5f), from);
-        var body = platform.AddComponent<Rigidbody3D>();
+        Rigidbody3D body = platform.AddComponent<Rigidbody3D>();
         body.MotionType = Jitter2.Dynamics.MotionType.Kinematic;
         body.EnableSpeculativeContacts = true;
         body.Friction = 1f;
-        var mover = platform.AddComponent<MovingPlatform>();
+        MovingPlatform mover = platform.AddComponent<MovingPlatform>();
         mover.From = from;
         mover.To = to;
         mover.Speed = speed;
@@ -380,7 +380,7 @@ public sealed partial class VRShowcaseGame : StationGame
     private void BuildTurntable(Float3 at)
     {
         GameObject table = Block("Turntable", new Float3(3f, 0.16f, 3f), Lit(Orange, 0f, 0.5f), at + new Float3(0f, 0.08f, 0f));
-        var body = table.AddComponent<Rigidbody3D>();
+        Rigidbody3D body = table.AddComponent<Rigidbody3D>();
         body.MotionType = Jitter2.Dynamics.MotionType.Kinematic;
         body.EnableSpeculativeContacts = true;
         body.Friction = 1f;
@@ -407,7 +407,7 @@ public sealed partial class VRShowcaseGame : StationGame
         canvasObject.Transform.Rotation = rotation;
         canvasObject.Transform.LocalScale = new Float3(scale);
         canvasObject.Transform.Position = center - rotation * new Float3(size.X * scale * 0.5f, size.Y * scale * 0.5f, 0f);
-        var canvas = canvasObject.AddComponent<GameCanvas>();
+        GameCanvas canvas = canvasObject.AddComponent<GameCanvas>();
         canvas.RenderMode = Prowl.Runtime.UI.RenderMode.WorldSpace;
         canvas.ReferenceResolution = size;
 
@@ -453,7 +453,7 @@ public sealed partial class VRShowcaseGame : StationGame
 
     private static TextComponent MenuLabel(GameObject parent, string text, Float2 corner, Float2 size, int fontSize, Prowl.Runtime.UI.TextAlignment alignment = Prowl.Runtime.UI.TextAlignment.CenterLeft)
     {
-        var label = UIElement(parent, "Label", corner, size).AddComponent<TextComponent>();
+        TextComponent label = UIElement(parent, "Label", corner, size).AddComponent<TextComponent>();
         label.Text = text;
         label.Size = fontSize;
         label.Alignment = alignment;
@@ -465,11 +465,11 @@ public sealed partial class VRShowcaseGame : StationGame
     private static UIToggle MenuToggle(GameObject parent, string text, Float2 corner, bool on)
     {
         GameObject box = UIElement(parent, "Toggle", corner, new Float2(36f, 36f));
-        var image = box.AddComponent<UIImage>();
+        UIImage image = box.AddComponent<UIImage>();
         image.Color = new Color(0.2f, 0.22f, 0.26f, 1f);
-        var toggle = box.AddComponent<UIToggle>();
+        UIToggle toggle = box.AddComponent<UIToggle>();
 
-        var mark = UIElement(box, "Check", new Float2(7f, 7f), new Float2(22f, 22f)).AddComponent<UIImage>();
+        UIImage mark = UIElement(box, "Check", new Float2(7f, 7f), new Float2(22f, 22f)).AddComponent<UIImage>();
         mark.Color = Orange;
         mark.RaycastTarget = false;
 
@@ -485,15 +485,15 @@ public sealed partial class VRShowcaseGame : StationGame
     {
         GameObject go = UIElement(parent, "Slider", corner, size);
         go.AddComponent<UIImage>().Color = new Color(0.2f, 0.22f, 0.26f, 1f);
-        var slider = go.AddComponent<UISlider>();
+        UISlider slider = go.AddComponent<UISlider>();
 
         GameObject fill = UIElement(go, "Fill", Float2.Zero, Float2.Zero);
-        var fillImage = fill.AddComponent<UIImage>();
+        UIImage fillImage = fill.AddComponent<UIImage>();
         fillImage.Color = Orange;
         fillImage.RaycastTarget = false;
 
         GameObject handle = UIElement(go, "Handle", Float2.Zero, new Float2(22f, 0f));
-        var handleImage = handle.AddComponent<UIImage>();
+        UIImage handleImage = handle.AddComponent<UIImage>();
         handleImage.RaycastTarget = false;
 
         slider.FillRect = fill.RectTransform;
@@ -519,9 +519,9 @@ public sealed partial class VRShowcaseGame : StationGame
     private static UIButton MenuButton(GameObject parent, string text, Float2 corner, Float2 size, out TextComponent label)
     {
         GameObject go = UIElement(parent, "Button", corner, size);
-        var image = go.AddComponent<UIImage>();
+        UIImage image = go.AddComponent<UIImage>();
         image.Color = new Color(0.25f, 0.27f, 0.32f, 1f);
-        var button = go.AddComponent<UIButton>();
+        UIButton button = go.AddComponent<UIButton>();
         button.TargetGraphic = image;
         button.Colors = Tints(new Color(0.25f, 0.27f, 0.32f, 1f));
         label = MenuLabel(go, text, Float2.Zero, size, 24, Prowl.Runtime.UI.TextAlignment.CenterMiddle);

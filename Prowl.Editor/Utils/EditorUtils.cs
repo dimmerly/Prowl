@@ -44,10 +44,10 @@ public static class EditorUtils
     /// </summary>
     public static IEnumerable<Type> GetAllTypes()
     {
-        foreach (var assembly in RuntimeUtils.AssemblySource())
+        foreach (Assembly assembly in RuntimeUtils.AssemblySource())
         {
             if (IsFrameworkAssembly(assembly)) continue;
-            foreach (var type in RuntimeUtils.GetLoadableTypes(assembly))
+            foreach (Type type in RuntimeUtils.GetLoadableTypes(assembly))
                 yield return type;
         }
     }
@@ -63,14 +63,14 @@ public static class EditorUtils
 
     public static IEnumerable<MethodInfo> GetAllMethods(BindingFlags flags)
     {
-        foreach (var type in GetAllTypes())
-            foreach (var method in type.GetMethods(flags))
+        foreach (Type type in GetAllTypes())
+            foreach (MethodInfo method in type.GetMethods(flags))
                 yield return method;
     }
 
     public static string GetHierarchyPath(GameObject go)
     {
-        var parent = go.Parent;
+        GameObject? parent = go.Parent;
         if (!parent.IsValid()) return "";
         var parts = new List<string>();
         while (parent.IsValid())

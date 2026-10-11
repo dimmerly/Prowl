@@ -45,7 +45,7 @@ public static class ThumbnailGenerator
         if (guid == Guid.Empty || asset == null) return;
         if (_queued.Contains(guid)) return;
 
-        var db = EditorAssetBackend.Instance;
+        EditorAssetBackend? db = EditorAssetBackend.Instance;
         if (db == null) return;
 
         if (File.Exists(GetThumbnailPath(guid, db.ThumbnailsPath))) return;
@@ -62,10 +62,10 @@ public static class ThumbnailGenerator
     {
         if (_queue.Count == 0) return;
 
-        var db = EditorAssetBackend.Instance;
+        EditorAssetBackend? db = EditorAssetBackend.Instance;
         if (db == null) return;
 
-        var job = _queue.Dequeue();
+        ThumbnailJob job = _queue.Dequeue();
         _queued.Remove(job.Guid);
 
         if (job.Asset.IsDisposed || File.Exists(GetThumbnailPath(job.Guid, db.ThumbnailsPath)))
@@ -98,7 +98,7 @@ public static class ThumbnailGenerator
         byte[]? pixels = null;
         try
         {
-            var gen = EditorRegistries.GetThumbnailGenerator(job.Asset.GetType());
+            IThumbnailGenerator? gen = EditorRegistries.GetThumbnailGenerator(job.Asset.GetType());
             if (gen != null) pixels = gen.Generate(job.Asset, job.SourceFilePath);
         }
         catch (Exception ex)
@@ -135,7 +135,7 @@ public static class ThumbnailGenerator
         bool ready = true;
         try
         {
-            foreach (var dep in db.Dependencies.GetTransitiveDependencies(new[] { job.Guid }))
+            foreach (Guid dep in db.Dependencies.GetTransitiveDependencies(new[] { job.Guid }))
             {
                 if (AssetDatabase.Get(dep) is not { } asset) continue;
                 AssetDatabase.Hold(asset, job);
@@ -193,7 +193,7 @@ public static class ThumbnailGenerator
     /// <summary>Delete all thumbnail files on disk and clear the queue.</summary>
     public static void DeleteAll()
     {
-        var project = Project.Current;
+        Project? project = Project.Current;
         if (project == null) return;
 
         try
@@ -244,7 +244,7 @@ public static class ThumbnailGenerator
             setup(preview);
             preview.Render();
 
-            var rt = preview.Result;
+            RenderTexture? rt = preview.Result;
             if (rt == null || rt.MainTexture == null) return null;
 
             int w = rt.Width;
@@ -269,7 +269,7 @@ public static class ThumbnailGenerator
     {
         try
         {
-            var tex = sprite.Texture;
+            Texture2D? tex = sprite.Texture;
             if (tex == null) return null;
             int tw = (int)tex.Width, th = (int)tex.Height;
             if (tw <= 0 || th <= 0) return null;

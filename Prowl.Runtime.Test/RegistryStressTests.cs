@@ -38,18 +38,18 @@ public class RegistryStressTests : RuntimeTestBase
 {
     private (Scene scene, GameObject go) NewSceneGo()
     {
-        var scene = CreateScene(enable: true);
-        var go = CreateGameObject();
+        Scene scene = CreateScene(enable: true);
+        GameObject go = CreateGameObject();
         return (scene, go);
     }
 
     [Fact]
     public void EnablingComponentDuringUpdate_TicksNextFrameNotThisFrame()
     {
-        var (scene, go) = NewSceneGo();
-        var target = go.AddComponent<PlainUpdateCounter>();
+        (Scene? scene, GameObject? go) = NewSceneGo();
+        PlainUpdateCounter target = go.AddComponent<PlainUpdateCounter>();
         target.Enabled = false; // not registered
-        var driver = go.AddComponent<UpdateActionComponent>();
+        UpdateActionComponent driver = go.AddComponent<UpdateActionComponent>();
         driver.Action = () => target.Enabled = true;
         scene.Add(go);
 
@@ -63,9 +63,9 @@ public class RegistryStressTests : RuntimeTestBase
     [Fact]
     public void DisablingLaterComponentDuringUpdate_SkipsItThisFrame()
     {
-        var (scene, go) = NewSceneGo();
-        var driver = go.AddComponent<UpdateActionComponent>(); // registered first -> runs first
-        var target = go.AddComponent<PlainUpdateCounter>();
+        (Scene? scene, GameObject? go) = NewSceneGo();
+        UpdateActionComponent driver = go.AddComponent<UpdateActionComponent>(); // registered first -> runs first
+        PlainUpdateCounter target = go.AddComponent<PlainUpdateCounter>();
         driver.Action = () => target.Enabled = false;
         scene.Add(go);
 
@@ -77,9 +77,9 @@ public class RegistryStressTests : RuntimeTestBase
     [Fact]
     public void DestroyingComponentDuringUpdate_SkippedWithoutCrash()
     {
-        var (scene, go) = NewSceneGo();
-        var driver = go.AddComponent<UpdateActionComponent>();
-        var target = go.AddComponent<PlainUpdateCounter>();
+        (Scene? scene, GameObject? go) = NewSceneGo();
+        UpdateActionComponent driver = go.AddComponent<UpdateActionComponent>();
+        PlainUpdateCounter target = go.AddComponent<PlainUpdateCounter>();
         driver.Action = () => go.RemoveComponent(target);
         scene.Add(go);
 
@@ -93,7 +93,7 @@ public class RegistryStressTests : RuntimeTestBase
     [Fact]
     public void ComponentDestroyingItselfDuringUpdate_NoCrash()
     {
-        var (scene, go) = NewSceneGo();
+        (Scene? scene, GameObject? go) = NewSceneGo();
         UpdateActionComponent? driver = null;
         driver = go.AddComponent<UpdateActionComponent>();
         driver.Action = () => go.RemoveComponent(driver!);
@@ -109,8 +109,8 @@ public class RegistryStressTests : RuntimeTestBase
     [Fact]
     public void AddingComponentDuringUpdate_TicksNextFrame()
     {
-        var (scene, go) = NewSceneGo();
-        var driver = go.AddComponent<UpdateActionComponent>();
+        (Scene? scene, GameObject? go) = NewSceneGo();
+        UpdateActionComponent driver = go.AddComponent<UpdateActionComponent>();
         PlainUpdateCounter? added = null;
         driver.Action = () => added ??= go.AddComponent<PlainUpdateCounter>();
         scene.Add(go);
@@ -126,8 +126,8 @@ public class RegistryStressTests : RuntimeTestBase
     [Fact]
     public void EnableDisableEnable_DoesNotDoubleRegister()
     {
-        var (scene, go) = NewSceneGo();
-        var c = go.AddComponent<PlainUpdateCounter>();
+        (Scene? scene, GameObject? go) = NewSceneGo();
+        PlainUpdateCounter c = go.AddComponent<PlainUpdateCounter>();
         scene.Add(go);
 
         c.Enabled = false;
@@ -142,7 +142,7 @@ public class RegistryStressTests : RuntimeTestBase
     public void EqualExecutionOrder_TicksInRegistrationOrder()
     {
         TickLog.Entries.Clear();
-        var (scene, go) = NewSceneGo();
+        (Scene? scene, GameObject? go) = NewSceneGo();
         go.AddComponent<TagTick>().Mark = "a";
         go.AddComponent<TagTick>().Mark = "b";
         go.AddComponent<TagTick>().Mark = "c";
@@ -156,10 +156,10 @@ public class RegistryStressTests : RuntimeTestBase
     [Fact]
     public void DisablingGameObjectMidUpdate_SkipsItsOtherComponents()
     {
-        var (scene, go) = NewSceneGo();
-        var driver = go.AddComponent<UpdateActionComponent>();
-        var other = CreateGameObject("Other");
-        var otherCounter = other.AddComponent<PlainUpdateCounter>();
+        (Scene? scene, GameObject? go) = NewSceneGo();
+        UpdateActionComponent driver = go.AddComponent<UpdateActionComponent>();
+        GameObject other = CreateGameObject("Other");
+        PlainUpdateCounter otherCounter = other.AddComponent<PlainUpdateCounter>();
         driver.Action = () => other.Enabled = false;
 
         // 'go' is registered first so the driver runs before 'otherCounter' in the snapshot - it
@@ -175,9 +175,9 @@ public class RegistryStressTests : RuntimeTestBase
     [Fact]
     public void DisabledScene_DoesNotTick()
     {
-        var scene = CreateScene(enable: true);
-        var go = CreateGameObject();
-        var c = go.AddComponent<PlainUpdateCounter>();
+        Scene scene = CreateScene(enable: true);
+        GameObject go = CreateGameObject();
+        PlainUpdateCounter c = go.AddComponent<PlainUpdateCounter>();
         scene.Add(go);
 
         scene.Disable(); // unregisters all
@@ -189,7 +189,7 @@ public class RegistryStressTests : RuntimeTestBase
     [Fact]
     public void ManyComponents_AllTickOncePerUpdate()
     {
-        var (scene, go) = NewSceneGo();
+        (Scene? scene, GameObject? go) = NewSceneGo();
         var counters = new List<PlainUpdateCounter>();
         for (int i = 0; i < 200; i++)
             counters.Add(go.AddComponent<PlainUpdateCounter>());
@@ -203,10 +203,10 @@ public class RegistryStressTests : RuntimeTestBase
     [Fact]
     public void RemovingOneComponentMidUpdate_OthersStillTick()
     {
-        var (scene, go) = NewSceneGo();
-        var driver = go.AddComponent<UpdateActionComponent>(); // c0 - runs first
-        var victim = go.AddComponent<PlainUpdateCounter>();      // c1 - removed
-        var survivor = go.AddComponent<PlainUpdateCounter>();    // c2 - must still tick
+        (Scene? scene, GameObject? go) = NewSceneGo();
+        UpdateActionComponent driver = go.AddComponent<UpdateActionComponent>(); // c0 - runs first
+        PlainUpdateCounter victim = go.AddComponent<PlainUpdateCounter>();      // c1 - removed
+        PlainUpdateCounter survivor = go.AddComponent<PlainUpdateCounter>();    // c2 - must still tick
         driver.Action = () => go.RemoveComponent(victim);
         scene.Add(go);
 

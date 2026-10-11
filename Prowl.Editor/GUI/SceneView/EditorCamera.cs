@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 
+using Prowl.Echo;
 using Prowl.Editor.Core;
 using Prowl.Runtime;
 using Prowl.Runtime.Rendering;
@@ -264,7 +265,7 @@ public class EditorCamera
         };
 
         // Render
-        var pipeline = _camera.Pipeline.IsValid() ? _camera.Pipeline : DefaultRenderPipeline.Default;
+        RenderPipeline pipeline = _camera.Pipeline.IsValid() ? _camera.Pipeline : DefaultRenderPipeline.Default;
         pipeline.Render(_camera, renderData);
 
         // Remove from scene if we added it
@@ -308,7 +309,7 @@ public class EditorCamera
         // Build a filtered list of non-null effects from the scene camera so null
         // entries don't cause index misalignment between the source and clone lists.
         var sourceEffects = new List<ImageEffect>();
-        foreach (var effect in sceneCamera.Effects)
+        foreach (ImageEffect effect in sceneCamera.Effects)
         {
             if (effect != null)
                 sourceEffects.Add(effect);
@@ -336,11 +337,11 @@ public class EditorCamera
             // adaptation buffers, etc.) are freed before creating new instances.
             DisposeClonedEffects();
 
-            foreach (var effect in sourceEffects)
+            foreach (ImageEffect effect in sourceEffects)
             {
                 try
                 {
-                    var echo = Echo.Serializer.Serialize(effect);
+                    EchoObject echo = Echo.Serializer.Serialize(effect);
                     var clone = Echo.Serializer.Deserialize(echo, effect.GetType()) as ImageEffect;
                     if (clone != null)
                         _clonedEffects.Add(clone);
@@ -361,7 +362,7 @@ public class EditorCamera
             {
                 try
                 {
-                    var echo = Echo.Serializer.Serialize(sourceEffects[i]);
+                    EchoObject echo = Echo.Serializer.Serialize(sourceEffects[i]);
                     Echo.Serializer.DeserializeInto(echo, _clonedEffects[i]);
                 }
                 catch { }
@@ -380,7 +381,7 @@ public class EditorCamera
     /// </summary>
     private void DisposeClonedEffects()
     {
-        foreach (var effect in _clonedEffects)
+        foreach (ImageEffect effect in _clonedEffects)
         {
             try { effect.OnDisable(); }
             catch { }
@@ -391,21 +392,21 @@ public class EditorCamera
     private static Camera? FindSceneCamera(Scene scene)
     {
         // First try to find a camera tagged "Main Camera"
-        foreach (var go in scene.AllObjects)
+        foreach (GameObject go in scene.AllObjects)
         {
             if (go.HideFlags.HasFlag(HideFlags.HideAndDontSave)) continue;
             if (!go.CompareTag("Main Camera")) continue;
 
-            var cam = go.GetComponent<Camera>();
+            Camera? cam = go.GetComponent<Camera>();
             if (cam != null) return cam;
         }
 
         // Fallback: first visible Camera in the scene
-        foreach (var go in scene.AllObjects)
+        foreach (GameObject go in scene.AllObjects)
         {
             if (go.HideFlags.HasFlag(HideFlags.HideAndDontSave)) continue;
 
-            var cam = go.GetComponent<Camera>();
+            Camera? cam = go.GetComponent<Camera>();
             if (cam != null) return cam;
         }
 
@@ -585,7 +586,7 @@ public class EditorCamera
 
         Float3 pivotNormal = Float3.Zero;
 
-        foreach (var go in Selection.GetSelected<GameObject>())
+        foreach (GameObject go in Selection.GetSelected<GameObject>())
         {
             count++;
             positionSum += go.Transform.Position;
@@ -611,7 +612,7 @@ public class EditorCamera
         Float3 uiNormal = Float3.Zero;
         bool anyUI = false;
 
-        foreach (var go in Selection.GetSelected<GameObject>())
+        foreach (GameObject go in Selection.GetSelected<GameObject>())
         {
             goCount++;
             positionSum += go.Transform.Position;
@@ -659,23 +660,23 @@ public class EditorCamera
 
     private static void AccumulateRendererBounds(GameObject go, ref Float3 min, ref Float3 max, ref bool any)
     {
-        var mr = go.GetComponent<MeshRenderer>();
+        MeshRenderer? mr = go.GetComponent<MeshRenderer>();
         if (mr != null && mr.Mesh != null)
         {
-            var wb = mr.Mesh.bounds.TransformBy(go.Transform.LocalToWorldMatrix);
+            AABB wb = mr.Mesh.bounds.TransformBy(go.Transform.LocalToWorldMatrix);
             min = new Float3(MathF.Min(min.X, wb.Min.X), MathF.Min(min.Y, wb.Min.Y), MathF.Min(min.Z, wb.Min.Z));
             max = new Float3(MathF.Max(max.X, wb.Max.X), MathF.Max(max.Y, wb.Max.Y), MathF.Max(max.Z, wb.Max.Z));
             any = true;
         }
-        var smr = go.GetComponent<SkinnedMeshRenderer>();
+        SkinnedMeshRenderer? smr = go.GetComponent<SkinnedMeshRenderer>();
         if (smr != null && smr.SharedMesh != null)
         {
-            var wb = smr.SharedMesh.bounds.TransformBy(go.Transform.LocalToWorldMatrix);
+            AABB wb = smr.SharedMesh.bounds.TransformBy(go.Transform.LocalToWorldMatrix);
             min = new Float3(MathF.Min(min.X, wb.Min.X), MathF.Min(min.Y, wb.Min.Y), MathF.Min(min.Z, wb.Min.Z));
             max = new Float3(MathF.Max(max.X, wb.Max.X), MathF.Max(max.Y, wb.Max.Y), MathF.Max(max.Z, wb.Max.Z));
             any = true;
         }
-        foreach (var child in go.Children)
+        foreach (GameObject child in go.Children)
             AccumulateRendererBounds(child, ref min, ref max, ref any);
     }
 
@@ -685,7 +686,7 @@ public class EditorCamera
     /// </summary>
     private static void AccumulateUIBounds(GameObject go, ref Float3 min, ref Float3 max, ref bool any, ref Float3 normal)
     {
-        var canvas = go.GetComponent<GameCanvas>();
+        GameCanvas? canvas = go.GetComponent<GameCanvas>();
         if (canvas.IsValid())
         {
             Rect root = canvas.RootRect;
@@ -713,7 +714,7 @@ public class EditorCamera
             }
         }
 
-        foreach (var child in go.Children)
+        foreach (GameObject child in go.Children)
             AccumulateUIBounds(child, ref min, ref max, ref any, ref normal);
     }
 

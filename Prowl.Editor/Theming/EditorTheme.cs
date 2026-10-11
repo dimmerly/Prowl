@@ -48,7 +48,7 @@ public static class EditorTheme
     /// <summary>Rebuild the pushed Origami theme and transition toward it.</summary>
     public static void SyncOrigami(float transitionSeconds = OrigamiTransitionSeconds)
     {
-        var target = BuildOrigamiTheme();
+        OrigamiTheme target = BuildOrigamiTheme();
         if (transitionSeconds <= 0f)
         {
             OrigamiTheme = target;

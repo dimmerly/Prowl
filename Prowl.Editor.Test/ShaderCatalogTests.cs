@@ -58,7 +58,7 @@ public class ShaderCatalogTests : EditorTestHarness
     [Fact]
     public void Catalog_IsSortedByMenuPath()
     {
-        var entries = Assets.GetShaderCatalog(includeHidden: true);
+        List<EditorAssetBackend.ShaderMenuEntry> entries = Assets.GetShaderCatalog(includeHidden: true);
         var sorted = entries.Select(e => e.MenuPath).OrderBy(p => p, StringComparer.OrdinalIgnoreCase).ToList();
 
         Assert.Equal(sorted, entries.Select(e => e.MenuPath).ToList());
@@ -67,7 +67,7 @@ public class ShaderCatalogTests : EditorTestHarness
     [Fact]
     public void Catalog_HandsBackTheGuidThatResolvesToThatShader()
     {
-        var standard = Assets.GetShaderCatalog().Single(e => e.MenuPath == "Default/Standard");
+        EditorAssetBackend.ShaderMenuEntry standard = Assets.GetShaderCatalog().Single(e => e.MenuPath == "Default/Standard");
 
         Assert.True(standard.IsBuiltIn);
         Assert.Equal(BuiltInAssets.GuidFor(DefaultShader.Standard), standard.Guid);
@@ -96,7 +96,7 @@ public class ShaderCatalogTests : EditorTestHarness
     {
         Guid guid = WriteShader("Custom.shader", "Custom/My Shader");
 
-        var entry = Assets.GetShaderCatalog().Single(e => e.Guid == guid);
+        EditorAssetBackend.ShaderMenuEntry entry = Assets.GetShaderCatalog().Single(e => e.Guid == guid);
         Assert.Equal("Custom/My Shader", entry.MenuPath);
         Assert.False(entry.IsBuiltIn);
         Assert.Equal("Custom/My Shader", Assets.GetShaderMenuPath(guid, "None"));

@@ -35,7 +35,7 @@ internal static class PropertyStatePool
             return last;
         }
 
-        if (!s_free.TryDequeue(out var ps))
+        if (!s_free.TryDequeue(out PropertyState? ps))
             ps = new PropertyState();
         ps.ApplyOverride(source);
         ps.ResolveHandles();

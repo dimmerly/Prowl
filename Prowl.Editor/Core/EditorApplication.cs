@@ -5,6 +5,7 @@ using System.Linq;
 using System.Reflection;
 using System.Runtime.InteropServices;
 
+using Prowl.Echo;
 using Prowl.Editor.GUI;
 using Prowl.Editor.GUI.Panels;
 using Prowl.Editor.GUI.PropertyEditors;
@@ -21,7 +22,11 @@ using Prowl.PaperUI;
 using Prowl.PaperUI.LayoutEngine;
 using Prowl.Rosetta;
 using Prowl.Runtime;
+using Prowl.Runtime.Resources;
 using Prowl.Vector;
+
+using Silk.NET.Core.Contexts;
+using Silk.NET.Maths;
 
 namespace Prowl.Editor.Core;
 
@@ -65,7 +70,7 @@ public class EditorApplication : Game
     /// <summary> Initializes the editor window with the given title, width and height, restoring saved position and maximization state from EditorSettings. </summary>
     public override void InitializeWindow(string title, int width, int height)
     {
-        var instance = EditorSettings.Instance;
+        EditorSettings instance = EditorSettings.Instance;
         Window.InitWindow(title, width, height, instance.WindowMaximized ? Silk.NET.Windowing.WindowState.Maximized : Silk.NET.Windowing.WindowState.Normal, false);
 
         Window.Position = new Silk.NET.Maths.Vector2D<int>(
@@ -168,7 +173,7 @@ public class EditorApplication : Game
             db.Initialize();
 
             // Restore layout
-            var savedLayout = LoadDockLayout();
+            DockNode? savedLayout = LoadDockLayout();
             if (savedLayout != null)
                 SetDockLayout(savedLayout);
 
@@ -220,7 +225,7 @@ public class EditorApplication : Game
         };
         PropertyGridConfig.DrawTypePicker = (paper, id, baseType, currentValue, onChange) =>
         {
-            var types = EditorUtils.GetAllTypes()
+            Type[] types = EditorUtils.GetAllTypes()
                 .Where(t => baseType.IsAssignableFrom(t) && !t.IsAbstract && !t.IsInterface)
                 .Take(20).ToArray();
 
@@ -241,7 +246,7 @@ public class EditorApplication : Game
         {
             if (typeof(Runtime.EngineObject).IsAssignableFrom(fieldType))
                 EngineObjectPropertyEditor.SetFieldType(fieldType);
-            var editor = EditorRegistries.GetPropertyEditor(fieldType);
+            PropertyEditor? editor = EditorRegistries.GetPropertyEditor(fieldType);
             if (editor != null)
             {
                 editor.OnGUI(paper, id, label, value, onChange, depth);
@@ -338,7 +343,7 @@ public class EditorApplication : Game
 
     private static Prowl.Scribe.FontFile? LoadBundledFont(string fileName)
     {
-        using var stream = GetEmbeddedResource(fileName);
+        using Stream? stream = GetEmbeddedResource(fileName);
         if (stream == null)
         {
             Runtime.Debug.LogWarning($"Missing bundled font: {fileName}");
@@ -350,7 +355,7 @@ public class EditorApplication : Game
     /// <summary> Sets the Paper resolution and framebuffer scale, accounting for content scale and user scale. </summary>
     protected override void PreparePaperFrame()
     {
-        var fbSize = Window.InternalWindow.FramebufferSize;
+        Vector2D<int> fbSize = Window.InternalWindow.FramebufferSize;
         float cs = Math.Max(0.01f, Window.ContentScale);
         float us = Math.Max(0.01f, EditorTheme.UserScale);
         PaperInstance.SetResolution(fbSize.X / (cs * us), fbSize.Y / (cs * us));
@@ -360,9 +365,9 @@ public class EditorApplication : Game
     /// <summary> Converts the raw mouse position into Paper-local coordinates, accounting for framebuffer size, window size, content scale, and user scale. </summary>
     protected override Float2 GetPaperMousePosition()
     {
-        var p = Input.MousePosition;
-        var fb = Window.InternalWindow.FramebufferSize;
-        var win = Window.InternalWindow.Size;
+        Int2 p = Input.MousePosition;
+        Vector2D<int> fb = Window.InternalWindow.FramebufferSize;
+        Vector2D<int> win = Window.InternalWindow.Size;
         float cs = Math.Max(0.01f, Window.ContentScale);
         float csFbWin = win.X > 0 ? (float)fb.X / win.X : 1f;
         float us = Math.Max(0.01f, EditorTheme.UserScale);
@@ -373,7 +378,7 @@ public class EditorApplication : Game
     {
         if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) return;
 
-        var native = Window.InternalWindow.Native;
+        INativeWindow? native = Window.InternalWindow.Native;
         nint hwnd = native?.Win32?.Hwnd ?? 0;
         if (hwnd == 0) return;
 
@@ -588,7 +593,7 @@ public class EditorApplication : Game
 
     private void DrawHeader(Paper paper, float w, float h)
     {
-        var font = EditorTheme.DefaultFont;
+        Scribe.FontFile? font = EditorTheme.DefaultFont;
         if (font == null) return;
 
         // The full top band = menu bar height + the dock-padding gap above the dock. Everything lives
@@ -616,13 +621,13 @@ public class EditorApplication : Game
         {
             // Ghost buttons tint their icon by variant: green Play when stopped, red Stop while playing,
             // amber Pause when paused; step stays neutral.
-            var play = Origami.IconButton(paper, "btn_play", Application.IsPlaying ? EditorIcons.CircleStop_I : EditorIcons.Play_I)
+            ButtonBuilder play = Origami.IconButton(paper, "btn_play", Application.IsPlaying ? EditorIcons.CircleStop_I : EditorIcons.Play_I)
                 .OnClick(RequestTogglePlayMode)
                 .Style(ButtonStyle.Ghost);
             if (Application.IsPlaying) play.Danger(); else play.Success();
             play.Show();
 
-            var pause = Origami.IconButton(paper, "btn_pause", EditorIcons.Pause_I, TogglePause).Style(ButtonStyle.Ghost);
+            ButtonBuilder pause = Origami.IconButton(paper, "btn_pause", EditorIcons.Pause_I, TogglePause).Style(ButtonStyle.Ghost);
             if (Application.IsPaused) pause.Warning();
             pause.Show();
 
@@ -673,7 +678,7 @@ public class EditorApplication : Game
         int fps = _dispFps;
         string fpsNum = fps.ToString();
         string msText = $"{_dispMs:F1}ms";
-        var dotColor = fps >= 50 ? EditorTheme.Green400 : (fps >= 25 ? EditorTheme.Amber400 : EditorTheme.Red400);
+        System.Drawing.Color dotColor = fps >= 50 ? EditorTheme.Green400 : (fps >= 25 ? EditorTheme.Amber400 : EditorTheme.Red400);
 
         string version = Assembly.GetExecutingAssembly()
             .GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion
@@ -790,15 +795,15 @@ public class EditorApplication : Game
     {
         float pad = EditorTheme.DockPadding;
         float barH = HeaderChipHeight;
-        var font = EditorTheme.DefaultFont;
+        Scribe.FontFile? font = EditorTheme.DefaultFont;
         // Menu labels + a Theme quick-access button, pinned to the left edge and vertically centered by
         // margins; auto width hugs the menus.
         using (paper.Row("menubar_host").PositionType(PositionType.SelfDirected)
             .Width(UnitValue.Auto).Height(barH)
             .Margin(UnitValue.Pixels(pad), UnitValue.StretchOne, UnitValue.StretchOne, UnitValue.StretchOne).Gap(4).Enter())
         {
-            var bar = Origami.MenuBar(paper, "menubar").Height(barH);
-            foreach (var root in MenuRegistry.RootMenus)
+            MenuBarBuilder bar = Origami.MenuBar(paper, "menubar").Height(barH);
+            foreach (AppMenuItem root in MenuRegistry.RootMenus)
                 if (root.HasSubItems)
                     bar.Menu(root.Label, ctx =>
                     {
@@ -835,7 +840,7 @@ public class EditorApplication : Game
     /// </summary>
     private static void BuildMenu(ContextBuilder ctx, IReadOnlyList<AppMenuItem> items)
     {
-        foreach (var item in items)
+        foreach (AppMenuItem item in items)
         {
             if (item.IsSeparator)
             {
@@ -872,19 +877,19 @@ public class EditorApplication : Game
 
     private void DrawStatusBar(Paper paper, float w, float h)
     {
-        var font = EditorTheme.DefaultFont;
+        Scribe.FontFile? font = EditorTheme.DefaultFont;
         if (font == null) return;
 
         float sh = EditorTheme.StatusBarHeight;
         float fs = EditorTheme.FontSizeSmall;
-        var dim = EditorTheme.Ink300;
-        var mono = EditorTheme.FontMono ?? font;
+        System.Drawing.Color dim = EditorTheme.Ink300;
+        Scribe.FontFile mono = EditorTheme.FontMono ?? font;
 
         // Glyph-icon (EditorIcons/FontAwesome) + text cell.
         void GlyphCell(string id, string glyph, System.Drawing.Color glyphColor, string text,
             System.Drawing.Color textColor, string? tooltip = null)
         {
-            var row = paper.Row(id).Width(UnitValue.Auto).Height(sh).Margin(0, 8, UnitValue.StretchOne, UnitValue.StretchOne);
+            ElementBuilder row = paper.Row(id).Width(UnitValue.Auto).Height(sh).Margin(0, 8, UnitValue.StretchOne, UnitValue.StretchOne);
             if (tooltip != null) row.Tooltip(tooltip);
             using (row.Enter())
             {
@@ -898,7 +903,7 @@ public class EditorApplication : Game
         // Console severity icon (Origami icon) + number, for the log counters.
         void CounterCell(string id, LogSeverity sev, int n)
         {
-            var (icon, color) = ConsolePanel.SeverityStyle(sev);
+            (IOrigamiIcon? icon, System.Drawing.Color color) = ConsolePanel.SeverityStyle(sev);
             using (paper.Row(id).Width(UnitValue.Auto).Height(sh).Margin(0, 8, UnitValue.StretchOne, UnitValue.StretchOne).Enter())
             {
                 paper.Box(id + "_i").Width(14).Height(sh).Margin(0, 3, UnitValue.StretchOne, UnitValue.StretchOne).IsNotInteractable()
@@ -922,11 +927,11 @@ public class EditorApplication : Game
             // ---------- Column 1: console (last log on the left, counters on the right) ----------
             using (paper.Row("sb_console").Width(UnitValue.StretchOne).Height(sh).Padding(pad, pad, 0, 0).Enter())
             {
-                var last = ConsolePanel.LastLog();
+                (LogSeverity severity, string message, string? source, int count)? last = ConsolePanel.LastLog();
                 if (last.HasValue)
                 {
-                    var (sev, msg, src, cnt) = last.Value;
-                    var (icon, color) = ConsolePanel.SeverityStyle(sev);
+                    (LogSeverity sev, string? msg, string? src, int cnt) = last.Value;
+                    (IOrigamiIcon? icon, System.Drawing.Color color) = ConsolePanel.SeverityStyle(sev);
                     paper.Box("sb_log_i").Width(16).Height(sh).Margin(0, 5, UnitValue.StretchOne, UnitValue.StretchOne).IsNotInteractable()
                         .Icon(paper, icon, color, size: 13f);
                     paper.Box("sb_log_m").Width(UnitValue.StretchOne).Height(sh).Margin(0, 6, UnitValue.StretchOne, UnitValue.StretchOne).IsNotInteractable()
@@ -944,7 +949,7 @@ public class EditorApplication : Game
 
                 //paper.Box("sb_console_spacer");
 
-                var (info, warn, err) = ConsolePanel.LogCounts();
+                (int info, int warn, int err) = ConsolePanel.LogCounts();
                 CounterCell("sb_cnt_info", LogSeverity.Normal, info);
                 CounterCell("sb_cnt_warn", LogSeverity.Warning, warn);
                 CounterCell("sb_cnt_err", LogSeverity.Error, err);
@@ -983,8 +988,8 @@ public class EditorApplication : Game
         {
             GitInfo.Poll();
 
-            var iconColor = EditorTheme.InkDim;
-            var textColor = EditorTheme.InkDim;
+            System.Drawing.Color iconColor = EditorTheme.InkDim;
+            System.Drawing.Color textColor = EditorTheme.InkDim;
             string text, tip;
             if (!GitInfo.GitInstalled)
             {
@@ -1048,7 +1053,7 @@ public class EditorApplication : Game
     /// <summary> Reads an embedded resource file and returns its content as a string. </summary>
     public static string GetEmbeddedResourceText(string resource)
     {
-        var stream = GetEmbeddedResource(resource);
+        Stream? stream = GetEmbeddedResource(resource);
 
         string data = "";
         using (StreamReader reader = new StreamReader(stream))
@@ -1066,7 +1071,7 @@ public class EditorApplication : Game
 
         var resourceName = "Prowl.Editor.Resources." + resource;
 
-        var stream = assembly.GetManifestResourceStream(resourceName);
+        Stream? stream = assembly.GetManifestResourceStream(resourceName);
         return stream;
     }
 
@@ -1080,9 +1085,9 @@ public class EditorApplication : Game
         var pathToFile = Path.GetDirectoryName(AppDomain.CurrentDomain.BaseDirectory) +
                           resourceName;
 
-        using (var stream = assembly.GetManifestResourceStream(resourceName))
+        using (Stream? stream = assembly.GetManifestResourceStream(resourceName))
         {
-            using (var fileStream = File.Create(pathToFile))
+            using (FileStream fileStream = File.Create(pathToFile))
             {
                 stream.Seek(0, SeekOrigin.Begin);
                 stream.CopyTo(fileStream);
@@ -1101,8 +1106,8 @@ public class EditorApplication : Game
             .IsNotInteractable()
             .OnPostLayout((handle, rect) => paper.Draw(ref handle, (canvas, r) =>
             {
-                var font = EditorTheme.FontLogo ?? EditorTheme.DefaultBoldFont;
-                var black = Prowl.Vector.Color32.FromArgb(255, 8, 8, 10);
+                Scribe.FontFile? font = EditorTheme.FontLogo ?? EditorTheme.DefaultBoldFont;
+                Vector.Color black = Prowl.Vector.Color32.FromArgb(255, 8, 8, 10);
                 float barH = (float)h / BarCount;
                 double time = _introTime;
                 float brandFade = 1f;
@@ -1166,7 +1171,7 @@ public class EditorApplication : Game
         float textW = 0f, lockupH = 88f;
         if (font != null)
         {
-            var m = canvas.MeasureText(word, EditorTheme.FontSizeLogo, font, letterSpacing);
+            Float2 m = canvas.MeasureText(word, EditorTheme.FontSizeLogo, font, letterSpacing);
             textW = (float)m.X;
             lockupH = (float)m.Y;
         }
@@ -1180,7 +1185,7 @@ public class EditorApplication : Game
         {
             float t = EaseOutCubic(Math.Clamp((time - TextStart) / (TextEnd - TextStart), 0f, 1f));
             float drift = (1f - t) * 16f;
-            var textColor = Prowl.Vector.Color32.FromArgb((byte)(t * fade * 255), 230, 230, 230);
+            Vector.Color textColor = Prowl.Vector.Color32.FromArgb((byte)(t * fade * 255), 230, 230, 230);
             canvas.DrawText(word, textX + drift, cy, textColor, EditorTheme.FontSizeLogo, font,
                 letterSpacing, new Float2(0f, 0.5f), quality: Scribe.FontQuality.Ultra);
 
@@ -1244,7 +1249,7 @@ public class EditorApplication : Game
 
     private Scribe.FontFile? LoadFallbackFont(string resourceName)
     {
-        using var stream = Assembly.GetExecutingAssembly().GetManifestResourceStream(resourceName);
+        using Stream? stream = Assembly.GetExecutingAssembly().GetManifestResourceStream(resourceName);
         if (stream == null) { Runtime.Debug.LogWarning($"Could not load font resource: {resourceName}"); return null; }
         Runtime.Debug.Log($"Loaded fallback font: {resourceName} ({stream.Length} bytes)");
         var fontFile = new Scribe.FontFile(stream);
@@ -1284,12 +1289,12 @@ public class EditorApplication : Game
             "Noto Sans",           // Linux
         ];
 
-        var systemFonts = PaperInstance.EnumerateSystemFonts().ToArray();
+        Scribe.FontFile[] systemFonts = PaperInstance.EnumerateSystemFonts().ToArray();
         int loaded = 0;
 
         foreach (var family in fallbackFamilies)
         {
-            var font = systemFonts.FirstOrDefault(f =>
+            Scribe.FontFile? font = systemFonts.FirstOrDefault(f =>
                 f.FamilyName.Equals(family, StringComparison.OrdinalIgnoreCase)
                 && f.Style == Prowl.Scribe.FontStyle.Regular);
 
@@ -1336,10 +1341,10 @@ public class EditorApplication : Game
     /// <summary>Enumerate every open panel across the docked tree and all floating windows.</summary>
     private IEnumerable<DockPanel> EnumerateAllPanels()
     {
-        foreach (var p in EnumerateNodePanels(_panelMaximizer.LayoutRoot))
+        foreach (DockPanel p in EnumerateNodePanels(_panelMaximizer.LayoutRoot))
             yield return p;
-        foreach (var fw in _dockSpace.FloatingWindows)
-            foreach (var p in EnumerateNodePanels(fw.Node))
+        foreach (FloatingWindow fw in _dockSpace.FloatingWindows)
+            foreach (DockPanel p in EnumerateNodePanels(fw.Node))
                 yield return p;
     }
 
@@ -1349,12 +1354,12 @@ public class EditorApplication : Game
         if (node.IsLeaf)
         {
             if (node.Tabs != null)
-                foreach (var tab in node.Tabs)
+                foreach (DockPanel tab in node.Tabs)
                     yield return tab;
             yield break;
         }
-        foreach (var p in EnumerateNodePanels(node.ChildA)) yield return p;
-        foreach (var p in EnumerateNodePanels(node.ChildB)) yield return p;
+        foreach (DockPanel p in EnumerateNodePanels(node.ChildA)) yield return p;
+        foreach (DockPanel p in EnumerateNodePanels(node.ChildB)) yield return p;
     }
 
     /// <summary>
@@ -1363,7 +1368,7 @@ public class EditorApplication : Game
     public void OpenPanel(Type panelType)
     {
         // Check if already open
-        var existing = FindOpenPanel(panelType);
+        DockPanel? existing = FindOpenPanel(panelType);
         if (existing != null)
         {
             // Asking for a panel the maximized one is hiding brings the full layout back to show it.
@@ -1477,9 +1482,9 @@ public class EditorApplication : Game
         });
         MenuRegistry.Register($"{assets}/{Loc.Get("menu.assets.reimport_all")}", () =>
         {
-            var db = EditorAssetBackend.Instance;
+            EditorAssetBackend? db = EditorAssetBackend.Instance;
             if (db == null) return;
-            foreach (var entry in db.GetAllEntries().ToList())
+            foreach (AssetEntry? entry in db.GetAllEntries().ToList())
                 db.Reimport(entry.Guid);
             Runtime.Debug.Log("[AssetDatabase] Reimported all assets.");
         });
@@ -1607,7 +1612,7 @@ public class EditorApplication : Game
             return DockSerializer.Deserialize(json, _dockSpace.FloatingWindows, (typeName, state) =>
             {
                 Type? type = null;
-                foreach (var asm in AppDomain.CurrentDomain.GetAssemblies())
+                foreach (Assembly asm in AppDomain.CurrentDomain.GetAssemblies())
                 {
                     type = asm.GetType(typeName);
                     if (type != null && typeof(DockPanel).IsAssignableFrom(type)) break;
@@ -1711,7 +1716,7 @@ public class EditorApplication : Game
     {
         if (Application.IsPlaying) return;
 
-        var settings = EditorSettings.Instance;
+        EditorSettings settings = EditorSettings.Instance;
         Application.VSync = settings.VSync;
 
         int limit = settings.TargetFrameRate;
@@ -1733,7 +1738,7 @@ public class EditorApplication : Game
             return;
         }
 
-        var scene = Runtime.Resources.Scene.Current;
+        Scene scene = Runtime.Resources.Scene.Current;
         if (scene == null) return;
 
         // Save active tab (to restore on stop)
@@ -1758,8 +1763,8 @@ public class EditorApplication : Game
 
         // Deserialize a fresh play copy. Loading it is what disposes the editor scene, at the end of
         // the frame, so a failure here leaves the editor scene loaded and the editor usable.
-        var playCtx = Importers.ImportHelper.CreateTrackingContext(out _);
-        var playScene = Echo.Serializer.Deserialize<Runtime.Resources.Scene>(_savedEditorScene, playCtx);
+        SerializationContext playCtx = Importers.ImportHelper.CreateTrackingContext(out _);
+        Scene? playScene = Echo.Serializer.Deserialize<Runtime.Resources.Scene>(_savedEditorScene, playCtx);
         if (playScene == null)
         {
             Runtime.Debug.LogError("Failed to deserialize play scene.");
@@ -1833,8 +1838,8 @@ public class EditorApplication : Game
         {
             RevertAssetsAfterPlay();
 
-            var ctx = Importers.ImportHelper.CreateTrackingContext(out _);
-            var restoredScene = Echo.Serializer.Deserialize<Runtime.Resources.Scene>(_savedEditorScene, ctx);
+            SerializationContext ctx = Importers.ImportHelper.CreateTrackingContext(out _);
+            Scene? restoredScene = Echo.Serializer.Deserialize<Runtime.Resources.Scene>(_savedEditorScene, ctx);
             if (restoredScene != null)
             {
                 // Ends the play session at the swap, once the play scene's teardown has run, so nothing still
@@ -1910,7 +1915,7 @@ public class EditorApplication : Game
         _savedActiveTabNode = FindNodeContainingPanel(_panelMaximizer.LayoutRoot, typeof(GameViewPanel));
         if (_savedActiveTabNode == null)
         {
-            foreach (var fw in _dockSpace.FloatingWindows)
+            foreach (FloatingWindow fw in _dockSpace.FloatingWindows)
             {
                 _savedActiveTabNode = FindNodeContainingPanel(fw.Node, typeof(GameViewPanel));
                 if (_savedActiveTabNode != null) break;
@@ -1933,10 +1938,10 @@ public class EditorApplication : Game
     private void FocusPanel(Type panelType)
     {
         // Behind a maximized panel this only picks the tab its leaf will show once the layout is back.
-        var node = FindNodeContainingPanel(_panelMaximizer.LayoutRoot, panelType);
+        DockNode? node = FindNodeContainingPanel(_panelMaximizer.LayoutRoot, panelType);
         if (node == null)
         {
-            foreach (var fw in _dockSpace.FloatingWindows)
+            foreach (FloatingWindow fw in _dockSpace.FloatingWindows)
             {
                 node = FindNodeContainingPanel(fw.Node, panelType);
                 if (node != null) break;
@@ -1961,7 +1966,7 @@ public class EditorApplication : Game
     {
         DockNode? node = FindNodeContainingInstance(_dockSpace.Root, panel);
         if (node == null)
-            foreach (var fw in _dockSpace.FloatingWindows)
+            foreach (FloatingWindow fw in _dockSpace.FloatingWindows)
             {
                 node = FindNodeContainingInstance(fw.Node, panel);
                 if (node != null) break;
@@ -1985,7 +1990,7 @@ public class EditorApplication : Game
         if (node == null) return null;
         if (node.IsLeaf && node.Tabs != null)
         {
-            foreach (var tab in node.Tabs)
+            foreach (DockPanel tab in node.Tabs)
                 if (tab.GetType() == panelType)
                     return node;
             return null;

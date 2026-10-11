@@ -3,6 +3,7 @@ using System.Collections.Generic;
 
 using Prowl.OrigamiUI;
 using Prowl.PaperUI;
+using Prowl.PaperUI.LayoutEngine;
 using Prowl.Vector;
 
 namespace Prowl.Editor.GUI;
@@ -66,7 +67,7 @@ internal sealed class PanelMaximizer
         // Origami's tabs handle clicks and drags but not double-clicks, so a double-click on one bubbles up
         // to this host. It takes no input of its own and sits at the origin, so the dock lays out and hit
         // tests exactly as it would without it.
-        var screen = paper.ScreenRect.Size;
+        Float2 screen = paper.ScreenRect.Size;
         using (paper.Box("dock_maximize_host")
             .PositionType(PositionType.SelfDirected).Position(0, 0).Size(screen.X, screen.Y)
             .IsNotInteractable()
@@ -78,7 +79,7 @@ internal sealed class PanelMaximizer
 
         // Taken after Draw, which applies a pending drop and prunes empty leaves first, so this matches what
         // was drawn when Paper dispatches the double-click at the end of the frame.
-        var metrics = Origami.Current.Metrics;
+        OrigamiMetrics metrics = Origami.Current.Metrics;
         _tabBarHeight = metrics.TabBarHeight;
         _leaves.Clear();
         CollectLeaves(_dock.Root, x, y, w, h, metrics.SplitterSize);
@@ -91,7 +92,7 @@ internal sealed class PanelMaximizer
     public bool Maximize(DockPanel panel)
     {
         Restore();
-        var host = FindLeaf(_dock.Root, panel);
+        DockNode? host = FindLeaf(_dock.Root, panel);
         if (host == null) return false;
 
         // The panel is what the user is looking at, so it is the one in front when the layout comes back.
@@ -111,14 +112,14 @@ internal sealed class PanelMaximizer
     public void Restore()
     {
         if (_view == null) return;
-        var (panel, host, layout, view) = (_panel!, _host!, _layout!, _view);
+        (DockPanel? panel, DockNode? host, DockNode? layout, DockNode? view) = (_panel!, _host!, _layout!, _view);
         Discard();
 
         // The leaf keeps whichever tab it had in front (the panel, unless something like play mode focused
         // another meanwhile), except that a panel just docked into the stand-in comes to the front.
-        var tabs = host.Tabs!;
-        var viewTabs = view.Tabs!;
-        var front = tabs.Count > 0 ? tabs[Math.Clamp(host.ActiveTabIndex, 0, tabs.Count - 1)] : null;
+        List<DockPanel> tabs = host.Tabs!;
+        List<DockPanel> viewTabs = view.Tabs!;
+        DockPanel? front = tabs.Count > 0 ? tabs[Math.Clamp(host.ActiveTabIndex, 0, tabs.Count - 1)] : null;
         if (viewTabs.Exists(t => t != panel))
             front = viewTabs[Math.Clamp(view.ActiveTabIndex, 0, viewTabs.Count - 1)];
 
@@ -136,8 +137,8 @@ internal sealed class PanelMaximizer
         // A split made around the stand-in (a panel docked beside it, or on the dock's outer edge) stands
         // where the leaf stood in the layout. The stand-in can only leave the tree by being pruned once empty,
         // which Sync catches first; should it have anyway, both halves are kept.
-        var current = _dock.Root;
-        var replacement = Contains(current, view)
+        DockNode current = _dock.Root;
+        DockNode replacement = Contains(current, view)
             ? Replace(current, view, host)
             : DockNode.Split(SplitDirection.Horizontal, 0.5f, host, current);
         _dock.Root = Replace(layout, host, replacement);
@@ -180,7 +181,7 @@ internal sealed class PanelMaximizer
 
         if (paper.IsPointerDown(PaperMouseBtn.Left) || paper.IsPointerReleased(PaperMouseBtn.Left)) return;
 
-        var panel = _toggle;
+        DockPanel panel = _toggle;
         _toggle = null;
         if (_view != null) Restore();
         else Maximize(panel);
@@ -189,20 +190,20 @@ internal sealed class PanelMaximizer
     private void OnDoubleClick(Paper paper)
     {
         // The event arrives here from whatever was double-clicked, and Paper still knows which element that was.
-        var hit = paper.FindElementByID(paper.HoveredElementId);
+        ElementHandle hit = paper.FindElementByID(paper.HoveredElementId);
         if (!hit.IsValid) return;
         Rect element = hit.Data.LayoutRect;
 
         // Floating windows draw over the docked layout, and are not maximized.
         Float2 p = paper.PointerPos;
-        foreach (var fw in _dock.FloatingWindows)
+        foreach (FloatingWindow fw in _dock.FloatingWindows)
         {
             if (p.X >= fw.Position.X && p.X <= fw.Position.X + fw.Size.X &&
                 p.Y >= fw.Position.Y && p.Y <= fw.Position.Y + fw.Size.Y)
                 return;
         }
 
-        foreach (var (leaf, x, y, w) in _leaves)
+        foreach ((DockNode? leaf, float x, float y, float w) in _leaves)
         {
             if (!IsTab(element, leaf, x, y, w)) continue;
 

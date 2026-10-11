@@ -92,7 +92,7 @@ public sealed class AssetVariantResolver
     public async Task<ResolvedVariant> ResolveAsync(
         AssetEntry asset, string importedPath, PlatformTarget target, CancellationToken ct = default)
     {
-        var processor = SelectProcessor(asset, target);
+        IAssetVariantProcessor? processor = SelectProcessor(asset, target);
         if (processor == null)
             return new ResolvedVariant(VariantOrigin.Universal, "universal", importedPath, null);
 
@@ -102,7 +102,7 @@ public sealed class AssetVariantResolver
         if (await _cache.ExistsAsync(key, ct).ConfigureAwait(false))
             return new ResolvedVariant(VariantOrigin.Cached, processor.Format, importedPath, key);
 
-        using (var source = File.OpenRead(importedPath))
+        using (FileStream source = File.OpenRead(importedPath))
         using (var produced = new MemoryStream())
         {
             await processor.ProcessAsync(asset, source, produced, target, ct).ConfigureAwait(false);
@@ -120,7 +120,7 @@ public sealed class AssetVariantResolver
     /// </summary>
     private static async Task<string> HashOfAsync(string path, CancellationToken ct)
     {
-        await using var stream = File.OpenRead(path);
+        await using FileStream stream = File.OpenRead(path);
         return Convert.ToHexStringLower(await SHA256.HashDataAsync(stream, ct).ConfigureAwait(false));
     }
 

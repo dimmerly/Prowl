@@ -264,7 +264,7 @@ public sealed class TyreSpray : Component
 
     private ParticleSystemComponent System(Texture2D? texture, int maxParticles)
     {
-        var system = GameObject.AddComponent<ParticleSystemComponent>();
+        ParticleSystemComponent system = GameObject.AddComponent<ParticleSystemComponent>();
         system.SimulationSpace = SimulationSpace.World;
         system.MaxParticles = maxParticles;
         system.Emission.RateOverTime = new MinMaxCurve(0f);

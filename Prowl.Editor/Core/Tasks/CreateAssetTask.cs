@@ -46,7 +46,7 @@ public class CreateAssetTask : EditorTask
     /// <summary> Begins the asset creation workflow: navigates to the target folder, shows a rename overlay, then creates the asset based on TaskType. </summary>
     public async void BeginCreateTask(AssetMenuEntry entry, string relativeFolder)
     {
-        var panel = ProjectPanel.Instance;
+        ProjectPanel panel = ProjectPanel.Instance;
         if (panel != null)
         {
             // The rename placeholder is drawn in the browsed folder, so show the target folder.
@@ -101,7 +101,7 @@ public class CreateAssetTask : EditorTask
         string name = AssetCreateMenu.FindUniqueName(absFolder, shaderName, ".shader");
         string filePath = Path.Combine(absFolder, name);
 
-        var stream = EditorApplication.GetEmbeddedResource("NewShader.template");
+        Stream? stream = EditorApplication.GetEmbeddedResource("NewShader.template");
         if (stream == null)
         {
             Debug.LogError("Failed to create shader: embedded resource 'NewShader.template' is missing.");
@@ -157,7 +157,7 @@ public class CreateAssetTask : EditorTask
         try
         {
             var instance = entry.Factory != null ? entry.Factory() : Activator.CreateInstance(entry.Type);
-            var echo = Serializer.Serialize(typeof(object), instance);
+            EchoObject echo = Serializer.Serialize(typeof(object), instance);
             if (echo == null) return null;
             File.WriteAllText(filePath, echo.WriteToString());
 

@@ -13,6 +13,7 @@ using Prowl.Runtime;
 using Prowl.Vector;
 
 using Xunit;
+using Prowl.Recast.Detour.TileCache;
 
 namespace Prowl.Runtime.Test;
 
@@ -133,7 +134,7 @@ public class NavMeshBuildTests
         Assert.NotNull(data);
         data!.FormatVersion = NavMeshData.CurrentFormatVersion + 1;
 
-        var thrown = Assert.Throws<InvalidOperationException>(() => data.CreateTileCache(maxObstacles: 1));
+        InvalidOperationException thrown = Assert.Throws<InvalidOperationException>(() => data.CreateTileCache(maxObstacles: 1));
         Assert.Contains($"{NavMeshData.MinReadableFormatVersion}..{NavMeshData.CurrentFormatVersion}", thrown.Message);
         Assert.Contains("Rebake", thrown.Message);
     }
@@ -413,7 +414,7 @@ public class NavMeshBuildTests
             {
                 foreach (long tileRef in cache.GetTilesAt(x, z))
                 {
-                    var header = cache.GetTileByRef(tileRef)?.header;
+                    DtTileCacheLayerHeader? header = cache.GetTileByRef(tileRef)?.header;
                     if (header != null)
                     {
                         long navRef = navMesh.GetTileRefAt(header.tx, header.ty, header.tlayer);

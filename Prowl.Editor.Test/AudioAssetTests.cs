@@ -242,7 +242,7 @@ public class AudioAssetTests : EditorTestHarness
 
         Guid guid = CreateMixer(mixer);
 
-        var loaded = AssetDatabase.Load<AudioMixer>(guid)!;
+        AudioMixer loaded = AssetDatabase.Load<AudioMixer>(guid)!;
         AudioMixerGroup music = loaded.FindGroup("Music")!;
         Assert.Equal(0f, music.VolumeDB);
 
@@ -262,8 +262,8 @@ public class AudioAssetTests : EditorTestHarness
         Guid held = CreateMixer(new AudioMixer(), "Held.audiomixer");
         Guid ordinary = CreateMixer(new AudioMixer(), "Ordinary.audiomixer");
 
-        var heldAsset = AssetDatabase.Load<AudioMixer>(held)!;
-        var ordinaryAsset = AssetDatabase.Load<AudioMixer>(ordinary)!;
+        AudioMixer heldAsset = AssetDatabase.Load<AudioMixer>(held)!;
+        AudioMixer ordinaryAsset = AssetDatabase.Load<AudioMixer>(ordinary)!;
         object owner = new();
         AssetDatabase.Hold(heldAsset, owner);
 
@@ -285,8 +285,8 @@ public class AudioAssetTests : EditorTestHarness
         AssetDatabase.ClearForTests();
 
         Guid musicId = Assets.GetSubAssets(guid).First(s => s.Name == "Music").Guid;
-        var group = AssetDatabase.Load<AudioMixerGroup>(musicId)!;
-        var loaded = AssetDatabase.Load<AudioMixer>(guid)!;
+        AudioMixerGroup group = AssetDatabase.Load<AudioMixerGroup>(musicId)!;
+        AudioMixer loaded = AssetDatabase.Load<AudioMixer>(guid)!;
 
         Assert.Same(group, loaded.FindGroup("Music"));
         Assert.Same(loaded, group.Mixer);
@@ -300,7 +300,7 @@ public class AudioAssetTests : EditorTestHarness
         Guid guid = CreateMixer(mixer);
         Guid musicId = Assets.GetSubAssets(guid).First(s => s.Name == "Music").Guid;
 
-        var group = AssetDatabase.Load<AudioMixerGroup>(musicId)!;
+        AudioMixerGroup group = AssetDatabase.Load<AudioMixerGroup>(musicId)!;
         group.VolumeDB = -6f;
 
         Assert.True(Assets.SaveAsset(group));
@@ -410,7 +410,7 @@ public class AudioAssetTests : EditorTestHarness
         scene.Add(go);
         Guid sceneGuid = CreateSceneAsset(scene, "Clipped.scene");
 
-        var entry = Assets.GetEntry(sceneGuid);
+        AssetEntry? entry = Assets.GetEntry(sceneGuid);
         Assert.NotNull(entry);
         Assert.Contains(clip.AssetID, entry!.Dependencies);
     }
@@ -434,7 +434,7 @@ public class AudioAssetTests : EditorTestHarness
 
         Guid sceneGuid = CreateSceneAsset(scene, "Mixed.scene");
 
-        var entry = Assets.GetEntry(sceneGuid);
+        AssetEntry? entry = Assets.GetEntry(sceneGuid);
         Assert.NotNull(entry);
         Assert.Contains(music.AssetID, entry!.Dependencies);
     }

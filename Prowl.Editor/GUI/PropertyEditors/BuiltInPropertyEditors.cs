@@ -260,12 +260,12 @@ public class ColorPropertyEditor : PropertyEditor
     {
         if (s_palette != null) return s_palette;
 
-        var settings = EditorRegistries.GetSettings<ProjectsEditorSettings>();
+        ProjectsEditorSettings settings = EditorRegistries.GetSettings<ProjectsEditorSettings>();
         // Convert hex strings to Color list, keep in sync
         var colors = new List<Color>();
         foreach (var hex in settings.ColorPalette)
         {
-            var sc = ColorRamp.ParseHex(hex);
+            System.Drawing.Color sc = ColorRamp.ParseHex(hex);
             colors.Add(new Color(sc.R / 255f, sc.G / 255f, sc.B / 255f, 1f));
         }
 
@@ -291,13 +291,13 @@ public class ColorPropertyEditor : PropertyEditor
     public override void OnGUI(Paper paper, string id, string label, object? value, Action<object?> onChange, int depth)
     {
         var color = (Color)(value ?? new Color(1, 1, 1, 1));
-        var palette = GetEditorPalette();
+        ColorPalette palette = GetEditorPalette();
 
         // Set the OnAdd to capture the current color value
-        var capturedColor = color;
+        Color capturedColor = color;
         palette.OnAdd = () =>
         {
-            var settings = EditorRegistries.GetSettings<ProjectsEditorSettings>();
+            ProjectsEditorSettings settings = EditorRegistries.GetSettings<ProjectsEditorSettings>();
             int r = Math.Clamp((int)(capturedColor.R * 255), 0, 255);
             int g = Math.Clamp((int)(capturedColor.G * 255), 0, 255);
             int b = Math.Clamp((int)(capturedColor.B * 255), 0, 255);

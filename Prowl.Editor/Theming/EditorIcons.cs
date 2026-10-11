@@ -28,7 +28,7 @@ public class EditorIcons
         var random = new Random(seed);
 
         // Use Reflection to get all public static fields
-        var fields = typeof(EditorIcons).GetFields(BindingFlags.Public | BindingFlags.Static)
+        FieldInfo[] fields = typeof(EditorIcons).GetFields(BindingFlags.Public | BindingFlags.Static)
             // Filter only unicode character fields (icons)
             .Where(field =>
                 field.FieldType == typeof(string) &&
@@ -42,7 +42,7 @@ public class EditorIcons
             return string.Empty;
         }
 
-        var randomField = fields[random.Next(fields.Length)];
+        FieldInfo randomField = fields[random.Next(fields.Length)];
         var randomIcon = randomField.GetValue(null)?.ToString() ?? string.Empty;
         _iconCache[seed] = randomIcon;
         return randomIcon;

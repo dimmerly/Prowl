@@ -17,7 +17,7 @@ public class ScriptImporter : AssetImporter
     public override bool Import(ImportContext ctx)
     {
         // Request recompile if the project is loaded and the source file exists on disk.
-        var project = Project.Current;
+        Project? project = Project.Current;
         if (project != null && File.Exists(ctx.AbsolutePath))
         {
             ScriptAssemblyManager.RequestRecompile();

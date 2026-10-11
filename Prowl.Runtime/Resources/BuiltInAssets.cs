@@ -1,8 +1,10 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Security.Cryptography;
 using System.Text;
 
+using Prowl.Runtime.AssetImporting;
 using Prowl.Runtime.Resources;
 
 namespace Prowl.Runtime;
@@ -68,7 +70,7 @@ public static class BuiltInAssets
         // without recursing through itself.
         foreach (DefaultShader s in Enum.GetValues<DefaultShader>())
         {
-            var shader = s;
+            DefaultShader shader = s;
             Register($"$Default:Shader/{shader}", shader.ToString(), typeof(Shader),
                 () => Shader.ParseDefault(shader));
         }
@@ -77,7 +79,7 @@ public static class BuiltInAssets
         // Default meshes (parsed directly from embedded OBJ files)
         foreach (DefaultModel m in Enum.GetValues<DefaultModel>())
         {
-            var model = m;
+            DefaultModel model = m;
             string fileName = model switch
             {
                 DefaultModel.Cube => "Cube.obj",
@@ -96,9 +98,9 @@ public static class BuiltInAssets
             Register($"$Default:Model/{model}/Mesh/0", model.ToString(), typeof(Mesh),
                 () =>
                 {
-                    using var stream = EmbeddedResources.GetStream($"Assets/Defaults/{fileName}");
+                    using Stream stream = EmbeddedResources.GetStream($"Assets/Defaults/{fileName}");
                     // Built-in primitives always get lightmap UV2 so they're lightmappable out of the box.
-                    var importResult = new AssetImporting.ModelImporter().Import(stream, fileName, new AssetImporting.ModelImporterSettings() { RecalculateNormals = true, GenerateNormals = true, GenerateSmoothNormals = true, CalculateTangentSpace = true, GenerateLightmapUVs = true });
+                    ModelImportResult importResult = new AssetImporting.ModelImporter().Import(stream, fileName, new AssetImporting.ModelImporterSettings() { RecalculateNormals = true, GenerateNormals = true, GenerateSmoothNormals = true, CalculateTangentSpace = true, GenerateLightmapUVs = true });
                     return importResult.Meshes.Count > 0 ? importResult.Meshes[0] : new Mesh { Name = model.ToString() };
                 });
         }
@@ -106,7 +108,7 @@ public static class BuiltInAssets
         // Materials register the raw parse so LoadDefault routes through this cache.
         foreach (DefaultMaterial m in Enum.GetValues<DefaultMaterial>())
         {
-            var mat = m;
+            DefaultMaterial mat = m;
             Register($"$Default:Material/{mat}", mat.ToString(), typeof(Material),
                 () => Material.ParseDefault(mat));
         }
@@ -114,14 +116,14 @@ public static class BuiltInAssets
         // Textures same: raw load, shared instance.
         foreach (DefaultTexture t in Enum.GetValues<DefaultTexture>())
         {
-            var tex = t;
+            DefaultTexture tex = t;
             Register($"$Default:Texture/{tex}", tex.ToString(), typeof(Texture2D),
                 () => Texture2D.ParseDefault(tex));
         }
 
         foreach (DefaultTexture3D t in Enum.GetValues<DefaultTexture3D>())
         {
-            var tex = t;
+            DefaultTexture3D tex = t;
             Register($"$Default:Texture3D/{tex}", tex.ToString(), typeof(Texture3D),
                 () => Texture3D.ParseDefault(tex));
         }
@@ -129,7 +131,7 @@ public static class BuiltInAssets
         // Sprites: built from a default texture, shared instance.
         foreach (DefaultSprite sp in Enum.GetValues<DefaultSprite>())
         {
-            var sprite = sp;
+            DefaultSprite sprite = sp;
             Register($"$Default:Sprite/{sprite}", sprite.ToString(), typeof(Sprite),
                 () => Sprite.ParseDefault(sprite));
         }
@@ -137,7 +139,7 @@ public static class BuiltInAssets
         // Fonts: raw load, shared instance (fallback for UI text with no font assigned).
         foreach (DefaultFont f in Enum.GetValues<DefaultFont>())
         {
-            var font = f;
+            DefaultFont font = f;
             Register($"$Default:Font/{font}", font.ToString(), typeof(FontAsset),
                 () => FontAsset.ParseDefault(font));
         }
@@ -145,7 +147,7 @@ public static class BuiltInAssets
 
     private static void Register(string path, string name, Type type, Func<Asset> loader)
     {
-        var guid = DeterministicGuid(path);
+        Guid guid = DeterministicGuid(path);
         _entries[guid] = new BuiltInEntry
         {
             Guid = guid,
@@ -159,7 +161,7 @@ public static class BuiltInAssets
     /// <summary>Builds a built-in asset into the staging copy the database fills its stable object from.</summary>
     internal static bool ReadContent(Guid guid, Asset staging)
     {
-        if (!_entries.TryGetValue(guid, out var entry)) return false;
+        if (!_entries.TryGetValue(guid, out BuiltInEntry entry)) return false;
 
         try
         {
@@ -191,7 +193,7 @@ public static class BuiltInAssets
     /// </summary>
     public static IEnumerable<(Guid guid, string name, string path, Type type)> FindAllOfType(Type type)
     {
-        foreach (var (guid, entry) in Entries)
+        foreach ((Guid guid, BuiltInEntry entry) in Entries)
         {
             if (type.IsAssignableFrom(entry.AssetType))
                 yield return (guid, entry.Name, entry.Path, entry.AssetType);

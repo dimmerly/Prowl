@@ -45,7 +45,7 @@ internal static class TestHumanoid
         };
 
         // Without a chest the neck and shoulders hang off the spine.
-        var defs = chest ? all : Array.ConvertAll(Array.FindAll(all, d => d.Name is not ("Chest" or "UpperChest")),
+        (string Name, string?, Float3 Local)[] defs = chest ? all : Array.ConvertAll(Array.FindAll(all, d => d.Name is not ("Chest" or "UpperChest")),
             d => d.Parent is "Chest" or "UpperChest" ? (d.Name, "Spine", d.Local) : d);
 
         var root = new GameObject("Character");

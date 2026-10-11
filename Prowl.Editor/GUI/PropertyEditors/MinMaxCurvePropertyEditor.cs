@@ -17,7 +17,7 @@ public class MinMaxCurvePropertyEditor : PropertyEditor
 {
     public override void OnGUI(Paper paper, string id, string label, object? value, Action<object?> onChange, int depth)
     {
-        var curve = value as MinMaxCurve ?? new MinMaxCurve();
+        MinMaxCurve curve = value as MinMaxCurve ?? new MinMaxCurve();
 
         using (paper.Column(id).Height(UnitValue.Auto).Enter())
         {

@@ -1,3 +1,5 @@
+using System.Collections.Generic;
+
 using Prowl.Editor.GUI;
 using Prowl.Editor.Inspector;
 using Prowl.Editor.Theming;
@@ -72,7 +74,7 @@ public class PhysicsSettings : ProjectSettingsBase
             s_sceneHookRegistered = true;
             Runtime.Resources.Scene.OnSceneLoaded += () =>
             {
-                var s = EditorRegistries.GetSettings<PhysicsSettings>();
+                PhysicsSettings s = EditorRegistries.GetSettings<PhysicsSettings>();
                 s.ApplyToScene(Runtime.Resources.Scene.Current);
             };
         }
@@ -121,7 +123,7 @@ public class PhysicsSettings : ProjectSettingsBase
 
     public override void OnGUI(Paper paper, float width)
     {
-        var font = EditorTheme.DefaultFont;
+        Scribe.FontFile? font = EditorTheme.DefaultFont;
         if (font == null) return;
 
         // Gravity
@@ -173,7 +175,7 @@ public class PhysicsSettings : ProjectSettingsBase
     private void DrawCollisionMatrix(Paper paper, Scribe.FontFile font, float width)
     {
         // Only show layers that have names
-        var layers = TagLayerManager.GetLayers();
+        IReadOnlyList<string> layers = TagLayerManager.GetLayers();
         var activeIndices = new System.Collections.Generic.List<int>();
         for (int i = 0; i < layers.Count && i < 32; i++)
             if (!string.IsNullOrEmpty(layers[i]))

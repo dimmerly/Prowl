@@ -20,6 +20,7 @@ using Prowl.Runtime;
 using Prowl.Runtime.Rendering;
 using Prowl.Runtime.Resources;
 using Prowl.Samples;
+using Prowl.Scribe;
 using Prowl.Vector;
 
 namespace HelloProwl;
@@ -55,7 +56,7 @@ public sealed class HelloProwlGame : Game
 
         // A floor with a collider, so dropped cubes have something to land on.
         var floor = new GameObject("Floor");
-        var floorRenderer = floor.AddComponent<MeshRenderer>();
+        MeshRenderer floorRenderer = floor.AddComponent<MeshRenderer>();
         floorRenderer.Mesh = Mesh.CreateCube(new Float3(80f, 0.2f, 80f));
         floorRenderer.Material = MakeMaterial(new Color(0.06f, 0.065f, 0.075f, 1f));
         floor.AddComponent<BoxCollider>().Size = new Float3(80f, 0.2f, 80f);
@@ -64,7 +65,7 @@ public sealed class HelloProwlGame : Game
 
         // The star of the show, with our own component on it.
         var cube = new GameObject("Spinning Cube");
-        var cubeRenderer = cube.AddComponent<MeshRenderer>();
+        MeshRenderer cubeRenderer = cube.AddComponent<MeshRenderer>();
         cubeRenderer.Mesh = Mesh.CreateCube(Float3.One);
         cubeRenderer.Material = MakeMaterial(new Color(0.9f, 0.22f, 0.03f, 1f));
         cube.AddComponent<Spinner>();
@@ -135,7 +136,7 @@ public sealed class CubeSpawner : Component
         if (Input.GetKeyDown(KeyCode.C))
         {
             var cube = new GameObject("Dropped Cube");
-            var renderer = cube.AddComponent<MeshRenderer>();
+            MeshRenderer renderer = cube.AddComponent<MeshRenderer>();
             renderer.Mesh = Mesh.CreateCube(new Float3(0.5f, 0.5f, 0.5f));
             renderer.Material = HelloProwlGame.MakeMaterial(new Color(0.05f, 0.25f, 0.8f, 1f));
             cube.AddComponent<BoxCollider>().Size = new Float3(0.5f, 0.5f, 0.5f);
@@ -159,7 +160,7 @@ public sealed class CubeSpawner : Component
 
     public override void OnGui(Paper paper)
     {
-        var font = FontAsset.LoadDefault().FontFile;
+        FontFile font = FontAsset.LoadDefault().FontFile;
         if (font == null) return;
 
         paper.Box("help").Margin(20).Height(30)

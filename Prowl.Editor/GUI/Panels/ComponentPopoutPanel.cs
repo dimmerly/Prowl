@@ -39,11 +39,11 @@ public class ComponentPopoutPanel : DockPanel
 
     public override void OnGUI(Paper paper, float width, float height)
     {
-        var font = EditorTheme.DefaultFont;
+        Scribe.FontFile? font = EditorTheme.DefaultFont;
         if (font == null) return;
 
         // Find the component in the current scene
-        var (go, comp) = FindComponent();
+        (GameObject? go, Component? comp) = FindComponent();
 
         if (comp == null)
         {
@@ -106,7 +106,7 @@ public class ComponentPopoutPanel : DockPanel
             // property getter or a bad [Button] must not take the editor down with it.
             try
             {
-                var customEditor = EditorRegistries.GetCustomEditor(comp.GetType());
+                CustomEditor? customEditor = EditorRegistries.GetCustomEditor(comp.GetType());
                 if (customEditor != null)
                 {
                     customEditor.OnGUI(paper, compId, comp);
@@ -127,14 +127,14 @@ public class ComponentPopoutPanel : DockPanel
 
     private (GameObject? go, Component? comp) FindComponent()
     {
-        var scene = Scene.Current;
+        Scene scene = Scene.Current;
         if (scene == null) return (null, null);
 
-        foreach (var go in scene.AllObjects)
+        foreach (GameObject go in scene.AllObjects)
         {
             if (go.Identifier != _goIdentifier) continue;
 
-            foreach (var comp in go.GetComponents<Component>())
+            foreach (Component comp in go.GetComponents<Component>())
             {
                 if (comp.Identifier == _compIdentifier)
                     return (go, comp);

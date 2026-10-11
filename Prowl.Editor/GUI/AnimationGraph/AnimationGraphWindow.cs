@@ -380,7 +380,7 @@ public class AnimationGraphWindow : DockPanel
     /// <summary>Copies a snapshot's records into a graph asset, keeping the asset itself.</summary>
     private static bool CopyRecords(EchoObject snapshot, AnimationGraph target, bool compiles)
     {
-        var restored = Serializer.Deserialize<AnimationGraph>(snapshot.Clone());
+        AnimationGraph? restored = Serializer.Deserialize<AnimationGraph>(snapshot.Clone());
         if (restored == null) return false;
 
         target.Nodes = restored.Nodes;
@@ -406,9 +406,9 @@ public class AnimationGraphWindow : DockPanel
 
     public override void OnGUI(Paper paper, float width, float height)
     {
-        var font = EditorTheme.DefaultFont;
+        Scribe.FontFile? font = EditorTheme.DefaultFont;
         if (font == null) return;
-        var m = Origami.Current.Metrics;
+        OrigamiMetrics m = Origami.Current.Metrics;
 
         Resolve();
         HandleShortcuts(paper);
@@ -1279,9 +1279,9 @@ public class AnimationGraphWindow : DockPanel
     /// <summary>Draws a selected piece of this graph in the inspector, editing through this window's undo.</summary>
     internal void DrawInspector(Paper paper, AnimationGraphSelection selection)
     {
-        var font = EditorTheme.DefaultFont;
+        Scribe.FontFile? font = EditorTheme.DefaultFont;
         if (font == null) return;
-        var m = Origami.Current.Metrics;
+        OrigamiMetrics m = Origami.Current.Metrics;
 
         if (_graph.IsNotValid() || !StillInGraph(selection))
         {
@@ -1382,7 +1382,7 @@ public class AnimationGraphWindow : DockPanel
     /// <summary>The parameter a parameter node reads. Fixed when the node is made, so it is shown, not edited.</summary>
     internal void DrawParameterPicker(Paper paper, string id, string name)
     {
-        var font = EditorTheme.DefaultFont!;
+        Scribe.FontFile font = EditorTheme.DefaultFont!;
         GraphParameterRecord? declared = _graph!.Parameters.Find(p => p.Name == name);
         bool isVirtual = declared == null && AnimationGraphView.VirtualParameters(_graph).Contains(name);
 
@@ -1589,7 +1589,7 @@ public class AnimationGraphWindow : DockPanel
         bool selected = Selection.IsSelected(new AnimationGraphSelection(this, parameter: parameter));
         string live = _probe.ReadParameter(parameter);
 
-        var row = ParameterRow(paper, m, "ag_param", index, parameter.Name, selected)
+        ElementBuilder row = ParameterRow(paper, m, "ag_param", index, parameter.Name, selected)
             .OnClick(0, (_, _) => Publish(new List<AnimationGraphSelection> { new(this, parameter: parameter) }));
 
         using (row.Enter())
@@ -1614,7 +1614,7 @@ public class AnimationGraphWindow : DockPanel
     /// <summary>A Virtual Parameter's name, which drags onto the graph like a parameter.</summary>
     private void DrawVirtualParameterRow(Paper paper, Scribe.FontFile font, OrigamiMetrics m, string name, int index)
     {
-        var row = ParameterRow(paper, m, "ag_virtual", index, name, selected: false)
+        ElementBuilder row = ParameterRow(paper, m, "ag_virtual", index, name, selected: false)
             .Tooltip("Set by the Virtual Parameter node of this name. Drag it onto the graph to read it.");
 
         using (row.Enter())
@@ -1986,11 +1986,11 @@ public class AnimationGraphAssetEditor : AssetImporterEditor
 
     public override void OnGUI(Paper paper, string id, AssetEntry entry, EngineObject? asset)
     {
-        var font = EditorTheme.DefaultFont;
+        Scribe.FontFile? font = EditorTheme.DefaultFont;
         if (font == null) return;
 
         var graph = asset as AnimationGraph;
-        var m = Origami.Current.Metrics;
+        OrigamiMetrics m = Origami.Current.Metrics;
 
         using (paper.Row($"{id}_open").Width(UnitValue.Stretch()).Height(34)
             .Margin(m.PaddingLarge, m.PaddingLarge, m.Spacing, m.SpacingMedium).Enter())

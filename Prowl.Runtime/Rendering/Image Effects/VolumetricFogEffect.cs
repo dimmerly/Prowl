@@ -118,7 +118,7 @@ public sealed class VolumetricFogEffect : ImageEffect
         UploadFogToggles();
         UploadFogVolumes(context);
 
-        var format = context.SceneColor.MainTexture.ImageFormat;
+        TextureImageFormat format = context.SceneColor.MainTexture.ImageFormat;
         EyeHistory eye = GetEyeState<EyeHistory>(context.Camera);
 
         // Drop history if the low-res size changed reprojecting against a
@@ -133,7 +133,7 @@ public sealed class VolumetricFogEffect : ImageEffect
         // A camera cut (Camera.ResetMotionHistory) or a freshly enabled camera has nothing to reproject from.
         if (!context.Camera.HasPreviousViewProjectionMatrix) eye.HistoryValid = false;
 
-        using var cmd = Graphics.GetCommandBuffer("VolumetricFog");
+        using CommandBuffer cmd = Graphics.GetCommandBuffer("VolumetricFog");
 
         // Pass 0 Ray march into low-res.
         var currentLow = RenderTexture.GetTemporaryRT(lowW, lowH, false, [format]);
@@ -221,16 +221,16 @@ public sealed class VolumetricFogEffect : ImageEffect
     private void UploadFogVolumes(RenderContext context)
     {
         // The volumes of the scene being rendered, which isn't always the active one (previews, additive scenes).
-        var scene = context.Camera.GameObject.Scene;
-        var collected = _collected;
+        Scene? scene = context.Camera.GameObject.Scene;
+        List<(FogVolume vol, float distSq)> collected = _collected;
         collected.Clear();
 
         if (scene != null)
         {
             Float3 camPos = context.Camera.Transform.Position;
-            foreach (var go in scene.ActiveObjects)
+            foreach (GameObject go in scene.ActiveObjects)
             {
-                var v = go.GetComponent<FogVolume>();
+                FogVolume? v = go.GetComponent<FogVolume>();
                 if (v == null || !v.EnabledInHierarchy) continue;
                 float dSq = v.Shape == FogVolumeShape.Global
                     ? -1f // globals always go in
@@ -256,7 +256,7 @@ public sealed class VolumetricFogEffect : ImageEffect
 
             if (i < count)
             {
-                var v = collected[i].vol;
+                FogVolume v = collected[i].vol;
                 shape = (int)v.Shape;
                 pos = (Float3)v.Transform.Position;
                 size = (Float3)v.Transform.LossyScale;

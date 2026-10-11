@@ -131,7 +131,7 @@ internal class TerrainDetailRenderer
     {
         if (_quadMesh == null || data.DetailPrototypes.Count == 0) return;
 
-        var detailTextures = data.GetDetailTextures();
+        IReadOnlyList<Texture2D> detailTextures = data.GetDetailTextures();
         if (detailTextures.Count == 0) return;
 
         Float3 camLocal = terrain.WorldToTerrain(camera.Transform.Position);
@@ -146,7 +146,7 @@ internal class TerrainDetailRenderer
         int slot = 0;
         for (int protoIdx = 0; protoIdx < data.DetailPrototypes.Count; protoIdx++)
         {
-            var proto = data.DetailPrototypes[protoIdx];
+            DetailPrototype proto = data.DetailPrototypes[protoIdx];
             if (proto.RenderMode == DetailRenderMode.Mesh) continue; // meshes have their own renderer
             if (protoIdx >= data.DetailLayers.Count) continue;
 
@@ -172,7 +172,7 @@ internal class TerrainDetailRenderer
                 float cellSize = CascadeCellSize(density, 0);
 
                 CascadeSlot slotData = GetSlot(slot++);
-                var props = slotData.Properties;
+                PropertyState props = slotData.Properties;
                 props.Clear();
 
                 Int2 origin = CascadeOriginCell(camLocal.X, camLocal.Z, density, cascade, cellsPerSide);
@@ -219,12 +219,12 @@ internal class TerrainDetailRenderer
     {
         // Clone per prototype: material state is read at draw time, so prototypes sharing one
         // material would otherwise all render with the last one's texture and parameters.
-        var protoMat = proto.GrassMaterial;
+        Material? protoMat = proto.GrassMaterial;
         Material material = (protoMat.IsValid() ? protoMat : baseMaterial).Clone();
         terrain.ApplyDetailUniforms(material);
 
         if (s_defaultWhite.IsNotValid()) s_defaultWhite = Texture2D.LoadDefault(DefaultTexture.White);
-        var texRes = proto.Texture;
+        Texture2D? texRes = proto.Texture;
         material.SetTexture("_MainTex", texRes.IsValid() ? texRes : s_defaultWhite);
 
         material.SetKeyword("TERRAIN_BICUBIC", data.Interpolation == TerrainInterpolation.Bicubic);

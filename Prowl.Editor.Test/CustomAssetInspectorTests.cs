@@ -43,11 +43,11 @@ public class CustomAssetInspectorTests : EditorTestHarness
     {
         Guid guid = CreateCustomAsset("Custom.customtest", out _);
 
-        var entry = Assets.GetEntry("Custom.customtest");
+        AssetEntry? entry = Assets.GetEntry("Custom.customtest");
         Assert.NotNull(entry);
         Assert.True(typeof(Asset).IsAssignableFrom(entry!.MainAssetType));
 
-        var loaded = AssetDatabase.Get(guid);
+        Asset? loaded = AssetDatabase.Get(guid);
         Assert.NotNull(loaded);
         Assert.IsType<CustomTestAsset>(loaded);
     }
@@ -64,7 +64,7 @@ public class CustomAssetInspectorTests : EditorTestHarness
         Assets.SaveAsset(asset);
 
         AssetDatabase.ClearForTests();
-        var reloaded = AssetDatabase.Load<CustomTestAsset>(guid);
+        CustomTestAsset? reloaded = AssetDatabase.Load<CustomTestAsset>(guid);
 
         Assert.NotNull(reloaded);
         Assert.Equal(42, reloaded!.Rounds);

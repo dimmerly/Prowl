@@ -47,7 +47,7 @@ public class RenderPipelineTests
         };
 
         var pipeline = new DefaultRenderPipeline();
-        using var cmd = Graphics.GetCommandBuffer("Test");
+        using CommandBuffer cmd = Graphics.GetCommandBuffer("Test");
         pipeline.DrawRenderables(cmd, sorted, "RenderOrder", "Transparent", default, null!, false, null, preserveOrder: true);
 
         Assert.Equal([1, 2, 3], EncodedObjectIds(cmd));
@@ -57,7 +57,7 @@ public class RenderPipelineTests
     [Fact]
     public void CommandBuffer_EncodesMoreThan65kObjects()
     {
-        using var cmd = Graphics.GetCommandBuffer("Test");
+        using CommandBuffer cmd = Graphics.GetCommandBuffer("Test");
 
         for (int i = 0; i < 70_000; i++)
             cmd.SetRenderTarget(null);
@@ -70,7 +70,7 @@ public class RenderPipelineTests
     [Fact]
     public void CommandBuffer_IsNotReusedUntilOwnerDisposes()
     {
-        var first = Graphics.GetCommandBuffer("First");
+        CommandBuffer first = Graphics.GetCommandBuffer("First");
         Graphics.Submit(first);
         Assert.False(first._inPool);
 
@@ -81,7 +81,7 @@ public class RenderPipelineTests
     [Fact]
     public void CommandBuffer_EncodingAfterSubmitThrows()
     {
-        using var cmd = Graphics.GetCommandBuffer("Test");
+        using CommandBuffer cmd = Graphics.GetCommandBuffer("Test");
         Graphics.Submit(cmd);
 
         Assert.Throws<System.InvalidOperationException>(() => cmd.SetRenderTarget(null));
@@ -132,7 +132,7 @@ public class RenderPipelineTests
         Float4x4 after = Float4x4.CreateTranslation(new Float3(2, 0, 0));
 
         pipeline.FrameWithTwoSubMeshes(camera, 7, before);
-        var (first, second) = pipeline.FrameWithTwoSubMeshes(camera, 7, after);
+        (Float4x4 first, Float4x4 second) = pipeline.FrameWithTwoSubMeshes(camera, 7, after);
 
         Assert.Equal(before, first);
         Assert.Equal(before, second);

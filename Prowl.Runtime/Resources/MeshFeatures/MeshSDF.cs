@@ -71,7 +71,7 @@ public sealed class MeshSDF : Asset, IMeshFeature
         Resolution = new Int3(value["Res.X"].IntValue, value["Res.Y"].IntValue, value["Res.Z"].IntValue);
         VoxelSize = value["VoxelSize"].FloatValue;
         MaxDistance = value["MaxDistance"].FloatValue;
-        if (value.TryGet("Volume", out var volTag))
+        if (value.TryGet("Volume", out EchoObject? volTag))
             Volume = Serializer.Deserialize<Texture3D>(volTag, ctx);
     }
 }

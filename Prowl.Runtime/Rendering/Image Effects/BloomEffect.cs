@@ -48,9 +48,9 @@ public sealed class BloomEffect : ImageEffect
 
         int w = context.Width / 2;
         int h = context.Height / 2;
-        var format = context.SceneColor.MainTexture.ImageFormat;
+        TextureImageFormat format = context.SceneColor.MainTexture.ImageFormat;
 
-        using var cmd = Graphics.GetCommandBuffer("Bloom");
+        using CommandBuffer cmd = Graphics.GetCommandBuffer("Bloom");
 
         // Pass 0: Threshold extract bright pixels into half-res
         RenderTexture thresholdRT = RenderTexture.GetTemporaryRT(w, h, false, [format]);
@@ -100,9 +100,9 @@ public sealed class BloomEffect : ImageEffect
         Graphics.Submit(cmd);
         RenderTexture.ReleaseTemporaryRT(temp);
 
-        foreach (var rt in mipChain)
+        foreach (RenderTexture rt in mipChain)
             RenderTexture.ReleaseTemporaryRT(rt);
-        foreach (var rt in upChain)
+        foreach (RenderTexture rt in upChain)
             RenderTexture.ReleaseTemporaryRT(rt);
     }
 

@@ -111,7 +111,7 @@ internal sealed class AnimatorBinding
 
     private static void CollectRenderers(Transform parent, List<SkinnedMeshRenderer> into)
     {
-        var own = parent.GameObject.GetComponent<SkinnedMeshRenderer>();
+        SkinnedMeshRenderer? own = parent.GameObject.GetComponent<SkinnedMeshRenderer>();
         if (own.IsValid()) into.Add(own);
 
         foreach (GameObject child in parent.GameObject.Children)

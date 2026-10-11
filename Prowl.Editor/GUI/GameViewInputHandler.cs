@@ -270,14 +270,14 @@ public static class SimulatedInput
     {
         long frame = Time.FrameCount;
         var done = new List<T>();
-        foreach (var (key, hold) in holds)
+        foreach ((T? key, Hold? hold) in holds)
         {
             if (!hold.Released && s_clock.Elapsed >= hold.ReleaseAt && hold.DownFrame >= 0 && frame > hold.DownFrame) hold.Released = true;
             bool upSeen = hold.UpFrame >= 0 && frame > hold.UpFrame;
             bool neverRead = hold.Released && s_clock.Elapsed > hold.ReleaseAt + TimeSpan.FromSeconds(5);
             if (upSeen || neverRead) done.Add(key);
         }
-        foreach (var key in done) holds.Remove(key);
+        foreach (T key in done) holds.Remove(key);
     }
 
     private static bool Gameplay => Application.IsPlaying && Application.IsGameplayExecuting;

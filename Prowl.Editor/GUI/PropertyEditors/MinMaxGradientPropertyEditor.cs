@@ -20,7 +20,7 @@ public class MinMaxGradientPropertyEditor : PropertyEditor
 {
     public override void OnGUI(Paper paper, string id, string label, object? value, Action<object?> onChange, int depth)
     {
-        var gradient = value as MinMaxGradient ?? new MinMaxGradient();
+        MinMaxGradient gradient = value as MinMaxGradient ?? new MinMaxGradient();
 
         using (paper.Column(id).Height(UnitValue.Auto).Enter())
         {

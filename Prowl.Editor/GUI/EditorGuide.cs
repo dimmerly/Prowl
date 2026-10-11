@@ -73,7 +73,7 @@ public static class EditorGuide
 
     /// <summary>Target the docked panel of the given type (searches tabs; works after the layout shifts).</summary>
     public static GuideTarget Panel(Type panelType) => () =>
-        _dock != null && _dock.TryGetPanelRect(panelType, out var r)
+        _dock != null && _dock.TryGetPanelRect(panelType, out Vector.Rect r)
             ? ((float)r.Min.X, (float)r.Min.Y, (float)r.Size.X, (float)r.Size.Y)
             : ((float, float, float, float)?)null;
 
@@ -150,18 +150,18 @@ public static class EditorGuide
     public static void Draw(Paper paper, float dt)
     {
         if (_active == null) return;
-        var step = Cur;
+        GuideStep? step = Cur;
         if (step == null) { Finish(false); return; }
 
         _time += dt;
         _stepTime += dt;
 
         float W = (float)paper.ScreenRect.Size.X, H = (float)paper.ScreenRect.Size.Y;
-        var font = EditorTheme.DefaultFont;
+        Scribe.FontFile? font = EditorTheme.DefaultFont;
         if (font == null) return;
 
         float appear = Ease(_stepTime / 0.32f);
-        var hole = step.Target?.Invoke();
+        (float x, float y, float w, float h)? hole = step.Target?.Invoke();
 
         // ---- dark backdrop (spotlight cut-out via 4 side rects) ----
         int backA = (int)(190 * appear);
@@ -225,9 +225,9 @@ public static class EditorGuide
         bool last = _active != null && _index >= _active.Steps.Count - 1;
         bool first = _index == 0;
         bool gated = step.WaitUntil != null && !step.WaitUntil();
-        var semi = EditorTheme.FontSemiBold ?? font;
-        var display = EditorTheme.FontDisplay ?? EditorTheme.DefaultBoldFont ?? semi;
-        var m = Origami.Current.Metrics;
+        Scribe.FontFile semi = EditorTheme.FontSemiBold ?? font;
+        Scribe.FontFile display = EditorTheme.FontDisplay ?? EditorTheme.DefaultBoldFont ?? semi;
+        OrigamiMetrics m = Origami.Current.Metrics;
 
         float heroH = centered ? 66 : 52;
         using (paper.Column("grd_card").PositionType(PositionType.SelfDirected).Position(cx, cy)

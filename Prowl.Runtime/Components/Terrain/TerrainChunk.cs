@@ -58,8 +58,8 @@ public class TerrainChunk
 
     public void DrawGizmos(Float3 offset)
     {
-        var min = offset + Position;
-        var max = offset + Position + new Float3(Size, 0, Size);
+        Float3 min = offset + Position;
+        Float3 max = offset + Position + new Float3(Size, 0, Size);
         Debug.DrawLine(min, new Float3(max.X, min.Y, min.Z), Color.Green);
         Debug.DrawLine(min, new Float3(min.X, min.Y, max.Z), Color.Green);
         Debug.DrawLine(new Float3(max.X, min.Y, min.Z), max, Color.Green);
@@ -67,7 +67,7 @@ public class TerrainChunk
 
         if (Children != null)
         {
-            foreach (var child in Children)
+            foreach (TerrainChunk child in Children)
             {
                 child.DrawGizmos(offset);
             }

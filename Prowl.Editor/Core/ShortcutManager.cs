@@ -98,8 +98,8 @@ public static class ShortcutManager
         // If overrides have been loaded and one exists for this id, apply it
         if (_overridesLoaded)
         {
-            var overrides = EditorSettings.Instance.ShortcutOverrides;
-            if (overrides.TryGetValue(id, out var ov))
+            Dictionary<string, ShortcutBinding> overrides = EditorSettings.Instance.ShortcutOverrides;
+            if (overrides.TryGetValue(id, out ShortcutBinding? ov))
                 def.Override = ov;
         }
 
@@ -123,9 +123,9 @@ public static class ShortcutManager
         // Don't fire shortcuts when Paper has keyboard focus (e.g. text field is active)
         if (EditorApplication.Instance?.PaperInstance?.WantsCaptureKeyboard == true) return false;
 
-        if (!_shortcuts.TryGetValue(id, out var def)) return false;
+        if (!_shortcuts.TryGetValue(id, out ShortcutDefinition? def)) return false;
 
-        var b = def.Binding;
+        ShortcutBinding b = def.Binding;
         if (!Input.GetKeyDown(b.Key)) return false;
         if (b.Ctrl != IsPlatformCtrlPressed()) return false;
         if (b.Shift != Input.IsShiftPressed) return false;
@@ -146,11 +146,11 @@ public static class ShortcutManager
 
     /// <summary>Get the effective binding for a shortcut.</summary>
     public static ShortcutBinding? GetBinding(string id)
-        => _shortcuts.TryGetValue(id, out var def) ? def.Binding : null;
+        => _shortcuts.TryGetValue(id, out ShortcutDefinition? def) ? def.Binding : null;
 
     /// <summary>Get the default binding for a shortcut.</summary>
     public static ShortcutBinding? GetDefault(string id)
-        => _shortcuts.TryGetValue(id, out var def) ? def.Default : null;
+        => _shortcuts.TryGetValue(id, out ShortcutDefinition? def) ? def.Default : null;
 
     /// <summary>Get all registered shortcut definitions.</summary>
     public static IEnumerable<ShortcutDefinition> GetAllShortcuts()
@@ -163,7 +163,7 @@ public static class ShortcutManager
     /// <summary>Set a user override for a shortcut and persist to settings.</summary>
     public static void SetOverride(string id, ShortcutBinding binding)
     {
-        if (!_shortcuts.TryGetValue(id, out var def)) return;
+        if (!_shortcuts.TryGetValue(id, out ShortcutDefinition? def)) return;
         def.Override = binding;
         SaveOverrides();
     }
@@ -171,7 +171,7 @@ public static class ShortcutManager
     /// <summary>Clear the user override for a shortcut (reverts to default) and persist.</summary>
     public static void ClearOverride(string id)
     {
-        if (!_shortcuts.TryGetValue(id, out var def)) return;
+        if (!_shortcuts.TryGetValue(id, out ShortcutDefinition? def)) return;
         def.Override = null;
         SaveOverrides();
     }
@@ -179,7 +179,7 @@ public static class ShortcutManager
     /// <summary>Clear all user overrides and persist.</summary>
     public static void ClearAllOverrides()
     {
-        foreach (var def in _shortcuts.Values)
+        foreach (ShortcutDefinition def in _shortcuts.Values)
             def.Override = null;
         SaveOverrides();
     }
@@ -188,7 +188,7 @@ public static class ShortcutManager
     public static List<string> FindConflicts(string excludeId, ShortcutBinding proposed)
     {
         var conflicts = new List<string>();
-        foreach (var (id, def) in _shortcuts)
+        foreach ((string? id, ShortcutDefinition? def) in _shortcuts)
         {
             if (id == excludeId) continue;
             if (def.Binding.Equals(proposed))
@@ -207,10 +207,10 @@ public static class ShortcutManager
         if (_overridesLoaded) return;
         _overridesLoaded = true;
 
-        var overrides = EditorSettings.Instance.ShortcutOverrides;
-        foreach (var (id, binding) in overrides)
+        Dictionary<string, ShortcutBinding> overrides = EditorSettings.Instance.ShortcutOverrides;
+        foreach ((string? id, ShortcutBinding? binding) in overrides)
         {
-            if (_shortcuts.TryGetValue(id, out var def))
+            if (_shortcuts.TryGetValue(id, out ShortcutDefinition? def))
                 def.Override = binding;
         }
     }
@@ -219,7 +219,7 @@ public static class ShortcutManager
     public static void SaveOverrides()
     {
         var overrides = new Dictionary<string, ShortcutBinding>();
-        foreach (var (id, def) in _shortcuts)
+        foreach ((string? id, ShortcutDefinition? def) in _shortcuts)
         {
             if (def.Override != null)
                 overrides[id] = def.Override;

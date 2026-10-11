@@ -11,6 +11,7 @@ using Prowl.PaperUI;
 using Prowl.PaperUI.LayoutEngine;
 using Prowl.Runtime;
 using Prowl.Runtime.AnimationNodes;
+using Prowl.Scribe;
 using Prowl.Vector;
 
 using Canvas = Prowl.Quill.Canvas;
@@ -210,7 +211,7 @@ internal sealed class StateMachineNodeEditor : AnimationNodeEditor
 
     private static void PaintStates(AnimationGraphEditing editing, Canvas canvas, Rect rect, GraphNodeRecord machine)
     {
-        var font = EditorTheme.DefaultFont;
+        FontFile? font = EditorTheme.DefaultFont;
         if (font == null || machine.States.Count == 0) return;
 
         float minX = float.MaxValue, minY = float.MaxValue, maxX = float.MinValue, maxY = float.MinValue;

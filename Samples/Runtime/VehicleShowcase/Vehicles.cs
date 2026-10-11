@@ -51,7 +51,7 @@ public sealed partial class VehicleShowcaseGame
         Material taillight = Taillight();
         Dress(chassis, "Models/Car", Lit(new Color(0.55f, 0.02f, 0.02f, 1f), 0.7f, 0.25f), taillight);
 
-        var car = chassis.AddComponent<CarController>();
+        CarController car = chassis.AddComponent<CarController>();
         car.Torque = 2800f;
         car.TopSpeed = 50f;
         car.Brake = 3500f;
@@ -78,7 +78,7 @@ public sealed partial class VehicleShowcaseGame
         Material taillight = Taillight();
         Dress(chassis, "Models/Buggy", Lit(new Color(0.7f, 0.45f, 0.02f, 1f), 0.4f, 0.4f), taillight);
 
-        var car = chassis.AddComponent<CarController>();
+        CarController car = chassis.AddComponent<CarController>();
         car.Torque = 2600f;
         car.TopSpeed = 42f;
         car.Brake = 3000f;
@@ -110,7 +110,7 @@ public sealed partial class VehicleShowcaseGame
         Material taillight = Taillight();
         Dress(chassis, "Models/Monster Truck", Lit(new Color(0.03f, 0.12f, 0.6f, 1f), 0.6f, 0.3f), taillight);
 
-        var car = chassis.AddComponent<CarController>();
+        CarController car = chassis.AddComponent<CarController>();
         car.Torque = 11000f;
         car.TopSpeed = 30f;
         car.Brake = 9000f;
@@ -138,7 +138,7 @@ public sealed partial class VehicleShowcaseGame
         GameObject chassis = Chassis("Go Kart", position, 170f, out Rigidbody3D body, (new(1f, 0.22f, 1.7f), new(0f, -0.05f, 0.05f)), (new(0.4f, 0.5f, 0.12f), new(0f, 0.25f, -0.45f)));
         Dress(chassis, "Models/Kart", Lit(new Color(0.9f, 0.25f, 0.02f, 1f), 0.3f, 0.4f), _trim);
 
-        var car = chassis.AddComponent<CarController>();
+        CarController car = chassis.AddComponent<CarController>();
         car.Torque = 420f;
         car.TopSpeed = 26f;
         car.Brake = 900f;
@@ -147,7 +147,7 @@ public sealed partial class VehicleShowcaseGame
         car.Downforce = 0.5f;
 
         var front = new WheelSetup(0.2f, 0.2f, 0.06f, 4f, 0.8f, 2.8f, 2f);
-        var rear = front with { Radius = 0.22f, Width = 0.26f };
+        WheelSetup rear = front with { Radius = 0.22f, Width = 0.26f };
         car.Axles.Add(Axle(chassis, front, CarWheel, 0.58f, -0.02f, 0.55f, steer: 1f, driven: false, handbrake: false));
         car.Axles.Add(Axle(chassis, rear, CarWheel, 0.6f, 0f, -0.55f, steer: 0f, driven: true, handbrake: true));
         car.Axles[0].Grip = 2f;
@@ -171,7 +171,7 @@ public sealed partial class VehicleShowcaseGame
         Material taillight = Taillight();
         Dress(chassis, "Models/Army Truck", Lit(new Color(0.1f, 0.13f, 0.05f, 1f), 0.1f, 0.7f), taillight, canvas: Lit(new Color(0.16f, 0.18f, 0.08f, 1f), 0f, 0.95f));
 
-        var car = chassis.AddComponent<CarController>();
+        CarController car = chassis.AddComponent<CarController>();
         car.Torque = 16000f;
         car.TopSpeed = 24f;
         car.Brake = 16000f;
@@ -210,7 +210,7 @@ public sealed partial class VehicleShowcaseGame
         steering.Transform.LocalRotation = Quaternion.FromToRotation(-Float3.UnitY, Float3.Normalize(axle - head));
         Dress(steering, "Models/Fork", paint, taillight);
 
-        var bike = chassis.AddComponent<MotorcycleController>();
+        MotorcycleController bike = chassis.AddComponent<MotorcycleController>();
         bike.Torque = 600f;
         bike.TopSpeed = 55f;
         bike.Brake = 1200f;
@@ -240,7 +240,7 @@ public sealed partial class VehicleShowcaseGame
         Material taillight = Taillight();
         Dress(chassis, "Models/Semi Truck", Lit(new Color(0.5f, 0.06f, 0.02f, 1f), 0.6f, 0.3f), taillight);
 
-        var car = chassis.AddComponent<CarController>();
+        CarController car = chassis.AddComponent<CarController>();
         car.Torque = 45000f;
         car.TopSpeed = 26f;
         car.Brake = 18000f;
@@ -308,7 +308,7 @@ public sealed partial class VehicleShowcaseGame
     {
         var trailer = new GameObject(model);
         trailer.Transform.Position = position;
-        var body = trailer.AddComponent<Rigidbody3D>();
+        Rigidbody3D body = trailer.AddComponent<Rigidbody3D>();
         body.Mass = 4000f;
         AddBox(trailer, new Float3(2.6f, 0.2f, 12.5f), Float3.Zero);
         AddBox(trailer, new Float3(0.1f, 0.1f, 12.5f), new Float3(-1.27f, 0.15f, 0f));
@@ -328,7 +328,7 @@ public sealed partial class VehicleShowcaseGame
     {
         var dolly = new GameObject("Dolly");
         dolly.Transform.Position = position;
-        var body = dolly.AddComponent<Rigidbody3D>();
+        Rigidbody3D body = dolly.AddComponent<Rigidbody3D>();
         body.Mass = 800f;
         AddBox(dolly, new Float3(1f, 0.2f, 1.6f), new Float3(0f, -0.02f, 0f));
         AddBox(dolly, new Float3(2.5f, 0.08f, 1.5f), new Float3(0f, 0.46f, 1.8f));
@@ -369,7 +369,7 @@ public sealed partial class VehicleShowcaseGame
         body.Mass = mass;
         foreach ((Float3 size, Float3 center) in boxes)
         {
-            var box = chassis.AddComponent<BoxCollider>();
+            BoxCollider box = chassis.AddComponent<BoxCollider>();
             box.Size = size;
             box.Center = center;
         }
@@ -455,7 +455,7 @@ public sealed partial class VehicleShowcaseGame
         float scale = setup.Radius / model.Radius;
         Paint(Spawn(model.Path, spin, Float3.Zero, new Float3(setup.Width / model.Width, scale, scale)), new() { ["Tyre"] = _tyre, ["Chrome"] = _chrome, ["Trim"] = _trim });
 
-        var wheel = wheelMount.AddComponent<WheelCollider>();
+        WheelCollider wheel = wheelMount.AddComponent<WheelCollider>();
         wheel.Radius = setup.Radius;
         wheel.Width = setup.Width;
         wheel.SuspensionDistance = setup.Travel;

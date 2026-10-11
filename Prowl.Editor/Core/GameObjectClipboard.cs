@@ -43,7 +43,7 @@ public static class GameObjectClipboard
         var root = EchoObject.NewList();
         foreach (GameObject go in roots)
         {
-            var echo = Serializer.Serialize(typeof(object), go, context);
+            EchoObject echo = Serializer.Serialize(typeof(object), go, context);
             if (echo != null)
                 root.ListAdd(echo);
         }
@@ -73,16 +73,16 @@ public static class GameObjectClipboard
             var root = EchoObject.ReadFromString(echoText);
             if (root == null || root.TagType != EchoType.List) return results;
 
-            var scene = Scene.Current;
+            Scene scene = Scene.Current;
             if (scene == null) return results;
 
             // Shared context so a reference between two pasted objects resolves to the pasted one,
             // and a resolver so a reference out of the selection binds to the live scene object.
             var context = new SerializationContext { ExternalReferences = new SceneReferenceResolver() };
 
-            foreach (var item in root.List)
+            foreach (EchoObject item in root.List)
             {
-                var go = Serializer.Deserialize<GameObject>(item, context);
+                GameObject? go = Serializer.Deserialize<GameObject>(item, context);
                 if (go == null) continue;
 
                 // The clipboard carries whatever prefab data the copied objects had. Only a whole
@@ -102,7 +102,7 @@ public static class GameObjectClipboard
             if (results.Count > 0)
             {
                 Selection.Clear();
-                foreach (var go in results)
+                foreach (GameObject go in results)
                     Selection.AddToSelection(go);
                 EditorSceneManager.MarkDirty();
             }
@@ -123,7 +123,7 @@ public static class GameObjectClipboard
     public static List<GameObject> Duplicate(IEnumerable<GameObject> gameObjects)
     {
         var results = new List<GameObject>();
-        var scene = Scene.Current;
+        Scene scene = Scene.Current;
         if (scene == null) return results;
 
         List<GameObject> roots = FilterToRoots(gameObjects);
@@ -161,7 +161,7 @@ public static class GameObjectClipboard
         if (results.Count > 0)
         {
             Selection.Clear();
-            foreach (var go in results)
+            foreach (GameObject go in results)
                 Selection.AddToSelection(go);
             EditorSceneManager.MarkDirty();
         }
@@ -175,10 +175,10 @@ public static class GameObjectClipboard
         var set = new HashSet<GameObject>(gameObjects);
         var roots = new List<GameObject>();
 
-        foreach (var go in set)
+        foreach (GameObject go in set)
         {
             bool ancestorSelected = false;
-            var parent = go.Parent;
+            GameObject? parent = go.Parent;
             while (parent != null)
             {
                 if (set.Contains(parent))

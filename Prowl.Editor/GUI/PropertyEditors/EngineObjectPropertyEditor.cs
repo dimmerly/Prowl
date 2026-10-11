@@ -46,14 +46,14 @@ public class EngineObjectPropertyEditor : PropertyEditor
 
     private static void HandleDrops(Paper paper, Type fieldType, Action<object?> onChange)
     {
-        var assetDrop = DragDrop.AcceptDrop<AssetDragPayload>(paper.IsParentHovered,
+        AssetDragPayload? assetDrop = DragDrop.AcceptDrop<AssetDragPayload>(paper.IsParentHovered,
             dp => dp.AssetType != null && fieldType.IsAssignableFrom(dp.AssetType));
         if (assetDrop != null && AssetDatabase.Get(assetDrop.AssetGuid) is { } droppedAsset)
             onChange(droppedAsset);
 
         if (!DragDrop.IsDragging && paper.IsParentHovered && DragDrop.Payload is GameObjectDragPayload goDrop)
         {
-            var go = goDrop.GameObjects.Length > 0 ? goDrop.GameObjects[0] : null;
+            GameObject? go = goDrop.GameObjects.Length > 0 ? goDrop.GameObjects[0] : null;
             if (go != null)
             {
                 if (typeof(GameObject).IsAssignableFrom(fieldType))
@@ -84,7 +84,7 @@ public class EngineObjectPropertyEditor : PropertyEditor
         // Scene types (GameObject, Component subclasses) -> Scene tab
         // Asset types (Mesh, Material, etc.) -> Assets tab
         bool isSceneType = typeof(GameObject).IsAssignableFrom(type) || typeof(Component).IsAssignableFrom(type);
-        var tabs = isSceneType ? SelectorTabs.Scene : SelectorTabs.Assets;
+        SelectorTabs tabs = isSceneType ? SelectorTabs.Scene : SelectorTabs.Assets;
         SelectorModal.Open($"Select {type.Name}", type, tabs, onChange);
     }
 }

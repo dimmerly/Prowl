@@ -43,7 +43,7 @@ public class NavMeshAllocationTests
     [Fact]
     public void EmptyTile_SkipsPipeline_AllocatingAlmostNothing()
     {
-        var data = NavMeshBuilder.Build(TestSettings(), [CornerQuad()],
+        NavMeshData? data = NavMeshBuilder.Build(TestSettings(), [CornerQuad()],
             worldBounds: new AABB(new Float3(0, -1, 0), new Float3(96, 1, 96)));
         Assert.NotNull(data);
 
@@ -68,7 +68,7 @@ public class NavMeshAllocationTests
     [Fact]
     public void PooledRebuilds_ProduceIdenticalTiles()
     {
-        var data = NavMeshBuilder.Build(TestSettings(), [CornerQuad()],
+        NavMeshData? data = NavMeshBuilder.Build(TestSettings(), [CornerQuad()],
             worldBounds: new AABB(new Float3(0, -1, 0), new Float3(96, 1, 96)));
         Assert.NotNull(data);
 
@@ -100,7 +100,7 @@ public class NavMeshAllocationTests
         Float3[] verts = [new(0, 0, 0), new(0, 0, 96), new(96, 0, 96), new(96, 0, 0)];
         var worldQuad = new NavMeshGeometrySource(verts, [0, 1, 2, 0, 2, 3], Float4x4.Identity);
 
-        var data = NavMeshBuilder.Build(TestSettings(), [worldQuad],
+        NavMeshData? data = NavMeshBuilder.Build(TestSettings(), [worldQuad],
             worldBounds: new AABB(new Float3(0, -1, 0), new Float3(96, 1, 96)));
         Assert.NotNull(data);
 

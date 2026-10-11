@@ -248,7 +248,7 @@ public class CollisionModule : ParticleSystemModule
         }
 
         float cell = MathF.Max(VoxelSize, 0.01f);
-        var key = ((int)MathF.Floor(from.X / cell), (int)MathF.Floor(from.Y / cell), (int)MathF.Floor(from.Z / cell), DirectionBucket(direction));
+        (int, int, int, int) key = ((int)MathF.Floor(from.X / cell), (int)MathF.Floor(from.Y / cell), (int)MathF.Floor(from.Z / cell), DirectionBucket(direction));
 
         if (!_cache.TryGetValue(key, out CachedSurface surface) || frame - surface.Frame > lifetime)
         {

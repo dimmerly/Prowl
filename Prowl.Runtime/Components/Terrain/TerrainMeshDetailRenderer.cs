@@ -111,11 +111,11 @@ internal class TerrainMeshDetailRenderer
 
         for (int protoIdx = 0; protoIdx < data.DetailPrototypes.Count; protoIdx++)
         {
-            var proto = data.DetailPrototypes[protoIdx];
+            DetailPrototype proto = data.DetailPrototypes[protoIdx];
             if (proto.RenderMode != DetailRenderMode.Mesh) continue;
             if (protoIdx >= data.DetailLayers.Count) continue;
 
-            var mesh = proto.Mesh;
+            Mesh? mesh = proto.Mesh;
             if (mesh == null) continue;
 
             // Nothing painted, nothing to place

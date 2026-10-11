@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 
 using Prowl.Editor.Core;
 using Prowl.Editor.GUI;
@@ -28,17 +29,17 @@ public class SceneAssetEditor : AssetImporterEditor
 
     public override void OnGUI(Paper paper, string id, AssetEntry entry, EngineObject? asset)
     {
-        var font = EditorTheme.DefaultFont;
+        Scribe.FontFile? font = EditorTheme.DefaultFont;
         if (font == null) return;
-        var mono = EditorTheme.FontMono ?? font;
-        var m = Origami.Current.Metrics;
-        var db = EditorAssetBackend.Instance;
+        Scribe.FontFile mono = EditorTheme.FontMono ?? font;
+        OrigamiMetrics m = Origami.Current.Metrics;
+        EditorAssetBackend? db = EditorAssetBackend.Instance;
         if (db == null) return;
 
         if (entry.Guid != _cachedSceneGuid)
             RebuildRefs(entry, db);
 
-        var deps = _refs;
+        List<Guid> deps = _refs;
         string sceneName = System.IO.Path.GetFileNameWithoutExtension(entry.Path);
 
         EditorGUI.SectionHeader(paper, $"{id}_hdr", "Scene", first: true);
@@ -89,7 +90,7 @@ public class SceneAssetEditor : AssetImporterEditor
         _cachedSceneGuid = entry.Guid;
         _refs.Clear();
         var seen = new System.Collections.Generic.HashSet<Guid>();
-        foreach (var dep in entry.Dependencies)
+        foreach (Guid dep in entry.Dependencies)
         {
             if (dep == entry.Guid) continue; // don't list the scene itself
 
@@ -117,7 +118,7 @@ public class SceneAssetEditor : AssetImporterEditor
         string typeLabel;
         if (builtIn)
         {
-            name = BuiltInAssets.Entries.TryGetValue(guid, out var bi) ? bi.Name : guid.ToString()[..8];
+            name = BuiltInAssets.Entries.TryGetValue(guid, out BuiltInAssets.BuiltInEntry bi) ? bi.Name : guid.ToString()[..8];
             typeLabel = "Built-in";
         }
         else if (path != null)
@@ -133,11 +134,11 @@ public class SceneAssetEditor : AssetImporterEditor
 
         if (col == 0)
         {
-            var style = builtIn || path == null
+            AssetTypeStyle style = builtIn || path == null
                 ? AssetTypeStyles.Folder
                 : AssetTypeStyles.For(System.IO.Path.GetExtension(path), typeLabel);
 
-            var ic = paper.Box($"dep_ic_{guid}").Width(20).Height(rowH).Margin(6, 0, 0, 0).IsNotInteractable();
+            ElementBuilder ic = paper.Box($"dep_ic_{guid}").Width(20).Height(rowH).Margin(6, 0, 0, 0).IsNotInteractable();
             if (builtIn)
                 ic.Text(EditorIcons.Star, font).TextColor(EditorTheme.Amber400).FontSize(EditorTheme.FontSizeSmall)
                     .Alignment(TextAlignment.MiddleCenter);

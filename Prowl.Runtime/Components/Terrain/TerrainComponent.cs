@@ -112,7 +112,7 @@ public class TerrainComponent : Component
     /// <summary>Push terrain transform, heightmap and wind state onto a grass material.</summary>
     internal void ApplyDetailUniforms(Material material)
     {
-        var data = Data;
+        TerrainData? data = Data;
         if (data == null) return;
 
         Float4x4 terrainToWorld = Transform.LocalToWorldMatrix;
@@ -123,10 +123,10 @@ public class TerrainComponent : Component
         material.SetMatrix("_TerrainLocalToWorld", terrainToWorld);
         material.SetFloat("_TerrainSize", data.Size);
         material.SetFloat("_TerrainHeight", data.Height);
-        var heightmap = data.GetHeightmapTexture();
+        Texture2D? heightmap = data.GetHeightmapTexture();
         if (heightmap != null) material.SetTexture("_Heightmap", heightmap);
 
-        var holes = data.GetHolesTexture();
+        Texture2D? holes = data.GetHolesTexture();
         if (holes != null) material.SetTexture("_HolesMap", holes);
         material.SetInt("_HasHoles", holes != null ? 1 : 0);
 
@@ -134,10 +134,10 @@ public class TerrainComponent : Component
     }
 
     /// <summary>Shortcut to terrain size from the data asset.</summary>
-    public float TerrainSize { get { var d = Data; return d.IsValid() ? d.Size : 1024f; } }
+    public float TerrainSize { get { TerrainData? d = Data; return d.IsValid() ? d.Size : 1024f; } }
 
     /// <summary>Shortcut to terrain height from the data asset.</summary>
-    public float TerrainHeight { get { var d = Data; return d.IsValid() ? d.Height : 100f; } }
+    public float TerrainHeight { get { TerrainData? d = Data; return d.IsValid() ? d.Height : 100f; } }
 
     #endregion
 
@@ -189,7 +189,7 @@ public class TerrainComponent : Component
 
     public override void OnRenderCollect(Camera camera, List<IRenderable> renderables, List<IRenderableLight> lights)
     {
-        var terrainData = Data;
+        TerrainData? terrainData = Data;
         if (terrainData == null) return;
 
         float terrainSize = terrainData.Size;
@@ -210,7 +210,7 @@ public class TerrainComponent : Component
         _quadtree.Update(camLocal, LODQuality);
         UpdateInstanceData(terrainToWorld);
 
-        var mat = GetMaterialInstance();
+        Material? mat = GetMaterialInstance();
         if (mat == null || _transforms.Length == 0 || _baseMesh == null) return;
 
         // Enable 8-layer keyword when more than 4 layers are active
@@ -221,10 +221,10 @@ public class TerrainComponent : Component
         _properties.SetInt("_ObjectID", InstanceID);
 
         // GPU textures from TerrainData
-        var heightmapTex = terrainData.GetHeightmapTexture();
-        var splatmapTextures = terrainData.GetSplatmapTextures();
+        Texture2D? heightmapTex = terrainData.GetHeightmapTexture();
+        IReadOnlyList<Texture2D> splatmapTextures = terrainData.GetSplatmapTextures();
 
-        var holesTex = terrainData.GetHolesTexture();
+        Texture2D? holesTex = terrainData.GetHolesTexture();
 
         if (heightmapTex != null) _properties.SetTexture("_Heightmap", heightmapTex);
         for (int si = 0; si < splatmapTextures.Count; si++)
@@ -240,14 +240,14 @@ public class TerrainComponent : Component
         // Per-layer textures and settings
         for (int i = 0; i < terrainData.LayerCount; i++)
         {
-            var layer = terrainData.Layers[i];
+            TerrainLayer layer = terrainData.Layers[i];
             string prefix = $"_Layer{i}";
 
             if (s_defaultWhite.IsNotValid()) s_defaultWhite = Texture2D.LoadDefault(DefaultTexture.White);
             if (s_defaultNormal.IsNotValid()) s_defaultNormal = Texture2D.LoadDefault(DefaultTexture.Normal);
-            var albedoTex = layer.Albedo;
+            Texture2D? albedoTex = layer.Albedo;
             _properties.SetTexture(prefix, albedoTex.IsValid() ? albedoTex : s_defaultWhite);
-            var normalTex = layer.NormalMap;
+            Texture2D? normalTex = layer.NormalMap;
             _properties.SetTexture(prefix + "Normal", normalTex.IsValid() ? normalTex : s_defaultNormal);
 
             _properties.SetFloat(prefix + "Tiling", layer.Tiling);
@@ -271,7 +271,7 @@ public class TerrainComponent : Component
         float height = terrainData.Height;
         Float3 localMin = new(0, -height * 2f, 0);
         Float3 localMax = new(terrainSize, height * 2f, terrainSize);
-        var bounds = TransformAABB(localMin, localMax, terrainToWorld);
+        AABB bounds = TransformAABB(localMin, localMax, terrainToWorld);
 
         InstancedMeshRenderable.CreateBatched(
             renderables, _baseMesh, mat, _transforms,
@@ -280,7 +280,7 @@ public class TerrainComponent : Component
             properties: _properties, bounds: bounds, isStatic: GameObject.IsStatic);
 
         // Details
-        var grassMat = GetDetailMaterialInstance();
+        Material? grassMat = GetDetailMaterialInstance();
         if (grassMat != null && terrainData.DetailPrototypes.Count > 0)
         {
             _windZoneCount = WindZone.GetNearest(camera.Transform.Position, _windZones);
@@ -305,7 +305,7 @@ public class TerrainComponent : Component
 
     private Material? GetMaterialInstance()
     {
-        var sourceMat = Material;
+        Material? sourceMat = Material;
         if (sourceMat == null)
         {
             if (s_defaultTerrainMat.IsNotValid()) s_defaultTerrainMat = Resources.Material.LoadDefault(DefaultMaterial.Terrain);
@@ -321,7 +321,7 @@ public class TerrainComponent : Component
 
     private Material? GetDetailMaterialInstance()
     {
-        var sourceMat = DetailMaterial;
+        Material? sourceMat = DetailMaterial;
         if (sourceMat == null)
         {
             if (s_defaultDetailMat.IsNotValid()) s_defaultDetailMat = Resources.Material.LoadDefault(DefaultMaterial.Grass);
@@ -348,7 +348,7 @@ public class TerrainComponent : Component
         hitPoint = Float3.Zero;
         terrainUV = Float2.Zero;
 
-        var terrainData = Data;
+        TerrainData? terrainData = Data;
         if (terrainData == null || terrainData.Heights == null) return false;
 
         float size = terrainData.Size;
@@ -467,14 +467,14 @@ public class TerrainComponent : Component
 
     private void UpdateInstanceData(Float4x4 terrainToWorld)
     {
-        var visibleChunks = _quadtree.GetVisibleChunks();
+        List<TerrainChunk> visibleChunks = _quadtree.GetVisibleChunks();
 
         if (_transforms.Length != visibleChunks.Count)
             _transforms = new Float4x4[visibleChunks.Count];
 
         for (int i = 0; i < visibleChunks.Count; i++)
         {
-            var chunk = visibleChunks[i];
+            TerrainChunk chunk = visibleChunks[i];
             // Chunk position is in terrain-local space; transform to world via terrain matrix
             Float4x4 localChunk = Float4x4.CreateTranslation(chunk.Position) * Float4x4.CreateScale((float)chunk.Size, 1.0f, (float)chunk.Size);
             _transforms[i] = terrainToWorld * localChunk;

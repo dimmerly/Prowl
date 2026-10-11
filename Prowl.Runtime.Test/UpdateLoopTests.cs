@@ -1,6 +1,8 @@
 // This file is part of the Prowl Game Engine
 // Licensed under the MIT License. See the LICENSE file in the project root for details.
 
+using Prowl.Runtime.Resources;
+
 using Xunit;
 
 namespace Prowl.Runtime.Test;
@@ -65,9 +67,9 @@ public class UpdateLoopTests : RuntimeTestBase
 {
     private (Resources.Scene scene, CounterComponent comp) MakeRunningCounter()
     {
-        var scene = CreateScene(enable: true);
-        var go = CreateGameObject();
-        var comp = go.AddComponent<CounterComponent>();
+        Scene scene = CreateScene(enable: true);
+        GameObject go = CreateGameObject();
+        CounterComponent comp = go.AddComponent<CounterComponent>();
         scene.Add(go);
         return (scene, comp);
     }
@@ -75,7 +77,7 @@ public class UpdateLoopTests : RuntimeTestBase
     [Fact]
     public void Start_IsCalledOnce_OnFirstUpdate()
     {
-        var (scene, comp) = MakeRunningCounter();
+        (Scene? scene, CounterComponent? comp) = MakeRunningCounter();
         Assert.Equal(0, comp.StartCount);
 
         Update(scene);
@@ -88,7 +90,7 @@ public class UpdateLoopTests : RuntimeTestBase
     [Fact]
     public void Update_IsCalledEveryFrame()
     {
-        var (scene, comp) = MakeRunningCounter();
+        (Scene? scene, CounterComponent? comp) = MakeRunningCounter();
 
         Update(scene, 10);
 
@@ -99,7 +101,7 @@ public class UpdateLoopTests : RuntimeTestBase
     [Fact]
     public void Start_RunsBeforeUpdateAndLateUpdate_OnFirstFrame()
     {
-        var (scene, comp) = MakeRunningCounter();
+        (Scene? scene, CounterComponent? comp) = MakeRunningCounter();
 
         Update(scene);
 
@@ -109,10 +111,10 @@ public class UpdateLoopTests : RuntimeTestBase
     [Fact]
     public void LateUpdate_RunsAfterUpdate_AcrossComponents()
     {
-        var scene = CreateScene(enable: true);
-        var go = CreateGameObject();
-        var a = go.AddComponent<CounterComponent>();
-        var b = go.AddComponent<CounterComponent>();
+        Scene scene = CreateScene(enable: true);
+        GameObject go = CreateGameObject();
+        CounterComponent a = go.AddComponent<CounterComponent>();
+        CounterComponent b = go.AddComponent<CounterComponent>();
         scene.Add(go);
 
         // Scene runs all Updates, then all LateUpdates, so both Updates precede either LateUpdate.
@@ -127,7 +129,7 @@ public class UpdateLoopTests : RuntimeTestBase
     [Fact]
     public void FixedUpdate_IsCalledOnPhysicsStep_NotOnUpdate()
     {
-        var (scene, comp) = MakeRunningCounter();
+        (Scene? scene, CounterComponent? comp) = MakeRunningCounter();
 
         Update(scene, 3);
         Assert.Equal(0, comp.FixedUpdateCount);
@@ -139,7 +141,7 @@ public class UpdateLoopTests : RuntimeTestBase
     [Fact]
     public void DisabledComponent_DoesNotUpdate()
     {
-        var (scene, comp) = MakeRunningCounter();
+        (Scene? scene, CounterComponent? comp) = MakeRunningCounter();
         comp.Enabled = false;
 
         Update(scene, 5);
@@ -151,9 +153,9 @@ public class UpdateLoopTests : RuntimeTestBase
     [Fact]
     public void DisabledGameObject_DoesNotUpdate()
     {
-        var scene = CreateScene(enable: true);
-        var go = CreateGameObject();
-        var comp = go.AddComponent<CounterComponent>();
+        Scene scene = CreateScene(enable: true);
+        GameObject go = CreateGameObject();
+        CounterComponent comp = go.AddComponent<CounterComponent>();
         scene.Add(go);
         go.Enabled = false;
 
@@ -168,7 +170,7 @@ public class UpdateLoopTests : RuntimeTestBase
         // Edit-mode: a plain component's gameplay callbacks are gated off.
         Application.IsPlaying = false;
 
-        var (scene, comp) = MakeRunningCounter();
+        (Scene? scene, CounterComponent? comp) = MakeRunningCounter();
 
         Update(scene, 5);
 
@@ -180,8 +182,8 @@ public class UpdateLoopTests : RuntimeTestBase
     public void Update_RunsComponentsInExecutionOrder_RegardlessOfAddOrder()
     {
         TickLog.Entries.Clear();
-        var scene = CreateScene(enable: true);
-        var go = CreateGameObject();
+        Scene scene = CreateScene(enable: true);
+        GameObject go = CreateGameObject();
         go.AddComponent<LateTick>();   // added first, runs last
         go.AddComponent<EarlyTick>();
         go.AddComponent<MidTick>();
@@ -197,9 +199,9 @@ public class UpdateLoopTests : RuntimeTestBase
     public void ASceneEnabledOutsidePlay_GetsNoGameplayCallbacks_WhenPlayStartsUnderIt()
     {
         Application.IsPlaying = false;
-        var scene = CreateScene(enable: true);
-        var go = CreateGameObject();
-        var comp = go.AddComponent<LifecycleRecorder>();
+        Scene scene = CreateScene(enable: true);
+        GameObject go = CreateGameObject();
+        LifecycleRecorder comp = go.AddComponent<LifecycleRecorder>();
         scene.Add(go);
 
         Application.IsPlaying = true;
@@ -212,9 +214,9 @@ public class UpdateLoopTests : RuntimeTestBase
     [Fact]
     public void OnDisable_PairsWithOnEnable_WhenPlayStopsUnderIt()
     {
-        var scene = CreateScene(enable: true);
-        var go = CreateGameObject();
-        var comp = go.AddComponent<LifecycleRecorder>();
+        Scene scene = CreateScene(enable: true);
+        GameObject go = CreateGameObject();
+        LifecycleRecorder comp = go.AddComponent<LifecycleRecorder>();
         scene.Add(go);
         Update(scene);
 
@@ -230,9 +232,9 @@ public class UpdateLoopTests : RuntimeTestBase
     {
         Application.IsPlaying = false;
 
-        var scene = CreateScene(enable: true);
-        var go = CreateGameObject();
-        var comp = go.AddComponent<ExecuteAlwaysCounter>();
+        Scene scene = CreateScene(enable: true);
+        GameObject go = CreateGameObject();
+        ExecuteAlwaysCounter comp = go.AddComponent<ExecuteAlwaysCounter>();
         scene.Add(go);
 
         Update(scene, 5);

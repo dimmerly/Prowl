@@ -30,7 +30,7 @@ public class EngineObjectNullAnalyzerTests : EditorTestHarness
     [InlineData("void N<T, U>(T? a) where T : U where U : Asset { a?.Load(); }", EngineObjectNullAnalyzer.NullConditionalId)]
     public void FlagsNullOperatorsOnEngineObjectsIncludingGenerics(string members, string expectedId)
     {
-        var result = Compile(members);
+        ScriptCompiler.CompileResult result = Compile(members);
         Assert.False(result.Success);
         Assert.Contains(expectedId, result.Errors);
     }
@@ -41,7 +41,7 @@ public class EngineObjectNullAnalyzerTests : EditorTestHarness
     [InlineData("bool N(GameObject? go) => go.IsValid();")]
     public void LeavesOtherTypesAlone(string members)
     {
-        var result = Compile(members);
+        ScriptCompiler.CompileResult result = Compile(members);
         Assert.True(result.Success, result.Errors);
     }
 }

@@ -46,7 +46,7 @@ public static class ComponentClipboard
         if (comp == null) return;
 
         DependencySerializationContext context = SerializeContext(comp);
-        var data = Serializer.Serialize(comp.GetType(), comp, context);
+        EchoObject data = Serializer.Serialize(comp.GetType(), comp, context);
         s_linkedAssets = context.LinkedAssets;
         Input.Clipboard = $"{ClipboardHeader}{comp.GetType().AssemblyQualifiedName}\n{data.WriteToString()}";
     }
@@ -120,8 +120,8 @@ public static class ComponentClipboard
 
             // Look the GameObject back up by identifier rather than capturing it: undoing a destroy
             // recreates objects as new instances, so a captured reference would go stale.
-            var goId = go.Identifier;
-            var compId = comp.Identifier;
+            Guid goId = go.Identifier;
+            Guid compId = comp.Identifier;
             Type compType = type;
             EchoObject compData = data;
 
@@ -176,12 +176,12 @@ public static class ComponentClipboard
 
             ApplyState(target, data);
 
-            var compId = target.Identifier;
+            Guid compId = target.Identifier;
             var after = new MemoryCopy(data, s_linkedAssets);
 
             Undo.RegisterAction("Paste Component Values",
-                undo: () => { var c = Undo.FindComponent(compId); if (c != null) ApplyState(c, before.Data); },
-                redo: () => { var c = Undo.FindComponent(compId); if (c != null) ApplyState(c, after.Data); });
+                undo: () => { Component? c = Undo.FindComponent(compId); if (c != null) ApplyState(c, before.Data); },
+                redo: () => { Component? c = Undo.FindComponent(compId); if (c != null) ApplyState(c, after.Data); });
 
             EditorSceneManager.MarkDirty();
             return true;

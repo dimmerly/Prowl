@@ -197,7 +197,7 @@ public sealed class MagazineWell : Component
         _joint.Enabled = false;
         _joint.SetParent(gun.GameObject);
         _joint.Transform.LocalPosition = Float3.Zero;
-        var line = _joint.AddComponent<PointOnLineConstraint>();
+        PointOnLineConstraint line = _joint.AddComponent<PointOnLineConstraint>();
         line.LineAxis = axisLocal;
         line.Anchor1 = seatLocal - axisLocal * (Depth * 0.5f);
         line.Anchor2 = magazine.SocketPosition;
@@ -215,7 +215,7 @@ public sealed class MagazineWell : Component
         _joint.Enabled = false;
         _joint.SetParent(magazine.GameObject);
         _joint.Transform.LocalPosition = Float3.Zero;
-        var socket = _joint.AddComponent<BallSocketConstraint>();
+        BallSocketConstraint socket = _joint.AddComponent<BallSocketConstraint>();
         socket.Anchor = magazine.SocketPosition;
         socket.ConnectedBody = Gun;
         _joint.AddComponent<FixedAngleConstraint>().ConnectedBody = Gun;
@@ -489,11 +489,11 @@ public sealed class Gun : Component
         casing.Transform.Position = body.Position + body.Rotation * EjectPort;
         casing.Transform.Rotation = body.Rotation;
         Float3 size = new(0.01f, 0.01f, live ? 0.03f : 0.02f);
-        var renderer = casing.AddComponent<MeshRenderer>();
+        MeshRenderer renderer = casing.AddComponent<MeshRenderer>();
         renderer.Mesh = Mesh.CreateCube(size);
         renderer.Material = s_brass;
         casing.AddComponent<BoxCollider>().Size = size;
-        var rigidbody = casing.AddComponent<Rigidbody3D>();
+        Rigidbody3D rigidbody = casing.AddComponent<Rigidbody3D>();
         rigidbody.Mass = 0.012f;
         rigidbody.EnableSpeculativeContacts = true;
         casing.AddComponent<Expire>().Seconds = 6f;

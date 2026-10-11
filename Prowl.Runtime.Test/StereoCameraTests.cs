@@ -317,7 +317,7 @@ public class StereoCameraTests : RuntimeTestBase
     public void WithoutXR_EyeRequestsFailClearlyAndNothingWasDrawn()
     {
         Scene scene = CreateScene(enable: true);
-        var camera = CreateGameObject("Camera").AddComponent<Camera>();
+        Camera camera = CreateGameObject("Camera").AddComponent<Camera>();
         scene.Add(camera.GameObject);
 
         Assert.Throws<InvalidOperationException>(() => XR.GetEyeView(StereoEye.Left));

@@ -117,7 +117,7 @@ public class LightTreeTests
     [Fact]
     public void CoincidentLights_StillBuild()
     {
-        var lights = Enumerable.Repeat(new Vector4(1, 2, 3, 4), 500).ToArray();
+        Vector4[] lights = Enumerable.Repeat(new Vector4(1, 2, 3, 4), 500).ToArray();
         foreach (bool morton in new[] { false, true })
         {
             var tree = new LightTreeBuilder();
@@ -230,7 +230,7 @@ public class ForwardLightTreesTests
     public void BothTrees_TogetherFindExactlyTheLightsReachingEachPoint()
     {
         var trees = new ForwardLightTrees();
-        var lights = Scatter(trees, 3000, 1, i => i % 3 != 0);
+        (StubLight Light, ForwardLightData Data)[] lights = Scatter(trees, 3000, 1, i => i % 3 != 0);
         trees.BeginFrame(null);
         trees.Prepare();
 
@@ -243,7 +243,7 @@ public class ForwardLightTreesTests
     public void DynamicTree_StaysCorrectAcrossTheRing_AsLightsMove()
     {
         var trees = new ForwardLightTrees();
-        var lights = Scatter(trees, 600, 3, i => i < 200);
+        (StubLight Light, ForwardLightData Data)[] lights = Scatter(trees, 600, 3, i => i < 200);
         for (int frame = 0; frame < 5; frame++)
         {
             for (int i = 200; i < lights.Length; i++)
@@ -280,13 +280,13 @@ public class ForwardLightTreesTests
     public void StaticDataChange_PatchesTheRecord_WithoutRebuilding()
     {
         var trees = new ForwardLightTrees();
-        var lights = Scatter(trees, 100, 4, _ => true);
+        (StubLight Light, ForwardLightData Data)[] lights = Scatter(trees, 100, 4, _ => true);
         trees.BeginFrame(null);
         trees.Prepare();
         int root = trees.StaticRoot;
         int[] nodes = NodeBits(trees);
 
-        var changed = lights[37];
+        (StubLight Light, ForwardLightData Data) changed = lights[37];
         changed.Data.Intensity = 9f;
         trees.Track(changed.Light, changed.Data, true);
         trees.SetShadowSlot(changed.Light, 5);
@@ -304,7 +304,7 @@ public class ForwardLightTreesTests
     public void MovingAStaticLight_RebuildsSoItIsFoundWhereItWent()
     {
         var trees = new ForwardLightTrees();
-        var lights = Scatter(trees, 200, 5, _ => true);
+        (StubLight Light, ForwardLightData Data)[] lights = Scatter(trees, 200, 5, _ => true);
         trees.BeginFrame(null);
         trees.Prepare();
 
@@ -321,13 +321,13 @@ public class ForwardLightTreesTests
     public void LightsSwitchingTrees_OrDisappearing_AreFoundOnlyWhereTheyAre()
     {
         var trees = new ForwardLightTrees();
-        var lights = Scatter(trees, 300, 7, i => i % 2 == 0);
+        (StubLight Light, ForwardLightData Data)[] lights = Scatter(trees, 300, 7, i => i % 2 == 0);
         trees.BeginFrame(null);
         trees.Prepare();
 
         for (int i = 0; i < 50; i++)
             trees.Track(lights[i].Light, lights[i].Data, i % 2 != 0);
-        var kept = lights.Skip(25).ToArray();
+        (StubLight Light, ForwardLightData Data)[] kept = lights.Skip(25).ToArray();
         trees.RemoveUnseen(new HashSet<IRenderableLight>(kept.Select(l => (IRenderableLight)l.Light), ReferenceEqualityComparer.Instance));
         trees.BeginFrame(null);
         trees.Prepare();
@@ -350,9 +350,9 @@ public class SceneLightSystemTests : RuntimeTestBase
 
     private ControlledLight CreateLight(bool isStatic)
     {
-        var go = CreateGameObject("Light");
+        GameObject go = CreateGameObject("Light");
         go.IsStatic = isStatic;
-        var light = go.AddComponent<ControlledLight>();
+        ControlledLight light = go.AddComponent<ControlledLight>();
         light.Data = new ForwardLightData { Type = LightType.Point, Range = 5f, Color = new Float3(1, 1, 1), Intensity = 1f };
         return light;
     }
@@ -361,7 +361,7 @@ public class SceneLightSystemTests : RuntimeTestBase
     public void StaticLight_PicksUpShadowAndIntensityChanges()
     {
         var system = new SceneLightSystem();
-        var light = CreateLight(isStatic: true);
+        ControlledLight light = CreateLight(isStatic: true);
 
         system.Reconcile([light], Float3.Zero, LayerMask.Everything);
 
@@ -379,9 +379,9 @@ public class SceneLightSystemTests : RuntimeTestBase
     public void LightThatStopsCasting_LosesItsShadowSlot()
     {
         var system = new SceneLightSystem();
-        var go = CreateGameObject("Lamp");
+        GameObject go = CreateGameObject("Lamp");
         go.IsStatic = true;
-        var light = go.AddComponent<PointLight>();
+        PointLight light = go.AddComponent<PointLight>();
         light.Range = 5f;
         go.Transform.Position = new Float3(0, 0, 10);
 
@@ -406,8 +406,8 @@ public class SceneLightSystemTests : RuntimeTestBase
     public void TwoCameras_EachShadowTheLightInTheirOwnAtlas_UnderOneSharedId()
     {
         var system = new SceneLightSystem();
-        var go = CreateGameObject("Lamp");
-        var light = go.AddComponent<PointLight>();
+        GameObject go = CreateGameObject("Lamp");
+        PointLight light = go.AddComponent<PointLight>();
         light.Range = 5f;
         go.Transform.Position = new Float3(0, 0, 10);
 
@@ -436,7 +436,7 @@ public class SceneLightSystemTests : RuntimeTestBase
 
     private ControlledLight CreateDirectional(float intensity)
     {
-        var light = CreateLight(isStatic: false);
+        ControlledLight light = CreateLight(isStatic: false);
         light.Data.Type = LightType.Directional;
         light.Data.Intensity = intensity;
         return light;
@@ -446,9 +446,9 @@ public class SceneLightSystemTests : RuntimeTestBase
     public void BrightestDirectional_IsMain_OthersAreExtras()
     {
         var system = new SceneLightSystem();
-        var dim = CreateDirectional(1f);
-        var bright = CreateDirectional(3f);
-        var mid = CreateDirectional(2f);
+        ControlledLight dim = CreateDirectional(1f);
+        ControlledLight bright = CreateDirectional(3f);
+        ControlledLight mid = CreateDirectional(2f);
 
         system.Reconcile([dim, bright, mid], Float3.Zero, LayerMask.Everything);
 

@@ -95,7 +95,7 @@ internal sealed class UIRenderTree
             gc.RebuildIfDirty();         // no-op if clean
             gc.Tree.RefreshTransforms(); // matrix fast-path
 
-            var items = gc.Tree._items;
+            List<UIRenderItem> items = gc.Tree._items;
             for (int i = 0; i < items.Count; i++)
                 dst.Add(items[i]);
         }

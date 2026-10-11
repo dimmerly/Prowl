@@ -214,7 +214,7 @@ public sealed class ShaderPass
     /// can still recompile fresh variants on next use if the owning Shader isn't actually disposed.</summary>
     public void Dispose()
     {
-        foreach (var variant in _variants.Values)
+        foreach (GraphicsProgram variant in _variants.Values)
             variant.Dispose();
         _variants.Clear();
         _variantsByHash.Clear();

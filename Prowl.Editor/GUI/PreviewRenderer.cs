@@ -86,7 +86,7 @@ public class PreviewRenderer : IDisposable
         _lightGo = new GameObject("PreviewLight");
         _lightGo.HideFlags = HideFlags.HideAndDontSave | HideFlags.NoGizmos;
         _lightGo.Transform.LocalEulerAngles = new Float3(45, 225, 0);
-        var light = _lightGo.AddComponent<DirectionalLight>();
+        DirectionalLight light = _lightGo.AddComponent<DirectionalLight>();
         light.Intensity = 1f;
         light.CastShadows = false;
         _scene.Add(_lightGo);
@@ -105,7 +105,7 @@ public class PreviewRenderer : IDisposable
 
         _subjectGo = new GameObject("PreviewSubject");
         _subjectGo.HideFlags = HideFlags.HideAndDontSave;
-        var renderer = _subjectGo.AddComponent<MeshRenderer>();
+        MeshRenderer renderer = _subjectGo.AddComponent<MeshRenderer>();
         renderer.Mesh = mesh;
         renderer.Material = material.IsValid() ? material : new Material(Shader.LoadDefault(DefaultShader.Standard));
 
@@ -227,7 +227,7 @@ public class PreviewRenderer : IDisposable
 
         _subjectGo = new GameObject("PreviewSubject");
         _subjectGo.HideFlags = HideFlags.HideAndDontSave;
-        var renderer = _subjectGo.AddComponent<MeshRenderer>();
+        MeshRenderer renderer = _subjectGo.AddComponent<MeshRenderer>();
         renderer.Mesh = Mesh.CreateSphere(0.5f, 32, 32);
 
         if (material.Shader == null || !material.Shader.IsValid())
@@ -248,7 +248,7 @@ public class PreviewRenderer : IDisposable
 
         _camera.UpdateRenderData(_rt);
 
-        var pipeline = _camera.Pipeline.IsValid() ? _camera.Pipeline : DefaultRenderPipeline.Default;
+        RenderPipeline pipeline = _camera.Pipeline.IsValid() ? _camera.Pipeline : DefaultRenderPipeline.Default;
         pipeline.Render(_camera, new RenderingData { DisplayGrid = ShowGrid, FallbackTarget = _rt });
     }
 
@@ -337,8 +337,8 @@ public class PreviewRenderer : IDisposable
         subject.Transform.LocalScale = Float3.One;
 
         AABB bounds;
-        var meshRenderer = subject.GetComponent<MeshRenderer>();
-        var skinnedRenderer = subject.GetComponent<SkinnedMeshRenderer>();
+        MeshRenderer? meshRenderer = subject.GetComponent<MeshRenderer>();
+        SkinnedMeshRenderer? skinnedRenderer = subject.GetComponent<SkinnedMeshRenderer>();
 
         // Fast path for single-MeshRenderer subjects (SetupForMesh case): use the mesh's own
         // bounds directly, since there is no child hierarchy to walk and world == local at this
@@ -427,13 +427,13 @@ public class PreviewRenderer : IDisposable
     private static void CollectBoundsRecursive(GameObject go, ref Float3 min, ref Float3 max, ref bool found)
     {
         // Check MeshRenderer
-        var mr = go.GetComponent<MeshRenderer>();
+        MeshRenderer? mr = go.GetComponent<MeshRenderer>();
         if (mr != null)
         {
-            var mesh = mr.Mesh;
+            Mesh? mesh = mr.Mesh;
             if (mesh != null)
             {
-                var worldBounds = mesh.bounds.TransformBy(go.Transform.LocalToWorldMatrix);
+                AABB worldBounds = mesh.bounds.TransformBy(go.Transform.LocalToWorldMatrix);
                 min = new Float3(MathF.Min(min.X, worldBounds.Min.X), MathF.Min(min.Y, worldBounds.Min.Y), MathF.Min(min.Z, worldBounds.Min.Z));
                 max = new Float3(MathF.Max(max.X, worldBounds.Max.X), MathF.Max(max.Y, worldBounds.Max.Y), MathF.Max(max.Z, worldBounds.Max.Z));
                 found = true;
@@ -441,20 +441,20 @@ public class PreviewRenderer : IDisposable
         }
 
         // Check SkinnedMeshRenderer
-        var smr = go.GetComponent<SkinnedMeshRenderer>();
+        SkinnedMeshRenderer? smr = go.GetComponent<SkinnedMeshRenderer>();
         if (smr != null)
         {
-            var mesh = smr.SharedMesh;
+            Mesh? mesh = smr.SharedMesh;
             if (mesh != null)
             {
-                var worldBounds = mesh.bounds.TransformBy(go.Transform.LocalToWorldMatrix);
+                AABB worldBounds = mesh.bounds.TransformBy(go.Transform.LocalToWorldMatrix);
                 min = new Float3(MathF.Min(min.X, worldBounds.Min.X), MathF.Min(min.Y, worldBounds.Min.Y), MathF.Min(min.Z, worldBounds.Min.Z));
                 max = new Float3(MathF.Max(max.X, worldBounds.Max.X), MathF.Max(max.Y, worldBounds.Max.Y), MathF.Max(max.Z, worldBounds.Max.Z));
                 found = true;
             }
         }
 
-        foreach (var child in go.Children)
+        foreach (GameObject child in go.Children)
             CollectBoundsRecursive(child, ref min, ref max, ref found);
     }
 

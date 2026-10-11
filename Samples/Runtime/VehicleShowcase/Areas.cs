@@ -49,7 +49,7 @@ public sealed partial class VehicleShowcaseGame
     private Rigidbody3D Crate(Float3 position, Float3 size, Color color, float mass = 1f)
     {
         GameObject go = Model("Crate", Mesh.CreateCube(size), Lit(color, 0f, 0.5f), position);
-        var rb = go.AddComponent<Rigidbody3D>();
+        Rigidbody3D rb = go.AddComponent<Rigidbody3D>();
         rb.Mass = mass;
         go.AddComponent<BoxCollider>().Size = size;
         Add(go);
@@ -344,8 +344,8 @@ public sealed partial class VehicleShowcaseGame
         for (int i = 0; i < 8; i++)
         {
             GameObject go = Model("Cone", Mesh.CreateCone(0.35f, 0.9f, 12), cone, c + new Float3((i % 2 == 0 ? -1f : 1f) * 4f, 0.55f, -32f + i * 9f));
-            var rb = go.AddComponent<Rigidbody3D>();
-            var collider = go.AddComponent<ConeCollider>();
+            Rigidbody3D rb = go.AddComponent<Rigidbody3D>();
+            ConeCollider collider = go.AddComponent<ConeCollider>();
             collider.Radius = 0.35f;
             collider.Height = 0.9f;
             Add(go);
@@ -383,9 +383,9 @@ public sealed partial class VehicleShowcaseGame
     private void BuildTurntable(Float3 c)
     {
         GameObject table = Model("Turntable", Mesh.CreateCylinder(10f, 0.3f, 48), Grid(new Color(0.2f, 0.4f, 0.5f, 1f)), c + new Float3(0f, 0.15f, 0f));
-        var body = table.AddComponent<Rigidbody3D>();
+        Rigidbody3D body = table.AddComponent<Rigidbody3D>();
         body.MotionType = Jitter2.Dynamics.MotionType.Kinematic;
-        var collider = table.AddComponent<CylinderCollider>();
+        CylinderCollider collider = table.AddComponent<CylinderCollider>();
         collider.Radius = 10f;
         collider.Height = 0.3f;
         table.AddComponent<Spinner>().DegreesPerSecond = 25f;
@@ -410,10 +410,10 @@ public sealed partial class VehicleShowcaseGame
 
         // The ferry starts against one dock and travels along the crossing, so its path turns with it.
         GameObject ferry = Model("Ferry", Mesh.CreateCube(new Float3(10f, 0.4f, 12f)), Grid(new Color(0.55f, 0.1f, 0.05f, 1f)), c + turn * new Float3(0f, Deck - 0.2f, Gap * 0.5f - 6.2f), new Float3(0f, yaw, 0f));
-        var body = ferry.AddComponent<Rigidbody3D>();
+        Rigidbody3D body = ferry.AddComponent<Rigidbody3D>();
         body.MotionType = Jitter2.Dynamics.MotionType.Kinematic;
         ferry.AddComponent<BoxCollider>().Size = new Float3(10f, 0.4f, 12f);
-        var mover = ferry.AddComponent<MovingPlatform>();
+        MovingPlatform mover = ferry.AddComponent<MovingPlatform>();
         mover.Travel = turn * new Float3(0f, 0f, -(Gap - 12.4f));
         mover.Speed = 4f;
         mover.Wait = 5f;
@@ -429,10 +429,10 @@ public sealed partial class VehicleShowcaseGame
         Wedge("High Deck Ramp", c, yaw, 0f, -16f, -76f, High, 0f, 10f, deck);
 
         GameObject lift = Model("Lift", Mesh.CreateCube(new Float3(9f, 0.4f, 8f)), Grid(new Color(0.7f, 0.55f, 0.05f, 1f)), c + new Float3(0f, 0.2f, 0f), new Float3(0f, yaw, 0f));
-        var body = lift.AddComponent<Rigidbody3D>();
+        Rigidbody3D body = lift.AddComponent<Rigidbody3D>();
         body.MotionType = Jitter2.Dynamics.MotionType.Kinematic;
         lift.AddComponent<BoxCollider>().Size = new Float3(9f, 0.4f, 8f);
-        var mover = lift.AddComponent<MovingPlatform>();
+        MovingPlatform mover = lift.AddComponent<MovingPlatform>();
         mover.Travel = new Float3(0f, High, 0f);
         mover.Speed = 2f;
         mover.Wait = 4f;

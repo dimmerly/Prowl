@@ -138,7 +138,7 @@ public sealed class TAAEffect : ImageEffect
         EyeHistory eye = GetEyeState<EyeHistory>(context.Camera);
         int w = context.Width;
         int h = context.Height;
-        var format = context.SceneColor.MainTexture.ImageFormat;
+        TextureImageFormat format = context.SceneColor.MainTexture.ImageFormat;
 
         // Invalidate history if resolution changed
         if (eye.History != null && (eye.History.Width != w || eye.History.Height != h))
@@ -168,7 +168,7 @@ public sealed class TAAEffect : ImageEffect
             _mat.SetTexture("_MotionVectorsTex", context.MotionVectors);
         _mat.SetTexture("_CameraDepthTexture", context.DepthNormals.InternalDepth);
 
-        using var cmd = Graphics.GetCommandBuffer("TAA");
+        using CommandBuffer cmd = Graphics.GetCommandBuffer("TAA");
 
         // Resolve: blend current jittered frame with reprojected history
         var resolved = RenderTexture.GetTemporaryRT(w, h, false, [format]);

@@ -14,6 +14,7 @@ using Prowl.OrigamiUI;
 using Prowl.PaperUI;
 using Prowl.PaperUI.LayoutEngine;
 using Prowl.Runtime;
+using Prowl.Scribe;
 
 namespace Prowl.Editor.GUI;
 
@@ -45,15 +46,15 @@ public class ShowIfAttributeHandler : OrigamiUI.AttributeHandler
     public override bool OnBeforeDraw(Paper paper, string id, Attribute attr, FieldInfo field, object target, int depth)
     {
         var showIf = (ShowIfAttribute)attr;
-        var type = target.GetType();
+        Type type = target.GetType();
 
         // Check field
-        var condField = type.GetField(showIf.ConditionMember, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
+        FieldInfo? condField = type.GetField(showIf.ConditionMember, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
         if (condField != null && condField.FieldType == typeof(bool))
             return (bool)(condField.GetValue(target) ?? false);
 
         // Check property
-        var condProp = type.GetProperty(showIf.ConditionMember, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
+        PropertyInfo? condProp = type.GetProperty(showIf.ConditionMember, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
         if (condProp != null && condProp.PropertyType == typeof(bool))
             return (bool)(condProp.GetValue(target) ?? false);
 
@@ -76,11 +77,11 @@ public class EnableIfAttributeHandler : OrigamiUI.AttributeHandler
 
     private static bool EvaluateCondition(string member, object target)
     {
-        var type = target.GetType();
-        var condField = type.GetField(member, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
+        Type type = target.GetType();
+        FieldInfo? condField = type.GetField(member, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
         if (condField != null && condField.FieldType == typeof(bool))
             return (bool)(condField.GetValue(target) ?? false);
-        var condProp = type.GetProperty(member, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
+        PropertyInfo? condProp = type.GetProperty(member, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
         if (condProp != null && condProp.PropertyType == typeof(bool))
             return (bool)(condProp.GetValue(target) ?? false);
         return true; // condition not found: leave enabled
@@ -90,7 +91,7 @@ public class EnableIfAttributeHandler : OrigamiUI.AttributeHandler
     {
         if (!ReferenceEquals(_dimSource, source) || _dimTheme == null)
         {
-            var dim = source.Clone();
+            OrigamiTheme dim = source.Clone();
             FadeRamp(dim.Ink);      // labels + field text
             FadeRamp(dim.Neutral);  // field backgrounds/borders
             _dimSource = source;
@@ -248,14 +249,14 @@ public class TextAreaAttributeHandler : OrigamiUI.AttributeHandler
     {
         var textArea = (TextAreaAttribute)attr;
         var value = (string?)field.GetValue(target) ?? "";
-        var theme = OrigamiUI.Origami.Current;
-        var m = theme.Metrics;
+        OrigamiTheme theme = OrigamiUI.Origami.Current;
+        OrigamiMetrics m = theme.Metrics;
 
         using (paper.Row(id).Height(UnitValue.Auto).MinHeight(m.RowHeight)
             .Gap(m.SpacingMedium).Margin(0, 0, 0, m.SpacingSmall).Enter())
         {
-            var font = theme.Font;
-            var ink = theme.Ink;
+            FontFile? font = theme.Font;
+            OrigamiRamp ink = theme.Ink;
             if (font != null)
                 paper.Box($"{id}_lbl")
                     .Width(m.LabelWidth).Height(m.RowHeight).Padding(m.PaddingSmall, 0, 0, 0)

@@ -46,11 +46,11 @@ public static class PropertyGridUtils
     public static void ObjectField(Paper paper, string id, string label, string icon, Color iconColor, string displayName,
         bool hasValue, bool isDragTarget, Action onClick, Action onDoubleClick, Action onPick, Action acceptDrops)
     {
-        var font = EditorTheme.DefaultFont;
+        Scribe.FontFile? font = EditorTheme.DefaultFont;
         if (font == null) return;
 
-        var theme = Origami.Current;
-        var m = theme.Metrics;
+        OrigamiTheme theme = Origami.Current;
+        OrigamiMetrics m = theme.Metrics;
         float rh = m.RowHeight;
 
         using (paper.Row(id).Height(UnitValue.Auto).MinHeight(rh).Padding(m.PaddingLarge, m.PaddingLarge, 0, 0).Gap(m.Padding).Enter())
@@ -62,7 +62,7 @@ public static class PropertyGridUtils
                     .Text(label, font).TextColor(theme.Ink.C300)
                     .FontSize(m.FontSize).Alignment(TextAlignment.MiddleLeft).TextTruncate();
 
-            var field = paper.Row($"{id}_field")
+            ElementBuilder field = paper.Row($"{id}_field")
                 .Height(rh)
                 .BackgroundColor(isDragTarget ? EditorTheme.WithAlpha(EditorTheme.Accent, 60) : EditorTheme.Glass)
                 .Hovered.BorderColor(EditorTheme.BorderStrong).End()

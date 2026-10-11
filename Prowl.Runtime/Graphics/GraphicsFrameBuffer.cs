@@ -66,7 +66,7 @@ public unsafe class GraphicsFrameBuffer
 
         // SubmitAndWait so the completeness check throws at construction
         // instead of on a later render-thread tick.
-        using var cmd = Graphics.GetCommandBuffer("GraphicsFrameBuffer.Create");
+        using CommandBuffer cmd = Graphics.GetCommandBuffer("GraphicsFrameBuffer.Create");
         cmd.EncodeCreateFramebuffer(this);
         Graphics.SubmitAndWait(cmd);
     }
@@ -120,7 +120,7 @@ public unsafe class GraphicsFrameBuffer
             return;
         IsDisposed = true;
 
-        using var cmd = Graphics.GetCommandBuffer("GraphicsFrameBuffer.Dispose");
+        using CommandBuffer cmd = Graphics.GetCommandBuffer("GraphicsFrameBuffer.Dispose");
         cmd.EncodeDisposeFramebuffer(this);
         Graphics.Submit(cmd);
     }

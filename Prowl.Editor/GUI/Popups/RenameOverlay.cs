@@ -79,7 +79,7 @@ public static class RenameOverlay
     /// </summary>
     public static void Draw(Paper paper, string id, Position position = Position.Top)
     {
-        var font = EditorTheme.DefaultFont;
+        Scribe.FontFile? font = EditorTheme.DefaultFont;
         if (font == null) return;
 
         // Handle keys
@@ -119,7 +119,7 @@ public static class RenameOverlay
             settings.TextColor = EditorTheme.Ink500;
             settings.SelectAllOnFocus = true;
 
-            var textField = paper.Box($"{id}_tf")
+            ElementBuilder textField = paper.Box($"{id}_tf")
                 .Margin(4, UnitValue.Stretch())
                 .HookToParent()
                 .IsNotInteractable()

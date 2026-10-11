@@ -42,7 +42,7 @@ public sealed class SMAAEffect : ImageEffect
         var blendRT = RenderTexture.GetTemporaryRT(w, h, false, [TextureImageFormat.Color4b]);
         var outRT = RenderTexture.GetTemporaryRT(w, h, false, [context.SceneColor.MainTexture.ImageFormat]);
 
-        using var cmd = Graphics.GetCommandBuffer("SMAA");
+        using CommandBuffer cmd = Graphics.GetCommandBuffer("SMAA");
 
         // Pass 0: luma edge detection. The shader discards non-edge pixels, so clear
         // the pooled RT to 0 first, otherwise stale pool data would leak into pass 1.

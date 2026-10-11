@@ -81,7 +81,7 @@ public class NavigationSettings : ProjectSettingsBase
     public override void OnGUI(Paper paper, float width)
     {
         EnsureSize();
-        var font = EditorTheme.DefaultFont;
+        Scribe.FontFile? font = EditorTheme.DefaultFont;
         if (font == null) return;
 
         Origami.ButtonGroup(paper, "nav_tabs", _activeTab, t => _activeTab = t)

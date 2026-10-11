@@ -39,16 +39,16 @@ public static class MetaFile
 
         var data = new MetaFileData();
 
-        if (echo.TryGet("guid", out var guidTag))
+        if (echo.TryGet("guid", out EchoObject? guidTag))
             Guid.TryParse(guidTag.StringValue, out data.Guid);
 
-        if (echo.TryGet("importer", out var importerTag))
+        if (echo.TryGet("importer", out EchoObject? importerTag))
             data.ImporterType = importerTag.StringValue;
 
-        if (echo.TryGet("importerVersion", out var versionTag))
+        if (echo.TryGet("importerVersion", out EchoObject? versionTag))
             data.ImporterVersion = versionTag.IntValue;
 
-        if (echo.TryGet("settings", out var settingsTag))
+        if (echo.TryGet("settings", out EchoObject? settingsTag))
             data.Settings = settingsTag;
 
         return data;
@@ -126,7 +126,7 @@ public static class MetaFile
                 "to this asset will no longer resolve. Restore the .meta from source control to recover them.");
         }
 
-        var data = CreateNew(importerTypeName, importerVersion, defaultSettings);
+        MetaFileData data = CreateNew(importerTypeName, importerVersion, defaultSettings);
         Write(metaPath, data);
         return data;
     }

@@ -101,7 +101,7 @@ public static class CliServer
         PumpContinuations();
         if (s_shutDown) return;
 
-        var project = Project.Current;
+        Project? project = Project.Current;
         string? root = project?.RootPath;
         if (root != s_handledRoot)
         {
@@ -134,7 +134,7 @@ public static class CliServer
             frame = s_frameWaiters.Count > 0 ? [.. s_frameWaiters] : null;
             s_frameWaiters.Clear();
         }
-        if (frame != null) foreach (var waiter in frame) waiter.TrySetResult();
+        if (frame != null) foreach (TaskCompletionSource waiter in frame) waiter.TrySetResult();
 
         s_context.Pump();
     }
@@ -176,7 +176,7 @@ public static class CliServer
 
     public static void Stop()
     {
-        var server = s_server;
+        Server? server = s_server;
         if (server == null) return;
         s_server = null;
 
@@ -200,7 +200,7 @@ public static class CliServer
 
     private static void EnsureLockFile(Server server)
     {
-        var existing = ReadLockFile(server.LockPath);
+        CliLockFile? existing = ReadLockFile(server.LockPath);
         if (existing?.Token == server.Token) return;
 
         if (existing != null && existing.ProcessId != Environment.ProcessId && IsProcessAlive(existing.ProcessId))
@@ -258,7 +258,7 @@ public static class CliServer
 
     private static async Task AcceptLoopAsync(Server server)
     {
-        var ct = server.Cts.Token;
+        CancellationToken ct = server.Cts.Token;
         while (!ct.IsCancellationRequested)
         {
             TcpClient client;
@@ -286,10 +286,10 @@ public static class CliServer
     {
         using (client)
         {
-            var stream = client.GetStream();
+            NetworkStream stream = client.GetStream();
             try
             {
-                var (status, body) = await ReadAndRouteAsync(stream, server).ConfigureAwait(false);
+                (int status, string? body) = await ReadAndRouteAsync(stream, server).ConfigureAwait(false);
                 await WriteResponseAsync(stream, status, body, server.Cts.Token).ConfigureAwait(false);
             }
             catch (Exception ex) when (ex is IOException or OperationCanceledException or ObjectDisposedException) { }
@@ -301,9 +301,9 @@ public static class CliServer
         using var readTimeout = CancellationTokenSource.CreateLinkedTokenSource(server.Cts.Token);
         readTimeout.CancelAfter(s_readTimeout);
 
-        var head = await ReadHeadAsync(stream, readTimeout.Token).ConfigureAwait(false);
+        (string Method, string Path, Dictionary<string, string> Headers, byte[] Buffered)? head = await ReadHeadAsync(stream, readTimeout.Token).ConfigureAwait(false);
         if (head == null) return (400, Error("Malformed request."));
-        var (method, path, headers, buffered) = head.Value;
+        (string? method, string? path, Dictionary<string, string>? headers, byte[]? buffered) = head.Value;
 
         if (headers.TryGetValue("Host", out string? host) && !IsLoopbackHost(host, server.Port))
             return (403, Error("Requests must be addressed to the loopback interface."));
@@ -407,7 +407,7 @@ public static class CliServer
         object? result = null;
         ExecutionContext.Run(ExecutionContext.Capture()!, _ =>
         {
-            var previous = SynchronizationContext.Current;
+            SynchronizationContext? previous = SynchronizationContext.Current;
             s_capture.Value = capture;
             MainThreadContext.LeaveSession();
             if (MainThreadContext.Current != null)
@@ -462,13 +462,13 @@ public static class CliServer
 
     private static TimeSpan Remaining(TimeSpan timeout, Stopwatch clock)
     {
-        var left = timeout - clock.Elapsed;
+        TimeSpan left = timeout - clock.Elapsed;
         return left > TimeSpan.FromSeconds(1) ? left : TimeSpan.FromSeconds(1);
     }
 
     private static object? TaskResult(Task task)
     {
-        var type = task.GetType();
+        Type type = task.GetType();
         if (!type.IsGenericType || type.GetGenericArguments()[0].Name == "VoidTaskResult") return null;
         return type.GetProperty("Result")!.GetValue(task);
     }
@@ -519,11 +519,11 @@ public static class CliServer
             int pending = _queue.Count;
             if (pending == 0) return;
 
-            var previous = Current;
+            SynchronizationContext? previous = Current;
             SetSynchronizationContext(this);
             try
             {
-                for (int i = 0; i < pending && _queue.TryDequeue(out var entry); i++)
+                for (int i = 0; i < pending && _queue.TryDequeue(out (SendOrPostCallback Callback, object? State) entry); i++)
                 {
                     try { entry.Callback(entry.State); }
                     catch (Exception ex) { Debug.LogError($"[CLI] A command continuation threw: {ex}"); }
@@ -617,7 +617,7 @@ public static class AgentFiles
         {
             WriteLauncher(libraryPath);
 
-            var assembly = typeof(AgentFiles).Assembly;
+            Assembly assembly = typeof(AgentFiles).Assembly;
             foreach (string name in assembly.GetManifestResourceNames())
             {
                 if (!name.StartsWith(Prefix, StringComparison.Ordinal)) continue;

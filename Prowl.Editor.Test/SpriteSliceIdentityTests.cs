@@ -30,7 +30,7 @@ public class SpriteSliceIdentityTests
         var previous = new List<SpriteSliceData> { Slice("hero_idle", 0, 0, 16, 16) };
         Guid original = previous[0].Id;
 
-        var result = SpriteSliceMatcher.CarryOverIdentities(previous, Generated(Slice("tex_0", 0, 0, 16, 16)));
+        List<SpriteSliceData> result = SpriteSliceMatcher.CarryOverIdentities(previous, Generated(Slice("tex_0", 0, 0, 16, 16)));
 
         Assert.Equal(original, result[0].Id);
         Assert.Equal("hero_idle", result[0].Name);
@@ -43,7 +43,7 @@ public class SpriteSliceIdentityTests
         Guid original = previous[0].Id;
 
         // Nudging the grid by a pixel still describes the same sprite.
-        var result = SpriteSliceMatcher.CarryOverIdentities(previous, Generated(Slice("tex_0", 1, 0, 16, 16)));
+        List<SpriteSliceData> result = SpriteSliceMatcher.CarryOverIdentities(previous, Generated(Slice("tex_0", 1, 0, 16, 16)));
 
         Assert.Equal(original, result[0].Id);
         Assert.Equal(1, result[0].Rect.X);
@@ -56,7 +56,7 @@ public class SpriteSliceIdentityTests
         Guid original = previous[0].Id;
 
         // Only a sliver in common - a different sprite, not the same one moved.
-        var result = SpriteSliceMatcher.CarryOverIdentities(previous, Generated(Slice("tex_0", 14, 0, 16, 16)));
+        List<SpriteSliceData> result = SpriteSliceMatcher.CarryOverIdentities(previous, Generated(Slice("tex_0", 14, 0, 16, 16)));
 
         Assert.NotEqual(original, result[0].Id);
     }
@@ -68,7 +68,7 @@ public class SpriteSliceIdentityTests
         Guid original = previous[0].Id;
 
         // Two new rects both overlap the single old one; only one may inherit its identity.
-        var result = SpriteSliceMatcher.CarryOverIdentities(previous,
+        List<SpriteSliceData> result = SpriteSliceMatcher.CarryOverIdentities(previous,
             Generated(Slice("tex_0", 0, 0, 16, 16), Slice("tex_1", 2, 0, 16, 16)));
 
         int inherited = 0;
@@ -82,11 +82,11 @@ public class SpriteSliceIdentityTests
     [Fact]
     public void ExactMatchWinsOverOverlap()
     {
-        var exact = Slice("exact", 0, 0, 16, 16);
-        var near = Slice("near", 1, 0, 16, 16);
+        SpriteSliceData exact = Slice("exact", 0, 0, 16, 16);
+        SpriteSliceData near = Slice("near", 1, 0, 16, 16);
         var previous = new List<SpriteSliceData> { near, exact };
 
-        var result = SpriteSliceMatcher.CarryOverIdentities(previous, Generated(Slice("tex_0", 0, 0, 16, 16)));
+        List<SpriteSliceData> result = SpriteSliceMatcher.CarryOverIdentities(previous, Generated(Slice("tex_0", 0, 0, 16, 16)));
 
         Assert.Equal(exact.Id, result[0].Id);
     }
@@ -103,7 +103,7 @@ public class SpriteSliceIdentityTests
         for (int i = 0; i < 4; i++)
             generated.Add(Slice($"tex_{i}", i * 16, 0, 16, 16));
 
-        var result = SpriteSliceMatcher.CarryOverIdentities(previous, generated);
+        List<SpriteSliceData> result = SpriteSliceMatcher.CarryOverIdentities(previous, generated);
 
         for (int i = 0; i < 4; i++)
         {
@@ -115,14 +115,14 @@ public class SpriteSliceIdentityTests
     [Fact]
     public void AuthoredBorderSurvives_ButPresetPivotFollowsTheNewSettings()
     {
-        var old = Slice("hero", 0, 0, 16, 16);
+        SpriteSliceData old = Slice("hero", 0, 0, 16, 16);
         old.Border = new Float4(2, 3, 4, 5);
         old.Alignment = SpriteAlignment.BottomLeft;
 
-        var incoming = Slice("tex_0", 0, 0, 16, 16);
+        SpriteSliceData incoming = Slice("tex_0", 0, 0, 16, 16);
         incoming.Alignment = SpriteAlignment.TopRight; // what the user just picked for this run
 
-        var result = SpriteSliceMatcher.CarryOverIdentities(new List<SpriteSliceData> { old }, Generated(incoming));
+        List<SpriteSliceData> result = SpriteSliceMatcher.CarryOverIdentities(new List<SpriteSliceData> { old }, Generated(incoming));
 
         Assert.Equal(new Float4(2, 3, 4, 5), result[0].Border);
         Assert.Equal(SpriteAlignment.TopRight, result[0].Alignment);
@@ -131,15 +131,15 @@ public class SpriteSliceIdentityTests
     [Fact]
     public void CustomPivotSurvives_BecauseNoSlicingSettingCanReproduceIt()
     {
-        var old = Slice("hero", 0, 0, 16, 16);
+        SpriteSliceData old = Slice("hero", 0, 0, 16, 16);
         old.Alignment = SpriteAlignment.Custom;
         old.CustomPivot = new Float2(0.25f, 0.75f);
         old.PivotUnit = PivotUnitMode.Normalized;
 
-        var incoming = Slice("tex_0", 0, 0, 16, 16);
+        SpriteSliceData incoming = Slice("tex_0", 0, 0, 16, 16);
         incoming.Alignment = SpriteAlignment.Center;
 
-        var result = SpriteSliceMatcher.CarryOverIdentities(new List<SpriteSliceData> { old }, Generated(incoming));
+        List<SpriteSliceData> result = SpriteSliceMatcher.CarryOverIdentities(new List<SpriteSliceData> { old }, Generated(incoming));
 
         Assert.Equal(SpriteAlignment.Custom, result[0].Alignment);
         Assert.Equal(new Float2(0.25f, 0.75f), result[0].CustomPivot);
@@ -150,11 +150,11 @@ public class SpriteSliceIdentityTests
     {
         var previous = new List<SpriteSliceData> { Slice("a", 0, 0, 16, 16) };
 
-        var first = Slice("tex_0", 0, 0, 16, 16);
-        var second = Slice("tex_1", 32, 0, 16, 16);
+        SpriteSliceData first = Slice("tex_0", 0, 0, 16, 16);
+        SpriteSliceData second = Slice("tex_1", 32, 0, 16, 16);
         Guid secondId = second.Id;
 
-        var result = SpriteSliceMatcher.CarryOverIdentities(previous, Generated(first, second));
+        List<SpriteSliceData> result = SpriteSliceMatcher.CarryOverIdentities(previous, Generated(first, second));
 
         Assert.Equal(previous[0].Id, result[0].Id);
         Assert.Equal(secondId, result[1].Id);
@@ -163,10 +163,10 @@ public class SpriteSliceIdentityTests
     [Fact]
     public void EmptyPreviousList_IsPassedThroughUnchanged()
     {
-        var generated = Generated(Slice("tex_0", 0, 0, 16, 16));
+        List<SpriteSliceData> generated = Generated(Slice("tex_0", 0, 0, 16, 16));
         Guid id = generated[0].Id;
 
-        var result = SpriteSliceMatcher.CarryOverIdentities(new List<SpriteSliceData>(), generated);
+        List<SpriteSliceData> result = SpriteSliceMatcher.CarryOverIdentities(new List<SpriteSliceData>(), generated);
 
         Assert.Single(result);
         Assert.Equal(id, result[0].Id);

@@ -285,7 +285,7 @@ public sealed class Shader : Asset, ISerializationCallbackReceiver
 
     protected override void OnUnload()
     {
-        foreach (var pass in _passes ?? [])
+        foreach (ShaderPass pass in _passes ?? [])
             pass.Dispose();
     }
 

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 
+using Prowl.Echo;
 using Prowl.Editor.Core;
 using Prowl.Editor.GUI;
 using Prowl.Editor.GUI.Panels;
@@ -65,10 +66,10 @@ public static class GameObjectInspector
         string glyph, string title, Color titleColor, Action? trailing = null, Action? onDragStart = null)
     {
         bool expanded = IsExpanded(id);
-        var semi = EditorTheme.FontSemiBold ?? font;
+        Scribe.FontFile semi = EditorTheme.FontSemiBold ?? font;
         using (paper.Row($"{id}_head").Height(30).Padding(10, 8, 0, 0).Gap(7).Enter())
         {
-            var clickRow = paper.Row($"{id}_hclick").Width(UnitValue.Stretch()).Height(30).Gap(7).Rounded(EditorTheme.Roundness)
+            ElementBuilder clickRow = paper.Row($"{id}_hclick").Width(UnitValue.Stretch()).Height(30).Gap(7).Rounded(EditorTheme.Roundness)
                 .Hovered.BackgroundColor(Color.FromArgb(13, EditorTheme.Purple400)).End()
                 .OnClick(id, (i, _) => ToggleSection(i));
             if (onDragStart != null)
@@ -211,7 +212,7 @@ public static class GameObjectInspector
             .TextColor(EditorTheme.Ink500)
             .FontSize(EditorTheme.FontSize).Alignment(TextAlignment.MiddleLeft);
 
-        var t0 = gos[0].Transform;
+        Transform t0 = gos[0].Transform;
 
         bool posMixed = gos.Any(g => !g.Transform.LocalPosition.Equals(t0.LocalPosition));
         EditorGUI.Row(paper, "gim_pos", MixLabel(Loc.Get("inspector.position"), posMixed), () =>
@@ -233,22 +234,22 @@ public static class GameObjectInspector
     {
         // Component types in the first object's order, kept only if present on every selected object.
         var orderedTypes = new List<Type>();
-        foreach (var c in gos[0].GetComponents<Component>())
+        foreach (Component c in gos[0].GetComponents<Component>())
         {
             if (c.HideFlags.HasFlag(HideFlags.Hide)) continue;
             if (c is RectTransform) continue; // handled by the transform row at the top
-            var ct = c.GetType();
+            Type ct = c.GetType();
             if (!orderedTypes.Contains(ct)) orderedTypes.Add(ct);
         }
 
-        foreach (var type in orderedTypes)
+        foreach (Type type in orderedTypes)
         {
             var instances = new List<object>(gos.Count);
             bool onAll = true;
-            foreach (var go in gos)
+            foreach (GameObject go in gos)
             {
                 Component? match = null;
-                foreach (var c in go.GetComponents<Component>())
+                foreach (Component c in go.GetComponents<Component>())
                 {
                     if (c.HideFlags.HasFlag(HideFlags.Hide)) continue;
                     if (c.GetType() == type) { match = c; break; }
@@ -272,10 +273,10 @@ public static class GameObjectInspector
                         foreach (var o in instances)
                         {
                             var c = (Component)o;
-                            var cid = c.Identifier;
+                            Guid cid = c.Identifier;
                             bool old = c.Enabled;
-                            actions.Add((() => { var x = Undo.FindComponent(cid); if (x != null) { x.Enabled = old; x.OnValidate(); } },
-                                        () => { var x = Undo.FindComponent(cid); if (x != null) { x.Enabled = v; x.OnValidate(); } }
+                            actions.Add((() => { Component? x = Undo.FindComponent(cid); if (x != null) { x.Enabled = old; x.OnValidate(); } },
+                                        () => { Component? x = Undo.FindComponent(cid); if (x != null) { x.Enabled = v; x.OnValidate(); } }
                             ));
                             c.Enabled = v; c.OnValidate();
                         }
@@ -303,7 +304,7 @@ public static class GameObjectInspector
 
     private static void DrawHeader(Paper paper, Prowl.Scribe.FontFile font, GameObject go)
     {
-        var goId = go.Identifier;
+        Guid goId = go.Identifier;
 
         // Enabled toggle + Name + Static
         using (paper.Row("gi_header")
@@ -392,7 +393,7 @@ public static class GameObjectInspector
     /// <summary>Set <see cref="GameObject.IsStatic"/> on every descendant of <paramref name="go"/> (recorded for undo).</summary>
     private static void ApplyStaticToChildren(GameObject go, bool value)
     {
-        foreach (var child in go.GetChildrenDeep())
+        foreach (GameObject child in go.GetChildrenDeep())
         {
             if (child.IsStatic == value) continue;
             Undo.RecordGameObjectChange(child, "Toggle Static", child.IsStatic, value, (g, x) => g.IsStatic = x);
@@ -429,8 +430,8 @@ public static class GameObjectInspector
 
     private static void DrawTransform(Paper paper, Prowl.Scribe.FontFile font, GameObject go)
     {
-        var t = go.Transform;
-        var goId = go.Identifier;
+        Transform t = go.Transform;
+        Guid goId = go.Identifier;
 
         bool expanded = SectionHeader(paper, font, $"gi_transform_{goId}", EditorIcons.ArrowsUpDownLeftRight,
             Loc.Get("inspector.transform"), EditorTheme.Ink500, () =>
@@ -443,29 +444,29 @@ public static class GameObjectInspector
         if (!expanded) return;
 
         // Position
-        var pos = t.LocalPosition;
+        Float3 pos = t.LocalPosition;
         EditorGUI.Row(paper, "gi_pos", Loc.Get("inspector.position"), () =>
             Origami.Float3Field(paper, "gi_pos_vf", pos, v => { Undo.RecordGameObjectChange(go, "Change Position", t.LocalPosition, v, (g, x) => g.Transform.LocalPosition = x, coalesce: true); t.LocalPosition = v; }).Show());
 
         // Rotation (as euler)
-        var euler = t.LocalEulerAngles;
+        Float3 euler = t.LocalEulerAngles;
         EditorGUI.Row(paper, "gi_rot", Loc.Get("inspector.rotation"), () =>
             Origami.Float3Field(paper, "gi_rot_vf", euler, v => { Undo.RecordGameObjectChange(go, "Change Rotation", t.LocalEulerAngles, v, (g, x) => g.Transform.LocalEulerAngles = x, coalesce: true); t.LocalEulerAngles = v; }).Show());
 
         // Scale
-        var scale = t.LocalScale;
+        Float3 scale = t.LocalScale;
         EditorGUI.Row(paper, "gi_scale", Loc.Get("inspector.scale"), () =>
             Origami.Float3Field(paper, "gi_scale_vf", scale, v => { Undo.RecordGameObjectChange(go, "Change Scale", t.LocalScale, v, (g, x) => g.Transform.LocalScale = x, coalesce: true); t.LocalScale = v; }).Show());
     }
 
     private static void ResetTransform(GameObject go)
     {
-        var t = go.Transform;
-        var goId = go.Identifier;
-        var (oldP, oldR, oldS) = (t.LocalPosition, t.LocalEulerAngles, t.LocalScale);
+        Transform t = go.Transform;
+        Guid goId = go.Identifier;
+        (Float3 oldP, Float3 oldR, Float3 oldS) = (t.LocalPosition, t.LocalEulerAngles, t.LocalScale);
         Undo.RegisterAction("Reset Transform",
-            undo: () => { var g = Undo.FindGO(goId); if (g != null) { g.Transform.LocalPosition = oldP; g.Transform.LocalEulerAngles = oldR; g.Transform.LocalScale = oldS; } },
-            redo: () => { var g = Undo.FindGO(goId); if (g != null) { g.Transform.LocalPosition = Float3.Zero; g.Transform.LocalEulerAngles = Float3.Zero; g.Transform.LocalScale = Float3.One; } });
+            undo: () => { GameObject? g = Undo.FindGO(goId); if (g != null) { g.Transform.LocalPosition = oldP; g.Transform.LocalEulerAngles = oldR; g.Transform.LocalScale = oldS; } },
+            redo: () => { GameObject? g = Undo.FindGO(goId); if (g != null) { g.Transform.LocalPosition = Float3.Zero; g.Transform.LocalEulerAngles = Float3.Zero; g.Transform.LocalScale = Float3.One; } });
         t.LocalPosition = Float3.Zero;
         t.LocalEulerAngles = Float3.Zero;
         t.LocalScale = Float3.One;
@@ -488,8 +489,8 @@ public static class GameObjectInspector
 
     private static void DrawRectTransform(Paper paper, Prowl.Scribe.FontFile font, GameObject go)
     {
-        var rt = go.RectTransform!;
-        var t = go.Transform;
+        RectTransform rt = go.RectTransform!;
+        Transform t = go.Transform;
 
         paper.Box("gi_rt_header").Height(22).PaddingLeft(8)
             .Text($"{EditorIcons.VectorSquare}  Rect Transform", font)
@@ -532,7 +533,7 @@ public static class GameObjectInspector
         });
 
         // Rotation (as euler) and scale come from the underlying Transform.
-        var euler = t.LocalEulerAngles;
+        Float3 euler = t.LocalEulerAngles;
         EditorGUI.Row(paper, "gi_rt_rot", "Rotation", () =>
         {
             Origami.Float3Field(paper, "gi_rt_rot_vf", euler, v =>
@@ -548,7 +549,7 @@ public static class GameObjectInspector
             }).Show();
         });
 
-        var scale = t.LocalScale;
+        Float3 scale = t.LocalScale;
         EditorGUI.Row(paper, "gi_rt_scale", "Scale", () =>
         {
             Origami.Float3Field(paper, "gi_rt_scale_vf", scale, v =>
@@ -592,7 +593,7 @@ public static class GameObjectInspector
                 {
                     for (int col = 0; col < 4; col++)
                     {
-                        var preset = AnchorPresets[row, col];
+                        (Float2 min, Float2 max) preset = AnchorPresets[row, col];
                         DrawAnchorPresetCell(paper, $"gi_rt_acell_{row}_{col}", go, rt,
                             preset.min, preset.max, CellSize);
                     }
@@ -607,9 +608,9 @@ public static class GameObjectInspector
         bool isFixed = ApproxEq(minPreset, maxPreset);
         bool isActive = ApproxEq(rt.AnchorMin, minPreset) && ApproxEq(rt.AnchorMax, maxPreset);
 
-        var bg = isActive ? EditorTheme.Purple400 : EditorTheme.Neutral300;
-        var hoverBg = isActive ? EditorTheme.Purple400 : EditorTheme.Neutral400;
-        var indicator = isActive ? EditorTheme.Neutral200 : EditorTheme.Purple400;
+        Color bg = isActive ? EditorTheme.Purple400 : EditorTheme.Neutral300;
+        Color hoverBg = isActive ? EditorTheme.Purple400 : EditorTheme.Neutral400;
+        Color indicator = isActive ? EditorTheme.Neutral200 : EditorTheme.Purple400;
 
         using (paper.Box(id)
             .Width(cellSize).Height(cellSize)
@@ -619,24 +620,24 @@ public static class GameObjectInspector
             .Rounded(Origami.Current.Metrics.SmallRounding)
             .OnClick((go, minPreset, maxPreset), (cap, _) =>
             {
-                var (capGo, capMin, capMax) = cap;
-                var r = capGo.RectTransform;
+                (GameObject? capGo, Float2 capMin, Float2 capMax) = cap;
+                RectTransform? r = capGo.RectTransform;
                 if (r == null) return;
 
                 // Changing the anchor preset re-parameterizes the rect but must keep it visually put,
                 // so it re-solves SizeDelta/AnchoredPosition. Snapshot the full solved state both ways
                 // so undo/redo restore the exact values rather than re-deriving them.
-                var oldMin = r.AnchorMin; var oldMax = r.AnchorMax;
-                var oldSize = r.SizeDelta; var oldPos = r.AnchoredPosition;
+                Float2 oldMin = r.AnchorMin; Float2 oldMax = r.AnchorMax;
+                Float2 oldSize = r.SizeDelta; Float2 oldPos = r.AnchoredPosition;
 
                 SetAnchorsPreservingRect(r, capMin, capMax);
 
-                var newMin = r.AnchorMin; var newMax = r.AnchorMax;
-                var newSize = r.SizeDelta; var newPos = r.AnchoredPosition;
+                Float2 newMin = r.AnchorMin; Float2 newMax = r.AnchorMax;
+                Float2 newSize = r.SizeDelta; Float2 newPos = r.AnchoredPosition;
 
                 Undo.RegisterAction("Change Anchor Preset",
-                    undo: () => { var rr = capGo.RectTransform; if (rr != null) { rr.AnchorMin = oldMin; rr.AnchorMax = oldMax; rr.SizeDelta = oldSize; rr.AnchoredPosition = oldPos; } },
-                    redo: () => { var rr = capGo.RectTransform; if (rr != null) { rr.AnchorMin = newMin; rr.AnchorMax = newMax; rr.SizeDelta = newSize; rr.AnchoredPosition = newPos; } });
+                    undo: () => { RectTransform? rr = capGo.RectTransform; if (rr != null) { rr.AnchorMin = oldMin; rr.AnchorMax = oldMax; rr.SizeDelta = oldSize; rr.AnchoredPosition = oldPos; } },
+                    redo: () => { RectTransform? rr = capGo.RectTransform; if (rr != null) { rr.AnchorMin = newMin; rr.AnchorMax = newMax; rr.SizeDelta = newSize; rr.AnchoredPosition = newPos; } });
             })
             .Enter())
         {
@@ -738,7 +739,7 @@ public static class GameObjectInspector
 
     private static void ApplyPosSize(GameObject g, (Float2 pos, Float2 size) v)
     {
-        var r = g.RectTransform;
+        RectTransform? r = g.RectTransform;
         if (r == null) return;
         r.AnchoredPosition = v.pos;
         r.SizeDelta = v.size;
@@ -836,7 +837,7 @@ public static class GameObjectInspector
             Origami.Float2Field(paper, "gi_rt_pivot_vf", rt.Pivot, v =>
             {
                 Undo.RecordGameObjectChange(go, "Change Pivot", rt.Pivot, v,
-                    (g, x) => { var r = g.RectTransform; if (r != null) r.Pivot = x; }, coalesce: true);
+                    (g, x) => { RectTransform? r = g.RectTransform; if (r != null) r.Pivot = x; }, coalesce: true);
                 rt.Pivot = v;
             }).Show();
         }, labelWidth: EditorTheme.LabelWidth / 2f);
@@ -853,7 +854,7 @@ public static class GameObjectInspector
 
         for (int i = 0; i < components.Count; i++)
         {
-            var comp = components[i];
+            Component comp = components[i];
             if (comp.HideFlags.HasFlag(HideFlags.Hide)) continue;
             if (comp is RectTransform) continue; // drawn at the top in place of the Transform
 
@@ -870,7 +871,7 @@ public static class GameObjectInspector
                     using (paper.Box($"{compId}_en_wrap").Width(UnitValue.Auto).Height(UnitValue.Auto)
                         .Margin(0, 0, UnitValue.StretchOne, UnitValue.StretchOne).Enter())
                         Origami.Checkbox(paper, $"{compId}_en", comp.Enabled,
-                            v => { var old = comp.Enabled; var cId = comp.Identifier; Undo.RegisterAction("Toggle Component", () => { var c = Undo.FindComponent(cId); if (c != null) { c.Enabled = old; c.OnValidate(); } }, () => { var c = Undo.FindComponent(cId); if (c != null) { c.Enabled = v; c.OnValidate(); } }); comp.Enabled = v; comp.OnValidate(); })
+                            v => { var old = comp.Enabled; Guid cId = comp.Identifier; Undo.RegisterAction("Toggle Component", () => { Component? c = Undo.FindComponent(cId); if (c != null) { c.Enabled = old; c.OnValidate(); } }, () => { Component? c = Undo.FindComponent(cId); if (c != null) { c.Enabled = v; c.OnValidate(); } }); comp.Enabled = v; comp.OnValidate(); })
                             .NoLabel().Show();
                     EditorGUI.HeaderIconButton(paper, $"{compId}_gear", EditorIcons.EllipsisVertical, () =>
                         Origami.ContextMenu((float)paper.PointerPos.X, (float)paper.PointerPos.Y, b =>
@@ -887,9 +888,9 @@ public static class GameObjectInspector
 
                     var overridden = new HashSet<string>();
                     // Overrides are stored on the instance root with root-relative paths.
-                    var prefabRoot = PrefabUtility.GetPrefabInstanceRoot(go);
-                    var overrideHost = prefabRoot.IsValid() ? prefabRoot : go;
-                    foreach (var ov in overrideHost.PrefabOverrides)
+                    GameObject? prefabRoot = PrefabUtility.GetPrefabInstanceRoot(go);
+                    GameObject overrideHost = prefabRoot.IsValid() ? prefabRoot : go;
+                    foreach (PropertyOverride ov in overrideHost.PrefabOverrides)
                     {
                         if (ov.Path.StartsWith(pathPrefix))
                             overridden.Add(ov.Path[pathPrefix.Length..].Split('.')[0]);
@@ -902,7 +903,7 @@ public static class GameObjectInspector
                 // Contain it per component (finally keeps OverriddenFields from leaking to the next).
                 try
                 {
-                    var customEditor = EditorRegistries.GetCustomEditor(comp.GetType());
+                    CustomEditor? customEditor = EditorRegistries.GetCustomEditor(comp.GetType());
                     if (customEditor != null)
                     {
                         customEditor.OnGUI(paper, compId, comp);
@@ -936,7 +937,7 @@ public static class GameObjectInspector
         GameObject go = comp.GameObject;
         if (go.IsNotValid()) return;
 
-        var serialized = Echo.Serializer.Serialize(comp.GetType(), comp);
+        EchoObject serialized = Echo.Serializer.Serialize(comp.GetType(), comp);
         Type compType = comp.GetType();
         Guid compId = comp.Identifier;
         int compIndex = comp.GetSiblingIndex() ?? 0;
@@ -945,7 +946,7 @@ public static class GameObjectInspector
         Undo.RegisterAction("Remove Component",
             undo: () =>
             {
-                var g = Undo.FindGO(goId);
+                GameObject? g = Undo.FindGO(goId);
                 if (g == null) return;
                 if (Echo.Serializer.Deserialize(serialized, compType) is not Component restored) return;
 
@@ -955,10 +956,10 @@ public static class GameObjectInspector
             },
             redo: () =>
             {
-                var g = Undo.FindGO(goId);
+                GameObject? g = Undo.FindGO(goId);
                 if (g.IsNotValid()) return;
 
-                var c = g!.GetComponentByIdentifier(compId);
+                Component? c = g!.GetComponentByIdentifier(compId);
                 if (c != null) g.RemoveComponent(c);
             });
 
@@ -1023,15 +1024,15 @@ public static class GameObjectInspector
 
         builder.Separator();
 
-        var moveCompId = comp.Identifier;
+        Guid moveCompId = comp.Identifier;
         builder.Item(Loc.Get("inspector.move_up"), () =>
         {
             if (index > 0)
             {
                 var oldIdx = index; var newIdx = index - 1;
                 Undo.RegisterAction("Move Component Up",
-                    () => { var c = Undo.FindComponent(moveCompId); if (c.IsValid()) c.SetSiblingIndex(oldIdx); },
-                    () => { var c = Undo.FindComponent(moveCompId); if (c.IsValid()) c.SetSiblingIndex(newIdx); });
+                    () => { Component? c = Undo.FindComponent(moveCompId); if (c.IsValid()) c.SetSiblingIndex(oldIdx); },
+                    () => { Component? c = Undo.FindComponent(moveCompId); if (c.IsValid()) c.SetSiblingIndex(newIdx); });
                 comp.SetSiblingIndex(newIdx);
             }
         }, icon: EditorIcons.ArrowUp, enabled: index > 0);
@@ -1040,8 +1041,8 @@ public static class GameObjectInspector
         {
             var oldIdx = index; var newIdx = index + 1;
             Undo.RegisterAction("Move Component Down",
-                () => { var c = Undo.FindComponent(moveCompId); if (c.IsValid()) c.SetSiblingIndex(oldIdx); },
-                () => { var c = Undo.FindComponent(moveCompId); if (c.IsValid()) c.SetSiblingIndex(newIdx); });
+                () => { Component? c = Undo.FindComponent(moveCompId); if (c.IsValid()) c.SetSiblingIndex(oldIdx); },
+                () => { Component? c = Undo.FindComponent(moveCompId); if (c.IsValid()) c.SetSiblingIndex(newIdx); });
             comp.SetSiblingIndex(newIdx);
         }, icon: EditorIcons.ArrowDown);
 
@@ -1059,11 +1060,11 @@ public static class GameObjectInspector
 
     public static void DrawButtonMethods(Paper paper, string id, Component comp)
     {
-        var methods = comp.GetType().GetMethods(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
+        MethodInfo[] methods = comp.GetType().GetMethods(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
         int btnIdx = 0;
-        foreach (var method in methods)
+        foreach (MethodInfo method in methods)
         {
-            var btnAttr = method.GetCustomAttribute<ButtonAttribute>();
+            ButtonAttribute? btnAttr = method.GetCustomAttribute<ButtonAttribute>();
             if (btnAttr == null) continue;
             if (method.GetParameters().Length > 0) continue; // Only parameterless methods
 
@@ -1080,7 +1081,7 @@ public static class GameObjectInspector
     {
         using (paper.Row("gi_add_comp_row").Height(28).PaddingLeft(20).PaddingRight(20).Enter())
         {
-            var trigger = paper.Box("gi_add_comp")
+            ElementBuilder trigger = paper.Box("gi_add_comp")
                 .Height(28).Rounded(EditorTheme.Roundness)
                 .BackgroundColor(EditorTheme.Ink100)
                 .Hovered.BackgroundColor(EditorTheme.Ink200).End()
@@ -1093,7 +1094,7 @@ public static class GameObjectInspector
 
             using (trigger.Enter())
             {
-                var trigHandle = paper.CurrentParent;
+                ElementHandle trigHandle = paper.CurrentParent;
 
                 paper.Box("gi_add_comp_lbl")
                     .Width(UnitValue.Stretch()).Height(28).IsNotInteractable()
@@ -1121,12 +1122,12 @@ public static class GameObjectInspector
 
     private static void DrawPrefabHeader(Paper paper, Prowl.Scribe.FontFile font, GameObject go)
     {
-        var root = PrefabUtility.GetPrefabInstanceRoot(go);
+        GameObject? root = PrefabUtility.GetPrefabInstanceRoot(go);
         bool isRoot = PrefabUtility.IsInstanceRoot(go);
         bool isNested = PrefabUtility.IsNestedPrefabRoot(go);
         bool hasOverrides = PrefabUtility.HasAnyOverrides(go);
 
-        var entry = EditorAssetBackend.Instance?.GetEntry(go.PrefabAssetId);
+        AssetEntry? entry = EditorAssetBackend.Instance?.GetEntry(go.PrefabAssetId);
         bool isMissing = entry == null;
         bool canApply = !isMissing && PrefabUtility.IsEditablePrefab(go.PrefabAssetId);
         string prefabName = isMissing ? Loc.Get("inspector.missing") : System.IO.Path.GetFileNameWithoutExtension(entry!.Path);
@@ -1135,9 +1136,9 @@ public static class GameObjectInspector
             : isNested ? Loc.Get("inspector.nested_prefab", new { name = prefabName })
             : Loc.Get("inspector.prefab", new { name = prefabName });
 
-        var barColor = isMissing ? Color.FromArgb(40, EditorTheme.Red300) : Color.FromArgb(40, EditorTheme.Purple400);
-        var borderColor = isMissing ? EditorTheme.Red300 : EditorTheme.Purple300;
-        var textColor = isMissing ? EditorTheme.Red300 : EditorTheme.Purple400;
+        Color barColor = isMissing ? Color.FromArgb(40, EditorTheme.Red300) : Color.FromArgb(40, EditorTheme.Purple400);
+        Color borderColor = isMissing ? EditorTheme.Red300 : EditorTheme.Purple300;
+        Color textColor = isMissing ? EditorTheme.Red300 : EditorTheme.Purple400;
 
         // Entire prefab section in a purple-tinted container
         using (paper.Column("gi_prefab_section")
@@ -1212,7 +1213,7 @@ public static class GameObjectInspector
     {
         int count = PrefabUtility.CountOverrides(go);
 
-        var trigger = paper.Box("gi_prefab_ov_btn")
+        ElementBuilder trigger = paper.Box("gi_prefab_ov_btn")
             .Width(110).Height(24).Rounded(EditorTheme.Roundness)
             .BackgroundColor(EditorTheme.Ink100)
             .Hovered.BackgroundColor(EditorTheme.Ink200).End()
@@ -1220,7 +1221,7 @@ public static class GameObjectInspector
 
         using (trigger.Enter())
         {
-            var trigHandle = paper.CurrentParent;
+            ElementHandle trigHandle = paper.CurrentParent;
 
             paper.Box("gi_prefab_ov_btn_lbl")
                 .Width(UnitValue.Stretch()).Height(24).IsNotInteractable()
@@ -1277,12 +1278,12 @@ public static class GameObjectInspector
     private static void DrawOverridesContent(Paper paper, Prowl.Scribe.FontFile font, GameObject go)
     {
         // Overrides for the whole prefab instance are stored on its root.
-        var prefabRoot = PrefabUtility.GetPrefabInstanceRoot(go);
+        GameObject? prefabRoot = PrefabUtility.GetPrefabInstanceRoot(go);
         go = prefabRoot.IsValid() ? prefabRoot : go;
         bool canApply = PrefabUtility.IsEditablePrefab(go.PrefabAssetId);
 
-        var described = PrefabUtility.DescribeOverrides(go);
-        var additions = PrefabUtility.DescribeAdditions(go);
+        List<PrefabUtility.OverrideDescription> described = PrefabUtility.DescribeOverrides(go);
+        List<PrefabUtility.AdditionDescription> additions = PrefabUtility.DescribeAdditions(go);
         if (described.Count == 0 && additions.Count == 0) return;
 
         using (paper.Column("gi_prefab_ov_list")
@@ -1290,15 +1291,15 @@ public static class GameObjectInspector
             .Enter())
         {
             int key = 0;
-            foreach (var group in described.GroupBy(d => d.Group))
+            foreach (IGrouping<string, PrefabUtility.OverrideDescription> group in described.GroupBy(d => d.Group))
             {
                 DrawOverrideGroupHeader(paper, font, go, group.Key, group.First(), canApply, key++);
 
-                foreach (var entry in group)
+                foreach (PrefabUtility.OverrideDescription? entry in group)
                     DrawOverrideRow(paper, font, go, entry, canApply, key++);
             }
 
-            foreach (var addition in additions)
+            foreach (PrefabUtility.AdditionDescription addition in additions)
                 DrawAdditionRow(paper, font, go, addition, canApply, key++);
         }
     }
@@ -1432,7 +1433,7 @@ public static class GameObjectInspector
             .FontSize(EditorTheme.FontSize - 2).Alignment(TextAlignment.MiddleCenter)
             .OnClick((rootId, act), (cap, _) =>
             {
-                var live = Undo.FindGO(cap.rootId);
+                GameObject? live = Undo.FindGO(cap.rootId);
                 if (live.IsValid()) cap.act(live!);
             });
     }
@@ -1489,9 +1490,9 @@ public static class GameObjectInspector
     // canvas root rect when the element is a direct child of the canvas.
     private static Rect GetParentRect(RectTransform rt)
     {
-        var canvas = rt.GameObject.GetComponentInParent<GameCanvas>(includeSelf: true);
-        var parentGo = rt.GameObject.Parent;
-        var parentRt = parentGo.IsValid() ? parentGo.RectTransform : null;
+        GameCanvas? canvas = rt.GameObject.GetComponentInParent<GameCanvas>(includeSelf: true);
+        GameObject? parentGo = rt.GameObject.Parent;
+        RectTransform? parentRt = parentGo.IsValid() ? parentGo.RectTransform : null;
         if (parentRt != null && parentGo != (canvas.IsValid() ? canvas.GameObject : null) &&
             parentRt.ComputedRect.Size.X > 0 && parentRt.ComputedRect.Size.Y > 0)
             return parentRt.ComputedRect;
@@ -1554,16 +1555,16 @@ public static class GameObjectInspector
     /// </summary>
     public static Component? AddComponentWithUndo(GameObject go, Type type)
     {
-        var addedComp = go.AddComponent(type);
+        Component? addedComp = go.AddComponent(type);
         if (addedComp != null)
         {
-            var compId = addedComp.Identifier;
-            var goId = go.Identifier;
-            var serialized = Echo.Serializer.Serialize(addedComp.GetType(), addedComp);
-            var compType = addedComp.GetType();
+            Guid compId = addedComp.Identifier;
+            Guid goId = go.Identifier;
+            EchoObject serialized = Echo.Serializer.Serialize(addedComp.GetType(), addedComp);
+            Type compType = addedComp.GetType();
             Undo.RegisterAction("Add Component",
-                undo: () => { var g = Undo.FindGO(goId); if (g == null) return; var c = g.GetComponentByIdentifier(compId); if (c != null) g.RemoveComponent(c); },
-                redo: () => { var g = Undo.FindGO(goId); if (g == null) return; var c = Echo.Serializer.Deserialize(serialized, compType) as Component; if (c != null) { c.Identifier = compId; g.AddComponent(c); } });
+                undo: () => { GameObject? g = Undo.FindGO(goId); if (g == null) return; Component? c = g.GetComponentByIdentifier(compId); if (c != null) g.RemoveComponent(c); },
+                redo: () => { GameObject? g = Undo.FindGO(goId); if (g == null) return; var c = Echo.Serializer.Deserialize(serialized, compType) as Component; if (c != null) { c.Identifier = compId; g.AddComponent(c); } });
         }
         return addedComp;
     }
@@ -1572,13 +1573,13 @@ public static class GameObjectInspector
     {
         var result = new List<MenuTreeEntry>();
 
-        foreach (var type in EditorUtils.GetAllTypes())
+        foreach (Type type in EditorUtils.GetAllTypes())
         {
             if (!typeof(Component).IsAssignableFrom(type) || type.IsAbstract) continue;
             if (type == typeof(Component)) continue;
             if (type.Name == "MissingComponent") continue;
 
-            var menuAttr = type.GetCustomAttribute<AddComponentMenuAttribute>();
+            AddComponentMenuAttribute? menuAttr = type.GetCustomAttribute<AddComponentMenuAttribute>();
             string path = menuAttr?.Path ?? type.Name;
             string icon = menuAttr?.Icon ?? "";
 

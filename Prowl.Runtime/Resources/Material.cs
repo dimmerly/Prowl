@@ -366,7 +366,7 @@ public sealed class Material : Asset, ISerializationCallbackReceiver
     public void SyncShaderDefaults()
     {
         EnsureLoaded();
-        var shader = Shader;
+        Shader? shader = Shader;
         if (shader == null) return;
 
         foreach (ShaderProperty prop in shader.Properties)

@@ -30,24 +30,24 @@ public class TypeCollisionSceneLoadTests : RuntimeTestBase
     [Fact]
     public void Scene_WithComponentTypeResolvingToNonComponent_StillLoadsEveryObject()
     {
-        var scene = CreateScene();
+        Scene scene = CreateScene();
 
-        var withGoodComp = CreateGameObject("Healthy");
+        GameObject withGoodComp = CreateGameObject("Healthy");
         withGoodComp.AddComponent<CollisionProbeComponent>().Marker = 7;
         scene.Add(withGoodComp);
 
-        var willGetBadComp = CreateGameObject("HasBadComponent");
+        GameObject willGetBadComp = CreateGameObject("HasBadComponent");
         scene.Add(willGetBadComp);
 
-        var alsoHealthy = CreateGameObject("AlsoHealthy");
+        GameObject alsoHealthy = CreateGameObject("AlsoHealthy");
         scene.Add(alsoHealthy);
 
-        var echo = Serializer.Serialize(scene);
+        EchoObject echo = Serializer.Serialize(scene);
 
         // Give one object a component whose $type resolves to a non-Component (Jitter2.World).
         InjectBadComponent(echo, "HasBadComponent", JitterWorldName);
 
-        var clone = Serializer.Deserialize<Scene>(echo);
+        Scene? clone = Serializer.Deserialize<Scene>(echo);
 
         Assert.NotNull(clone);
         var objs = clone.AllObjects.ToList();
@@ -57,11 +57,11 @@ public class TypeCollisionSceneLoadTests : RuntimeTestBase
         Assert.Contains(objs, g => g.Name == "AlsoHealthy");
 
         // The healthy component still deserializes with its data intact.
-        var healthy = objs.First(g => g.Name == "Healthy");
+        GameObject healthy = objs.First(g => g.Name == "Healthy");
         Assert.Equal(7, healthy.GetComponent<CollisionProbeComponent>()!.Marker);
 
         // The bad component is kept as a MissingComponent so its data survives a re-save.
-        var bad = objs.First(g => g.Name == "HasBadComponent");
+        GameObject bad = objs.First(g => g.Name == "HasBadComponent");
         Assert.Contains(bad.GetComponents<Component>(), c => c is MissingComponent);
     }
 
@@ -69,7 +69,7 @@ public class TypeCollisionSceneLoadTests : RuntimeTestBase
     {
         foreach (EchoObject go in sceneEcho["serializeObj"]["array"].List)
         {
-            if (!go.TryGet("Name", out var n) || n!.StringValue != goName)
+            if (!go.TryGet("Name", out EchoObject? n) || n!.StringValue != goName)
                 continue;
 
             var badComp = EchoObject.NewCompound();

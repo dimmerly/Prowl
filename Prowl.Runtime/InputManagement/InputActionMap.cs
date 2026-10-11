@@ -156,7 +156,7 @@ public class InputActionMap : Asset, ISerializable
         compound.Add("Name", new EchoObject(Name));
 
         var actionsList = EchoObject.NewList();
-        foreach (var action in _actions.Values)
+        foreach (InputAction action in _actions.Values)
         {
             var actionTag = EchoObject.NewCompound();
             actionTag["name"] = new EchoObject(action.Name);
@@ -165,13 +165,13 @@ public class InputActionMap : Asset, ISerializable
 
             // Serialize bindings
             var bindingsList = EchoObject.NewList();
-            foreach (var binding in action.Bindings)
+            foreach (InputBinding binding in action.Bindings)
                 bindingsList.ListAdd(SerializeBinding(binding));
             actionTag["bindings"] = bindingsList;
 
             // Serialize composites
             var compositesList = EchoObject.NewList();
-            foreach (var composite in action.CompositeBindings)
+            foreach (InputCompositeBinding composite in action.CompositeBindings)
                 compositesList.ListAdd(SerializeComposite(composite));
             actionTag["composites"] = compositesList;
 
@@ -182,32 +182,32 @@ public class InputActionMap : Asset, ISerializable
 
     public void Deserialize(EchoObject value, SerializationContext ctx)
     {
-        if (value.TryGet("Name", out var nameTag))
+        if (value.TryGet("Name", out EchoObject? nameTag))
             Name = nameTag.StringValue;
 
         _actions.Clear();
 
-        if (value.TryGet("actions", out var actionsList) && actionsList.TagType == EchoType.List)
+        if (value.TryGet("actions", out EchoObject? actionsList) && actionsList.TagType == EchoType.List)
         {
-            foreach (var actionTag in actionsList.List)
+            foreach (EchoObject actionTag in actionsList.List)
             {
                 string name = actionTag.Get("name").StringValue;
                 var type = (InputActionType)actionTag.Get("type").IntValue;
-                string valueTypeStr = actionTag.TryGet("valueType", out var vt) ? vt.StringValue : "float";
+                string valueTypeStr = actionTag.TryGet("valueType", out EchoObject? vt) ? vt.StringValue : "float";
 
                 var action = new InputAction(name, type) { ActionMap = this };
                 action.ExpectedValueType = valueTypeStr == "Float2" ? typeof(Float2) : typeof(float);
 
                 // Deserialize bindings
-                if (actionTag.TryGet("bindings", out var bindingsList) && bindingsList.TagType == EchoType.List)
-                    foreach (var bt in bindingsList.List)
+                if (actionTag.TryGet("bindings", out EchoObject? bindingsList) && bindingsList.TagType == EchoType.List)
+                    foreach (EchoObject bt in bindingsList.List)
                         action.AddBinding(DeserializeBinding(bt));
 
                 // Deserialize composites
-                if (actionTag.TryGet("composites", out var compositesList) && compositesList.TagType == EchoType.List)
-                    foreach (var ct in compositesList.List)
+                if (actionTag.TryGet("composites", out EchoObject? compositesList) && compositesList.TagType == EchoType.List)
+                    foreach (EchoObject ct in compositesList.List)
                     {
-                        var composite = DeserializeComposite(ct);
+                        InputCompositeBinding? composite = DeserializeComposite(ct);
                         if (composite != null)
                             action.AddBinding(composite);
                     }
@@ -243,7 +243,7 @@ public class InputActionMap : Asset, ISerializable
         if (binding.Processors.Count > 0)
         {
             var procList = EchoObject.NewList();
-            foreach (var proc in binding.Processors)
+            foreach (IInputProcessor proc in binding.Processors)
                 procList.ListAdd(SerializeProcessor(proc));
             tag["processors"] = procList;
         }
@@ -259,26 +259,26 @@ public class InputActionMap : Asset, ISerializable
             Interaction = (InputInteractionType)tag.Get("interaction").IntValue,
         };
 
-        if (tag.TryGet("key", out var k)) binding.Key = (KeyCode)k.IntValue;
-        if (tag.TryGet("mouseButton", out var mb)) binding.MouseButton = (MouseButton)mb.IntValue;
-        if (tag.TryGet("gamepadButton", out var gb)) binding.GamepadButton = (GamepadButton)gb.IntValue;
-        if (tag.TryGet("axisIndex", out var ai)) binding.AxisIndex = ai.IntValue;
-        if (tag.TryGet("deviceIndex", out var di)) binding.RequiredDeviceIndex = di.IntValue;
-        if (tag.TryGet("xrHand", out var xh)) binding.XRHand = (XRHand)xh.IntValue;
-        if (tag.TryGet("xrButton", out var xb)) binding.XRButton = (XRButton)xb.IntValue;
-        if (tag.TryGet("xrAxis", out var xa)) binding.XRAxis = (XRAxis)xa.IntValue;
-        if (tag.TryGet("xrTouch", out var xt)) binding.XRTouch = (XRTouch)xt.IntValue;
+        if (tag.TryGet("key", out EchoObject? k)) binding.Key = (KeyCode)k.IntValue;
+        if (tag.TryGet("mouseButton", out EchoObject? mb)) binding.MouseButton = (MouseButton)mb.IntValue;
+        if (tag.TryGet("gamepadButton", out EchoObject? gb)) binding.GamepadButton = (GamepadButton)gb.IntValue;
+        if (tag.TryGet("axisIndex", out EchoObject? ai)) binding.AxisIndex = ai.IntValue;
+        if (tag.TryGet("deviceIndex", out EchoObject? di)) binding.RequiredDeviceIndex = di.IntValue;
+        if (tag.TryGet("xrHand", out EchoObject? xh)) binding.XRHand = (XRHand)xh.IntValue;
+        if (tag.TryGet("xrButton", out EchoObject? xb)) binding.XRButton = (XRButton)xb.IntValue;
+        if (tag.TryGet("xrAxis", out EchoObject? xa)) binding.XRAxis = (XRAxis)xa.IntValue;
+        if (tag.TryGet("xrTouch", out EchoObject? xt)) binding.XRTouch = (XRTouch)xt.IntValue;
 
-        if (tag.TryGet("holdDuration", out var hd)) binding.HoldDuration = hd.FloatValue;
-        if (tag.TryGet("tapCount", out var tc)) binding.TapCount = tc.IntValue;
-        if (tag.TryGet("tapWindow", out var tw)) binding.TapWindow = tw.FloatValue;
-        if (tag.TryGet("maxTapDuration", out var mtd)) binding.MaxTapDuration = mtd.FloatValue;
+        if (tag.TryGet("holdDuration", out EchoObject? hd)) binding.HoldDuration = hd.FloatValue;
+        if (tag.TryGet("tapCount", out EchoObject? tc)) binding.TapCount = tc.IntValue;
+        if (tag.TryGet("tapWindow", out EchoObject? tw)) binding.TapWindow = tw.FloatValue;
+        if (tag.TryGet("maxTapDuration", out EchoObject? mtd)) binding.MaxTapDuration = mtd.FloatValue;
 
         // Processors
-        if (tag.TryGet("processors", out var procList) && procList.TagType == EchoType.List)
-            foreach (var pt in procList.List)
+        if (tag.TryGet("processors", out EchoObject? procList) && procList.TagType == EchoType.List)
+            foreach (EchoObject pt in procList.List)
             {
-                var proc = DeserializeProcessor(pt);
+                IInputProcessor? proc = DeserializeProcessor(pt);
                 if (proc != null) binding.Processors.Add(proc);
             }
 
@@ -301,7 +301,7 @@ public class InputActionMap : Asset, ISerializable
 
         // Serialize parts
         var partsTag = EchoObject.NewCompound();
-        foreach (var (partName, partBinding) in composite.Parts)
+        foreach ((string? partName, InputBinding? partBinding) in composite.Parts)
             partsTag[partName] = SerializeBinding(partBinding);
         tag["parts"] = partsTag;
 
@@ -309,7 +309,7 @@ public class InputActionMap : Asset, ISerializable
         if (composite.Processors.Count > 0)
         {
             var procList = EchoObject.NewList();
-            foreach (var proc in composite.Processors)
+            foreach (IInputProcessor proc in composite.Processors)
                 procList.ListAdd(SerializeProcessor(proc));
             tag["processors"] = procList;
         }
@@ -323,8 +323,8 @@ public class InputActionMap : Asset, ISerializable
 
         // Deserialize parts first
         var parts = new Dictionary<string, InputBinding>();
-        if (tag.TryGet("parts", out var partsTag) && partsTag.TagType == EchoType.Compound)
-            foreach (var kvp in partsTag.Tags)
+        if (tag.TryGet("parts", out EchoObject? partsTag) && partsTag.TagType == EchoType.Compound)
+            foreach (KeyValuePair<string, EchoObject> kvp in partsTag.Tags)
                 parts[kvp.Key] = DeserializeBinding(kvp.Value);
 
         var dummy = new InputBinding { BindingType = InputBindingType.Key, Key = KeyCode.Unknown };
@@ -336,7 +336,7 @@ public class InputActionMap : Asset, ISerializable
                 parts.GetValueOrDefault("down", dummy),
                 parts.GetValueOrDefault("left", dummy),
                 parts.GetValueOrDefault("right", dummy),
-                tag.TryGet("normalize", out var n) && n.BoolValue),
+                tag.TryGet("normalize", out EchoObject? n) && n.BoolValue),
             "DualAxis" => new DualAxisCompositeBinding(
                 parts.GetValueOrDefault("x", dummy),
                 parts.GetValueOrDefault("y", dummy)),
@@ -347,10 +347,10 @@ public class InputActionMap : Asset, ISerializable
         };
 
         // Composite processors
-        if (composite != null && tag.TryGet("processors", out var cprocList) && cprocList.TagType == EchoType.List)
-            foreach (var pt in cprocList.List)
+        if (composite != null && tag.TryGet("processors", out EchoObject? cprocList) && cprocList.TagType == EchoType.List)
+            foreach (EchoObject pt in cprocList.List)
             {
-                var proc = DeserializeProcessor(pt);
+                IInputProcessor? proc = DeserializeProcessor(pt);
                 if (proc != null) composite.Processors.Add(proc);
             }
 
@@ -400,12 +400,12 @@ public class InputActionMap : Asset, ISerializable
         {
             "Normalize" => new NormalizeProcessor(),
             "Invert" => new InvertProcessor(),
-            "Scale" => new ScaleProcessor(tag.TryGet("scale", out var s) ? s.FloatValue : 1f),
+            "Scale" => new ScaleProcessor(tag.TryGet("scale", out EchoObject? s) ? s.FloatValue : 1f),
             "Clamp" => new ClampProcessor(
-                tag.TryGet("min", out var mn) ? mn.FloatValue : 0f,
-                tag.TryGet("max", out var mx) ? mx.FloatValue : 1f),
-            "Deadzone" => new DeadzoneProcessor(tag.TryGet("threshold", out var t) ? t.FloatValue : 0.2f),
-            "Exponential" => new ExponentialProcessor(tag.TryGet("exponent", out var e) ? e.FloatValue : 2f),
+                tag.TryGet("min", out EchoObject? mn) ? mn.FloatValue : 0f,
+                tag.TryGet("max", out EchoObject? mx) ? mx.FloatValue : 1f),
+            "Deadzone" => new DeadzoneProcessor(tag.TryGet("threshold", out EchoObject? t) ? t.FloatValue : 0.2f),
+            "Exponential" => new ExponentialProcessor(tag.TryGet("exponent", out EchoObject? e) ? e.FloatValue : 2f),
             _ => null
         };
     }

@@ -5,6 +5,7 @@ using System.Runtime.CompilerServices;
 using System.Text;
 using System.Xml.Linq;
 
+using Prowl.Echo;
 using Prowl.Editor.Build;
 using Prowl.Editor.Projects.Scripting;
 using Prowl.Editor.Projects.Settings;
@@ -99,7 +100,7 @@ public class BuildSystemTests : IDisposable
             Node(BuildStage.Validate),
         ]);
 
-        var order = graph.TopologicalOrder();
+        IReadOnlyList<BuildStage>? order = graph.TopologicalOrder();
 
         Assert.NotNull(order);
         Assert.Equal(
@@ -128,7 +129,7 @@ public class BuildSystemTests : IDisposable
     [Fact]
     public void Cycle_ThrowsAtConstruction()
     {
-        var ex = Assert.Throws<ArgumentException>(() => new StageGraph(
+        ArgumentException ex = Assert.Throws<ArgumentException>(() => new StageGraph(
         [
             Node(BuildStage.Validate, BuildStage.PackAssets),
             Node(BuildStage.PackAssets, BuildStage.Validate),
@@ -140,7 +141,7 @@ public class BuildSystemTests : IDisposable
     [Fact]
     public void DependencyOutsideGraph_ThrowsAtConstruction()
     {
-        var ex = Assert.Throws<ArgumentException>(() => new StageGraph(
+        ArgumentException ex = Assert.Throws<ArgumentException>(() => new StageGraph(
         [
             Node(BuildStage.PackAssets, BuildStage.CompilePlayer),
         ]));
@@ -188,8 +189,8 @@ public class BuildSystemTests : IDisposable
             Node(BuildStage.PackAssets, BuildStage.CompileShaders, BuildStage.CopyPlugins),
         ];
 
-        var forward = new StageGraph(nodes).TopologicalOrder();
-        var reversed = new StageGraph(nodes.Reverse()).TopologicalOrder();
+        IReadOnlyList<BuildStage>? forward = new StageGraph(nodes).TopologicalOrder();
+        IReadOnlyList<BuildStage>? reversed = new StageGraph(nodes.Reverse()).TopologicalOrder();
 
         Assert.Equal(forward, reversed);
     }
@@ -214,8 +215,8 @@ public class BuildSystemTests : IDisposable
             BuildStage stage, IBuildContext context, [EnumeratorCancellation] CancellationToken ct)
         {
             await Task.Yield();
-            if (!_plans.TryGetValue(stage, out var plan)) yield break;
-            foreach (var operation in plan(context))
+            if (!_plans.TryGetValue(stage, out Func<IBuildContext, IEnumerable<BuildOperation>>? plan)) yield break;
+            foreach (BuildOperation operation in plan(context))
                 yield return operation;
         }
     }
@@ -262,7 +263,7 @@ public class BuildSystemTests : IDisposable
         });
 
         var context = new BuildContext(Request());
-        var outcome = await new BuildExecutor().RunAsync(pipeline, context);
+        BuildOutcome outcome = await new BuildExecutor().RunAsync(pipeline, context);
 
         Assert.True(outcome.Succeeded, string.Join("; ", outcome.Issues));
         Assert.Equal(["validate", "pack:from-validate"], order);
@@ -293,7 +294,7 @@ public class BuildSystemTests : IDisposable
         });
 
         var context = new BuildContext(Request());
-        var outcome = await new BuildExecutor().RunAsync(pipeline, context);
+        BuildOutcome outcome = await new BuildExecutor().RunAsync(pipeline, context);
 
         Assert.False(outcome.Succeeded);
         Assert.False(laterRan);
@@ -315,7 +316,7 @@ public class BuildSystemTests : IDisposable
         });
 
         var context = new BuildContext(Request());
-        var outcome = await new BuildExecutor().RunAsync(pipeline, context);
+        BuildOutcome outcome = await new BuildExecutor().RunAsync(pipeline, context);
 
         Assert.False(outcome.Succeeded);
         Assert.Equal(10, outcome.Issues.Count(i => i.Severity == BuildSeverity.Error));
@@ -347,7 +348,7 @@ public class BuildSystemTests : IDisposable
         });
 
         var context = new BuildContext(Request());
-        var outcome = await new BuildExecutor(new ExecutionLimits { CpuBound = 4 }).RunAsync(pipeline, context);
+        BuildOutcome outcome = await new BuildExecutor(new ExecutionLimits { CpuBound = 4 }).RunAsync(pipeline, context);
 
         Assert.True(outcome.Succeeded, string.Join("; ", outcome.Issues));
         Assert.True(peak > 1, $"expected overlap, peak concurrency was {peak}");
@@ -374,7 +375,7 @@ public class BuildSystemTests : IDisposable
         });
 
         var context = new BuildContext(Request());
-        var outcome = await new BuildExecutor().RunAsync(pipeline, context);
+        BuildOutcome outcome = await new BuildExecutor().RunAsync(pipeline, context);
 
         Assert.True(outcome.Succeeded, string.Join("; ", outcome.Issues));
         Assert.Equal(2, seen.Count);
@@ -397,7 +398,7 @@ public class BuildSystemTests : IDisposable
         });
 
         var context = new BuildContext(Request());
-        var outcome = await new BuildExecutor().RunAsync(pipeline, context);
+        BuildOutcome outcome = await new BuildExecutor().RunAsync(pipeline, context);
 
         Assert.False(outcome.Succeeded);
         Assert.False(File.Exists(destination));
@@ -422,7 +423,7 @@ public class BuildSystemTests : IDisposable
         });
 
         var context = new BuildContext(Request());
-        var outcome = await new BuildExecutor().RunAsync(pipeline, context);
+        BuildOutcome outcome = await new BuildExecutor().RunAsync(pipeline, context);
 
         Assert.True(outcome.Succeeded, string.Join("; ", outcome.Issues));
         Assert.Equal("hello", File.ReadAllText(destination));
@@ -434,7 +435,7 @@ public class BuildSystemTests : IDisposable
     {
         var context = new BuildContext(Request());
 
-        var ex = Assert.Throws<InvalidOperationException>(() => context.GetOutput<List<string>>());
+        InvalidOperationException ex = Assert.Throws<InvalidOperationException>(() => context.GetOutput<List<string>>());
         Assert.Contains("List`1", ex.Message);
     }
 
@@ -520,7 +521,7 @@ public class BuildSystemTests : IDisposable
             [BuildStage.Finalize] = () => lastRan = true,
         });
 
-        var outcome = await new BuildExecutor().RunAsync(pipeline, new BuildContext(Request()));
+        BuildOutcome outcome = await new BuildExecutor().RunAsync(pipeline, new BuildContext(Request()));
 
         Assert.True(lastRan, "A collected asset error stopped the stages that follow it.");
         Assert.False(outcome.Succeeded);
@@ -545,7 +546,7 @@ public class BuildSystemTests : IDisposable
             [BuildStage.Finalize] = () => lastRan = true,
         });
 
-        var outcome = await new BuildExecutor().RunAsync(pipeline, new BuildContext(Request()));
+        BuildOutcome outcome = await new BuildExecutor().RunAsync(pipeline, new BuildContext(Request()));
 
         Assert.False(lastRan);
         Assert.False(outcome.Succeeded);
@@ -560,7 +561,7 @@ public class BuildSystemTests : IDisposable
             BuildStage stage, IBuildContext context, [EnumeratorCancellation] CancellationToken ct)
         {
             await Task.CompletedTask;
-            if (!bodies.TryGetValue(stage, out var body)) yield break;
+            if (!bodies.TryGetValue(stage, out Action? body)) yield break;
 
             yield return new BuildOperation.Custom(new Handler((_, _) =>
             {
@@ -654,7 +655,7 @@ public class BuildSystemTests : IDisposable
 
         Assert.True(await cache.ExistsAsync(key));
 
-        await using var stored = await cache.OpenAsync(key);
+        await using Stream? stored = await cache.OpenAsync(key);
         using var buffer = new MemoryStream();
         await stored!.CopyToAsync(buffer);
 
@@ -671,7 +672,7 @@ public class BuildSystemTests : IDisposable
         var pipeline = new ScriptedWrites(graph, Path.Combine(_root, "out"), 16);
         var context = new BuildContext(Request());
 
-        var outcome = await new BuildExecutor().RunAsync(pipeline, context);
+        BuildOutcome outcome = await new BuildExecutor().RunAsync(pipeline, context);
 
         Assert.True(outcome.Succeeded, string.Join("; ", outcome.Issues));
         Assert.Equal(16, Directory.GetFiles(Path.Combine(_root, "out")).Length);
@@ -706,7 +707,7 @@ public class BuildSystemTests : IDisposable
             Interlocked.Decrement(ref running);
         });
 
-        var outcome = await new BuildExecutor().RunAsync(pipeline, new BuildContext(Request()));
+        BuildOutcome outcome = await new BuildExecutor().RunAsync(pipeline, new BuildContext(Request()));
 
         Assert.True(outcome.Succeeded, string.Join("; ", outcome.Issues));
         Assert.True(peak > 1, $"independent stages did not overlap, peak was {peak}");
@@ -737,7 +738,7 @@ public class BuildSystemTests : IDisposable
             Interlocked.Decrement(ref running);
         });
 
-        var outcome = await new BuildExecutor().RunAsync(pipeline, new BuildContext(Request()));
+        BuildOutcome outcome = await new BuildExecutor().RunAsync(pipeline, new BuildContext(Request()));
 
         Assert.True(outcome.Succeeded, string.Join("; ", outcome.Issues));
         Assert.Equal(1, peak);
@@ -789,7 +790,7 @@ public class BuildSystemTests : IDisposable
     public void Lookup_IsCaseInsensitive()
     {
         var registry = TargetRegistry.CreateWithBuiltIns();
-        Assert.True(registry.TryGet("Windows-X64", out var target));
+        Assert.True(registry.TryGet("Windows-X64", out PlatformTarget? target));
         Assert.Equal("windows-x64", target!.Id);
     }
 
@@ -797,7 +798,7 @@ public class BuildSystemTests : IDisposable
     public void UnknownId_ThrowsNamingIt()
     {
         var registry = TargetRegistry.CreateWithBuiltIns();
-        var ex = Assert.Throws<KeyNotFoundException>(() => registry.Get("nintendo-something"));
+        KeyNotFoundException ex = Assert.Throws<KeyNotFoundException>(() => registry.Get("nintendo-something"));
         Assert.Contains("nintendo-something", ex.Message);
     }
 
@@ -809,7 +810,7 @@ public class BuildSystemTests : IDisposable
         var registry = TargetRegistry.CreateWithBuiltIns();
         registry.RegisterFrom(new PrivateConsoleProvider());
 
-        Assert.True(registry.TryGet("private-console", out var target));
+        Assert.True(registry.TryGet("private-console", out PlatformTarget? target));
         Assert.Equal("console", target!.Family);
         Assert.False(target.Capabilities.Has(TargetFlags.Jit));
         Assert.Equal(["vendor_swizzled"], target.Capabilities.TextureFormats);
@@ -822,7 +823,7 @@ public class BuildSystemTests : IDisposable
     {
         var registry = TargetRegistry.CreateWithBuiltIns();
 
-        var ex = Assert.Throws<ArgumentException>(() => registry.Register(BuiltInTargets.WindowsX64 with
+        ArgumentException ex = Assert.Throws<ArgumentException>(() => registry.Register(BuiltInTargets.WindowsX64 with
         {
             Id = "broken",
             RuntimeIdentifiers = [],
@@ -871,7 +872,7 @@ public class BuildSystemTests : IDisposable
     public void ATargetCanCarryMoreThanOneRuntimeIdentifier()
     {
         var registry = TargetRegistry.CreateWithBuiltIns();
-        var universal = registry.Get("macos-universal");
+        PlatformTarget universal = registry.Get("macos-universal");
 
         Assert.Equal(["osx-x64", "osx-arm64"], universal.RuntimeIdentifiers);
     }
@@ -913,7 +914,7 @@ public class BuildSystemTests : IDisposable
     [Fact]
     public void EveryDesktopTarget_HasARuntimeIdentifier()
     {
-        foreach (var target in TargetRegistry.Shared.ByFamily(BuiltInTargets.DesktopFamily))
+        foreach (PlatformTarget target in TargetRegistry.Shared.ByFamily(BuiltInTargets.DesktopFamily))
             Assert.NotEmpty(target.RuntimeIdentifiers);
     }
 
@@ -923,7 +924,7 @@ public class BuildSystemTests : IDisposable
     {
         var profile = new DesktopBuildProfile();
 
-        foreach (var platform in Enum.GetValues<Prowl.Editor.Projects.Settings.BuildTarget>())
+        foreach (BuildTarget platform in Enum.GetValues<Prowl.Editor.Projects.Settings.BuildTarget>())
         {
             profile.Platform = platform;
 
@@ -936,7 +937,7 @@ public class BuildSystemTests : IDisposable
     [Fact]
     public void ProfilesPipelineType_IsConstructible()
     {
-        var type = new DesktopBuildProfile().GetPipelineType();
+        Type type = new DesktopBuildProfile().GetPipelineType();
 
         Assert.Equal(typeof(DesktopBuildPipeline), type);
         Assert.IsType<DesktopBuildPipeline>(Activator.CreateInstance(type));
@@ -946,7 +947,7 @@ public class BuildSystemTests : IDisposable
     public void ByFamily_FiltersWithoutCaringAboutCase()
     {
         var registry = TargetRegistry.CreateWithBuiltIns();
-        var desktop = registry.ByFamily("DESKTOP");
+        IReadOnlyList<PlatformTarget> desktop = registry.ByFamily("DESKTOP");
 
         Assert.Equal(7, desktop.Count);
         Assert.All(desktop, t => Assert.Equal("desktop", t.Family));
@@ -1008,7 +1009,7 @@ public class BuildSystemTests : IDisposable
         source.DependsOn(sceneA, onlyA);
         source.DependsOn(sceneB, onlyB);
 
-        var chunks = Plan(source, [sceneA, sceneB], [], new HashSet<Guid> { sceneA, sceneB, onlyA, onlyB });
+        IReadOnlyList<AssetChunk> chunks = Plan(source, [sceneA, sceneB], [], new HashSet<Guid> { sceneA, sceneB, onlyA, onlyB });
 
         Assert.Contains(onlyA, Chunk(chunks, ChunkPlanner.SceneChunkName(sceneA)).Assets);
         Assert.Contains(onlyB, Chunk(chunks, ChunkPlanner.SceneChunkName(sceneB)).Assets);
@@ -1023,7 +1024,7 @@ public class BuildSystemTests : IDisposable
         source.DependsOn(sceneA, shared);
         source.DependsOn(sceneB, shared);
 
-        var chunks = Plan(source, [sceneA, sceneB], [], new HashSet<Guid> { sceneA, sceneB, shared });
+        IReadOnlyList<AssetChunk> chunks = Plan(source, [sceneA, sceneB], [], new HashSet<Guid> { sceneA, sceneB, shared });
 
         Assert.Contains(shared, Chunk(chunks, ChunkPlanner.SharedChunk).Assets);
         Assert.DoesNotContain(shared, Chunk(chunks, ChunkPlanner.SceneChunkName(sceneA)).Assets);
@@ -1036,10 +1037,10 @@ public class BuildSystemTests : IDisposable
         Guid scene = G(1), resource = G(30), resourceDependency = G(31);
         source.DependsOn(resource, resourceDependency);
 
-        var chunks = Plan(source, [scene], [resource],
+        IReadOnlyList<AssetChunk> chunks = Plan(source, [scene], [resource],
             new HashSet<Guid> { scene, resource, resourceDependency });
 
-        var resources = Chunk(chunks, ChunkPlanner.ResourcesChunk);
+        AssetChunk resources = Chunk(chunks, ChunkPlanner.ResourcesChunk);
         Assert.Contains(resource, resources.Assets);
         Assert.Contains(resourceDependency, resources.Assets);
     }
@@ -1053,7 +1054,7 @@ public class BuildSystemTests : IDisposable
         source.DependsOn(scene, both);
         source.DependsOn(resource, both);
 
-        var chunks = Plan(source, [scene], [resource],
+        IReadOnlyList<AssetChunk> chunks = Plan(source, [scene], [resource],
             new HashSet<Guid> { scene, resource, both });
 
         Assert.Contains(both, Chunk(chunks, ChunkPlanner.SharedChunk).Assets);
@@ -1068,7 +1069,7 @@ public class BuildSystemTests : IDisposable
         Guid scene = G(1), texture = G(40), sprite = G(41);
         source.DependsOn(scene, texture);
 
-        var chunks = Plan(source, [scene], [], new HashSet<Guid> { scene, texture, sprite },
+        IReadOnlyList<AssetChunk> chunks = Plan(source, [scene], [], new HashSet<Guid> { scene, texture, sprite },
             new Dictionary<Guid, IReadOnlyList<Guid>> { [texture] = [sprite] });
 
         Assert.Contains(sprite, Chunk(chunks, ChunkPlanner.SceneChunkName(scene)).Assets);
@@ -1083,7 +1084,7 @@ public class BuildSystemTests : IDisposable
         source.DependsOn(scene, texture);
         source.DependsOn(sprite, material);
 
-        var chunks = Plan(source, [scene], [], new HashSet<Guid> { scene, texture, sprite, material },
+        IReadOnlyList<AssetChunk> chunks = Plan(source, [scene], [], new HashSet<Guid> { scene, texture, sprite, material },
             new Dictionary<Guid, IReadOnlyList<Guid>> { [texture] = [sprite] });
 
         Assert.Contains(material, Chunk(chunks, ChunkPlanner.SceneChunkName(scene)).Assets);
@@ -1096,7 +1097,7 @@ public class BuildSystemTests : IDisposable
         var source = new Graph();
         Guid scene = G(1), orphan = G(99);
 
-        var chunks = Plan(source, [scene], [], new HashSet<Guid> { scene, orphan });
+        IReadOnlyList<AssetChunk> chunks = Plan(source, [scene], [], new HashSet<Guid> { scene, orphan });
 
         Assert.Contains(orphan, Chunk(chunks, ChunkPlanner.CommonChunk).Assets);
     }
@@ -1109,7 +1110,7 @@ public class BuildSystemTests : IDisposable
         Guid scene = G(1), editorOnly = G(70);
         source.DependsOn(scene, editorOnly);
 
-        var chunks = Plan(source, [scene], [], new HashSet<Guid> { scene });
+        IReadOnlyList<AssetChunk> chunks = Plan(source, [scene], [], new HashSet<Guid> { scene });
 
         Assert.DoesNotContain(editorOnly, chunks.SelectMany(c => c.Assets));
     }
@@ -1125,13 +1126,13 @@ public class BuildSystemTests : IDisposable
 
         var shipped = new HashSet<Guid> { sceneA, sceneB, G(11), G(12), G(13), G(21), G(22) };
 
-        var first = Plan(source, [sceneA, sceneB], [], shipped);
-        var second = Plan(source, [sceneA, sceneB], [], shipped);
+        IReadOnlyList<AssetChunk> first = Plan(source, [sceneA, sceneB], [], shipped);
+        IReadOnlyList<AssetChunk> second = Plan(source, [sceneA, sceneB], [], shipped);
 
         Assert.Equal(first.Select(c => c.Name), second.Select(c => c.Name));
         Assert.Equal(first.Select(c => c.Assets), second.Select(c => c.Assets));
 
-        foreach (var chunk in first)
+        foreach (AssetChunk chunk in first)
             Assert.Equal(chunk.Assets.OrderBy(g => g), chunk.Assets);
     }
 
@@ -1144,7 +1145,7 @@ public class BuildSystemTests : IDisposable
         source.DependsOn(sceneB, shared, G(21));
 
         var shipped = new HashSet<Guid> { sceneA, sceneB, shared, G(11), G(21), G(99) };
-        var chunks = Plan(source, [sceneA, sceneB], [], shipped);
+        IReadOnlyList<AssetChunk> chunks = Plan(source, [sceneA, sceneB], [], shipped);
 
         var placed = chunks.SelectMany(c => c.Assets).ToList();
 
@@ -1164,12 +1165,12 @@ public class BuildSystemTests : IDisposable
     [Fact]
     public async Task WriteThenOpen_RoundTrips()
     {
-        var cache = Cache();
+        LocalVariantCache cache = Cache();
         await cache.WriteAsync(Key(), Bytes("payload"));
 
         Assert.True(await cache.ExistsAsync(Key()));
 
-        await using var stream = await cache.OpenAsync(Key());
+        await using Stream? stream = await cache.OpenAsync(Key());
         Assert.NotNull(stream);
         Assert.Equal("payload", new StreamReader(stream!).ReadToEnd());
     }
@@ -1230,7 +1231,7 @@ public class BuildSystemTests : IDisposable
     [Fact]
     public async Task Miss_ReturnsNull()
     {
-        var cache = Cache();
+        LocalVariantCache cache = Cache();
         Assert.False(await cache.ExistsAsync(Key()));
         Assert.Null(await cache.OpenAsync(Key()));
     }
@@ -1242,7 +1243,7 @@ public class BuildSystemTests : IDisposable
     [InlineData("abcdef", "windows-x64", 2)]
     public async Task ChangingAnyPartOfTheKey_Misses(string hash, string target, int version)
     {
-        var cache = Cache();
+        LocalVariantCache cache = Cache();
         await cache.WriteAsync(Key(), Bytes("original"));
 
         Assert.False(await cache.ExistsAsync(Key(hash, target, version)));
@@ -1252,12 +1253,12 @@ public class BuildSystemTests : IDisposable
     [Fact]
     public async Task TwoTargets_Coexist()
     {
-        var cache = Cache();
+        LocalVariantCache cache = Cache();
         await cache.WriteAsync(Key(target: "windows-x64"), Bytes("windows"));
         await cache.WriteAsync(Key(target: "android-arm64"), Bytes("android"));
 
-        await using var windows = await cache.OpenAsync(Key(target: "windows-x64"));
-        await using var android = await cache.OpenAsync(Key(target: "android-arm64"));
+        await using Stream? windows = await cache.OpenAsync(Key(target: "windows-x64"));
+        await using Stream? android = await cache.OpenAsync(Key(target: "android-arm64"));
 
         Assert.Equal("windows", new StreamReader(windows!).ReadToEnd());
         Assert.Equal("android", new StreamReader(android!).ReadToEnd());
@@ -1267,7 +1268,7 @@ public class BuildSystemTests : IDisposable
     [Fact]
     public async Task FailedWrite_LeavesNoEntryAndNoPartial()
     {
-        var cache = Cache();
+        LocalVariantCache cache = Cache();
 
         await Assert.ThrowsAsync<IOException>(async () =>
             await cache.WriteAsync(Key(), new ThrowingStream()));
@@ -1285,10 +1286,10 @@ public class BuildSystemTests : IDisposable
     {
         var processor = new CountingProcessor("bc7");
         var resolver = new AssetVariantResolver([processor], new LocalVariantCache(Path.Combine(_root, "cache")));
-        var target = TargetPreferring("bc7");
+        PlatformTarget target = TargetPreferring("bc7");
 
-        var first = await resolver.ResolveAsync(Asset("Textures/A.png"), WriteAsset("A.png", "same pixels"), target);
-        var second = await resolver.ResolveAsync(Asset("Textures/B.png"), WriteAsset("B.png", "same pixels"), target);
+        ResolvedVariant first = await resolver.ResolveAsync(Asset("Textures/A.png"), WriteAsset("A.png", "same pixels"), target);
+        ResolvedVariant second = await resolver.ResolveAsync(Asset("Textures/B.png"), WriteAsset("B.png", "same pixels"), target);
 
         Assert.Equal(VariantOrigin.Processed, first.Origin);
         Assert.Equal(VariantOrigin.Cached, second.Origin);
@@ -1358,7 +1359,7 @@ public class BuildSystemTests : IDisposable
         var resolver = new AssetVariantResolver([], new LocalVariantCache(Path.Combine(_root, "cache")));
         string path = WriteAsset("Grass.png", "pixels");
 
-        var resolved = await resolver.ResolveAsync(Asset(), path, TargetPreferring("bc7"));
+        ResolvedVariant resolved = await resolver.ResolveAsync(Asset(), path, TargetPreferring("bc7"));
 
         Assert.Equal(VariantOrigin.Universal, resolved.Origin);
         Assert.Null(resolved.Key);
@@ -1371,10 +1372,10 @@ public class BuildSystemTests : IDisposable
         var processor = new CountingProcessor("bc7");
         var resolver = new AssetVariantResolver([processor], new LocalVariantCache(Path.Combine(_root, "cache")));
         string path = WriteAsset("Grass.png", "pixels");
-        var target = TargetPreferring("bc7");
+        PlatformTarget target = TargetPreferring("bc7");
 
-        var first = await resolver.ResolveAsync(Asset(), path, target);
-        var second = await resolver.ResolveAsync(Asset(), path, target);
+        ResolvedVariant first = await resolver.ResolveAsync(Asset(), path, target);
+        ResolvedVariant second = await resolver.ResolveAsync(Asset(), path, target);
 
         Assert.Equal(VariantOrigin.Processed, first.Origin);
         Assert.Equal(VariantOrigin.Cached, second.Origin);
@@ -1387,11 +1388,11 @@ public class BuildSystemTests : IDisposable
         var processor = new CountingProcessor("bc7");
         var resolver = new AssetVariantResolver([processor], new LocalVariantCache(Path.Combine(_root, "cache")));
         string path = WriteAsset("Grass.png", "pixels");
-        var target = TargetPreferring("bc7");
+        PlatformTarget target = TargetPreferring("bc7");
 
         await resolver.ResolveAsync(Asset(), path, target);
         File.WriteAllText(path, "different pixels");
-        var again = await resolver.ResolveAsync(Asset(), path, target);
+        ResolvedVariant again = await resolver.ResolveAsync(Asset(), path, target);
 
         Assert.Equal(VariantOrigin.Processed, again.Origin);
         Assert.Equal(2, processor.Calls);
@@ -1403,13 +1404,13 @@ public class BuildSystemTests : IDisposable
     {
         string cacheRoot = Path.Combine(_root, "cache");
         string path = WriteAsset("Grass.png", "pixels");
-        var target = TargetPreferring("bc7");
+        PlatformTarget target = TargetPreferring("bc7");
 
         var v1 = new CountingProcessor("bc7", version: 1);
         await new AssetVariantResolver([v1], new LocalVariantCache(cacheRoot)).ResolveAsync(Asset(), path, target);
 
         var v2 = new CountingProcessor("bc7", version: 2);
-        var resolved = await new AssetVariantResolver([v2], new LocalVariantCache(cacheRoot)).ResolveAsync(Asset(), path, target);
+        ResolvedVariant resolved = await new AssetVariantResolver([v2], new LocalVariantCache(cacheRoot)).ResolveAsync(Asset(), path, target);
 
         Assert.Equal(VariantOrigin.Processed, resolved.Origin);
         Assert.Equal(1, v2.Calls);
@@ -1424,10 +1425,10 @@ public class BuildSystemTests : IDisposable
         var resolver = new AssetVariantResolver([astc, bc7], new LocalVariantCache(Path.Combine(_root, "cache")));
         string path = WriteAsset("Grass.png", "pixels");
 
-        var chosen = resolver.SelectProcessor(Asset(), TargetPreferring("astc_6x6", "bc7"));
+        IAssetVariantProcessor? chosen = resolver.SelectProcessor(Asset(), TargetPreferring("astc_6x6", "bc7"));
         Assert.Same(astc, chosen);
 
-        var other = resolver.SelectProcessor(Asset(), TargetPreferring("bc7", "astc_6x6"));
+        IAssetVariantProcessor? other = resolver.SelectProcessor(Asset(), TargetPreferring("bc7", "astc_6x6"));
         Assert.Same(bc7, other);
     }
 
@@ -1438,7 +1439,7 @@ public class BuildSystemTests : IDisposable
         var resolver = new AssetVariantResolver([new CountingProcessor("bc7")], new LocalVariantCache(Path.Combine(_root, "cache")));
         string path = WriteAsset("Grass.png", "pixels");
 
-        var resolved = await resolver.ResolveAsync(Asset(), path, TargetPreferring("etc2"));
+        ResolvedVariant resolved = await resolver.ResolveAsync(Asset(), path, TargetPreferring("etc2"));
 
         Assert.Equal(VariantOrigin.Universal, resolved.Origin);
     }
@@ -1449,7 +1450,7 @@ public class BuildSystemTests : IDisposable
         var resolver = new AssetVariantResolver([new CountingProcessor("bc7")], new LocalVariantCache(Path.Combine(_root, "cache")));
         string path = WriteAsset("Level.scene", "not a texture");
 
-        var resolved = await resolver.ResolveAsync(Asset("Scenes/Level.scene"), path, TargetPreferring("bc7"));
+        ResolvedVariant resolved = await resolver.ResolveAsync(Asset("Scenes/Level.scene"), path, TargetPreferring("bc7"));
 
         Assert.Equal(VariantOrigin.Universal, resolved.Origin);
     }
@@ -1460,8 +1461,8 @@ public class BuildSystemTests : IDisposable
         var resolver = new AssetVariantResolver([new CountingProcessor("bc7")], new LocalVariantCache(Path.Combine(_root, "cache")));
         string path = WriteAsset("Grass.png", "pixels");
 
-        var resolved = await resolver.ResolveAsync(Asset(), path, TargetPreferring("bc7"));
-        await using var stream = await resolver.OpenAsync(resolved);
+        ResolvedVariant resolved = await resolver.ResolveAsync(Asset(), path, TargetPreferring("bc7"));
+        await using Stream stream = await resolver.OpenAsync(resolved);
 
         Assert.Equal("bc7:pixels", new StreamReader(stream).ReadToEnd());
     }
@@ -1490,7 +1491,7 @@ public class BuildSystemTests : IDisposable
     [Fact]
     public void Minimal_IsValidXmlWithAnSdk()
     {
-        var doc = Render(Minimal());
+        XDocument doc = Render(Minimal());
 
         Assert.Equal("Project", doc.Root!.Name.LocalName);
         Assert.Equal("Microsoft.NET.Sdk", doc.Root.Attribute("Sdk")!.Value);
@@ -1501,7 +1502,7 @@ public class BuildSystemTests : IDisposable
     [Fact]
     public void PercentAndDollarInAPath_AreEscapedForMSBuild()
     {
-        var doc = Render(Minimal() with
+        XDocument doc = Render(Minimal() with
         {
             References = [new AssemblyRef("Prowl.Runtime", @"C:\100%Done\$(Weird)\Prowl.Runtime.dll")],
         });
@@ -1516,7 +1517,7 @@ public class BuildSystemTests : IDisposable
     [Fact]
     public void SemicolonSeparatedValues_StaySeparated()
     {
-        var doc = Render(Minimal() with
+        XDocument doc = Render(Minimal() with
         {
             RuntimeIdentifiers = ["osx-x64", "osx-arm64"],
             Properties = new Dictionary<string, string> { ["DefineConstants"] = "PROWL;PROWL_MACOS" },
@@ -1530,7 +1531,7 @@ public class BuildSystemTests : IDisposable
     [Fact]
     public void UnusablePropertyName_Throws()
     {
-        var spec = Minimal() with { Properties = new Dictionary<string, string> { ["Not A Name"] = "x" } };
+        MSBuildProjectSpec spec = Minimal() with { Properties = new Dictionary<string, string> { ["Not A Name"] = "x" } };
 
         Assert.Throws<InvalidOperationException>(() => spec.ToXml());
     }
@@ -1539,8 +1540,8 @@ public class BuildSystemTests : IDisposable
     [Fact]
     public void ItemGroups_AreOrderedRegardlessOfInputOrder()
     {
-        var forwards = Minimal() with { Packages = [new PackageRef("A.Pkg", "1.0"), new PackageRef("B.Pkg", "2.0")] };
-        var backwards = Minimal() with { Packages = [new PackageRef("B.Pkg", "2.0"), new PackageRef("A.Pkg", "1.0")] };
+        MSBuildProjectSpec forwards = Minimal() with { Packages = [new PackageRef("A.Pkg", "1.0"), new PackageRef("B.Pkg", "2.0")] };
+        MSBuildProjectSpec backwards = Minimal() with { Packages = [new PackageRef("B.Pkg", "2.0"), new PackageRef("A.Pkg", "1.0")] };
 
         Assert.Equal(forwards.ToXml(), backwards.ToXml());
     }
@@ -1550,7 +1551,7 @@ public class BuildSystemTests : IDisposable
     [Fact]
     public void SingleRuntimeIdentifier_EmitsTheSingularProperty()
     {
-        var doc = Render(Minimal() with { RuntimeIdentifiers = ["win-x64"] });
+        XDocument doc = Render(Minimal() with { RuntimeIdentifiers = ["win-x64"] });
 
         Assert.Equal("win-x64", doc.Descendants("RuntimeIdentifier").Single().Value);
         Assert.Empty(doc.Descendants("RuntimeIdentifiers"));
@@ -1559,7 +1560,7 @@ public class BuildSystemTests : IDisposable
     [Fact]
     public void SeveralRuntimeIdentifiers_EmitThePluralProperty()
     {
-        var doc = Render(Minimal() with { RuntimeIdentifiers = ["android-arm64", "android-x64"] });
+        XDocument doc = Render(Minimal() with { RuntimeIdentifiers = ["android-arm64", "android-x64"] });
 
         Assert.Equal("android-arm64;android-x64", doc.Descendants("RuntimeIdentifiers").Single().Value);
         Assert.Empty(doc.Descendants("RuntimeIdentifier"));
@@ -1568,7 +1569,7 @@ public class BuildSystemTests : IDisposable
     [Fact]
     public void NoRuntimeIdentifier_EmitsNeither()
     {
-        var doc = Render(Minimal());
+        XDocument doc = Render(Minimal());
 
         Assert.Empty(doc.Descendants("RuntimeIdentifier"));
         Assert.Empty(doc.Descendants("RuntimeIdentifiers"));
@@ -1578,19 +1579,19 @@ public class BuildSystemTests : IDisposable
     [Fact]
     public void PathsAreEscaped()
     {
-        var spec = Minimal() with
+        MSBuildProjectSpec spec = Minimal() with
         {
             References = [new AssemblyRef("Engine", @"C:\Games\Cloak & Dagger\Engine.dll")],
         };
 
-        var doc = Render(spec);
+        XDocument doc = Render(spec);
         Assert.Equal(@"C:\Games\Cloak & Dagger\Engine.dll", doc.Descendants("HintPath").Single().Value);
     }
 
     [Fact]
     public void Properties_AreEmittedAndOrdered()
     {
-        var spec = Minimal() with
+        MSBuildProjectSpec spec = Minimal() with
         {
             Properties = new Dictionary<string, string>
             {
@@ -1610,11 +1611,11 @@ public class BuildSystemTests : IDisposable
     [Fact]
     public void Output_IsStableAcrossDictionaryOrder()
     {
-        var first = Minimal() with
+        MSBuildProjectSpec first = Minimal() with
         {
             Properties = new Dictionary<string, string> { ["A"] = "1", ["B"] = "2", ["C"] = "3" },
         };
-        var second = Minimal() with
+        MSBuildProjectSpec second = Minimal() with
         {
             Properties = new Dictionary<string, string> { ["C"] = "3", ["A"] = "1", ["B"] = "2" },
         };
@@ -1625,8 +1626,8 @@ public class BuildSystemTests : IDisposable
     [Fact]
     public void References_CarryHintPathAndArePrivate()
     {
-        var doc = Render(Minimal() with { References = [new AssemblyRef("Prowl.Runtime", @"C:\e\Prowl.Runtime.dll")] });
-        var reference = doc.Descendants("Reference").Single();
+        XDocument doc = Render(Minimal() with { References = [new AssemblyRef("Prowl.Runtime", @"C:\e\Prowl.Runtime.dll")] });
+        XElement reference = doc.Descendants("Reference").Single();
 
         Assert.Equal("Prowl.Runtime", reference.Attribute("Include")!.Value);
         Assert.Equal("true", reference.Element("Private")!.Value);
@@ -1636,14 +1637,14 @@ public class BuildSystemTests : IDisposable
     [Fact]
     public void PackagesAndCompileItems_AreEmitted()
     {
-        var spec = Minimal() with
+        MSBuildProjectSpec spec = Minimal() with
         {
             Packages = [new PackageRef("Some.Package", "1.2.3")],
             Compile = ["Program.cs"],
         };
 
-        var doc = Render(spec);
-        var package = doc.Descendants("PackageReference").Single();
+        XDocument doc = Render(spec);
+        XElement package = doc.Descendants("PackageReference").Single();
 
         Assert.Equal("Some.Package", package.Attribute("Include")!.Value);
         Assert.Equal("1.2.3", package.Attribute("Version")!.Value);
@@ -1653,12 +1654,12 @@ public class BuildSystemTests : IDisposable
     [Fact]
     public void EmbeddedResources_CarryTheirLogicalName()
     {
-        var spec = Minimal() with
+        MSBuildProjectSpec spec = Minimal() with
         {
             EmbeddedResources = [new EmbeddedResourceRef(@"Assets\thing.asset", "Assets.thing.asset")],
         };
 
-        var resource = Render(spec).Descendants("EmbeddedResource").Single();
+        XElement resource = Render(spec).Descendants("EmbeddedResource").Single();
 
         Assert.Equal(@"Assets\thing.asset", resource.Attribute("Include")!.Value);
         Assert.Equal("Assets.thing.asset", resource.Element("LogicalName")!.Value);
@@ -1803,11 +1804,11 @@ public class BuildSystemTests : IDisposable
         var registry = TargetRegistry.CreateWithBuiltIns();
         registry.RegisterFrom(new HandheldProvider());
 
-        var target = registry.Get("handheld-arm64");
+        PlatformTarget target = registry.Get("handheld-arm64");
         var pipeline = new HandheldPipeline(_root);
 
         var context = new BuildContext(Request(Guid.NewGuid()));
-        var outcome = await new BuildExecutor().RunAsync(pipeline, context);
+        BuildOutcome outcome = await new BuildExecutor().RunAsync(pipeline, context);
 
         Assert.True(outcome.Succeeded, string.Join("; ", outcome.Issues));
         Assert.Equal(["validate", "process", "sign"], pipeline.Ran);
@@ -1830,7 +1831,7 @@ public class BuildSystemTests : IDisposable
         var pipeline = new HandheldPipeline(_root);
         var context = new BuildContext(RequestWithoutScenes());
 
-        var outcome = await new BuildExecutor().RunAsync(pipeline, context);
+        BuildOutcome outcome = await new BuildExecutor().RunAsync(pipeline, context);
 
         Assert.False(outcome.Succeeded);
         Assert.Contains(outcome.Issues, i => i.Message.Contains("at least one scene"));
@@ -1951,7 +1952,7 @@ public class BuildSystemTests : IDisposable
     [InlineData("macos-universal", "osx")]
     public void EveryDesktopTarget_MapsToTheRightRuntimePrefix(string targetId, string prefix)
     {
-        var target = TargetRegistry.Shared.Get(targetId);
+        PlatformTarget target = TargetRegistry.Shared.Get(targetId);
 
         Assert.StartsWith(prefix + "-", Native().RuntimeIdentifierFor(target.AssemblyPlatform!));
     }
@@ -1967,7 +1968,7 @@ public class BuildSystemTests : IDisposable
     [InlineData(PlayerSettingsFiles.Navigation)]
     public void EveryFileThePlayerReads_IsExportedByATypeOfThatName(string expected)
     {
-        var entry = Assert.Single(EditorRegistries.SettingsEntries.Where(e => e.Type.Name == expected));
+        EditorRegistries.SettingsEntry entry = Assert.Single(EditorRegistries.SettingsEntries.Where(e => e.Type.Name == expected));
 
         Assert.True(entry.ExportToBuild, $"'{expected}' is read by the player but is not exported to builds.");
     }
@@ -1976,7 +1977,7 @@ public class BuildSystemTests : IDisposable
     [Fact]
     public void TheFileNames_DoNotDependOnTheDisplayLabel()
     {
-        var tags = Assert.Single(EditorRegistries.SettingsEntries.Where(e => e.Type.Name == PlayerSettingsFiles.TagsAndLayers));
+        EditorRegistries.SettingsEntry tags = Assert.Single(EditorRegistries.SettingsEntries.Where(e => e.Type.Name == PlayerSettingsFiles.TagsAndLayers));
 
         Assert.NotEqual(tags.Name, tags.Type.Name);
     }
@@ -1990,7 +1991,7 @@ public class BuildSystemTests : IDisposable
 
         string dir = Path.Combine(_root, "Settings");
         Directory.CreateDirectory(dir);
-        var echo = Prowl.Echo.Serializer.Serialize(typeof(TagsAndLayersSettings), settings, Prowl.Echo.TypeMode.None);
+        EchoObject echo = Prowl.Echo.Serializer.Serialize(typeof(TagsAndLayersSettings), settings, Prowl.Echo.TypeMode.None);
         File.WriteAllText(Path.Combine(dir, PlayerSettingsFiles.TagsAndLayers + ".yaml"), echo.WriteToYaml());
 
         TagLayerManager.ResetDefault();
@@ -2033,7 +2034,7 @@ public class BuildSystemTests : IDisposable
     {
         EditorRegistries.Initialize();
 
-        Assert.True(TargetRegistry.Shared.TryGet(s_target.Id, out var found),
+        Assert.True(TargetRegistry.Shared.TryGet(s_target.Id, out PlatformTarget? found),
             "Nothing scans for IBuildTargetProvider, so an out of tree platform can never register.");
         Assert.Equal(Family, found!.Family);
     }
@@ -2042,14 +2043,14 @@ public class BuildSystemTests : IDisposable
 
     private static BuildIssue Parse(string line)
     {
-        Assert.True(MSBuildDiagnostics.TryParse(line, BuildStage.CompilePlayer, out var issue), $"Did not parse: {line}");
+        Assert.True(MSBuildDiagnostics.TryParse(line, BuildStage.CompilePlayer, out BuildIssue? issue), $"Did not parse: {line}");
         return issue;
     }
 
     [Fact]
     public void Error_WithFileLineAndColumn()
     {
-        var issue = Parse(@"C:\game\Assets\Player.cs(12,34): error CS1002: ; expected [C:\game\Game.csproj]");
+        BuildIssue issue = Parse(@"C:\game\Assets\Player.cs(12,34): error CS1002: ; expected [C:\game\Game.csproj]");
 
         Assert.Equal(BuildSeverity.Error, issue.Severity);
         Assert.Equal("CS1002", issue.Code);
@@ -2061,7 +2062,7 @@ public class BuildSystemTests : IDisposable
     [Fact]
     public void Warning_WithLineOnly()
     {
-        var issue = Parse(@"/home/dev/Player.cs(7): warning CS0168: variable declared but never used");
+        BuildIssue issue = Parse(@"/home/dev/Player.cs(7): warning CS0168: variable declared but never used");
 
         Assert.Equal(BuildSeverity.Warning, issue.Severity);
         Assert.Equal("CS0168", issue.Code);
@@ -2074,7 +2075,7 @@ public class BuildSystemTests : IDisposable
     [Fact]
     public void DriveLetter_DoesNotConfuseTheOrigin()
     {
-        var issue = Parse(@"C:\a\b\C.cs(1,1): error CS0103: The name 'x' does not exist");
+        BuildIssue issue = Parse(@"C:\a\b\C.cs(1,1): error CS0103: The name 'x' does not exist");
 
         Assert.Equal(@"C:\a\b\C.cs", issue.File);
         Assert.Equal(1, issue.Line);
@@ -2084,7 +2085,7 @@ public class BuildSystemTests : IDisposable
     [Fact]
     public void ToolLevelError_HasNoFile()
     {
-        var issue = Parse("MSBUILD : error MSB1009: Project file does not exist.");
+        BuildIssue issue = Parse("MSBUILD : error MSB1009: Project file does not exist.");
 
         Assert.Equal("MSB1009", issue.Code);
         Assert.Null(issue.File);
@@ -2094,7 +2095,7 @@ public class BuildSystemTests : IDisposable
     [Fact]
     public void ProjectLevelError_KeepsTheProjectAsTheFile()
     {
-        var issue = Parse(@"C:\game\Game.csproj : error NU1101: Unable to find package Foo");
+        BuildIssue issue = Parse(@"C:\game\Game.csproj : error NU1101: Unable to find package Foo");
 
         Assert.Equal("NU1101", issue.Code);
         Assert.Equal(@"C:\game\Game.csproj", issue.File);
@@ -2105,7 +2106,7 @@ public class BuildSystemTests : IDisposable
     [Fact]
     public void LongSdkCode_Parses()
     {
-        var issue = Parse(@"C:\g\G.csproj : warning NETSDK1138: The target framework is out of support");
+        BuildIssue issue = Parse(@"C:\g\G.csproj : warning NETSDK1138: The target framework is out of support");
         Assert.Equal("NETSDK1138", issue.Code);
     }
 
@@ -2126,7 +2127,7 @@ public class BuildSystemTests : IDisposable
     [Fact]
     public void MessageMentioningErrorElsewhere_IsStillClassifiedByItsRealSeverity()
     {
-        var issue = Parse(@"C:\g\G.cs(3,5): warning CS0219: assigned to 'error' but never used");
+        BuildIssue issue = Parse(@"C:\g\G.cs(3,5): warning CS0219: assigned to 'error' but never used");
 
         Assert.Equal(BuildSeverity.Warning, issue.Severity);
         Assert.Equal("CS0219", issue.Code);
@@ -2140,7 +2141,7 @@ public class BuildSystemTests : IDisposable
             @"C:\g\G.cs(1,1): error CS0103: nope [C:\g\B.csproj]",
             @"C:\g\G.cs(2,1): error CS0104: other [C:\g\A.csproj]");
 
-        var issues = MSBuildDiagnostics.Parse(output, BuildStage.CompilePlayer);
+        IReadOnlyList<BuildIssue> issues = MSBuildDiagnostics.Parse(output, BuildStage.CompilePlayer);
 
         Assert.Equal(2, issues.Count);
         Assert.Equal(["CS0103", "CS0104"], issues.Select(i => i.Code));
@@ -2150,7 +2151,7 @@ public class BuildSystemTests : IDisposable
     public void Parse_HandlesWindowsLineEndings()
     {
         string output = "C:\\g\\G.cs(1,1): error CS0103: nope\r\nBuild FAILED.\r\n";
-        var issues = MSBuildDiagnostics.Parse(output, BuildStage.CompilePlayer);
+        IReadOnlyList<BuildIssue> issues = MSBuildDiagnostics.Parse(output, BuildStage.CompilePlayer);
 
         Assert.Single(issues);
         Assert.Equal("CS0103", issues[0].Code);
@@ -2168,7 +2169,7 @@ public class BuildSystemTests : IDisposable
     [Fact]
     public void ProjectIsCaptured()
     {
-        var issue = Parse(@"C:\g\G.cs(1,1): error CS0103: nope [C:\g\Game.csproj]");
+        BuildIssue issue = Parse(@"C:\g\G.cs(1,1): error CS0103: nope [C:\g\Game.csproj]");
         Assert.Equal(@"C:\g\Game.csproj", issue.Project);
     }
 

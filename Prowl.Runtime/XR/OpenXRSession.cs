@@ -256,7 +256,7 @@ internal sealed unsafe partial class OpenXRSession : IDisposable
     // The spec requires this call before xrCreateSession, and the runtime tells us which GL versions it works with.
     private void CheckGraphicsRequirements()
     {
-        if (!_xr.TryGetInstanceExtension<KhrOpenglEnable>(null, _instance, out var openGL))
+        if (!_xr.TryGetInstanceExtension<KhrOpenglEnable>(null, _instance, out KhrOpenglEnable? openGL))
             throw new NotSupportedException("Could not load the XR_KHR_opengl_enable functions.");
 
         var requirements = new GraphicsRequirementsOpenGLKHR { Type = StructureType.GraphicsRequirementsOpenglKhr };
@@ -276,7 +276,7 @@ internal sealed unsafe partial class OpenXRSession : IDisposable
         if (count != 2)
             throw new NotSupportedException($"The headset reports {count} views, only stereo headsets are supported.");
 
-        var views = stackalloc ViewConfigurationView[2];
+        ViewConfigurationView* views = stackalloc ViewConfigurationView[2];
         for (int i = 0; i < 2; i++)
             views[i] = new ViewConfigurationView { Type = StructureType.ViewConfigurationView };
         Check(_xr.EnumerateViewConfigurationView(_instance, _systemId, ViewConfigurationType.PrimaryStereo, count, &count, views), "xrEnumerateViewConfigurationViews");
@@ -377,7 +377,7 @@ internal sealed unsafe partial class OpenXRSession : IDisposable
 
     private void CreateSpaces(XRTrackingOrigin origin, bool localFloor)
     {
-        var supported = GetReferenceSpaces();
+        List<ReferenceSpaceType> supported = GetReferenceSpaces();
 
         ReferenceSpaceType appType = ReferenceSpaceType.Local;
         TrackingOrigin = XRTrackingOrigin.Seated;
@@ -566,8 +566,8 @@ internal sealed unsafe partial class OpenXRSession : IDisposable
 
     private void EndFrameOnRenderThread(bool submit, SubmittedFrame frame)
     {
-        var projectionViews = stackalloc CompositionLayerProjectionView[2];
-        var depthInfos = stackalloc CompositionLayerDepthInfoKHR[2];
+        CompositionLayerProjectionView* projectionViews = stackalloc CompositionLayerProjectionView[2];
+        CompositionLayerDepthInfoKHR* depthInfos = stackalloc CompositionLayerDepthInfoKHR[2];
         var layer = new CompositionLayerProjection
         {
             Type = StructureType.CompositionLayerProjection,
@@ -615,7 +615,7 @@ internal sealed unsafe partial class OpenXRSession : IDisposable
             }
         }
 
-        var layers = stackalloc CompositionLayerBaseHeader*[1];
+        CompositionLayerBaseHeader** layers = stackalloc CompositionLayerBaseHeader*[1];
         layers[0] = (CompositionLayerBaseHeader*)&layer;
         var endInfo = new FrameEndInfo
         {
@@ -659,7 +659,7 @@ internal sealed unsafe partial class OpenXRSession : IDisposable
             Check(_xr.WaitSwapchainImage(swapchain, &waitInfo), "xrWaitSwapchainImage");
             waited = true;
 
-            var gl = Graphics.GL;
+            Silk.NET.OpenGL.GL gl = Graphics.GL;
             gl.BindFramebuffer(GLEnum.ReadFramebuffer, sourceFramebuffer);
             gl.BindFramebuffer(GLEnum.DrawFramebuffer, _copyFramebuffer);
             gl.FramebufferTexture2D(GLEnum.DrawFramebuffer, attachment, GLEnum.Texture2D, images[index], 0);
@@ -918,7 +918,7 @@ internal sealed unsafe partial class OpenXRSession : IDisposable
 
     internal static XRPose ToProwl(in SpaceLocation location)
     {
-        var flags = location.LocationFlags;
+        SpaceLocationFlags flags = location.LocationFlags;
         return new XRPose
         {
             Position = ToProwl(location.Pose.Position),

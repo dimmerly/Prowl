@@ -9,6 +9,8 @@ using Prowl.Runtime.Resources;
 using Prowl.Vector;
 using Prowl.Vector.Geometry;
 
+using Silk.NET.Maths;
+
 namespace Prowl.Runtime.UI;
 
 /// <summary>
@@ -321,8 +323,8 @@ public sealed class EventSystem : Component
             // Canvases lay out against the framebuffer, but the OS mouse arrives in window coordinates.
             // Those differ on a HiDPI display, so scale the pointer into framebuffer pixels or every hit
             // test would be offset and scaled against what was actually drawn.
-            var fb = Window.InternalWindow.FramebufferSize;
-            var win = Window.InternalWindow.Size;
+            Vector2D<int> fb = Window.InternalWindow.FramebufferSize;
+            Vector2D<int> win = Window.InternalWindow.Size;
             winSize = new(fb.X, fb.Y);
             Int2 mp = Input.MousePosition;
             float sx = win.X > 0 ? (float)fb.X / win.X : 1f;

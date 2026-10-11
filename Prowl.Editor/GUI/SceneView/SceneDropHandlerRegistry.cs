@@ -42,7 +42,7 @@ internal class SceneAssetDropHandler : ISceneDropHandler
     public string DropHint => $"{EditorIcons.ArrowDown}  Drop to open scene";
     public void Handle(AssetDragPayload payload, SceneDropContext context)
     {
-        var entry = EditorAssetBackend.Instance?.GetEntry(payload.AssetGuid);
+        AssetEntry? entry = EditorAssetBackend.Instance?.GetEntry(payload.AssetGuid);
         if (entry != null) EditorSceneManager.OpenScene(entry.Path);
     }
 }
@@ -53,11 +53,11 @@ internal class MaterialDropHandler : ISceneDropHandler
     public string DropHint => $"{EditorIcons.ArrowDown}  Drop on object to assign material";
     public void Handle(AssetDragPayload payload, SceneDropContext context)
     {
-        var hitGO = SceneViewPanel.PickObjectAt(context.Scene, context.Camera, context.MouseLocal, context.PanelSize);
+        GameObject? hitGO = SceneViewPanel.PickObjectAt(context.Scene, context.Camera, context.MouseLocal, context.PanelSize);
         if (hitGO == null) return;
         var mat = Runtime.AssetDatabase.Get(payload.AssetGuid) as Material;
         if (mat == null) return;
-        var meshRenderer = hitGO.GetComponent<MeshRenderer>();
+        MeshRenderer? meshRenderer = hitGO.GetComponent<MeshRenderer>();
         if (meshRenderer != null) { meshRenderer.Material = mat; EditorSceneManager.MarkDirty(); }
     }
 }

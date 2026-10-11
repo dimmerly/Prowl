@@ -136,11 +136,11 @@ public sealed partial class VRShowcaseGame
         // The model is laid out in the same space as the pieces, so it sits over them shifted the same way.
         Dress(go, name, -shift);
 
-        var body = go.AddComponent<Rigidbody3D>();
+        Rigidbody3D body = go.AddComponent<Rigidbody3D>();
         body.Mass = mass;
         body.EnableSpeculativeContacts = true;
 
-        var grabbable = go.AddComponent<Grabbable>();
+        Grabbable grabbable = go.AddComponent<Grabbable>();
         foreach (GrabPoint grip in grips)
         {
             GrabPoint shifted = grip.Kind == GrabKind.Point
@@ -158,7 +158,7 @@ public sealed partial class VRShowcaseGame
 
     private static Stabber Blade(Grabbable weapon, Float3 tip, float length, float sharpness)
     {
-        var stabber = weapon.AddComponent<Stabber>();
+        Stabber stabber = weapon.AddComponent<Stabber>();
         stabber.Tip = tip;
         stabber.Axis = Float3.UnitY;
         stabber.Length = length;
@@ -319,16 +319,16 @@ public sealed partial class VRShowcaseGame
         well.SetParent(weapon.GameObject);
         well.Transform.LocalPosition = magazineTop - shift;
         well.Transform.LocalRotation = Quaternion.Identity;
-        var socket = well.AddComponent<MagazineWell>();
+        MagazineWell socket = well.AddComponent<MagazineWell>();
         socket.Depth = depth;
 
-        var gun = weapon.AddComponent<Gun>();
+        Gun gun = weapon.AddComponent<Gun>();
         gun.Muzzle = muzzle - shift;
         gun.EjectPort = ejectPort - shift;
         gun.Automatic = automatic;
         gun.MagazineWell = socket;
 
-        var slide = weapon.AddComponent<GunSlide>();
+        GunSlide slide = weapon.AddComponent<GunSlide>();
         slide.Gun = gun;
         slide.Visual = slideVisual.Transform;
         slide.Handle = handle - shift;
@@ -346,7 +346,7 @@ public sealed partial class VRShowcaseGame
             new(new Float3(size.X * 0.8f, 0.006f, size.Z * 0.7f), new Float3(0f, size.Y * 0.5f + 0.003f, 0f), Brass, 0.9f, Collides: false),
         ],
         [GrabPoint.At(new Float3(0f, -size.Y * 0.2f, 0f))], out _);
-        var mag = magazine.AddComponent<Magazine>();
+        Magazine mag = magazine.AddComponent<Magazine>();
         mag.Capacity = mag.Rounds = rounds;
         return magazine;
     }
@@ -374,7 +374,7 @@ public sealed partial class VRShowcaseGame
         ],
         [GrabPoint.At(Float3.Zero)], out Float3 shift);
 
-        var b = bow.AddComponent<Bow>();
+        Bow b = bow.AddComponent<Bow>();
         b.TopTip = new Float3(0f, 0.56f, -0.08f) - shift;
         b.BottomTip = new Float3(0f, -0.56f, -0.08f) - shift;
         b.NockRest = new Float3(0f, 0.02f, -0.08f) - shift;
@@ -394,7 +394,7 @@ public sealed partial class VRShowcaseGame
         [GrabPoint.Line(new Float3(0f, 0.05f, 0f), new Float3(0f, 0.6f, 0f))], out Float3 shift);
         arrow.Reach = 0.05f;
 
-        var a = arrow.AddComponent<Arrow>();
+        Arrow a = arrow.AddComponent<Arrow>();
         a.Notch = -shift;
         a.Tip = new Float3(0f, 0.745f, 0f) - shift;
         Blade(arrow, a.Tip, 0.12f, 0.8f);
@@ -427,7 +427,7 @@ public sealed partial class VRShowcaseGame
         var go = new GameObject("Rack Socket");
         go.Transform.Position = position;
         go.Transform.Rotation = rotation;
-        var socket = go.AddComponent<Socket>();
+        Socket socket = go.AddComponent<Socket>();
         socket.Accepts = accepts;
         socket.Radius = radius;
         Add(go);
@@ -512,13 +512,13 @@ public sealed partial class VRShowcaseGame
         plate.AddComponent<BoxCollider>().Size = shape;
         Material material = Lit(new Color(0.75f, 0.75f, 0.72f, 1f), 0.8f, 0.4f);
         Dress(plate, "Steel Plate", Float3.Zero, new() { ["Steel"] = material }, new Float3(1f, size * 2f, size * 2f));
-        var body = plate.AddComponent<Rigidbody3D>();
+        Rigidbody3D body = plate.AddComponent<Rigidbody3D>();
         body.Mass = 8f;
         body.EnableSpeculativeContacts = true;
         body.AngularDamping = 0.05f;
-        var hinge = plate.AddComponent<BallSocketConstraint>();
+        BallSocketConstraint hinge = plate.AddComponent<BallSocketConstraint>();
         hinge.Anchor = new Float3(0f, 0.6f, 0f);
-        var flash = plate.AddComponent<HitFlash>();
+        HitFlash flash = plate.AddComponent<HitFlash>();
         flash.BaseColor = new Color(0.75f, 0.75f, 0.72f, 1f);
         flash.FlashColor = new Color(1f, 0.85f, 0.3f, 1f);
         flash.Materials.Add(material);
@@ -551,26 +551,26 @@ public sealed partial class VRShowcaseGame
 
         var dummy = new GameObject("Dummy");
         dummy.Transform.Position = at + new Float3(0f, 1.15f, 0.75f);
-        var body = dummy.AddComponent<Rigidbody3D>();
+        Rigidbody3D body = dummy.AddComponent<Rigidbody3D>();
         body.Mass = 30f;
         body.EnableSpeculativeContacts = true;
         body.AngularDamping = 0.3f;
         body.LinearDamping = 0.05f;
 
         Material material = Lit(Straw, 0f, 0.9f);
-        var bag = dummy.AddComponent<CapsuleCollider>();
+        CapsuleCollider bag = dummy.AddComponent<CapsuleCollider>();
         bag.Radius = 0.2f;
         bag.Height = 1f;
-        var shape = dummy.AddComponent<MeshRenderer>();
+        MeshRenderer shape = dummy.AddComponent<MeshRenderer>();
         shape.Mesh = Mesh.CreateCapsule(0.2f, 1f);
         shape.Material = material;
 
-        var rope = dummy.AddComponent<BallSocketConstraint>();
+        BallSocketConstraint rope = dummy.AddComponent<BallSocketConstraint>();
         rope.Anchor = new Float3(0f, 1.2f, 0f);
         dummy.AddComponent<DummyRope>().Anchor = new Float3(0f, 0.5f, 0f);
 
         dummy.AddComponent<Stabbable>().Resistance = 0.6f;
-        var flash = dummy.AddComponent<HitFlash>();
+        HitFlash flash = dummy.AddComponent<HitFlash>();
         flash.BaseColor = Straw;
         flash.Materials.Add(material);
         Add(dummy);
@@ -588,7 +588,7 @@ public sealed partial class VRShowcaseGame
         board.AddComponent<BoxCollider>().Size = new Float3(1f, 1f, 0.1f);
         Dress(board, "Target Board", Float3.Zero);
         board.AddComponent<Rigidbody3D>().MotionType = Jitter2.Dynamics.MotionType.Static;
-        var stabbable = board.AddComponent<Stabbable>();
+        Stabbable stabbable = board.AddComponent<Stabbable>();
         stabbable.Resistance = 2.5f;
         stabbable.RequiredSpeed = 2f;
         stabbable.MaxDepth = 0.08f;
@@ -604,11 +604,11 @@ public sealed partial class VRShowcaseGame
         bale.AddComponent<BoxCollider>().Size = size;
         Material material = Lit(Straw, 0f, 0.95f);
         Dress(bale, "Hay Bale", Float3.Zero, new() { ["Straw"] = material });
-        var baleBody = bale.AddComponent<Rigidbody3D>();
+        Rigidbody3D baleBody = bale.AddComponent<Rigidbody3D>();
         baleBody.Mass = 60f;
         baleBody.EnableSpeculativeContacts = true;
         bale.AddComponent<Stabbable>().Resistance = 0.4f;
-        var flash = bale.AddComponent<HitFlash>();
+        HitFlash flash = bale.AddComponent<HitFlash>();
         flash.BaseColor = Straw;
         flash.Materials.Add(material);
         Add(bale);

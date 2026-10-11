@@ -139,9 +139,9 @@ public abstract class AssetImporterEditor
     {
         if (Origami.IsReadOnly || !HasPendingChanges(entry, asset)) return;
 
-        var font = EditorTheme.FontSemiBold ?? EditorTheme.DefaultFont;
+        Scribe.FontFile? font = EditorTheme.FontSemiBold ?? EditorTheme.DefaultFont;
         if (font == null) return;
-        var m = Origami.Current.Metrics;
+        OrigamiMetrics m = Origami.Current.Metrics;
 
         using (paper.Row($"{id}_applybar").Height(UnitValue.Auto)
             .Margin(m.PaddingLarge, m.PaddingLarge, m.SpacingLarge, m.SpacingLarge)

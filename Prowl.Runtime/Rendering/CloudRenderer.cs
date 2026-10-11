@@ -360,7 +360,7 @@ internal static class CloudRenderer
         IRenderableLight? sun = DefaultRenderPipeline.GetOrCreateLightSystem(scene).Directional;
         if (sun != null)
         {
-            var light = sun.GetForwardLightData();
+            ForwardLightData light = sun.GetForwardLightData();
             AddSetting(light.Direction.X, 0.1f); AddSetting(light.Direction.Y, 0.1f); AddSetting(light.Direction.Z, 0.1f);
             AddSetting(light.Color.X * light.Intensity, 0.1f); AddSetting(light.Color.Y * light.Intensity, 0.1f);
             AddSetting(light.Color.Z * light.Intensity, 0.1f);
@@ -533,12 +533,12 @@ internal static class CloudRenderer
     private static Mesh GridFor(int size)
     {
         long now = Environment.TickCount64;
-        if (!s_grids.TryGetValue(size, out var entry) || entry.Mesh.IsNotValid())
+        if (!s_grids.TryGetValue(size, out (Mesh Mesh, long UsedAt) entry) || entry.Mesh.IsNotValid())
             entry.Mesh = BuildGrid(size);
         s_grids[size] = (entry.Mesh, now);
 
         s_staleGrids.Clear();
-        foreach (var (key, grid) in s_grids)
+        foreach ((int key, (Mesh Mesh, long UsedAt) grid) in s_grids)
             if (now - grid.UsedAt > 1000) s_staleGrids.Add(key);
         foreach (int key in s_staleGrids)
         {

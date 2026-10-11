@@ -11,6 +11,7 @@ using Prowl.PaperUI.Events;
 using Prowl.PaperUI.LayoutEngine;
 using Prowl.Runtime;
 using Prowl.Runtime.AnimationNodes;
+using Prowl.Scribe;
 using Prowl.Vector;
 
 using Canvas = Prowl.Quill.Canvas;
@@ -156,7 +157,7 @@ internal sealed class BlendSpaceNodeEditor : AnimationNodeEditor
             if (samples.Count != _framedCount) Frame(samples, twoD);
 
             float side = margin ?? Origami.Current.Metrics.PaddingLarge;
-            var box = paper.Box(id).Width(UnitValue.Stretch()).Height(height ?? (twoD ? 210f : 64f))
+            ElementBuilder box = paper.Box(id).Width(UnitValue.Stretch()).Height(height ?? (twoD ? 210f : 64f))
                 .Margin(side, side, margin.HasValue ? 0 : 4, margin.HasValue ? 0 : 6)
                 .Rounded(Origami.Current.Metrics.SmallRounding)
                 .BackgroundColor(Tinted(EditorTheme.Neutral300, EditorTheme.Green400, 0.16f))
@@ -175,7 +176,7 @@ internal sealed class BlendSpaceNodeEditor : AnimationNodeEditor
         private void DrawRecenter(Paper paper, string id, IReadOnlyList<Sample> samples, bool twoD)
         {
             const float size = 20f;
-            var button = paper.Box(id + "_frame")
+            ElementBuilder button = paper.Box(id + "_frame")
                 .PositionType(PositionType.SelfDirected).AnchorRight(2).AnchorTop(2).Width(size).Height(size)
                 .Cursor(PaperCursor.Pointer)
                 .StopDragPropagation()
@@ -185,7 +186,7 @@ internal sealed class BlendSpaceNodeEditor : AnimationNodeEditor
             // With no background to light up, the icon itself brightens under the pointer.
             using (button.Enter())
             {
-                var colour = paper.IsParentHovered ? EditorTheme.Ink700 : EditorTheme.Ink400;
+                Color colour = paper.IsParentHovered ? EditorTheme.Ink700 : EditorTheme.Ink400;
                 paper.Draw((canvas, rect) => EditorIcons.Crosshairs_I.Draw(canvas, rect, colour));
             }
         }
@@ -327,7 +328,7 @@ internal sealed class BlendSpaceNodeEditor : AnimationNodeEditor
 
         private void Paint(Canvas canvas, Rect rect, IReadOnlyList<Sample> samples, bool twoD)
         {
-            var font = EditorTheme.DefaultFont;
+            FontFile? font = EditorTheme.DefaultFont;
             if (font == null) return;
 
             PaintGrid(canvas, font, rect, twoD);

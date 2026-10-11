@@ -20,7 +20,7 @@ public class ComponentConstructorAnalyzerTests : EditorTestHarness
     {
         WriteScript("Ctor.cs", "public class Ctor : Prowl.Runtime.Component { public Ctor() { } }");
 
-        var result = ScriptCompiler.CompileAll(Project);
+        ScriptCompiler.CompileResult result = ScriptCompiler.CompileAll(Project);
 
         Assert.True(result.Success, result.Errors); // a warning, so the compile still succeeds
         Assert.Contains(ComponentConstructorAnalyzer.DeclaredConstructorId, result.Output);
@@ -35,7 +35,7 @@ public class ComponentConstructorAnalyzerTests : EditorTestHarness
     {
         WriteScript("NeedsArgs.cs", "public class NeedsArgs : Prowl.Runtime.Component { public NeedsArgs(int x) { } }");
 
-        var result = ScriptCompiler.CompileAll(Project);
+        ScriptCompiler.CompileResult result = ScriptCompiler.CompileAll(Project);
 
         Assert.Contains(ComponentConstructorAnalyzer.NoParameterlessConstructorId, result.Output);
     }
@@ -45,7 +45,7 @@ public class ComponentConstructorAnalyzerTests : EditorTestHarness
     {
         WriteScript("Hidden.cs", "public class Hidden : Prowl.Runtime.Component { private Hidden() { } }");
 
-        var result = ScriptCompiler.CompileAll(Project);
+        ScriptCompiler.CompileResult result = ScriptCompiler.CompileAll(Project);
 
         Assert.Contains(ComponentConstructorAnalyzer.NoParameterlessConstructorId, result.Output);
     }
@@ -57,7 +57,7 @@ public class ComponentConstructorAnalyzerTests : EditorTestHarness
         WriteScript("Both.cs",
             "public class Both : Prowl.Runtime.Component { public Both() { } public Both(int x) { } }");
 
-        var result = ScriptCompiler.CompileAll(Project);
+        ScriptCompiler.CompileResult result = ScriptCompiler.CompileAll(Project);
 
         Assert.True(result.Success, result.Errors);
         Assert.Contains(ComponentConstructorAnalyzer.DeclaredConstructorId, result.Output);
@@ -71,7 +71,7 @@ public class ComponentConstructorAnalyzerTests : EditorTestHarness
         WriteScript("Base.cs",
             "public abstract class BaseThing : Prowl.Runtime.Component { protected BaseThing(int x) { } }");
 
-        var result = ScriptCompiler.CompileAll(Project);
+        ScriptCompiler.CompileResult result = ScriptCompiler.CompileAll(Project);
 
         Assert.Contains(ComponentConstructorAnalyzer.DeclaredConstructorId, result.Output);
         Assert.DoesNotContain(ComponentConstructorAnalyzer.NoParameterlessConstructorId, result.Output);
@@ -87,7 +87,7 @@ public class ComponentConstructorAnalyzerTests : EditorTestHarness
         WriteScript("Reg.cs", "public static class Reg { public static System.Func<int> Get; }");
         WriteScript("Init.cs", "public class Init : Prowl.Runtime.Component { private int _v = Reg.Get(); }");
 
-        var result = ScriptCompiler.CompileAll(Project);
+        ScriptCompiler.CompileResult result = ScriptCompiler.CompileAll(Project);
 
         // A null delegate cannot be defended, so this refuses to compile rather than warning.
         Assert.False(result.Success);
@@ -104,7 +104,7 @@ public class ComponentConstructorAnalyzerTests : EditorTestHarness
         WriteScript("Pure.cs", "public static class Pure { public static int Twice(int x) => x * 2; }");
         WriteScript("Uses.cs", "public class Uses : Prowl.Runtime.Component { private int _v = Pure.Twice(2); }");
 
-        var result = ScriptCompiler.CompileAll(Project);
+        ScriptCompiler.CompileResult result = ScriptCompiler.CompileAll(Project);
 
         Assert.True(result.Success, result.Errors);
         Assert.Contains(ComponentConstructorAnalyzer.RunsBeforeAttachId, result.Output);
@@ -117,7 +117,7 @@ public class ComponentConstructorAnalyzerTests : EditorTestHarness
         WriteScript("Fw.cs",
             "public class Fw : Prowl.Runtime.Component { private string _id = System.Guid.NewGuid().ToString(); }");
 
-        var result = ScriptCompiler.CompileAll(Project);
+        ScriptCompiler.CompileResult result = ScriptCompiler.CompileAll(Project);
 
         Assert.True(result.Success, result.Errors);
         Assert.DoesNotContain(ComponentConstructorAnalyzer.RunsBeforeAttachId, result.Output);
@@ -133,7 +133,7 @@ public class ComponentConstructorAnalyzerTests : EditorTestHarness
             "{ public int Speed = 5; public string Name = \"hi\"; " +
             "public System.Collections.Generic.List<int> Items = new(); }");
 
-        var result = ScriptCompiler.CompileAll(Project);
+        ScriptCompiler.CompileResult result = ScriptCompiler.CompileAll(Project);
 
         Assert.True(result.Success, result.Errors);
         Assert.DoesNotContain(ComponentConstructorAnalyzer.RunsBeforeAttachId, result.Output);
@@ -145,7 +145,7 @@ public class ComponentConstructorAnalyzerTests : EditorTestHarness
     {
         WriteScript("Plain.cs", "public class Plain : Prowl.Runtime.Component { public int Speed = 5; }");
 
-        var result = ScriptCompiler.CompileAll(Project);
+        ScriptCompiler.CompileResult result = ScriptCompiler.CompileAll(Project);
 
         Assert.True(result.Success, result.Errors);
         Assert.DoesNotContain(ComponentConstructorAnalyzer.DeclaredConstructorId, result.Output);
@@ -158,7 +158,7 @@ public class ComponentConstructorAnalyzerTests : EditorTestHarness
     {
         WriteScript("Helper.cs", "public class Helper { public Helper(int x) { } }");
 
-        var result = ScriptCompiler.CompileAll(Project);
+        ScriptCompiler.CompileResult result = ScriptCompiler.CompileAll(Project);
 
         Assert.True(result.Success, result.Errors);
         Assert.DoesNotContain(ComponentConstructorAnalyzer.DeclaredConstructorId, result.Output);

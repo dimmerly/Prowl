@@ -43,7 +43,7 @@ public class PluginTests : EditorTestHarness
             }
             """);
 
-        var compile = ScriptCompiler.CompileAll(Project);
+        ScriptCompiler.CompileResult compile = ScriptCompiler.CompileAll(Project);
         Assert.True(compile.Success, $"Compile failed:\n{compile.Errors}\n{compile.Output}");
 
         string outDir = RunBuild(AuthorSceneWithComponent("PluginUser"));
@@ -65,7 +65,7 @@ public class PluginTests : EditorTestHarness
 
         WriteScript("UsesPlugin.cs", "using RealNs; public class UsesPlugin { public static int X() => new RealApi().V; }");
 
-        var compile = ScriptCompiler.CompileAll(Project);
+        ScriptCompiler.CompileResult compile = ScriptCompiler.CompileAll(Project);
         Assert.True(compile.Success, $"Compile failed:\n{compile.Errors}");
 
         string outDir = RunBuild(AuthorEmptyScene());
@@ -125,7 +125,7 @@ public class PluginTests : EditorTestHarness
         CopyIntoAssets(CompileLibrary("Common", "namespace CommonA { public class A { } }"), Path.Combine("Plugins", "A", "Common.dll"));
         CopyIntoAssets(CompileLibrary("Common", "namespace CommonB { public class B { } }"), Path.Combine("Plugins", "B", "Common.dll"));
 
-        var ex = Record.Exception(() => ScriptCompiler.CompileAll(Project));
+        Exception ex = Record.Exception(() => ScriptCompiler.CompileAll(Project));
         Assert.Null(ex);
     }
 }

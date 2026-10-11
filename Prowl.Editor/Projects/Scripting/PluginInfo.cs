@@ -152,16 +152,16 @@ public static class PluginScanner
         {
             try
             {
-                var settings = MetaFile.Read(metaPath).Settings;
+                EchoObject? settings = MetaFile.Read(metaPath).Settings;
                 if (settings != null)
                 {
-                    if (settings.TryGet(PluginInfo.Keys.EditorOnly, out var eo)) editorOnly = underEditor || eo.BoolValue;
-                    if (settings.TryGet(PluginInfo.Keys.AutoReferenced, out var arf)) autoReferenced = arf.BoolValue;
-                    if (settings.TryGet(PluginInfo.Keys.AnyPlatform, out var ap)) anyPlatform = ap.BoolValue;
-                    if (settings.TryGet(PluginInfo.Keys.Windows, out var w) && w.BoolValue) platforms.Add(BuildPlatforms.Windows);
-                    if (settings.TryGet(PluginInfo.Keys.Linux, out var l) && l.BoolValue) platforms.Add(BuildPlatforms.Linux);
-                    if (settings.TryGet(PluginInfo.Keys.MacOS, out var m) && m.BoolValue) platforms.Add(BuildPlatforms.MacOS);
-                    if (settings.TryGet(PluginInfo.Keys.Cpu, out var c) && !string.IsNullOrWhiteSpace(c.StringValue)) cpu = c.StringValue;
+                    if (settings.TryGet(PluginInfo.Keys.EditorOnly, out EchoObject? eo)) editorOnly = underEditor || eo.BoolValue;
+                    if (settings.TryGet(PluginInfo.Keys.AutoReferenced, out EchoObject? arf)) autoReferenced = arf.BoolValue;
+                    if (settings.TryGet(PluginInfo.Keys.AnyPlatform, out EchoObject? ap)) anyPlatform = ap.BoolValue;
+                    if (settings.TryGet(PluginInfo.Keys.Windows, out EchoObject? w) && w.BoolValue) platforms.Add(BuildPlatforms.Windows);
+                    if (settings.TryGet(PluginInfo.Keys.Linux, out EchoObject? l) && l.BoolValue) platforms.Add(BuildPlatforms.Linux);
+                    if (settings.TryGet(PluginInfo.Keys.MacOS, out EchoObject? m) && m.BoolValue) platforms.Add(BuildPlatforms.MacOS);
+                    if (settings.TryGet(PluginInfo.Keys.Cpu, out EchoObject? c) && !string.IsNullOrWhiteSpace(c.StringValue)) cpu = c.StringValue;
                 }
             }
             catch { /* fall back to defaults */ }

@@ -359,7 +359,7 @@ public class Camera : Component
     /// </summary>
     public override void OnDisable()
     {
-        foreach (var effect in _lastActiveEffects)
+        foreach (ImageEffect effect in _lastActiveEffects)
         {
             if (effect == null) continue;
             try { effect.OnDisable(); }
@@ -378,10 +378,10 @@ public class Camera : Component
     public void UpdateImageEffectLifecycle(IEnumerable<ImageEffect> currentlyActive)
     {
         var current = new HashSet<ImageEffect>();
-        foreach (var effect in currentlyActive)
+        foreach (ImageEffect effect in currentlyActive)
             if (effect != null) current.Add(effect);
 
-        foreach (var previous in _lastActiveEffects)
+        foreach (ImageEffect previous in _lastActiveEffects)
         {
             if (previous == null || current.Contains(previous)) continue;
             try { previous.OnDisable(); }
@@ -389,7 +389,7 @@ public class Camera : Component
         }
 
         _lastActiveEffects.Clear();
-        foreach (var effect in current)
+        foreach (ImageEffect effect in current)
             _lastActiveEffects.Add(effect);
     }
 
@@ -405,7 +405,7 @@ public class Camera : Component
         Float4x4 viewProjectionMatrix = GetProjectionMatrix(aspect) * GetViewMatrix();
 
         Frustum frustum = Frustum.FromMatrix(viewProjectionMatrix);
-        var corners = frustum.GetCorners();
+        Float3[] corners = frustum.GetCorners();
 
         // Corner indices from GetCorners():
         // 0: Near-Left-Bottom,  1: Near-Right-Bottom,  2: Near-Left-Top,  3: Near-Right-Top

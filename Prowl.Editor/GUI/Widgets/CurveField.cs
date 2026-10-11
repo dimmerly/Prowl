@@ -54,10 +54,10 @@ public sealed class CurveFieldBuilder
     public void Show()
     {
         if (Origami.IsReadOnly) _readOnly = true;
-        var theme = Origami.Current;
-        var m = theme.Metrics;
+        OrigamiTheme theme = Origami.Current;
+        OrigamiMetrics m = theme.Metrics;
 
-        var swatch = _paper.Box($"{_id}_swatch")
+        ElementBuilder swatch = _paper.Box($"{_id}_swatch")
             .Width(_width).Height(_previewHeight)
             .BackgroundColor(theme.Neutral.C200)
             .BorderColor(theme.Neutral.C400).BorderWidth(1)
@@ -66,8 +66,8 @@ public sealed class CurveFieldBuilder
 
         if (!_readOnly)
         {
-            var curve = _value;
-            var setter = _setter;
+            AnimationCurve curve = _value;
+            Action<AnimationCurve> setter = _setter;
             var id = _id;
             swatch.OnClick(e =>
             {
@@ -114,7 +114,7 @@ public static class CurveRenderer
         float w = (float)r.Size.X - 4, h = (float)r.Size.Y - 4;
         GetBounds(curve, out float minT, out float maxT, out float minV, out float maxV);
 
-        var curveColor = Color32.FromArgb(255, (byte)theme.Green.C500.R, (byte)theme.Green.C500.G, (byte)theme.Green.C500.B);
+        Vector.Color curveColor = Color32.FromArgb(255, (byte)theme.Green.C500.R, (byte)theme.Green.C500.G, (byte)theme.Green.C500.B);
         canvas.SetStrokeColor(curveColor);
         canvas.SetStrokeWidth(1.5f);
         canvas.BeginPath();
@@ -170,7 +170,7 @@ public static class CurveRenderer
         }
 
         // Curve line
-        var curveColor = Color32.FromArgb(255, (byte)theme.Green.C500.R, (byte)theme.Green.C500.G, (byte)theme.Green.C500.B);
+        Vector.Color curveColor = Color32.FromArgb(255, (byte)theme.Green.C500.R, (byte)theme.Green.C500.G, (byte)theme.Green.C500.B);
         canvas.SetStrokeColor(curveColor);
         canvas.SetStrokeWidth(2f);
         canvas.BeginPath();
@@ -188,13 +188,13 @@ public static class CurveRenderer
         float tToX = w / rngT, vToY = h / rngV;
         for (int i = 0; i < curve.Count; i++)
         {
-            var key = curve[i];
+            Keyframe key = curve[i];
             float kx = x + (key.Time - vMinT) * tToX;
             float ky = y + h - (key.Value - vMinV) * vToY;
             if (kx < x - 6 || kx > x + w + 6 || ky < y - 6 || ky > y + h + 6) continue;
 
             bool isSel = i == selectedIdx;
-            var dotColor = isSel
+            Vector.Color dotColor = isSel
                 ? Color32.FromArgb(255, 255, 210, 60)
                 : Color32.FromArgb(255, 240, 240, 240);
             canvas.SetFillColor(dotColor);
@@ -207,14 +207,14 @@ public static class CurveRenderer
                 canvas.SetStrokeWidth(1.5f);
                 if (i > 0)
                 {
-                    var (tinX, tinY) = GetTangentScreenPos(kx, ky, key.InTangent, -1f, tToX, vToY);
+                    (float tinX, float tinY) = GetTangentScreenPos(kx, ky, key.InTangent, -1f, tToX, vToY);
                     canvas.BeginPath(); canvas.MoveTo(kx, ky); canvas.LineTo(tinX, tinY); canvas.Stroke();
                     canvas.SetFillColor(Color32.FromArgb(255, 200, 200, 60));
                     canvas.BeginPath(); canvas.Circle(tinX, tinY, 3f, 8); canvas.Fill();
                 }
                 if (i < curve.Count - 1)
                 {
-                    var (toutX, toutY) = GetTangentScreenPos(kx, ky, key.OutTangent, 1f, tToX, vToY);
+                    (float toutX, float toutY) = GetTangentScreenPos(kx, ky, key.OutTangent, 1f, tToX, vToY);
                     canvas.BeginPath(); canvas.MoveTo(kx, ky); canvas.LineTo(toutX, toutY); canvas.Stroke();
                     canvas.SetFillColor(Color32.FromArgb(255, 200, 200, 60));
                     canvas.BeginPath(); canvas.Circle(toutX, toutY, 3f, 8); canvas.Fill();
@@ -320,7 +320,7 @@ internal static class CurvePopover
     {
         get
         {
-            var m = Origami.Current.Metrics;
+            OrigamiMetrics m = Origami.Current.Metrics;
             return RulerSize + GraphH + m.Spacing + m.RowHeight + m.Spacing;
         }
     }
@@ -328,13 +328,13 @@ internal static class CurvePopover
     /// <summary>Draw the curve editor content (no container). Used by the modal.</summary>
     public static void DrawContent(Paper paper, string id, AnimationCurve curve, Action<AnimationCurve> onChange, OrigamiTheme theme)
     {
-        var m = theme.Metrics;
+        OrigamiMetrics m = theme.Metrics;
         float graphX = RulerSize, graphY = RulerSize;
         float graphW = EditorW - RulerSize - m.SpacingLarge;
         float barY = graphY + GraphH + m.Spacing;
 
         {
-            var el = paper.CurrentParent;
+            ElementHandle el = paper.CurrentParent;
 
             // Initialize view bounds
             bool initialized = paper.GetElementStorage(el, "init", false);
@@ -417,7 +417,7 @@ internal static class CurvePopover
             bool dragActive = paper.GetElementStorage(el, "dragActive", false);
             for (int i = 0; i < curve.Count; i++)
             {
-                var key = curve[i];
+                Keyframe key = curve[i];
                 bool isSelected = i == selectedIdx;
 
                 // While the selected key is being dragged, render its live (uncommitted) position
@@ -463,7 +463,7 @@ internal static class CurvePopover
                     .OnDragStart(idx, (ci, _) =>
                     {
                         paper.SetElementStorage(el, "sel", ci);
-                        var k = curve[ci];
+                        Keyframe k = curve[ci];
                         paper.SetElementStorage(el, "dragActive", true);
                         paper.SetElementStorage(el, "dragT", k.Time);
                         paper.SetElementStorage(el, "dragV", k.Value);
@@ -484,7 +484,7 @@ internal static class CurvePopover
 
                         float t = paper.GetElementStorage(el, "dragT", 0f);
                         float v = paper.GetElementStorage(el, "dragV", 0f);
-                        var k = curve[ci];
+                        Keyframe k = curve[ci];
                         // MoveKey re-sorts when the drag crosses a neighbour and hands back where the
                         // key landed, which is what the selection has to follow.
                         int landed = curve.MoveKey(ci, new Keyframe(t, v, k.InTangent, k.OutTangent, k.Interpolation));
@@ -543,8 +543,8 @@ internal static class CurvePopover
         AnimationCurve curve, ElementHandle el, Action<AnimationCurve> onChange,
         float kx, float ky, float tangent, float dir, float tToX, float vToY, OrigamiTheme theme)
     {
-        var (hx, hy) = CurveRenderer.GetTangentScreenPos(kx, ky, tangent, dir, tToX, vToY);
-        var m = theme.Metrics;
+        (float hx, float hy) = CurveRenderer.GetTangentScreenPos(kx, ky, tangent, dir, tToX, vToY);
+        OrigamiMetrics m = theme.Metrics;
 
         paper.Box($"{id}_tan{side}_{keyIdx}")
             .PositionType(PositionType.SelfDirected)
@@ -555,7 +555,7 @@ internal static class CurvePopover
             .StopEventPropagation()
             .OnDragging(keyIdx, (ci, e) =>
                         {
-                            var k = curve[ci];
+                            Keyframe k = curve[ci];
                             float dt = (float)e.Delta.X / tToX;
                             float dv = -(float)e.Delta.Y / vToY;
 
@@ -604,8 +604,8 @@ internal sealed class CurveEditorModal : IModal
 
     public void Draw(Paper paper, int layer, int stackIndex)
     {
-        var theme = Origami.Current;
-        var m = theme.Metrics;
+        OrigamiTheme theme = Origami.Current;
+        OrigamiMetrics m = theme.Metrics;
 
         using (paper.Column($"{_id}_modal")
             .PositionType(PositionType.SelfDirected)

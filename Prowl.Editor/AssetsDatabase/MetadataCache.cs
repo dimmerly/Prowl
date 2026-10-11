@@ -27,7 +27,7 @@ public static class MetadataCache
 
             // Version check reject incompatible cache
             int version = 0;
-            if (root.TryGet("version", out var versionTag))
+            if (root.TryGet("version", out EchoObject? versionTag))
                 version = versionTag.IntValue;
 
             if (version != CurrentVersion)
@@ -36,11 +36,11 @@ public static class MetadataCache
                 return result; // Return empty caller will do a full scan
             }
 
-            if (root.TryGet("entries", out var entriesTag) && entriesTag.TagType == EchoType.List)
+            if (root.TryGet("entries", out EchoObject? entriesTag) && entriesTag.TagType == EchoType.List)
             {
-                foreach (var entryTag in entriesTag.List)
+                foreach (EchoObject entryTag in entriesTag.List)
                 {
-                    var entry = Serializer.Deserialize<AssetEntry>(entryTag, new SerializationContext());
+                    AssetEntry? entry = Serializer.Deserialize<AssetEntry>(entryTag, new SerializationContext());
                     if (entry != null && entry.Guid != Guid.Empty)
                         result[entry.Guid] = entry;
                 }
@@ -64,10 +64,10 @@ public static class MetadataCache
             root["lastScanTime"] = new EchoObject(DateTime.UtcNow.ToString("o"));
 
             var list = EchoObject.NewList();
-            foreach (var entry in entries)
+            foreach (AssetEntry entry in entries)
             {
                 var ctx = new SerializationContext();
-                var serialized = Serializer.Serialize(entry, ctx);
+                EchoObject serialized = Serializer.Serialize(entry, ctx);
                 if (serialized != null)
                     list.ListAdd(serialized);
             }

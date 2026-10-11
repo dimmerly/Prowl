@@ -320,7 +320,7 @@ internal sealed unsafe class OpenXRInput
     /// <summary>One tracker per hand, or none when the runtime will not make them, which leaves hands untracked.</summary>
     private ExtHandTracking? CreateHandTrackers()
     {
-        if (!_xr.TryGetInstanceExtension<ExtHandTracking>(null, _instance, out var extension)) return null;
+        if (!_xr.TryGetInstanceExtension<ExtHandTracking>(null, _instance, out ExtHandTracking? extension)) return null;
         for (int hand = 0; hand < 2; hand++)
         {
             var info = new HandTrackerCreateInfoEXT
@@ -387,7 +387,7 @@ internal sealed unsafe class OpenXRInput
             }
 
             if (accepted.Count == 0) continue;
-            var all = accepted.ToArray();
+            ActionSuggestedBinding[] all = accepted.ToArray();
             fixed (ActionSuggestedBinding* ptr = all)
                 OpenXRSession.Check(Suggest(profile, ptr, all.Length), "xrSuggestInteractionProfileBindings");
         }
@@ -517,8 +517,8 @@ internal sealed unsafe class OpenXRInput
         _handTracked[hand] = false;
         if (_handTracking == null) return;
 
-        var joints = stackalloc HandJointLocationEXT[s_jointCount];
-        var velocities = stackalloc HandJointVelocityEXT[s_jointCount];
+        HandJointLocationEXT* joints = stackalloc HandJointLocationEXT[s_jointCount];
+        HandJointVelocityEXT* velocities = stackalloc HandJointVelocityEXT[s_jointCount];
         var velocityList = new HandJointVelocitiesEXT
         {
             Type = StructureType.HandJointVelocitiesExt,
@@ -546,7 +546,7 @@ internal sealed unsafe class OpenXRInput
 
     private static XRHandJointPose ToProwl(in HandJointLocationEXT joint, in HandJointVelocityEXT velocity)
     {
-        var flags = joint.LocationFlags;
+        SpaceLocationFlags flags = joint.LocationFlags;
         var pose = new XRPose
         {
             Position = OpenXRSession.ToProwl(joint.Pose.Position),
@@ -567,14 +567,14 @@ internal sealed unsafe class OpenXRInput
 
     private float ReadFloat(XrAction action, int hand)
     {
-        var info = GetInfo(action, _handPaths[hand]);
+        ActionStateGetInfo info = GetInfo(action, _handPaths[hand]);
         var state = new ActionStateFloat { Type = StructureType.ActionStateFloat };
         return _xr.GetActionStateFloat(_session, &info, &state) == Result.Success && state.IsActive != 0 ? state.CurrentState : 0f;
     }
 
     private Float2 ReadVector2(XrAction action, int hand)
     {
-        var info = GetInfo(action, _handPaths[hand]);
+        ActionStateGetInfo info = GetInfo(action, _handPaths[hand]);
         var state = new ActionStateVector2f { Type = StructureType.ActionStateVector2f };
         if (_xr.GetActionStateVector2(_session, &info, &state) != Result.Success || state.IsActive == 0) return Float2.Zero;
         return new Float2(state.CurrentState.X, state.CurrentState.Y);
@@ -582,7 +582,7 @@ internal sealed unsafe class OpenXRInput
 
     private bool ReadBool(XrAction action, int hand, out bool changed)
     {
-        var info = GetInfo(action, _handPaths[hand]);
+        ActionStateGetInfo info = GetInfo(action, _handPaths[hand]);
         var state = new ActionStateBoolean { Type = StructureType.ActionStateBoolean };
         bool read = _xr.GetActionStateBoolean(_session, &info, &state) == Result.Success && state.IsActive != 0;
         changed = read && state.ChangedSinceLastSync != 0;
@@ -591,7 +591,7 @@ internal sealed unsafe class OpenXRInput
 
     private XRPose LocateAction(XrAction poseAction, Space space, ulong subactionPath, long time)
     {
-        var info = GetInfo(poseAction, subactionPath);
+        ActionStateGetInfo info = GetInfo(poseAction, subactionPath);
         var state = new ActionStatePose { Type = StructureType.ActionStatePose };
         if (_xr.GetActionStatePose(_session, &info, &state) != Result.Success || state.IsActive == 0) return default;
         return OpenXRSession.Locate(_xr, space, _appSpace, time);

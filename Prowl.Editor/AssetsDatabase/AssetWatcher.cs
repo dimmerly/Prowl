@@ -105,7 +105,7 @@ public class AssetWatcher : IDisposable
             //   - Created+Deleted cancels out.
             var coalesced = new Dictionary<string, FileEvent>(StringComparer.OrdinalIgnoreCase);
 
-            foreach (var evt in _pendingEvents)
+            foreach (FileEvent evt in _pendingEvents)
             {
                 // Renames always win they're the most specific
                 if (evt.Type == FileEventType.Renamed)
@@ -117,7 +117,7 @@ public class AssetWatcher : IDisposable
                     continue;
                 }
 
-                if (coalesced.TryGetValue(evt.Path, out var existing))
+                if (coalesced.TryGetValue(evt.Path, out FileEvent existing))
                 {
                     // Created + Deleted = cancel out entirely
                     if (existing.Type == FileEventType.Created && evt.Type == FileEventType.Deleted)

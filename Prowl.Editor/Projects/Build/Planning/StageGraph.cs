@@ -33,14 +33,14 @@ public sealed class StageGraph
     public StageGraph(IEnumerable<StageNode> nodes)
     {
         _nodes = new Dictionary<BuildStage, StageNode>();
-        foreach (var node in nodes)
+        foreach (StageNode node in nodes)
         {
             if (!_nodes.TryAdd(node.Stage, node))
                 throw new ArgumentException($"Stage '{node.Stage}' was declared twice.", nameof(nodes));
         }
 
-        foreach (var node in _nodes.Values)
-            foreach (var dependency in node.DependsOn)
+        foreach (StageNode node in _nodes.Values)
+            foreach (BuildStage dependency in node.DependsOn)
                 if (!_nodes.ContainsKey(dependency))
                     throw new ArgumentException($"Stage '{node.Stage}' depends on '{dependency}', which is not in the graph.", nameof(nodes));
 
@@ -69,7 +69,7 @@ public sealed class StageGraph
         while (order.Count < _nodes.Count)
         {
             // Ordered by id so an identical graph always produces an identical order.
-            var next = Ready(completed).FirstOrDefault();
+            StageNode? next = Ready(completed).FirstOrDefault();
             if (next is null) return null;
 
             order.Add(next.Stage);

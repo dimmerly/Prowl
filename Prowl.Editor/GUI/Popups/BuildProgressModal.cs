@@ -59,14 +59,14 @@ public sealed class BuildProgressModal : IModal
             return;
         }
 
-        var theme = Origami.Current;
-        var font = EditorTheme.DefaultFont;
+        OrigamiTheme theme = Origami.Current;
+        FontFile? font = EditorTheme.DefaultFont;
         if (font == null) return;
 
         float screenW = (float)paper.ScreenRect.Size.X;
         float screenH = (float)paper.ScreenRect.Size.Y;
 
-        var container = paper.Column("bpm_root")
+        ElementBuilder container = paper.Column("bpm_root")
             .PositionType(PositionType.SelfDirected)
             .Position((screenW - Width) / 2, screenH * 0.36f)
             .Width(Width).Height(UnitValue.Auto)
@@ -86,7 +86,7 @@ public sealed class BuildProgressModal : IModal
 
     private static void DrawHeader(Paper paper, FontFile font)
     {
-        var theme = Origami.Current;
+        OrigamiTheme theme = Origami.Current;
         float headH = theme.Metrics.FontSize + 18f;
 
         using (paper.Row("bpm_head").Width(UnitValue.Stretch()).Height(headH)
@@ -110,7 +110,7 @@ public sealed class BuildProgressModal : IModal
     private void DrawBody(Paper paper, FontFile font)
     {
         bool cancelling = _progress.IsCancelled;
-        var mono = EditorTheme.FontMono ?? font;
+        FontFile mono = EditorTheme.FontMono ?? font;
 
         using (paper.Column("bpm_body").Width(UnitValue.Stretch()).Height(UnitValue.Auto)
             .Padding(13, 13, 13, 13).Gap(10).Enter())

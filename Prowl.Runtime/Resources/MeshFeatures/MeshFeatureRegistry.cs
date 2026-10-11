@@ -32,7 +32,7 @@ public static class MeshFeatureRegistry
         {
             Initialize();
             int sum = 0;
-            foreach (var spec in _specs.Values) sum = unchecked(sum + spec.Version);
+            foreach (MeshFeatureSpec spec in _specs.Values) sum = unchecked(sum + spec.Version);
             return sum;
         }
     }
@@ -40,7 +40,7 @@ public static class MeshFeatureRegistry
     public static MeshFeatureSpec? Find(string key)
     {
         Initialize();
-        return _specs.TryGetValue(key, out var s) ? s : null;
+        return _specs.TryGetValue(key, out MeshFeatureSpec? s) ? s : null;
     }
 
     public static void Reinitialize()
@@ -70,7 +70,7 @@ public static class MeshFeatureRegistry
         if (_initialized) return;
         _initialized = true;
 
-        foreach (var type in RuntimeUtils.FindTypesImplementing(typeof(MeshFeatureSpec)))
+        foreach (Type type in RuntimeUtils.FindTypesImplementing(typeof(MeshFeatureSpec)))
         {
             try
             {
@@ -97,7 +97,7 @@ public static class MeshFeatureRegistry
     /// </summary>
     public static void PopulateDefaultSettings(EchoObject settings)
     {
-        foreach (var spec in Specs)
+        foreach (MeshFeatureSpec spec in Specs)
             spec.PopulateDefaults(settings);
     }
 }

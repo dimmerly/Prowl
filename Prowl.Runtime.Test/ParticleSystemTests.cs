@@ -25,8 +25,8 @@ public class ParticleSystemTests : RuntimeTestBase
     /// <summary>A system that emits nothing by default, from a point, moving straight up at no speed.</summary>
     private ParticleSystemComponent CreateSystem(Scene scene, Action<ParticleSystemComponent>? configure = null, GameObject? parent = null)
     {
-        var go = CreateGameObject("Particles");
-        var system = go.AddComponent<ParticleSystemComponent>();
+        GameObject go = CreateGameObject("Particles");
+        ParticleSystemComponent system = go.AddComponent<ParticleSystemComponent>();
         system.Emission.RateOverTime = new MinMaxCurve(0f);
         system.Initial.StartSpeed = new MinMaxCurve(0f);
         system.Initial.StartLifetime = new MinMaxCurve(100f);
@@ -60,9 +60,9 @@ public class ParticleSystemTests : RuntimeTestBase
     [Fact]
     public void NonLoopingSystemKeepsSimulatingAfterEmissionEnds()
     {
-        var scene = CreateScene(enable: true);
+        Scene scene = CreateScene(enable: true);
         int stopped = 0;
-        var system = CreateSystem(scene, s =>
+        ParticleSystemComponent system = CreateSystem(scene, s =>
         {
             s.Duration = 1f;
             s.Looping = false;
@@ -90,8 +90,8 @@ public class ParticleSystemTests : RuntimeTestBase
     [Fact]
     public void BurstsFireAtTheirTimeInSeconds()
     {
-        var scene = CreateScene(enable: true);
-        var system = CreateSystem(scene, s =>
+        Scene scene = CreateScene(enable: true);
+        ParticleSystemComponent system = CreateSystem(scene, s =>
         {
             s.Duration = 5f;
             s.Looping = false;
@@ -108,8 +108,8 @@ public class ParticleSystemTests : RuntimeTestBase
     [Fact]
     public void LoopingBurstsFireEveryLoop()
     {
-        var scene = CreateScene(enable: true);
-        var system = CreateSystem(scene, s =>
+        Scene scene = CreateScene(enable: true);
+        ParticleSystemComponent system = CreateSystem(scene, s =>
         {
             s.Duration = 1f;
             s.Emission.Bursts.Add(new ParticleBurst(0.5f, 3));
@@ -123,14 +123,14 @@ public class ParticleSystemTests : RuntimeTestBase
     [Fact]
     public void BurstCyclesAreCounted()
     {
-        var scene = CreateScene(enable: true);
-        var limited = CreateSystem(scene, s =>
+        Scene scene = CreateScene(enable: true);
+        ParticleSystemComponent limited = CreateSystem(scene, s =>
         {
             s.Duration = 5f;
             s.Looping = false;
             s.Emission.Bursts.Add(new ParticleBurst(0f, 2, 2, 3, 0.5f));
         });
-        var endless = CreateSystem(scene, s =>
+        ParticleSystemComponent endless = CreateSystem(scene, s =>
         {
             s.Duration = 5f;
             s.Looping = false;
@@ -146,9 +146,9 @@ public class ParticleSystemTests : RuntimeTestBase
     [Fact]
     public void RateOverTimeEmitsAtItsRate()
     {
-        var scene = CreateScene(enable: true);
-        var constant = CreateSystem(scene, s => s.Emission.RateOverTime = new MinMaxCurve(10f));
-        var random = CreateSystem(scene, s => s.Emission.RateOverTime = new MinMaxCurve(20f, 20f));
+        Scene scene = CreateScene(enable: true);
+        ParticleSystemComponent constant = CreateSystem(scene, s => s.Emission.RateOverTime = new MinMaxCurve(10f));
+        ParticleSystemComponent random = CreateSystem(scene, s => s.Emission.RateOverTime = new MinMaxCurve(20f, 20f));
 
         Run(scene, 2f);
 
@@ -159,10 +159,10 @@ public class ParticleSystemTests : RuntimeTestBase
     [Fact]
     public void RateCurvesFollowEveryLoop()
     {
-        var scene = CreateScene(enable: true);
+        Scene scene = CreateScene(enable: true);
         // No emission in the first half of each loop, 20 per second in the second.
         var curve = new AnimationCurve(new Keyframe(0f, 0f) { Interpolation = CurveInterpolation.Step }, new Keyframe(0.5f, 20f) { Interpolation = CurveInterpolation.Step }, new Keyframe(1f, 20f));
-        var system = CreateSystem(scene, s =>
+        ParticleSystemComponent system = CreateSystem(scene, s =>
         {
             s.Duration = 1f;
             s.Emission.RateOverTime = new MinMaxCurve(curve);
@@ -179,8 +179,8 @@ public class ParticleSystemTests : RuntimeTestBase
     [Fact]
     public void LongFramesSpreadParticlesInsteadOfClumping()
     {
-        var scene = CreateScene(enable: true);
-        var system = CreateSystem(scene, s =>
+        Scene scene = CreateScene(enable: true);
+        ParticleSystemComponent system = CreateSystem(scene, s =>
         {
             s.SimulationSpace = SimulationSpace.World;
             s.Emission.RateOverTime = new MinMaxCurve(100f);
@@ -208,8 +208,8 @@ public class ParticleSystemTests : RuntimeTestBase
     [Fact]
     public void LocalSpaceGravityPullsDownInTheWorld()
     {
-        var scene = CreateScene(enable: true);
-        var system = CreateSystem(scene, s => s.Initial.GravityModifier = 1f);
+        Scene scene = CreateScene(enable: true);
+        ParticleSystemComponent system = CreateSystem(scene, s => s.Initial.GravityModifier = 1f);
         system.Transform.Rotation = Quaternion.AxisAngle(Float3.UnitZ, MathF.PI * 0.5f);
 
         system.Emit(new EmitParams { Position = Float3.Zero, Velocity = Float3.Zero }, 1);
@@ -223,8 +223,8 @@ public class ParticleSystemTests : RuntimeTestBase
     [Fact]
     public void VelocityOverLifetimeIsAVelocityNotAnAcceleration()
     {
-        var scene = CreateScene(enable: true);
-        var system = CreateSystem(scene, s =>
+        Scene scene = CreateScene(enable: true);
+        ParticleSystemComponent system = CreateSystem(scene, s =>
         {
             s.SimulationSpace = SimulationSpace.World;
             s.VelocityOverLifetime.Enabled = true;
@@ -242,8 +242,8 @@ public class ParticleSystemTests : RuntimeTestBase
     [Fact]
     public void LimitVelocityPullsSpeedToTheLimit()
     {
-        var scene = CreateScene(enable: true);
-        var system = CreateSystem(scene, s =>
+        Scene scene = CreateScene(enable: true);
+        ParticleSystemComponent system = CreateSystem(scene, s =>
         {
             s.LimitVelocityOverLifetime.Enabled = true;
             s.LimitVelocityOverLifetime.Limit = new MinMaxCurve(2f);
@@ -259,8 +259,8 @@ public class ParticleSystemTests : RuntimeTestBase
     [Fact]
     public void InheritVelocityPicksUpTheEmittersMovement()
     {
-        var scene = CreateScene(enable: true);
-        var system = CreateSystem(scene, s =>
+        Scene scene = CreateScene(enable: true);
+        ParticleSystemComponent system = CreateSystem(scene, s =>
         {
             s.SimulationSpace = SimulationSpace.World;
             s.Emission.RateOverTime = new MinMaxCurve(60f);
@@ -282,8 +282,8 @@ public class ParticleSystemTests : RuntimeTestBase
     [Fact]
     public void ParticlesBounceOffCollisionPlanes()
     {
-        var scene = CreateScene(enable: true);
-        var plane = CreateGameObject("Plane");
+        Scene scene = CreateScene(enable: true);
+        GameObject plane = CreateGameObject("Plane");
         scene.Add(plane);
 
         ParticleSystemComponent MakeSystem(float bounce) => CreateSystem(scene, s =>
@@ -296,8 +296,8 @@ public class ParticleSystemTests : RuntimeTestBase
             s.Collision.Bounce = bounce;
         });
 
-        var bouncy = MakeSystem(1f);
-        var dead = MakeSystem(0f);
+        ParticleSystemComponent bouncy = MakeSystem(1f);
+        ParticleSystemComponent dead = MakeSystem(0f);
         var start = new EmitParams { Position = new Float3(0f, 2f, 0f), Velocity = new Float3(0f, -10f, 0f) };
         bouncy.Emit(start, 1);
         dead.Emit(start, 1);
@@ -316,14 +316,14 @@ public class ParticleSystemTests : RuntimeTestBase
     [InlineData(ParticleCollisionQuality.Low)]
     public void ParticlesRestOnTheWorldInsteadOfSinking(ParticleCollisionQuality quality)
     {
-        var scene = CreateScene(enable: true);
-        var floor = CreateGameObject("Floor");
+        Scene scene = CreateScene(enable: true);
+        GameObject floor = CreateGameObject("Floor");
         scene.Add(floor);
         floor.AddComponent<BoxCollider>().Size = new Float3(20f, 1f, 20f);
         floor.Transform.Position = new Float3(0f, -0.5f, 0f);
         Tick(scene);
 
-        var system = CreateSystem(scene, s =>
+        ParticleSystemComponent system = CreateSystem(scene, s =>
         {
             s.SimulationSpace = SimulationSpace.World;
             s.Initial.GravityModifier = 1f;
@@ -343,8 +343,8 @@ public class ParticleSystemTests : RuntimeTestBase
     [Fact]
     public void MaxParticlesCapsEmission()
     {
-        var scene = CreateScene(enable: true);
-        var system = CreateSystem(scene, s =>
+        Scene scene = CreateScene(enable: true);
+        ParticleSystemComponent system = CreateSystem(scene, s =>
         {
             s.MaxParticles = 5;
             s.Emission.Bursts.Add(new ParticleBurst(0f, 20));
@@ -358,8 +358,8 @@ public class ParticleSystemTests : RuntimeTestBase
     [Fact]
     public void DeadParticlesAreRemovedWithoutDisturbingTheRest()
     {
-        var scene = CreateScene(enable: true);
-        var system = CreateSystem(scene);
+        Scene scene = CreateScene(enable: true);
+        ParticleSystemComponent system = CreateSystem(scene);
         for (int i = 0; i < 10; i++)
             system.Emit(new EmitParams { StartLifetime = i % 2 == 0 ? 0.1f : 10f, Position = new Float3(i, 0f, 0f) }, 1);
 
@@ -378,8 +378,8 @@ public class ParticleSystemTests : RuntimeTestBase
     [Fact]
     public void ChangingSimulationSpaceKeepsParticlesInPlace()
     {
-        var scene = CreateScene(enable: true);
-        var system = CreateSystem(scene);
+        Scene scene = CreateScene(enable: true);
+        ParticleSystemComponent system = CreateSystem(scene);
         system.Transform.Position = new Float3(10f, 0f, 0f);
         system.Transform.Rotation = Quaternion.AxisAngle(Float3.UnitY, 1f);
         system.Transform.LocalScale = new Float3(2f);
@@ -397,8 +397,8 @@ public class ParticleSystemTests : RuntimeTestBase
     [Fact]
     public void StopEmittingLetsLiveParticlesFinish()
     {
-        var scene = CreateScene(enable: true);
-        var system = CreateSystem(scene, s =>
+        Scene scene = CreateScene(enable: true);
+        ParticleSystemComponent system = CreateSystem(scene, s =>
         {
             s.Emission.RateOverTime = new MinMaxCurve(10f);
             s.Initial.StartLifetime = new MinMaxCurve(1f);
@@ -419,8 +419,8 @@ public class ParticleSystemTests : RuntimeTestBase
     [Fact]
     public void StopActionDestroyRemovesTheGameObjectWhenFinished()
     {
-        var scene = CreateScene(enable: true);
-        var system = CreateSystem(scene, s =>
+        Scene scene = CreateScene(enable: true);
+        ParticleSystemComponent system = CreateSystem(scene, s =>
         {
             s.Duration = 0.1f;
             s.Looping = false;
@@ -438,8 +438,8 @@ public class ParticleSystemTests : RuntimeTestBase
     [Fact]
     public void PrewarmStartsWithAFullLoop()
     {
-        var scene = CreateScene(enable: true);
-        var system = CreateSystem(scene, s =>
+        Scene scene = CreateScene(enable: true);
+        ParticleSystemComponent system = CreateSystem(scene, s =>
         {
             s.Duration = 2f;
             s.Prewarm = true;
@@ -453,8 +453,8 @@ public class ParticleSystemTests : RuntimeTestBase
     [Fact]
     public void StartDelayHoldsEmissionBack()
     {
-        var scene = CreateScene(enable: true);
-        var system = CreateSystem(scene, s =>
+        Scene scene = CreateScene(enable: true);
+        ParticleSystemComponent system = CreateSystem(scene, s =>
         {
             s.StartDelay = new MinMaxCurve(1f);
             s.Emission.Bursts.Add(new ParticleBurst(0f, 4));
@@ -470,8 +470,8 @@ public class ParticleSystemTests : RuntimeTestBase
     [Fact]
     public void FixedSeedReplaysTheSameParticles()
     {
-        var scene = CreateScene(enable: true);
-        var system = CreateSystem(scene, s =>
+        Scene scene = CreateScene(enable: true);
+        ParticleSystemComponent system = CreateSystem(scene, s =>
         {
             s.AutoRandomSeed = false;
             s.RandomSeed = 42;
@@ -482,12 +482,12 @@ public class ParticleSystemTests : RuntimeTestBase
         });
 
         Run(scene, 0.5f);
-        var first = system.Particles.ToArray();
+        Particle[] first = system.Particles.ToArray();
 
         system.Stop(true, ParticleStopBehavior.StopEmittingAndClear);
         system.Play();
         Run(scene, 0.5f);
-        var second = system.Particles.ToArray();
+        Particle[] second = system.Particles.ToArray();
 
         Assert.NotEmpty(first);
         Assert.Equal(first.Length, second.Length);
@@ -498,8 +498,8 @@ public class ParticleSystemTests : RuntimeTestBase
     [Fact]
     public void SimulateFastForwardsAndPauses()
     {
-        var scene = CreateScene(enable: true);
-        var system = CreateSystem(scene, s => s.Emission.RateOverTime = new MinMaxCurve(10f));
+        Scene scene = CreateScene(enable: true);
+        ParticleSystemComponent system = CreateSystem(scene, s => s.Emission.RateOverTime = new MinMaxCurve(10f));
 
         system.Simulate(1.5f);
 
@@ -513,18 +513,18 @@ public class ParticleSystemTests : RuntimeTestBase
     [Fact]
     public void CullingPausesWhileUnseenAndCatchUpFastForwards()
     {
-        var scene = CreateScene(enable: true);
-        var paused = CreateSystem(scene, s =>
+        Scene scene = CreateScene(enable: true);
+        ParticleSystemComponent paused = CreateSystem(scene, s =>
         {
             s.CullingMode = ParticleCullingMode.Pause;
             s.Emission.RateOverTime = new MinMaxCurve(60f);
         });
-        var catchUp = CreateSystem(scene, s =>
+        ParticleSystemComponent catchUp = CreateSystem(scene, s =>
         {
             s.CullingMode = ParticleCullingMode.PauseAndCatchUp;
             s.Emission.RateOverTime = new MinMaxCurve(60f);
         });
-        var always = CreateSystem(scene, s => s.Emission.RateOverTime = new MinMaxCurve(60f));
+        ParticleSystemComponent always = CreateSystem(scene, s => s.Emission.RateOverTime = new MinMaxCurve(60f));
 
         RunFrames(scene, 60);
         Assert.Equal(0, paused.ParticleCount);
@@ -540,13 +540,13 @@ public class ParticleSystemTests : RuntimeTestBase
     [Fact]
     public void DeathSubEmittersEmitTheChildsBurstsAndSilenceIt()
     {
-        var scene = CreateScene(enable: true);
-        var parent = CreateSystem(scene, s =>
+        Scene scene = CreateScene(enable: true);
+        ParticleSystemComponent parent = CreateSystem(scene, s =>
         {
             s.Initial.StartLifetime = new MinMaxCurve(0.1f);
             s.Emission.Bursts.Add(new ParticleBurst(0f, 3));
         });
-        var child = CreateSystem(scene, s => s.Emission.Bursts.Add(new ParticleBurst(0f, 4)), parent.GameObject);
+        ParticleSystemComponent child = CreateSystem(scene, s => s.Emission.Bursts.Add(new ParticleBurst(0f, 4)), parent.GameObject);
         parent.SubEmitters.Enabled = true;
         parent.SubEmitters.Emitters.Add(new SubEmitter { System = child, Type = SubEmitterType.Death });
         parent.Stop(false, ParticleStopBehavior.StopEmittingAndClear);
@@ -562,9 +562,9 @@ public class ParticleSystemTests : RuntimeTestBase
     [Fact]
     public void BirthSubEmittersEmitAtTheChildsRate()
     {
-        var scene = CreateScene(enable: true);
-        var parent = CreateSystem(scene, s => s.Initial.StartLifetime = new MinMaxCurve(10f));
-        var child = CreateSystem(scene, s => s.Emission.RateOverTime = new MinMaxCurve(20f), parent.GameObject);
+        Scene scene = CreateScene(enable: true);
+        ParticleSystemComponent parent = CreateSystem(scene, s => s.Initial.StartLifetime = new MinMaxCurve(10f));
+        ParticleSystemComponent child = CreateSystem(scene, s => s.Emission.RateOverTime = new MinMaxCurve(20f), parent.GameObject);
         parent.SubEmitters.Enabled = true;
         parent.SubEmitters.Emitters.Add(new SubEmitter { System = child, Type = SubEmitterType.Birth });
 
@@ -577,10 +577,10 @@ public class ParticleSystemTests : RuntimeTestBase
     [Fact]
     public void EditModeOnlySimulatesWhileSelected()
     {
-        using var _ = EditMode();
-        var scene = CreateScene(enable: true);
-        var parent = CreateSystem(scene, s => s.Emission.RateOverTime = new MinMaxCurve(10f));
-        var child = CreateSystem(scene, s => s.Emission.RateOverTime = new MinMaxCurve(10f), parent.GameObject);
+        using EditModeScope _ = EditMode();
+        Scene scene = CreateScene(enable: true);
+        ParticleSystemComponent parent = CreateSystem(scene, s => s.Emission.RateOverTime = new MinMaxCurve(10f));
+        ParticleSystemComponent child = CreateSystem(scene, s => s.Emission.RateOverTime = new MinMaxCurve(10f), parent.GameObject);
 
         Run(scene, 0.5f);
         Assert.Equal(0, parent.ParticleCount);
@@ -618,8 +618,8 @@ public class ParticleSystemTests : RuntimeTestBase
     [Fact]
     public void TrailsFadeOutAfterTheirParticleDies()
     {
-        var scene = CreateScene(enable: true);
-        var system = CreateSystem(scene, s =>
+        Scene scene = CreateScene(enable: true);
+        ParticleSystemComponent system = CreateSystem(scene, s =>
         {
             s.SimulationSpace = SimulationSpace.World;
             s.Initial.StartLifetime = new MinMaxCurve(0.5f);
@@ -631,7 +631,7 @@ public class ParticleSystemTests : RuntimeTestBase
         system.Emit(1);
 
         Run(scene, 0.4f);
-        var buffer = Array.Empty<InstanceData>();
+        InstanceData[] buffer = Array.Empty<InstanceData>();
         AABB bounds = default;
         bool hasBounds = false;
         int segments = system.Trails.BuildSegments(system, ref buffer, ref bounds, ref hasBounds);
@@ -649,8 +649,8 @@ public class ParticleSystemTests : RuntimeTestBase
     [Fact]
     public void LightsRespectTheCap()
     {
-        var scene = CreateScene(enable: true);
-        var system = CreateSystem(scene, s =>
+        Scene scene = CreateScene(enable: true);
+        ParticleSystemComponent system = CreateSystem(scene, s =>
         {
             s.Light.Enabled = true;
             s.Light.MaxLights = 3;
@@ -683,15 +683,15 @@ public class ParticleSystemTests : RuntimeTestBase
     [Fact]
     public void SubEmitterChildrenStayQuietAfterTheirParentFinishes()
     {
-        var scene = CreateScene(enable: true);
-        var parent = CreateSystem(scene, s =>
+        Scene scene = CreateScene(enable: true);
+        ParticleSystemComponent parent = CreateSystem(scene, s =>
         {
             s.Duration = 0.2f;
             s.Looping = false;
             s.Initial.StartLifetime = new MinMaxCurve(0.1f);
             s.Emission.Bursts.Add(new ParticleBurst(0f, 2));
         });
-        var child = CreateSystem(scene, s =>
+        ParticleSystemComponent child = CreateSystem(scene, s =>
         {
             s.Initial.StartLifetime = new MinMaxCurve(0.5f);
             s.Emission.RateOverTime = new MinMaxCurve(50f);
@@ -713,8 +713,8 @@ public class ParticleSystemTests : RuntimeTestBase
     [Fact]
     public void ZeroScaleKeepsParticlesFinite()
     {
-        var scene = CreateScene(enable: true);
-        var system = CreateSystem(scene, s =>
+        Scene scene = CreateScene(enable: true);
+        ParticleSystemComponent system = CreateSystem(scene, s =>
         {
             s.Initial.GravityModifier = 1f;
             s.Emission.RateOverTime = new MinMaxCurve(30f);
@@ -737,13 +737,13 @@ public class ParticleSystemTests : RuntimeTestBase
     [Fact]
     public void SimulateKeepsWhatSubEmittersProduced()
     {
-        var scene = CreateScene(enable: true);
-        var parent = CreateSystem(scene, s =>
+        Scene scene = CreateScene(enable: true);
+        ParticleSystemComponent parent = CreateSystem(scene, s =>
         {
             s.Initial.StartLifetime = new MinMaxCurve(0.1f);
             s.Emission.Bursts.Add(new ParticleBurst(0f, 2));
         });
-        var child = CreateSystem(scene, s => s.Emission.Bursts.Add(new ParticleBurst(0f, 4)), parent.GameObject);
+        ParticleSystemComponent child = CreateSystem(scene, s => s.Emission.Bursts.Add(new ParticleBurst(0f, 4)), parent.GameObject);
         parent.SubEmitters.Enabled = true;
         parent.SubEmitters.Emitters.Add(new SubEmitter { System = child, Type = SubEmitterType.Death });
 
@@ -756,8 +756,8 @@ public class ParticleSystemTests : RuntimeTestBase
     [Fact]
     public void ResumingAfterAPauseDoesNotFillTheDistanceMoved()
     {
-        var scene = CreateScene(enable: true);
-        var system = CreateSystem(scene, s =>
+        Scene scene = CreateScene(enable: true);
+        ParticleSystemComponent system = CreateSystem(scene, s =>
         {
             s.SimulationSpace = SimulationSpace.World;
             s.Emission.RateOverDistance = new MinMaxCurve(10f);
@@ -779,10 +779,10 @@ public class ParticleSystemTests : RuntimeTestBase
     [Fact]
     public void AnEmitterRidingItsCustomSpaceIsNotMoving()
     {
-        var scene = CreateScene(enable: true);
-        var ship = CreateGameObject("Ship");
+        Scene scene = CreateScene(enable: true);
+        GameObject ship = CreateGameObject("Ship");
         scene.Add(ship);
-        var engine = CreateSystem(scene, s =>
+        ParticleSystemComponent engine = CreateSystem(scene, s =>
         {
             s.SimulationSpace = SimulationSpace.Custom;
             s.CustomSimulationSpace = ship;
@@ -805,8 +805,8 @@ public class ParticleSystemTests : RuntimeTestBase
     [Fact]
     public void OrbitsKeepTheirRadius()
     {
-        var scene = CreateScene(enable: true);
-        var system = CreateSystem(scene, s =>
+        Scene scene = CreateScene(enable: true);
+        ParticleSystemComponent system = CreateSystem(scene, s =>
         {
             s.SimulationSpace = SimulationSpace.World;
             s.VelocityOverLifetime.Enabled = true;
@@ -823,14 +823,14 @@ public class ParticleSystemTests : RuntimeTestBase
     [Fact]
     public void ParticlesSlidingAlongTheWorldDoNotSinkIntoIt()
     {
-        var scene = CreateScene(enable: true);
-        var floor = CreateGameObject("Floor");
+        Scene scene = CreateScene(enable: true);
+        GameObject floor = CreateGameObject("Floor");
         scene.Add(floor);
         floor.AddComponent<BoxCollider>().Size = new Float3(40f, 1f, 40f);
         floor.Transform.Position = new Float3(0f, -0.5f, 0f);
         Tick(scene);
 
-        var system = CreateSystem(scene, s =>
+        ParticleSystemComponent system = CreateSystem(scene, s =>
         {
             s.SimulationSpace = SimulationSpace.World;
             s.Initial.GravityModifier = 1f;
@@ -854,10 +854,10 @@ public class ParticleSystemTests : RuntimeTestBase
     [Fact]
     public void AnimatedVelocityIntoAPlaneDoesNotLaunchParticles()
     {
-        var scene = CreateScene(enable: true);
-        var plane = CreateGameObject("Plane");
+        Scene scene = CreateScene(enable: true);
+        GameObject plane = CreateGameObject("Plane");
         scene.Add(plane);
-        var system = CreateSystem(scene, s =>
+        ParticleSystemComponent system = CreateSystem(scene, s =>
         {
             s.SimulationSpace = SimulationSpace.World;
             s.Initial.StartSize = new MinMaxCurve(0.2f);
@@ -878,9 +878,9 @@ public class ParticleSystemTests : RuntimeTestBase
     [Fact]
     public void BirthSubEmittersLeaveAStreamBehindFastParents()
     {
-        var scene = CreateScene(enable: true);
-        var parent = CreateSystem(scene, s => s.SimulationSpace = SimulationSpace.World);
-        var child = CreateSystem(scene, s =>
+        Scene scene = CreateScene(enable: true);
+        ParticleSystemComponent parent = CreateSystem(scene, s => s.SimulationSpace = SimulationSpace.World);
+        ParticleSystemComponent child = CreateSystem(scene, s =>
         {
             s.SimulationSpace = SimulationSpace.World;
             s.Emission.RateOverTime = new MinMaxCurve(600f);
@@ -904,8 +904,8 @@ public class ParticleSystemTests : RuntimeTestBase
     [Fact]
     public void AHugeFrameIsCappedToAFewSteps()
     {
-        var scene = CreateScene(enable: true);
-        var system = CreateSystem(scene, s => s.Emission.RateOverTime = new MinMaxCurve(10f));
+        Scene scene = CreateScene(enable: true);
+        ParticleSystemComponent system = CreateSystem(scene, s => s.Emission.RateOverTime = new MinMaxCurve(10f));
 
         Run(scene, 60f, 60f);
 
@@ -915,8 +915,8 @@ public class ParticleSystemTests : RuntimeTestBase
     [Fact]
     public void CulledOneShotSystemsStillFinish()
     {
-        var scene = CreateScene(enable: true);
-        var system = CreateSystem(scene, s =>
+        Scene scene = CreateScene(enable: true);
+        ParticleSystemComponent system = CreateSystem(scene, s =>
         {
             s.CullingMode = ParticleCullingMode.Pause;
             s.Duration = 0.5f;
@@ -935,8 +935,8 @@ public class ParticleSystemTests : RuntimeTestBase
     [Fact]
     public void StorageGrowsWithUseInsteadOfUpFront()
     {
-        var scene = CreateScene(enable: true);
-        var system = CreateSystem(scene, s => s.MaxParticles = 1_000_000);
+        Scene scene = CreateScene(enable: true);
+        ParticleSystemComponent system = CreateSystem(scene, s => s.MaxParticles = 1_000_000);
 
         system.Emit(3);
         Run(scene, 0.1f);
@@ -948,8 +948,8 @@ public class ParticleSystemTests : RuntimeTestBase
     [Fact]
     public void LoweringMaxParticlesTrimsTheSystem()
     {
-        var scene = CreateScene(enable: true);
-        var system = CreateSystem(scene, s => s.Trails.Enabled = true);
+        Scene scene = CreateScene(enable: true);
+        ParticleSystemComponent system = CreateSystem(scene, s => s.Trails.Enabled = true);
         system.Emit(10);
 
         system.MaxParticles = 2;
@@ -962,8 +962,8 @@ public class ParticleSystemTests : RuntimeTestBase
     [Fact]
     public void AStoppedHandlerThatReplaysKeepsTheObject()
     {
-        var scene = CreateScene(enable: true);
-        var system = CreateSystem(scene, s =>
+        Scene scene = CreateScene(enable: true);
+        ParticleSystemComponent system = CreateSystem(scene, s =>
         {
             s.Duration = 0.1f;
             s.Looping = false;
@@ -983,8 +983,8 @@ public class ParticleSystemTests : RuntimeTestBase
     [Fact]
     public void AThrowingStoppedHandlerDoesNotBreakTheSystem()
     {
-        var scene = CreateScene(enable: true);
-        var system = CreateSystem(scene, s =>
+        Scene scene = CreateScene(enable: true);
+        ParticleSystemComponent system = CreateSystem(scene, s =>
         {
             s.Duration = 0.1f;
             s.Looping = false;
@@ -1001,8 +1001,8 @@ public class ParticleSystemTests : RuntimeTestBase
     [Fact]
     public void HugeBurstCountsAreClampedInsteadOfThrowing()
     {
-        var scene = CreateScene(enable: true);
-        var system = CreateSystem(scene, s =>
+        Scene scene = CreateScene(enable: true);
+        ParticleSystemComponent system = CreateSystem(scene, s =>
         {
             s.MaxParticles = 100;
             s.Emission.Bursts.Add(new ParticleBurst(0f, 0, int.MaxValue, 1, 0.01f));
@@ -1017,10 +1017,10 @@ public class ParticleSystemTests : RuntimeTestBase
     [Fact]
     public void RestingParticlesDoNotKeepReportingCollisions()
     {
-        var scene = CreateScene(enable: true);
-        var plane = CreateGameObject("Plane");
+        Scene scene = CreateScene(enable: true);
+        GameObject plane = CreateGameObject("Plane");
         scene.Add(plane);
-        var system = CreateSystem(scene, s =>
+        ParticleSystemComponent system = CreateSystem(scene, s =>
         {
             s.SimulationSpace = SimulationSpace.World;
             s.Initial.GravityModifier = 1f;
@@ -1043,15 +1043,15 @@ public class ParticleSystemTests : RuntimeTestBase
     [Fact]
     public void RemovalKeepsTrailsAndDeathSubEmittersInStep()
     {
-        var scene = CreateScene(enable: true);
-        var system = CreateSystem(scene, s =>
+        Scene scene = CreateScene(enable: true);
+        ParticleSystemComponent system = CreateSystem(scene, s =>
         {
             s.SimulationSpace = SimulationSpace.World;
             s.Initial.StartSpeed = new MinMaxCurve(3f);
             s.Trails.Enabled = true;
             s.Trails.MinVertexDistance = 0.05f;
         });
-        var child = CreateSystem(scene, s => s.Emission.Bursts.Add(new ParticleBurst(0f, 1)), system.GameObject);
+        ParticleSystemComponent child = CreateSystem(scene, s => s.Emission.Bursts.Add(new ParticleBurst(0f, 1)), system.GameObject);
         system.SubEmitters.Enabled = true;
         system.SubEmitters.Emitters.Add(new SubEmitter { System = child, Type = SubEmitterType.Death });
 
@@ -1063,7 +1063,7 @@ public class ParticleSystemTests : RuntimeTestBase
         Assert.Equal(5, system.ParticleCount);
         Assert.Equal(5, child.ParticleCount);
 
-        var buffer = Array.Empty<InstanceData>();
+        InstanceData[] buffer = Array.Empty<InstanceData>();
         AABB bounds = default;
         bool hasBounds = false;
         int segments = system.Trails.BuildSegments(system, ref buffer, ref bounds, ref hasBounds);
@@ -1079,8 +1079,8 @@ public class ParticleSystemTests : RuntimeTestBase
     [Fact]
     public void TrailsTaperToTheirTailWhileTheParticleLives()
     {
-        var scene = CreateScene(enable: true);
-        var system = CreateSystem(scene, s =>
+        Scene scene = CreateScene(enable: true);
+        ParticleSystemComponent system = CreateSystem(scene, s =>
         {
             s.SimulationSpace = SimulationSpace.World;
             s.Initial.StartLifetime = new MinMaxCurve(4f);
@@ -1092,7 +1092,7 @@ public class ParticleSystemTests : RuntimeTestBase
 
         Run(scene, 1f);
 
-        var buffer = Array.Empty<InstanceData>();
+        InstanceData[] buffer = Array.Empty<InstanceData>();
         AABB bounds = default;
         bool hasBounds = false;
         int segments = system.Trails.BuildSegments(system, ref buffer, ref bounds, ref hasBounds);
@@ -1105,9 +1105,9 @@ public class ParticleSystemTests : RuntimeTestBase
     [Fact]
     public void SystemsDrivingEachOtherAreNotStuck()
     {
-        var scene = CreateScene(enable: true);
-        var a = CreateSystem(scene, s => s.Emission.RateOverTime = new MinMaxCurve(10f));
-        var b = CreateSystem(scene, s => s.Emission.RateOverTime = new MinMaxCurve(10f));
+        Scene scene = CreateScene(enable: true);
+        ParticleSystemComponent a = CreateSystem(scene, s => s.Emission.RateOverTime = new MinMaxCurve(10f));
+        ParticleSystemComponent b = CreateSystem(scene, s => s.Emission.RateOverTime = new MinMaxCurve(10f));
         a.SubEmitters.Enabled = true;
         a.SubEmitters.Emitters.Add(new SubEmitter { System = b, Type = SubEmitterType.Death });
         b.SubEmitters.Enabled = true;

@@ -147,7 +147,7 @@ public class AvatarEditorWindow : DockPanel
 
     private static Runtime.Avatar? FindAvatar(AssetEntry entry)
     {
-        foreach (var sub in entry.SubAssets)
+        foreach (SubAssetEntry sub in entry.SubAssets)
         {
             if (sub.Type == null || !typeof(Runtime.Avatar).IsAssignableFrom(sub.Type)) continue;
             Runtime.Avatar? avatar = AssetDatabase.Get<Runtime.Avatar>(sub.Guid);
@@ -158,9 +158,9 @@ public class AvatarEditorWindow : DockPanel
 
     public override void OnGUI(Paper paper, float width, float height)
     {
-        var font = EditorTheme.DefaultFont;
+        Scribe.FontFile? font = EditorTheme.DefaultFont;
         if (font == null) return;
-        var m = Origami.Current.Metrics;
+        OrigamiMetrics m = Origami.Current.Metrics;
 
         if (_preview == null || _skeleton == null)
         {

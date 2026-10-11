@@ -36,7 +36,7 @@ public unsafe class GraphicsVertexArray : IDisposable
         _instanceBuffer = instanceBuffer;
         Handle = 0;
 
-        using var cmd = Graphics.GetCommandBuffer("GraphicsVertexArray.Create");
+        using CommandBuffer cmd = Graphics.GetCommandBuffer("GraphicsVertexArray.Create");
         cmd.EncodeCreateVertexArray(this);
         Graphics.Submit(cmd);
     }
@@ -94,7 +94,7 @@ public unsafe class GraphicsVertexArray : IDisposable
             return;
         IsDisposed = true;
 
-        using var cmd = Graphics.GetCommandBuffer("GraphicsVertexArray.Dispose");
+        using CommandBuffer cmd = Graphics.GetCommandBuffer("GraphicsVertexArray.Dispose");
         cmd.EncodeDisposeVertexArray(this);
         Graphics.Submit(cmd);
     }

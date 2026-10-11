@@ -77,14 +77,14 @@ public static class ObjectCopy
         EchoObject echo = Serializer.Serialize(typeof(object), source, written);
 
         var read = new SerializationContext { ExternalReferences = links };
-        foreach (var (from, into) in map.Fills)
+        foreach ((object? from, object? into) in map.Fills)
             if (written.objectToId.TryGetValue(from, out int id))
                 read.ReadInto(id, into);
 
         Serializer.DeserializeInto(echo, target, read);
         map.Ran(written, read);
 
-        foreach (var (filled, identifier) in identities)
+        foreach ((object? filled, Guid identifier) in identities)
             if (filled is GameObject go) go.SetIdentifier(identifier);
             else ((Component)filled).Identifier = identifier;
     }

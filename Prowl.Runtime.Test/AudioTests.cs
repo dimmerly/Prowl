@@ -46,9 +46,9 @@ public class AudioTests : RuntimeTestBase
 
     private AudioSource CreateSource()
     {
-        var scene = CreateScene(enable: true);
-        var go = CreateGameObject("Speaker");
-        var source = go.AddComponent<AudioSource>();
+        Scene scene = CreateScene(enable: true);
+        GameObject go = CreateGameObject("Speaker");
+        AudioSource source = go.AddComponent<AudioSource>();
         scene.Add(go);
         return source;
     }
@@ -416,7 +416,7 @@ public class AudioTests : RuntimeTestBase
         ulong hash = first.Hash;
         Assert.Equal(1, AudioContext.GetClipRefCount(hash));
 
-        var deserialized = Serializer.Deserialize<AudioClip>(Serializer.Serialize(first))!;
+        AudioClip deserialized = Serializer.Deserialize<AudioClip>(Serializer.Serialize(first))!;
 
         Assert.Equal(first.Handle, deserialized.Handle);
         Assert.Equal(2, AudioContext.GetClipRefCount(hash));
@@ -440,7 +440,7 @@ public class AudioTests : RuntimeTestBase
 
         var first = new AudioClip(data);
         var second = new AudioClip(data);
-        var third = Serializer.Deserialize<AudioClip>(Serializer.Serialize(first))!;
+        AudioClip third = Serializer.Deserialize<AudioClip>(Serializer.Serialize(first))!;
 
         ulong hash = first.Hash;
 
@@ -571,12 +571,12 @@ public class AudioTests : RuntimeTestBase
         byte[] data = [7, 7, 7, 8, 9];
 
         var unique = new AudioClip(data, isUnique: true);
-        var restored = Serializer.Deserialize<AudioClip>(Serializer.Serialize(unique))!;
+        AudioClip restored = Serializer.Deserialize<AudioClip>(Serializer.Serialize(unique))!;
 
         Assert.NotEqual(unique.Handle, restored.Handle);
 
         var shared = new AudioClip(data);
-        var sharedAgain = Serializer.Deserialize<AudioClip>(Serializer.Serialize(shared))!;
+        AudioClip sharedAgain = Serializer.Deserialize<AudioClip>(Serializer.Serialize(shared))!;
 
         Assert.Equal(shared.Handle, sharedAgain.Handle);
 
@@ -633,7 +633,7 @@ public class AudioTests : RuntimeTestBase
 
         echo["AudioData"] = new EchoObject(new byte[] { 9, 9, 9, 9 });
 
-        var restored = Serializer.Deserialize<AudioClip>(echo)!;
+        AudioClip restored = Serializer.Deserialize<AudioClip>(echo)!;
 
         Assert.Equal(1, restored.Channels);
         Assert.Equal(8000, restored.SampleRate);
@@ -674,7 +674,7 @@ public class AudioTests : RuntimeTestBase
         EchoObject echo = Serializer.Serialize(clip);
         echo["DataSize"] = new EchoObject((long)999_999);
 
-        var restored = Serializer.Deserialize<AudioClip>(echo)!;
+        AudioClip restored = Serializer.Deserialize<AudioClip>(echo)!;
 
         Assert.Equal((ulong)data.Length, restored.DataSize);
 
@@ -710,7 +710,7 @@ public class AudioTests : RuntimeTestBase
         EchoObject echo = Serializer.Serialize(source);
         Assert.True(echo.Remove("HashCode"));
 
-        var restored = Serializer.Deserialize<AudioClip>(echo)!;
+        AudioClip restored = Serializer.Deserialize<AudioClip>(echo)!;
 
         Assert.NotEqual(IntPtr.Zero, restored.Handle);
         Assert.Equal((ulong)data.Length, restored.DataSize);
@@ -745,7 +745,7 @@ public class AudioTests : RuntimeTestBase
             MaxOneShotVoices = 3,
         };
 
-        var restored = Serializer.Deserialize<AudioSource>(Serializer.Serialize(source));
+        AudioSource? restored = Serializer.Deserialize<AudioSource>(Serializer.Serialize(source));
 
         Assert.NotNull(restored);
         Assert.True(restored!.PlayOnStart);
@@ -818,16 +818,16 @@ public class AudioTests : RuntimeTestBase
         source.AddEffect(new FilterEffect { Type = FilterType.Highpass, Frequency = 800f, Q = 1.5f });
         source.AddEffect(new DistortionEffect { Drive = 3f, Blend = 0.25f });
 
-        var restored = Serializer.Deserialize<AudioSource>(Serializer.Serialize(source))!;
+        AudioSource restored = Serializer.Deserialize<AudioSource>(Serializer.Serialize(source))!;
 
         Assert.Equal(2, restored.EffectCount);
 
-        var filter = Assert.IsType<FilterEffect>(restored.Effects[0]);
+        FilterEffect filter = Assert.IsType<FilterEffect>(restored.Effects[0]);
         Assert.Equal(FilterType.Highpass, filter.Type);
         Assert.Equal(800f, filter.Frequency);
         Assert.Equal(1.5f, filter.Q);
 
-        var distortion = Assert.IsType<DistortionEffect>(restored.Effects[1]);
+        DistortionEffect distortion = Assert.IsType<DistortionEffect>(restored.Effects[1]);
         Assert.Equal(3f, distortion.Drive);
         Assert.Equal(0.25f, distortion.Blend);
 
@@ -1623,7 +1623,7 @@ public class AudioTests : RuntimeTestBase
         mixer.AddGroup("Music").VolumeDB = -9f;
         mixer.CaptureSnapshot("Quiet");
 
-        var restored = Serializer.Deserialize<AudioMixer>(Serializer.Serialize(mixer))!;
+        AudioMixer restored = Serializer.Deserialize<AudioMixer>(Serializer.Serialize(mixer))!;
 
         Assert.Single(restored.Snapshots);
 
@@ -1732,7 +1732,7 @@ public class AudioTests : RuntimeTestBase
         var mixer = new AudioMixer();
         mixer.AddGroup("Music").Solo = true;
 
-        var restored = Serializer.Deserialize<AudioMixer>(Serializer.Serialize(mixer))!;
+        AudioMixer restored = Serializer.Deserialize<AudioMixer>(Serializer.Serialize(mixer))!;
 
         Assert.False(restored.AnySolo);
         Assert.False(restored.FindGroup("Music")!.Solo);
@@ -1800,7 +1800,7 @@ public class AudioTests : RuntimeTestBase
         groups[1]["_parentIndex"] = new EchoObject(2);
         groups[2]["_parentIndex"] = new EchoObject(1);
 
-        var restored = Serializer.Deserialize<AudioMixer>(echo)!;
+        AudioMixer restored = Serializer.Deserialize<AudioMixer>(echo)!;
 
         foreach (AudioMixerGroup group in restored.Groups)
             Assert.True(ReachesRoot(group), $"'{group.GroupName}' never reaches the master");
@@ -1815,7 +1815,7 @@ public class AudioTests : RuntimeTestBase
         EchoObject echo = Serializer.Serialize(mixer);
         echo.Get("_groups")!.Get("$values")![1]["_parentIndex"] = new EchoObject(97);
 
-        var restored = Serializer.Deserialize<AudioMixer>(echo)!;
+        AudioMixer restored = Serializer.Deserialize<AudioMixer>(echo)!;
 
         Assert.Null(restored.FindGroup("Music").Parent);
     }
@@ -1909,12 +1909,12 @@ public class AudioTests : RuntimeTestBase
         AudioMixerGroup sfx = mixer.AddGroup("SFX");
         sfx.AddEffect(new FilterEffect { Type = FilterType.Lowpass, Frequency = 3000f });
 
-        var restored = Serializer.Deserialize<AudioMixer>(Serializer.Serialize(mixer))!;
+        AudioMixer restored = Serializer.Deserialize<AudioMixer>(Serializer.Serialize(mixer))!;
 
         AudioMixerGroup restoredSfx = restored.FindGroup("SFX");
         Assert.Single(restoredSfx.Effects);
 
-        var filter = Assert.IsType<FilterEffect>(restoredSfx.Effects[0]);
+        FilterEffect filter = Assert.IsType<FilterEffect>(restoredSfx.Effects[0]);
         Assert.Equal(3000f, filter.Frequency);
 
         // Bound to the audio format on the way in, or the effect is inert until something else runs.
@@ -1947,7 +1947,7 @@ public class AudioTests : RuntimeTestBase
         music.Mute = true;
         mixer.AddGroup("Stingers", music);
 
-        var restored = Serializer.Deserialize<AudioMixer>(Serializer.Serialize(mixer))!;
+        AudioMixer restored = Serializer.Deserialize<AudioMixer>(Serializer.Serialize(mixer))!;
 
         Assert.Equal(3, restored.Groups.Count);
 
@@ -1970,7 +1970,7 @@ public class AudioTests : RuntimeTestBase
     [Fact]
     public void Effects_SurviveDisableAndEnable()
     {
-        var source = CreateSource();
+        AudioSource source = CreateSource();
         var effect = new CountingEffect();
         source.AddEffect(effect);
 
@@ -1986,7 +1986,7 @@ public class AudioTests : RuntimeTestBase
     [Fact]
     public void Effects_TakenOutOfTheListAreDestroyedOnRefresh()
     {
-        var source = CreateSource();
+        AudioSource source = CreateSource();
         var kept = new CountingEffect();
         var dropped = new CountingEffect();
         source.AddEffect(kept);
@@ -2003,7 +2003,7 @@ public class AudioTests : RuntimeTestBase
         Assert.Equal(1, source.EffectCount);
 
         // And it is genuinely let go, so it can be put somewhere else afterwards.
-        var other = CreateSource();
+        AudioSource other = CreateSource();
         other.AddEffect(dropped);
         Assert.Equal(1, other.EffectCount);
     }
@@ -2013,8 +2013,8 @@ public class AudioTests : RuntimeTestBase
     [Fact]
     public void Effects_CannotBeInTwoChainsAtOnce()
     {
-        var first = CreateSource();
-        var second = CreateSource();
+        AudioSource first = CreateSource();
+        AudioSource second = CreateSource();
         var effect = new CountingEffect();
 
         first.AddEffect(effect);
@@ -2039,8 +2039,8 @@ public class AudioTests : RuntimeTestBase
     [Fact]
     public void Effects_ListedInTwoChains_AreTakenOutOfTheSecond()
     {
-        var first = CreateSource();
-        var second = CreateSource();
+        AudioSource first = CreateSource();
+        AudioSource second = CreateSource();
         var effect = new CountingEffect();
 
         first.AddEffect(effect);
@@ -2063,15 +2063,15 @@ public class AudioTests : RuntimeTestBase
     [Fact]
     public void Effects_SurviveTheirSourceBeingCloned()
     {
-        var scene = CreateScene(enable: true);
-        var go = CreateGameObject("Speaker");
-        var source = go.AddComponent<AudioSource>();
+        Scene scene = CreateScene(enable: true);
+        GameObject go = CreateGameObject("Speaker");
+        AudioSource source = go.AddComponent<AudioSource>();
         scene.Add(go);
 
         source.AddEffect(new FilterEffect { Type = FilterType.Highpass, Frequency = 900f });
 
         GameObject clone = GameObject.Instantiate(go, scene)!;
-        var cloned = clone.GetComponent<AudioSource>()!;
+        AudioSource cloned = clone.GetComponent<AudioSource>()!;
 
         cloned.OnValidate();
 
@@ -2079,7 +2079,7 @@ public class AudioTests : RuntimeTestBase
         Assert.Equal(1, source.EffectCount);
         Assert.NotSame(source.Effects[0], cloned.Effects[0]);
 
-        var filter = Assert.IsType<FilterEffect>(cloned.Effects[0]);
+        FilterEffect filter = Assert.IsType<FilterEffect>(cloned.Effects[0]);
         Assert.Equal(900f, filter.Frequency);
         Assert.True(filter.IsInitialized);
     }
@@ -2089,7 +2089,7 @@ public class AudioTests : RuntimeTestBase
     [Fact]
     public void Effects_AreDestroyedWhenRemoved()
     {
-        var source = CreateSource();
+        AudioSource source = CreateSource();
         var removed = new CountingEffect();
         var cleared = new CountingEffect();
         source.AddEffect(removed);
@@ -2111,7 +2111,7 @@ public class AudioTests : RuntimeTestBase
     [Fact]
     public void Effects_RemovingAnUnattachedEffect_DoesNothing()
     {
-        var source = CreateSource();
+        AudioSource source = CreateSource();
         var stranger = new CountingEffect();
 
         source.RemoveEffect(stranger);
@@ -2122,7 +2122,7 @@ public class AudioTests : RuntimeTestBase
     [Fact]
     public void Effects_AreDestroyedWithTheSource()
     {
-        var source = CreateSource();
+        AudioSource source = CreateSource();
         var effect = new CountingEffect();
         source.AddEffect(effect);
 
@@ -2135,7 +2135,7 @@ public class AudioTests : RuntimeTestBase
     [Fact]
     public void PauseAndStop_WithoutADevice_LeaveNoStuckState()
     {
-        var source = CreateSource();
+        AudioSource source = CreateSource();
 
         source.Pause();
         Assert.False(source.IsPaused);
@@ -2158,7 +2158,7 @@ public class AudioTests : RuntimeTestBase
     [InlineData(true)]
     public void AssigningAClip_SwapsIt_WhicheverWayPlayOnStartIsSet(bool playOnStart)
     {
-        var source = CreateSource();
+        AudioSource source = CreateSource();
         var first = new AudioClip([1, 2, 3, 4]);
         var second = new AudioClip([5, 6, 7, 8]);
 
@@ -2181,7 +2181,7 @@ public class AudioTests : RuntimeTestBase
     [Fact]
     public void Distances_StayInOrderWhicheverEndIsSet()
     {
-        var source = CreateSource();
+        AudioSource source = CreateSource();
 
         source.MinDistance = 1f;
         source.MaxDistance = 10f;
@@ -2209,7 +2209,7 @@ public class AudioTests : RuntimeTestBase
         echo["_minDistance"] = new EchoObject(80f);
         echo["_maxDistance"] = new EchoObject(4f);
 
-        var restored = Serializer.Deserialize<AudioSource>(echo)!;
+        AudioSource restored = Serializer.Deserialize<AudioSource>(echo)!;
 
         Assert.True(restored.MaxDistance >= restored.MinDistance,
             $"min {restored.MinDistance} exceeded max {restored.MaxDistance}");
@@ -2221,7 +2221,7 @@ public class AudioTests : RuntimeTestBase
     [Fact]
     public void AMissingClip_IsKeptWithoutLoading()
     {
-        var source = CreateSource();
+        AudioSource source = CreateSource();
         AudioClip missing = AssetDatabase.Get<AudioClip>(Guid.NewGuid())!;
 
         source.Clip = missing;
@@ -2235,7 +2235,7 @@ public class AudioTests : RuntimeTestBase
     [Fact]
     public void NormalizedTime_WithNoClip_StaysAtZero()
     {
-        var source = CreateSource();
+        AudioSource source = CreateSource();
 
         source.NormalizedTime = 0.5f;
         source.PlaybackTime = 2f;
@@ -2249,7 +2249,7 @@ public class AudioTests : RuntimeTestBase
     [Fact]
     public void PlaybackParameters_RejectValuesTheMixCannotUse()
     {
-        var source = CreateSource();
+        AudioSource source = CreateSource();
 
         source.Volume = -2f;
         Assert.Equal(0f, source.Volume);
@@ -2286,14 +2286,14 @@ public class AudioTests : RuntimeTestBase
     [Fact]
     public void PlaybackParameters_AreStraightenedOutOnValidate()
     {
-        var source = CreateSource();
+        AudioSource source = CreateSource();
         EchoObject echo = Serializer.Serialize(source);
 
         echo["_volume"] = new EchoObject(-5f);
         echo["_pitch"] = new EchoObject(0f);
         echo["_pan"] = new EchoObject(9f);
 
-        var restored = Serializer.Deserialize<AudioSource>(echo)!;
+        AudioSource restored = Serializer.Deserialize<AudioSource>(echo)!;
         restored.OnValidate();
 
         Assert.Equal(0f, restored.Volume);
@@ -2309,9 +2309,9 @@ public class AudioTests : RuntimeTestBase
     {
         int before = AudioListener.ActiveCount;
 
-        var scene = CreateScene(enable: true);
-        var go = CreateGameObject("Ears");
-        var listener = go.AddComponent<AudioListener>();
+        Scene scene = CreateScene(enable: true);
+        GameObject go = CreateGameObject("Ears");
+        AudioListener listener = go.AddComponent<AudioListener>();
         scene.Add(go);
 
         Assert.Equal(before + 1, AudioListener.ActiveCount);
@@ -2334,7 +2334,7 @@ public class AudioTests : RuntimeTestBase
     [Fact]
     public void PlayOneShot_WithoutADevice_DoesNothing()
     {
-        var source = CreateSource();
+        AudioSource source = CreateSource();
         var clip = new AudioClip([1, 2, 3, 4]);
 
         source.PlayOneShot(clip);
@@ -2353,7 +2353,7 @@ public class AudioTests : RuntimeTestBase
     [InlineData(-4)]
     public void MaxOneShotVoices_NeverDropsBelowOne(int requested)
     {
-        var source = CreateSource();
+        AudioSource source = CreateSource();
 
         source.MaxOneShotVoices = requested;
 
@@ -2381,10 +2381,10 @@ public class AudioTests : RuntimeTestBase
     {
         Assert.False(AudioContext.IsInitialized);
 
-        var scene = CreateScene(enable: true);
-        var go = CreateGameObject("Speaker");
-        var source = go.AddComponent<AudioSource>();
-        var listener = go.AddComponent<AudioListener>();
+        Scene scene = CreateScene(enable: true);
+        GameObject go = CreateGameObject("Speaker");
+        AudioSource source = go.AddComponent<AudioSource>();
+        AudioListener listener = go.AddComponent<AudioListener>();
         scene.Add(go);
 
         Update(scene);
@@ -2446,8 +2446,8 @@ public class AudioTests : RuntimeTestBase
     {
         int before = DeviceClosingSubscribers();
 
-        var scene = CreateScene(enable: true);
-        var go = CreateGameObject("Speaker");
+        Scene scene = CreateScene(enable: true);
+        GameObject go = CreateGameObject("Speaker");
         go.AddComponent<AudioSource>();
         go.AddComponent<AudioListener>();
         scene.Add(go);
@@ -2462,7 +2462,7 @@ public class AudioTests : RuntimeTestBase
 
     private static int DeviceClosingSubscribers()
     {
-        var field = typeof(AudioContext).GetField("DeviceClosing",
+        FieldInfo? field = typeof(AudioContext).GetField("DeviceClosing",
             System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.NonPublic);
 
         return (field?.GetValue(null) as Action)?.GetInvocationList().Length ?? 0;

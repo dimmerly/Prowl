@@ -89,7 +89,7 @@ public sealed class ScreenSpaceReflectionEffect : ImageEffect
 
         EyeHistory eye = GetEyeState<EyeHistory>(context.Camera);
         int w = context.Width, h = context.Height;
-        var format = context.SceneColor.MainTexture.ImageFormat;
+        TextureImageFormat format = context.SceneColor.MainTexture.ImageFormat;
 
         float rayScale = RayResolution.Scale();
         int rayW = Maths.Max(1, (int)(w * rayScale));
@@ -123,7 +123,7 @@ public sealed class ScreenSpaceReflectionEffect : ImageEffect
         if (!context.Camera.HasPreviousViewProjectionMatrix) eye.HistoryValid = false;
         bool feedback = UseTemporal && eye.HistoryValid;
 
-        using var cmd = Graphics.GetCommandBuffer("SSR");
+        using CommandBuffer cmd = Graphics.GetCommandBuffer("SSR");
 
         // 1) Reflection source. With one-bounce feedback, reflections sample last frame's combined
         //    result reprojected by motion; otherwise the current scene.

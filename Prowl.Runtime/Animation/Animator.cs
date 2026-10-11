@@ -281,7 +281,7 @@ public class Animator : Component
     private ExternalPoseInstance? FindExternalPose(string name)
     {
         AnimationGraph? asset = Graph;
-        if (_graph == null || asset is null || !asset.TryGetCompiledMaps(_graph.Graph.Graph, out var nodes, out _)) return null;
+        if (_graph == null || asset is null || !asset.TryGetCompiledMaps(_graph.Graph.Graph, out IReadOnlyDictionary<string, int>? nodes, out _)) return null;
 
         foreach (GraphNodeRecord record in asset.Nodes)
             if (record.Type == AnimationNodeIds.ExternalPose && record.Get(ExternalPoseNode.NameSetting) == name

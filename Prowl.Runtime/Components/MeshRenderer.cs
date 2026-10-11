@@ -58,7 +58,7 @@ public class MeshRenderer : Component, IMaterialRenderer
     public override void OnRenderCollect(Camera camera, List<IRenderable> renderables, List<IRenderableLight> lights)
     {
         // Something still loading is skipped this frame rather than waited on.
-        var mesh = Mesh;
+        Mesh? mesh = Mesh;
         if (mesh is not { IsLoaded: true } || Materials.Count == 0) return;
 
         StaticGeometry.Source? batched = StaticSource;
@@ -121,7 +121,7 @@ public class MeshRenderer : Component, IMaterialRenderer
     public bool Raycast(Ray worldRay, out float distance)
     {
         distance = float.MaxValue;
-        var mesh = Mesh;
+        Mesh? mesh = Mesh;
         if (mesh is not { IsLoaded: true }) return false;
 
         Float4x4 worldToLocal = Transform.WorldToLocalMatrix;

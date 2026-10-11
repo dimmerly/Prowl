@@ -48,7 +48,7 @@ public sealed class AutoExposureEffect : ImageEffect
         int w = context.Width / 2;
         int h = context.Height / 2;
 
-        using var cmd = Graphics.GetCommandBuffer("AutoExposure");
+        using CommandBuffer cmd = Graphics.GetCommandBuffer("AutoExposure");
 
         if (_adaptedLuminance != null && _adaptedLuminance.IsDisposed)
         {
@@ -71,7 +71,7 @@ public sealed class AutoExposureEffect : ImageEffect
             // ---- Step 2: Downsample chain until we reach a small enough size ----
             mipChain.Add(lumRT);
 
-            var current = lumRT;
+            RenderTexture current = lumRT;
             while (w > 2 || h > 2)
             {
                 w = Math.Max(1, w / 2);
@@ -110,7 +110,7 @@ public sealed class AutoExposureEffect : ImageEffect
 
         RenderTexture.ReleaseTemporaryRT(temp);
         if (newAdapted != null) RenderTexture.ReleaseTemporaryRT(newAdapted);
-        foreach (var rt in mipChain)
+        foreach (RenderTexture rt in mipChain)
             RenderTexture.ReleaseTemporaryRT(rt);
     }
 

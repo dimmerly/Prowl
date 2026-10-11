@@ -22,7 +22,7 @@ public class TransformPropertyEditor : PropertyEditor
 {
     public override void OnGUI(Paper paper, string id, string label, object? value, Action<object?> onChange, int depth)
     {
-        var go = (value as Transform)?.GameObject;
+        GameObject? go = (value as Transform)?.GameObject;
         bool hasValue = go.IsValid();
 
         PropertyGridUtils.ObjectField(paper, id, label,

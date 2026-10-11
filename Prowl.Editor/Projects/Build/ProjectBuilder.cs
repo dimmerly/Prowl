@@ -103,7 +103,7 @@ public static class ProjectBuilder
                 Console.WriteLine($"[BEGIN]{args.Data}[END]");
                 var serializedData = System.Text.Encoding.UTF8.GetString(Convert.FromBase64String(args.Data));
                 var echoData = EchoObject.ReadFromString(serializedData);
-                var logData = Serializer.Deserialize<BuildSettingsPanel.BuildStatusReport>(echoData);
+                BuildSettingsPanel.BuildStatusReport? logData = Serializer.Deserialize<BuildSettingsPanel.BuildStatusReport>(echoData);
 
                 if (logData != null)
                 {
@@ -188,7 +188,7 @@ public static class ProjectBuilder
         settings.OutputDirectory = outputPath;
         EditorRegistries.SaveSettings();
 
-        var pipeline = CreateSelectedPipeline(settings);
+        BuildPipeline? pipeline = CreateSelectedPipeline(settings);
         if (pipeline == null)
         {
             Runtime.Debug.LogError($"[Build] Build pipeline '{settings.SelectedPipeline}' was not found.");
@@ -230,7 +230,7 @@ public static class ProjectBuilder
     {
         var found = new List<BuildPipeline>();
 
-        foreach (var type in EditorUtils.GetAllTypes())
+        foreach (Type type in EditorUtils.GetAllTypes())
         {
             if (type.IsAbstract || !type.IsSubclassOf(typeof(BuildPipeline))) continue;
 
@@ -269,7 +269,7 @@ public static class ProjectBuilder
         try
         {
             Console.WriteLine($"[BEGIN]{projectPath}[END]");
-            var result = pipeline.BuildAsync(
+            BuildResult result = pipeline.BuildAsync(
                 projectPath, settings, outputPath, progress, progress.Token).GetAwaiter().GetResult();
             progress.Complete(result);
 

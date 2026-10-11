@@ -35,7 +35,7 @@ public static class ScriptComponentResolver
         string typeName = Path.GetFileNameWithoutExtension(fileNameOrPath);
         if (string.IsNullOrEmpty(typeName)) return null;
 
-        foreach (var type in EditorUtils.GetAllTypes())
+        foreach (Type type in EditorUtils.GetAllTypes())
         {
             if (type.Name != typeName) continue;
             if (type.IsAbstract) continue;

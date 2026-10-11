@@ -512,7 +512,7 @@ public sealed class Socket : Component
         _weld.Enabled = false;
         _weld.SetParent(item.GameObject);
         _weld.Transform.LocalPosition = Float3.Zero;
-        var socket = _weld.AddComponent<BallSocketConstraint>();
+        BallSocketConstraint socket = _weld.AddComponent<BallSocketConstraint>();
         socket.Anchor = item.SocketPosition;
         socket.ConnectedBody = _parentBody;
         _weld.AddComponent<FixedAngleConstraint>().ConnectedBody = _parentBody;

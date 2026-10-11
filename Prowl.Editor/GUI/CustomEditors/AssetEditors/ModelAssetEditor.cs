@@ -81,9 +81,9 @@ public class ModelAssetEditor : ImportSettingsEditor
         // Include the GUID in element IDs so Paper UI state is unique per asset
         id = $"{id}_{entry.Guid:N}";
 
-        var font = EditorTheme.DefaultFont;
+        Scribe.FontFile? font = EditorTheme.DefaultFont;
         if (font == null) return;
-        var m = Origami.Current.Metrics;
+        OrigamiMetrics m = Origami.Current.Metrics;
         var model = asset as PrefabAsset;
         ViewState view = View(entry.Guid);
 
@@ -171,9 +171,9 @@ public class ModelAssetEditor : ImportSettingsEditor
     private static void DrawStats(Paper paper, string id, OrigamiMetrics m, Scribe.FontFile font, AssetEntry entry)
     {
         int meshCount = 0, matCount = 0, animCount = 0;
-        foreach (var sub in entry.SubAssets)
+        foreach (SubAssetEntry sub in entry.SubAssets)
         {
-            var t = sub.Type;
+            Type? t = sub.Type;
             if (t == null) continue;
             if (typeof(Mesh).IsAssignableFrom(t)) meshCount++;
             else if (typeof(Material).IsAssignableFrom(t)) matCount++;
@@ -196,7 +196,7 @@ public class ModelAssetEditor : ImportSettingsEditor
     {
         int animations = CountOf(entry, typeof(AnimationClip));
 
-        var m = Origami.Current.Metrics;
+        OrigamiMetrics m = Origami.Current.Metrics;
         using (paper.Box($"{id}_tabsRow").Height(UnitValue.Auto)
             .Margin(m.PaddingLarge, m.PaddingLarge, 0, m.Spacing).Enter())
         {
@@ -212,7 +212,7 @@ public class ModelAssetEditor : ImportSettingsEditor
     private static int CountOf(AssetEntry entry, Type type)
     {
         int count = 0;
-        foreach (var sub in entry.SubAssets)
+        foreach (SubAssetEntry sub in entry.SubAssets)
             if (sub.Type != null && type.IsAssignableFrom(sub.Type)) count++;
         return count;
     }
@@ -341,7 +341,7 @@ public class ModelAssetEditor : ImportSettingsEditor
 
     private static Avatar? FindAvatar(AssetEntry entry)
     {
-        foreach (var sub in entry.SubAssets)
+        foreach (SubAssetEntry sub in entry.SubAssets)
         {
             if (sub.Type == null || !typeof(Avatar).IsAssignableFrom(sub.Type)) continue;
             Avatar? avatar = AssetDatabase.Get<Avatar>(sub.Guid);
@@ -456,13 +456,13 @@ public class ModelAssetEditor : ImportSettingsEditor
 
     private static void DrawClipTable(Paper paper, string id, OrigamiMetrics m, PreviewRenderer preview, ViewState view)
     {
-        var clips = preview.Clips;
+        IReadOnlyList<AnimationClip> clips = preview.Clips;
 
         using (paper.Box($"{id}_clipTableWrap").Height(UnitValue.Auto)
             .Margin(m.PaddingLarge, m.PaddingLarge, 0, m.Spacing).Enter())
         {
             // No internal scroll, the inspector scrolls instead.
-            var table = Origami.Table(paper, $"{id}_clipTable", view.Clip, i => Select(view, i))
+            TableBuilder table = Origami.Table(paper, $"{id}_clipTable", view.Clip, i => Select(view, i))
                 .Bordered(false)
                 .RowHeight(m.RowHeight)
                 .Column("Name", 2.2f)
@@ -590,7 +590,7 @@ public class ModelAssetEditor : ImportSettingsEditor
         var slots = new List<MaterialSlot>();
         var seen = new HashSet<string>();
 
-        foreach (var sub in entry.SubAssets)
+        foreach (SubAssetEntry sub in entry.SubAssets)
         {
             if (sub.Type == null || !typeof(Material).IsAssignableFrom(sub.Type)) continue;
             if (!seen.Add(sub.Name)) continue;

@@ -37,7 +37,7 @@ public class RagdollGeneratorWindow : DockPanel
 
     public override void OnGUI(Paper paper, float width, float height)
     {
-        var font = EditorTheme.DefaultFont;
+        Scribe.FontFile? font = EditorTheme.DefaultFont;
         if (font == null) return;
 
         Animator? animator = SelectedCharacter();

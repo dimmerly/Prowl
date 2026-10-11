@@ -3,6 +3,8 @@ using System;
 using Prowl.Runtime;
 using Prowl.Vector;
 
+using Silk.NET.Maths;
+
 namespace Prowl.Editor.GUI;
 
 /// <summary>
@@ -32,8 +34,8 @@ public class PanelLockContext : CursorLockContext
     // scale = cs/csFbWin converts paper -> winSize (== 1 on macOS, == cs on DPI-unaware Windows).
     private static float PaperToWindowScale()
     {
-        var fb = Window.InternalWindow.FramebufferSize;
-        var win = Window.InternalWindow.Size;
+        Vector2D<int> fb = Window.InternalWindow.FramebufferSize;
+        Vector2D<int> win = Window.InternalWindow.Size;
         float cs = Window.ContentScale;
         float csFbWin = win.X > 0 ? (float)fb.X / win.X : 1f;
         return csFbWin > 0 ? cs / csFbWin : 1f;

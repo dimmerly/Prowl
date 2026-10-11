@@ -56,7 +56,7 @@ public sealed class TonemapperEffect : ImageEffect
             [TextureImageFormat.Color4b] // LDR format
         );
 
-        using var cmd = Graphics.GetCommandBuffer("Tonemapper");
+        using CommandBuffer cmd = Graphics.GetCommandBuffer("Tonemapper");
 
         // Preserve depth so transparents drawn into the LDR buffer still occlude correctly.
         if (context.SceneColor.InternalDepth != null)

@@ -19,6 +19,7 @@ using System.Threading.Tasks;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
+using Microsoft.CodeAnalysis.Emit;
 
 using Prowl.Cli;
 using Prowl.Editor.GUI.SceneView;
@@ -74,16 +75,16 @@ public static class CliCommands
 
     internal static void Scan(MethodInfo method)
     {
-        var attr = method.GetCustomAttribute<CliCommandAttribute>();
+        CliCommandAttribute? attr = method.GetCustomAttribute<CliCommandAttribute>();
         if (attr == null) return;
 
-        if (s_commands.TryGetValue(attr.Name, out var existing))
+        if (s_commands.TryGetValue(attr.Name, out Command? existing))
         {
             Debug.LogWarning($"[CLI] Command '{attr.Name}' on {method.DeclaringType?.FullName}.{method.Name} is already defined by {existing.Method.DeclaringType?.FullName}.{existing.Method.Name}, skipping it.");
             return;
         }
 
-        var args = method.GetParameters()
+        Arg[] args = method.GetParameters()
             .Select(p => p.GetCustomAttribute<CliArgAttribute>() is { } a
                 ? new Arg(p, a.Name, a.Description)
                 : new Arg(p, p.Name ?? $"arg{p.Position}", ""))
@@ -112,7 +113,7 @@ public static class CliCommands
     /// <summary> Binds the request's arguments and invokes the command. Returns what the method returned, which may be a Task still running. </summary>
     public static object? Invoke(CliRunRequest request)
     {
-        if (!s_commands.TryGetValue(request.Command, out var command))
+        if (!s_commands.TryGetValue(request.Command, out Command? command))
             throw new CliException($"Unknown command '{request.Command}'. Run 'prowl command' to list them.");
 
         var values = Bind(command, request);
@@ -129,7 +130,7 @@ public static class CliCommands
         var named = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
         var positional = new List<string>(request.Positional);
 
-        foreach (var (key, value) in request.Args)
+        foreach ((string? key, string? value) in request.Args)
             AddNamed(command, named, key, value);
         ParseArgv(command, request.Argv, named, positional);
 
@@ -138,7 +139,7 @@ public static class CliCommands
 
         for (int i = 0; i < command.Args.Length; i++)
         {
-            var arg = command.Args[i];
+            Arg arg = command.Args[i];
             if (named.TryGetValue(arg.Name, out string? text))
                 values[i] = Convert(text, arg.Parameter.ParameterType, arg.Name);
             else if (next < positional.Count)
@@ -181,7 +182,7 @@ public static class CliCommands
                 key = key[..equals];
             }
 
-            var arg = FindArg(command, key);
+            Arg arg = FindArg(command, key);
             if (value == null)
             {
                 if (arg.IsBool)
@@ -198,7 +199,7 @@ public static class CliCommands
 
     private static void AddNamed(Command command, Dictionary<string, string> named, string key, string value)
     {
-        var arg = FindArg(command, key);
+        Arg arg = FindArg(command, key);
         if (!named.TryAdd(arg.Name, value))
             throw new CliException($"Argument '{arg.Name}' was given more than once.");
     }
@@ -307,7 +308,7 @@ public static class CliCommands
         if (type.IsDefined(typeof(CompilerGeneratedAttribute)) && type.Name.Contains("AnonymousType"))
         {
             var obj = new JsonObject();
-            foreach (var prop in type.GetProperties())
+            foreach (PropertyInfo prop in type.GetProperties())
                 if (ToJson(prop.GetValue(value), depth + 1) is { } propValue) obj[prop.Name] = propValue;
             return obj;
         }
@@ -374,8 +375,8 @@ public static class CliEval
         var context = new EvalLoadContext(assemblies);
         try
         {
-            var assembly = context.LoadFromStream(new MemoryStream(image));
-            var method = assembly.GetType("ProwlEval")!.GetMethod("Run")!;
+            Assembly assembly = context.LoadFromStream(new MemoryStream(image));
+            MethodInfo method = assembly.GetType("ProwlEval")!.GetMethod("Run")!;
             Task<object?> task;
             try { task = (Task<object?>)method.Invoke(null, null)!; }
             catch (TargetInvocationException ex) when (ex.InnerException != null)
@@ -394,7 +395,7 @@ public static class CliEval
     /// <summary> Wraps and compiles the snippet. Throws a <see cref="CliException"/> listing the errors when it does not compile. </summary>
     public static byte[] Compile(string code, IReadOnlyList<Assembly> assemblies)
     {
-        var (usings, body) = SplitUsings(code);
+        (string? usings, string? body) = SplitUsings(code);
         string expression = body.Trim();
         if (expression.EndsWith(';')) expression = expression[..^1].TrimEnd();
 
@@ -426,14 +427,14 @@ public static class CliEval
                 }));
 
         using var stream = new MemoryStream();
-        var result = compilation.Emit(stream);
+        EmitResult result = compilation.Emit(stream);
         if (result.Success) return stream.ToArray();
 
-        var errors = result.Diagnostics
+        IEnumerable<string> errors = result.Diagnostics
             .Where(d => d.Severity == DiagnosticSeverity.Error)
             .Select(d =>
             {
-                var line = d.Location.GetMappedLineSpan();
+                FileLinePositionSpan line = d.Location.GetMappedLineSpan();
                 string message = d.GetMessage(CultureInfo.InvariantCulture);
                 return line.IsValid ? $"({line.StartLinePosition.Line + 1},{line.StartLinePosition.Character + 1}): {d.Id}: {message}" : $"{d.Id}: {message}";
             });
@@ -458,7 +459,7 @@ public static class CliEval
         var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         var references = new List<MetadataReference>();
 
-        foreach (var assembly in assemblies)
+        foreach (Assembly assembly in assemblies)
         {
             string name = assembly.GetName().Name ?? "";
             if (!seen.Add(name)) continue;

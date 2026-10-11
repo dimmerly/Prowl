@@ -1,6 +1,7 @@
 // This file is part of the Prowl Game Engine
 // Licensed under the MIT License. See the LICENSE file in the project root for details.
 
+using Prowl.Runtime.Rendering.Shaders;
 using Prowl.Runtime.Resources;
 
 using Xunit;
@@ -84,7 +85,7 @@ public class HeadlessGraphicsTests
         // time while no shader declared them, so every factor-only glTF material rendered wrong.
         var loaded = Shader.LoadDefault(shader);
         var names = new System.Collections.Generic.HashSet<string>();
-        foreach (var p in loaded.Properties)
+        foreach (ShaderProperty p in loaded.Properties)
             names.Add(p.Name);
 
         Assert.Contains("_Metallic", names);
@@ -105,7 +106,7 @@ public class HeadlessGraphicsTests
     {
         var loaded = Shader.LoadDefault(shader);
         bool has = false;
-        foreach (var p in loaded.Properties)
+        foreach (ShaderProperty p in loaded.Properties)
             if (p.Name == "_AlphaCutoff") has = true;
 
         Assert.Equal(expectCutoff, has);
@@ -120,7 +121,7 @@ public class HeadlessGraphicsTests
     public void DoubleSidedShaders_DisableCulling(DefaultShader shader, RasterizerState.PolyFace expected)
     {
         var loaded = Shader.LoadDefault(shader);
-        foreach (var pass in loaded.Passes)
+        foreach (ShaderPass pass in loaded.Passes)
             Assert.Equal(expected, pass.State.CullFace);
     }
 
@@ -131,7 +132,7 @@ public class HeadlessGraphicsTests
     public void TransparentShaders_BlendAndSkipDepthWrite(DefaultShader shader)
     {
         var loaded = Shader.LoadDefault(shader);
-        var pass = Assert.Single(loaded.Passes);
+        ShaderPass pass = Assert.Single(loaded.Passes);
         Assert.True(pass.State.DoBlend);
         Assert.False(pass.State.DepthWrite);
         Assert.True(pass.HasTag("RenderOrder", "Transparent"));
@@ -172,7 +173,7 @@ public class HeadlessGraphicsTests
         foreach (DefaultShader s in System.Enum.GetValues<DefaultShader>())
         {
             string path = Shader.ReadDeclaredPath(Shader.GetDefaultSource(s))!;
-            Assert.False(byPath.TryGetValue(path, out var existing),
+            Assert.False(byPath.TryGetValue(path, out DefaultShader existing),
                 $"'{s}' and '{existing}' both declare the path '{path}'.");
             byPath[path] = s;
         }

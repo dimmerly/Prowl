@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 
 using Prowl.Echo;
+using Prowl.Recast.Detour.TileCache;
 using Prowl.Runtime;
 using Prowl.Runtime.Resources;
 using Prowl.Vector;
@@ -58,7 +59,7 @@ public class NavMeshObstacleTests : RuntimeTestBase
         Runtime.NavMeshData? loaded = Serializer.Deserialize<Runtime.NavMeshData>(echo);
         Assert.NotNull(loaded);
         Assert.Equal(data.CacheLayers.Count, loaded!.CacheLayers.Count);
-        var cache = loaded.CreateTileCache(maxObstacles: 16);
+        DtTileCache cache = loaded.CreateTileCache(maxObstacles: 16);
         Assert.NotNull(cache.GetNavMesh());
         Assert.True(cache.GetNavMesh().GetMaxTiles() > 0);
     }
@@ -81,7 +82,7 @@ public class NavMeshObstacleTests : RuntimeTestBase
 
         GameObject surfaceGo = CreateGameObject("NavMeshSurface");
         scene.Add(surfaceGo);
-        var surface = surfaceGo.AddComponent<NavMeshSurface>();
+        NavMeshSurface surface = surfaceGo.AddComponent<NavMeshSurface>();
         surface.UseGeometry = NavMeshCollectGeometry.PhysicsColliders;
 
         Assert.True(surface.BuildNavMesh());
@@ -156,7 +157,7 @@ public class NavMeshObstacleTests : RuntimeTestBase
         GameObject obstacleGo = CreateGameObject("Crate");
         scene.Add(obstacleGo);
         obstacleGo.Transform.Position = new Float3(0, 1, 0);
-        var obstacle = obstacleGo.AddComponent<NavMeshObstacle>();
+        NavMeshObstacle obstacle = obstacleGo.AddComponent<NavMeshObstacle>();
         obstacle.Shape = NavMeshObstacleShape.Box;
         obstacle.Size = new Float3(4, 3, 4);
 
@@ -182,7 +183,7 @@ public class NavMeshObstacleTests : RuntimeTestBase
         GameObject obstacleGo = CreateGameObject("Crate");
         scene.Add(obstacleGo);
         obstacleGo.Transform.Position = new Float3(0, 1, 0);
-        var obstacle = obstacleGo.AddComponent<NavMeshObstacle>();
+        NavMeshObstacle obstacle = obstacleGo.AddComponent<NavMeshObstacle>();
         obstacle.Carve = false;
         obstacle.CarveOnlyStationary = false;
         obstacle.Size = new Float3(4, 3, 4);
@@ -214,7 +215,7 @@ public class NavMeshObstacleTests : RuntimeTestBase
 
         GameObject surfaceGo = CreateGameObject("NavMeshSurface");
         scene.Add(surfaceGo);
-        var surface = surfaceGo.AddComponent<NavMeshSurface>();
+        NavMeshSurface surface = surfaceGo.AddComponent<NavMeshSurface>();
         ApplyFastBakeSettings(surface);
         surface.UseGeometry = NavMeshCollectGeometry.PhysicsColliders;
         Assert.True(surface.BuildNavMesh());
@@ -226,7 +227,7 @@ public class NavMeshObstacleTests : RuntimeTestBase
 
         GameObject obstacleGo = CreateGameObject("Crate");
         scene.Add(obstacleGo);
-        var obstacle = obstacleGo.AddComponent<NavMeshObstacle>();
+        NavMeshObstacle obstacle = obstacleGo.AddComponent<NavMeshObstacle>();
         obstacle.Shape = NavMeshObstacleShape.Box;
         // Small footprint: a wide one catches cells further up the ramp whatever its base height is.
         obstacle.Size = new Float3(1.5f, 3, 1.5f);
@@ -253,7 +254,7 @@ public class NavMeshObstacleTests : RuntimeTestBase
         obstacleGo.SetParent(parent);
         obstacleGo.Transform.LocalPosition = new Float3(0, 1, 0);
 
-        var obstacle = obstacleGo.AddComponent<NavMeshObstacle>();
+        NavMeshObstacle obstacle = obstacleGo.AddComponent<NavMeshObstacle>();
         obstacle.Shape = NavMeshObstacleShape.Box;
         obstacle.Size = new Float3(2, 3, 2);
 
@@ -282,7 +283,7 @@ public class NavMeshObstacleTests : RuntimeTestBase
         GameObject obstacleGo = CreateGameObject("Crate");
         scene.Add(obstacleGo);
         obstacleGo.Transform.Position = new Float3(0, 1, 0);
-        var obstacle = obstacleGo.AddComponent<NavMeshObstacle>();
+        NavMeshObstacle obstacle = obstacleGo.AddComponent<NavMeshObstacle>();
         obstacle.Shape = NavMeshObstacleShape.Box;
         obstacle.Size = new Float3(4, 3, 4);
 
@@ -322,7 +323,7 @@ public class NavMeshObstacleTests : RuntimeTestBase
         GameObject obstacleGo = CreateGameObject("Cart");
         scene.Add(obstacleGo);
         obstacleGo.Transform.Position = new Float3(0, 1, 0);
-        var obstacle = obstacleGo.AddComponent<NavMeshObstacle>();
+        NavMeshObstacle obstacle = obstacleGo.AddComponent<NavMeshObstacle>();
         obstacle.Shape = NavMeshObstacleShape.Box;
         obstacle.Size = new Float3(4, 3, 4);
         obstacle.CarveOnlyStationary = true;
@@ -360,7 +361,7 @@ public class NavMeshObstacleTests : RuntimeTestBase
         GameObject obstacleGo = CreateGameObject("Ghost");
         scene.Add(obstacleGo);
         obstacleGo.Transform.Position = new Float3(0, 1, 0);
-        var obstacle = obstacleGo.AddComponent<NavMeshObstacle>();
+        NavMeshObstacle obstacle = obstacleGo.AddComponent<NavMeshObstacle>();
         obstacle.Size = new Float3(4, 3, 4);
 
         Assert.True(TickUntil(scene, () => !Walkable(scene, new Float3(0, 0.2f, 0))) >= 0);
@@ -389,7 +390,7 @@ public class NavMeshObstacleTests : RuntimeTestBase
         scene.Add(obstacleGo);
         obstacleGo.Transform.Position = new Float3(0, 1, 0);
         obstacleGo.Transform.Rotation = Quaternion.FromEuler(new Float3(0, 45, 0));
-        var obstacle = obstacleGo.AddComponent<NavMeshObstacle>();
+        NavMeshObstacle obstacle = obstacleGo.AddComponent<NavMeshObstacle>();
         obstacle.Size = new Float3(1.5f, 3, 7); // long axis local Z, yawed 45°
 
         Assert.True(TickUntil(scene, () => !Walkable(scene, new Float3(0, 0.2f, 0))) >= 0,
@@ -454,7 +455,7 @@ public class NavMeshObstacleTests : RuntimeTestBase
         GameObject obstacleGo = CreateGameObject("Crate");
         scene.Add(obstacleGo);
         obstacleGo.Transform.Position = new Float3(4, 1, 4);
-        var obstacle = obstacleGo.AddComponent<NavMeshObstacle>();
+        NavMeshObstacle obstacle = obstacleGo.AddComponent<NavMeshObstacle>();
         obstacle.Size = new Float3(3, 3, 3);
         Assert.True(TickUntil(scene, () => !Walkable(scene, new Float3(4, 0.2f, 4))) >= 0);
 
@@ -496,7 +497,7 @@ public class NavMeshObstacleTests : RuntimeTestBase
         GameObject obstacleGo = CreateGameObject("Crate");
         scene.Add(obstacleGo);
         obstacleGo.Transform.Position = new Float3(6, 1, 0);
-        var obstacle = obstacleGo.AddComponent<NavMeshObstacle>();
+        NavMeshObstacle obstacle = obstacleGo.AddComponent<NavMeshObstacle>();
         obstacle.Size = new Float3(4, 3, 4); // carve x 4..8, both sides of the seam
         Assert.True(TickUntil(scene, () =>
             !Walkable(scene, new Float3(5, 0.2f, 0)) && !Walkable(scene, new Float3(7, 0.2f, 0))) >= 0);
@@ -599,7 +600,7 @@ public class NavMeshObstacleTests : RuntimeTestBase
         EchoObject echo = Serializer.Serialize(runtime);
         Runtime.NavMeshData? loaded = Serializer.Deserialize<Runtime.NavMeshData>(echo);
         Assert.NotNull(loaded);
-        var cache = loaded!.CreateTileCache(maxObstacles: 16);
+        DtTileCache cache = loaded!.CreateTileCache(maxObstacles: 16);
         Assert.True(cache.GetNavMesh().GetMaxTiles() > 0);
     }
 
@@ -616,7 +617,7 @@ public class NavMeshObstacleTests : RuntimeTestBase
         wall.Transform.Position = new Float3(0, 2, 0);
 
         var region = new AABB(new Float3(-2, -1, -11), new Float3(2, 5, 11));
-        var rebuilt = await surface.RebuildTilesAsync(region, surface.CollectSources());
+        List<NavMeshTileRebuild> rebuilt = await surface.RebuildTilesAsync(region, surface.CollectSources());
         Assert.NotEmpty(rebuilt);
         Assert.True(surface.ApplyRebuiltTiles(rebuilt));
 
@@ -824,14 +825,14 @@ public class NavMeshObstacleTests : RuntimeTestBase
         GameObject obstacleGo = CreateGameObject("Crate");
         scene.Add(obstacleGo);
         obstacleGo.Transform.Position = new Float3(0, 1, 0);
-        var obstacle = obstacleGo.AddComponent<NavMeshObstacle>();
+        NavMeshObstacle obstacle = obstacleGo.AddComponent<NavMeshObstacle>();
         obstacle.Size = new Float3(4, 3, 4); // straddles the straight line across
         Assert.True(TickUntil(scene, () => !Walkable(scene, new Float3(0, 0.2f, 0))) >= 0);
 
         GameObject agentGo = CreateGameObject("Walker");
         scene.Add(agentGo);
         agentGo.Transform.Position = new Float3(-8, 0, 0);
-        var agent = agentGo.AddComponent<NavMeshAgent>();
+        NavMeshAgent agent = agentGo.AddComponent<NavMeshAgent>();
         agent.Speed = 6f;
         agent.Acceleration = 100f;
         agent.Separation = false;
@@ -870,7 +871,7 @@ public class NavMeshObstacleTests : RuntimeTestBase
         scene.Add(crate);
         crate.Transform.Position = new Float3(6, 0.6f, 6);
         crate.AddComponent<BoxCollider>().Size = new Float3(4, 1.2f, 4);
-        var obstacle = crate.AddComponent<NavMeshObstacle>();
+        NavMeshObstacle obstacle = crate.AddComponent<NavMeshObstacle>();
         obstacle.Size = new Float3(4, 1.2f, 4);
         obstacle.CarvingTimeToStationary = 0.1f;
 
@@ -901,7 +902,7 @@ public class NavMeshObstacleTests : RuntimeTestBase
         scene.Add(crate);
         crate.Transform.Position = new Float3(6, 0.6f, 6);
         crate.AddComponent<BoxCollider>().Size = new Float3(4, 1.2f, 4);
-        var obstacle = crate.AddComponent<NavMeshObstacle>();
+        NavMeshObstacle obstacle = crate.AddComponent<NavMeshObstacle>();
         obstacle.Size = new Float3(4, 1.2f, 4);
         obstacle.Carve = carve;
 
@@ -953,7 +954,7 @@ public class NavMeshObstacleTests : RuntimeTestBase
             GameObject crate = CreateGameObject("FloatingCrate");
             scene.Add(crate);
             crate.Transform.Position = new Float3(0, 60, 0); // far above any walkable surface
-            var obstacle = crate.AddComponent<NavMeshObstacle>();
+            NavMeshObstacle obstacle = crate.AddComponent<NavMeshObstacle>();
             obstacle.Carve = false;
             obstacle.Size = new Float3(2, 2, 2);
 
@@ -992,7 +993,7 @@ public class NavMeshObstacleTests : RuntimeTestBase
             GameObject crate = CreateGameObject("Crate");
             scene.Add(crate);
             crate.Transform.Position = new Float3(0, 1, 0);
-            var obstacle = crate.AddComponent<NavMeshObstacle>();
+            NavMeshObstacle obstacle = crate.AddComponent<NavMeshObstacle>();
             obstacle.Size = new Float3(4, 3, 4);
             obstacle.CarvingTimeToStationary = 0.1f;
 
@@ -1038,7 +1039,7 @@ public class NavMeshObstacleTests : RuntimeTestBase
             GameObject crate = CreateGameObject("Crate");
             scene.Add(crate);
             crate.Transform.Position = spot;
-            var obstacle = crate.AddComponent<NavMeshObstacle>();
+            NavMeshObstacle obstacle = crate.AddComponent<NavMeshObstacle>();
             obstacle.Size = new Float3(4, 3, 4);
             obstacle.CarvingTimeToStationary = 0.1f;
         }
@@ -1080,7 +1081,7 @@ public class NavMeshObstacleTests : RuntimeTestBase
         GameObject go = CreateGameObject("Walker");
         scene.Add(go);
         go.Transform.Position = new Float3(-6, 0, 0);
-        var agent = go.AddComponent<NavMeshAgent>();
+        NavMeshAgent agent = go.AddComponent<NavMeshAgent>();
         agent.Speed = 3f;
         agent.Acceleration = 100f;
         Tick(scene, 2);
@@ -1195,7 +1196,7 @@ public class NavMeshObstacleTests : RuntimeTestBase
         GameObject crate = CreateGameObject("Cart");
         scene.Add(crate);
         crate.Transform.Position = new Float3(0, 1, 0); // straight across the agent's route
-        var obstacle = crate.AddComponent<NavMeshObstacle>();
+        NavMeshObstacle obstacle = crate.AddComponent<NavMeshObstacle>();
         obstacle.Carve = false;
         obstacle.Size = new Float3(3, 2, 3);
 
@@ -1206,7 +1207,7 @@ public class NavMeshObstacleTests : RuntimeTestBase
         GameObject agentGo = CreateGameObject("Walker");
         scene.Add(agentGo);
         agentGo.Transform.Position = new Float3(-10, 0, 0);
-        var agent = agentGo.AddComponent<NavMeshAgent>();
+        NavMeshAgent agent = agentGo.AddComponent<NavMeshAgent>();
         agent.Speed = 4f;
         agent.Acceleration = 20f;
         agent.Separation = false;
@@ -1251,7 +1252,7 @@ public class NavMeshObstacleTests : RuntimeTestBase
         GameObject cart = CreateGameObject("Cart");
         scene.Add(cart);
         cart.Transform.Position = new Float3(0, 1, 0);
-        var obstacle = cart.AddComponent<NavMeshObstacle>();
+        NavMeshObstacle obstacle = cart.AddComponent<NavMeshObstacle>();
         obstacle.Carve = false;
         obstacle.Size = new Float3(2, 2, 2);
         Tick(scene, 2);
@@ -1285,7 +1286,7 @@ public class NavMeshObstacleTests : RuntimeTestBase
         GameObject crate = CreateGameObject("Cart");
         scene.Add(crate);
         crate.Transform.Position = new Float3(0, 1, 0);
-        var obstacle = crate.AddComponent<NavMeshObstacle>();
+        NavMeshObstacle obstacle = crate.AddComponent<NavMeshObstacle>();
         obstacle.Carve = false;
         obstacle.Size = new Float3(2, 2, 2);
 
@@ -1294,7 +1295,7 @@ public class NavMeshObstacleTests : RuntimeTestBase
             GameObject go = CreateGameObject($"Pusher{i}");
             scene.Add(go);
             go.Transform.Position = new Float3(-8, 0, -2.5f + i);
-            var pusher = go.AddComponent<NavMeshAgent>();
+            NavMeshAgent pusher = go.AddComponent<NavMeshAgent>();
             pusher.Speed = 5f;
             pusher.Acceleration = 50f;
             pusher.Radius = 0.4f;
@@ -1331,7 +1332,7 @@ public class NavMeshObstacleTests : RuntimeTestBase
         GameObject crate = CreateGameObject("Crate");
         scene.Add(crate);
         crate.Transform.Position = new Float3(0, 1, 0);
-        var obstacle = crate.AddComponent<NavMeshObstacle>();
+        NavMeshObstacle obstacle = crate.AddComponent<NavMeshObstacle>();
         obstacle.Size = new Float3(4, 3, 4);
         Assert.True(TickUntil(scene, () => !Walkable(scene, new Float3(0, 0.2f, 0))) >= 0);
         Assert.Equal(1, BlockerCount(scene, obstacle)); // carving: no blocker

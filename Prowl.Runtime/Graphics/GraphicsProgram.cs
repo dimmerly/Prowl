@@ -3,6 +3,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Text.RegularExpressions;
 
 using Prowl.Vector;
 
@@ -82,7 +83,7 @@ public class GraphicsProgram : IDisposable
 
         // SubmitAndWait so compile / link errors surface synchronously to
         // ShaderPass.TryGetVariantProgram (it catches and falls back).
-        using var cmd = Graphics.GetCommandBuffer("GraphicsProgram.Compile");
+        using CommandBuffer cmd = Graphics.GetCommandBuffer("GraphicsProgram.Compile");
         cmd.EncodeCompileShader(this);
         Graphics.SubmitAndWait(cmd);
     }
@@ -94,7 +95,7 @@ public class GraphicsProgram : IDisposable
         _computeSource = AssignBindings(computeSource)[0];
         Handle = 0;
 
-        using var cmd = Graphics.GetCommandBuffer("GraphicsProgram.CompileCompute");
+        using CommandBuffer cmd = Graphics.GetCommandBuffer("GraphicsProgram.CompileCompute");
         cmd.EncodeCompileShader(this);
         Graphics.SubmitAndWait(cmd);
     }
@@ -127,7 +128,7 @@ public class GraphicsProgram : IDisposable
         foreach (string source in sources)
             foreach (System.Text.RegularExpressions.Match match in declaration.Matches(source))
             {
-                var binding = s_binding.Match(match.Groups["args"].Value);
+                Match binding = s_binding.Match(match.Groups["args"].Value);
                 if (binding.Success) used.Add(int.Parse(binding.Groups[1].Value));
             }
 
@@ -346,7 +347,7 @@ public class GraphicsProgram : IDisposable
             return;
         IsDisposed = true;
 
-        using var cmd = Graphics.GetCommandBuffer("GraphicsProgram.Dispose");
+        using CommandBuffer cmd = Graphics.GetCommandBuffer("GraphicsProgram.Dispose");
         cmd.EncodeDisposeShader(this);
         Graphics.Submit(cmd);
     }

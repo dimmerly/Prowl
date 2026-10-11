@@ -26,8 +26,8 @@ public sealed class UprightOnlyTests() : ControllerTestBase(Gravity.Upright)
     [Fact]
     public void AControllerWithNothingAroundItMovesTheWholeWay()
     {
-        var scene = World();
-        var cc = Place(scene, new Float3(0, 10, 0));
+        Scene scene = World();
+        Walker cc = Place(scene, new Float3(0, 10, 0));
 
         CharacterController.CollisionFlags flags = cc.Move(new Float3(0.5f, 0, 0));
 
@@ -38,10 +38,10 @@ public sealed class UprightOnlyTests() : ControllerTestBase(Gravity.Upright)
     [Fact]
     public void CastFindsWhatIsAheadWithoutMoving()
     {
-        var scene = World();
+        Scene scene = World();
         Box(scene, new Float3(2, 0, 0), new Float3(1, 4, 8));
 
-        var cc = Place(scene, new Float3(0, 0, 0));
+        Walker cc = Place(scene, new Float3(0, 0, 0));
         Float3 before = cc.Position;
 
         Assert.True(cc.Controller.Cast(ToWorld(new Float3(1, 0, 0)), 5.0f, out ShapeCastHit hit));

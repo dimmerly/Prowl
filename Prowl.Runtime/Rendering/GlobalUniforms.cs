@@ -86,7 +86,7 @@ public static class GlobalUniforms
 
         if (s_isDirty && s_uniformBuffer != null)
         {
-            using var cmd = Graphics.GetCommandBuffer("GlobalUniforms.Upload");
+            using CommandBuffer cmd = Graphics.GetCommandBuffer("GlobalUniforms.Upload");
             cmd.UpdateBuffer<GlobalUniformsData>(s_uniformBuffer, new ReadOnlySpan<GlobalUniformsData>(in s_data));
             Graphics.Submit(cmd);
             s_isDirty = false;

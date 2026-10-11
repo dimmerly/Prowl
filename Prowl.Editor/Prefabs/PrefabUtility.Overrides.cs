@@ -51,10 +51,10 @@ public static partial class PrefabUtility
 
         public static Member Find(object target, string name)
         {
-            var field = target.GetType().GetField(name, InstanceMembers);
+            FieldInfo? field = target.GetType().GetField(name, InstanceMembers);
             if (field != null) return new Member(field);
 
-            var property = target.GetType().GetProperty(name, InstanceMembers);
+            PropertyInfo? property = target.GetType().GetProperty(name, InstanceMembers);
             return property != null ? new Member(property) : default;
         }
     }

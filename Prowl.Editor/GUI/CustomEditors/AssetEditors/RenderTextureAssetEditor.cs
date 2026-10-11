@@ -14,6 +14,7 @@ using Prowl.PaperUI;
 using Prowl.PaperUI.LayoutEngine;
 using Prowl.Runtime;
 using Prowl.Runtime.Resources;
+using Prowl.Scribe;
 
 namespace Prowl.Editor.Inspector;
 
@@ -67,7 +68,7 @@ public class RenderTextureAssetEditor : AssetImporterEditor
 
     public override void OnGUI(Paper paper, string id, AssetEntry entry, EngineObject? asset)
     {
-        var font = EditorTheme.DefaultFont;
+        FontFile? font = EditorTheme.DefaultFont;
         if (font == null || Project.Current == null) return;
         if (asset is not RenderTexture rt) return;
 

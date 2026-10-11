@@ -224,13 +224,13 @@ public class ModelImporter
 {
     public ModelImportResult Import(FileInfo assetPath, ModelImporterSettings? settings = null)
     {
-        var s = settings ?? new ModelImporterSettings();
+        ModelImporterSettings s = settings ?? new ModelImporterSettings();
         return PostProcess(ClayBackedImporter.Import(assetPath, s), s);
     }
 
     public ModelImportResult Import(Stream stream, string virtualPath, ModelImporterSettings? settings = null)
     {
-        var s = settings ?? new ModelImporterSettings();
+        ModelImporterSettings s = settings ?? new ModelImporterSettings();
         return PostProcess(ClayBackedImporter.Import(stream, virtualPath, s), s);
     }
 

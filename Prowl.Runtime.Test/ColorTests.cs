@@ -83,7 +83,7 @@ public class ColorTests
     {
         var color1 = new Color(r1, g1, b1, a1);
         var color2 = new Color(r2, g2, b2, a2);
-        var result = color1 + color2;
+        Color result = color1 + color2;
         Assert.Equal(new Color(r3, g3, b3, a3), result);
     }
 
@@ -94,7 +94,7 @@ public class ColorTests
     public void Division_Operator_Works_Correctly(float r1, float g1, float b1, float a1, float divisor, float r2, float g2, float b2, float a2)
     {
         var color1 = new Color(r1, g1, b1, a1);
-        var result = color1 / divisor;
+        Color result = color1 / divisor;
         Assert.Equal(new Color(r2, g2, b2, a2), result);
     }
 
@@ -107,7 +107,7 @@ public class ColorTests
     {
         var color1 = new Color(r1, g1, b1, a1);
         var color2 = new Color(r2, g2, b2, a2);
-        var result = color1 * color2;
+        Color result = color1 * color2;
         Assert.Equal(new Color(r3, g3, b3, a3), result);
     }
 
@@ -119,7 +119,7 @@ public class ColorTests
         float g2, float b2, float a2)
     {
         var color1 = new Color(r1, g1, b1, a1);
-        var result = color1 * scalar;
+        Color result = color1 * scalar;
         Assert.Equal(new Color(r2, g2, b2, a2), result);
     }
 
@@ -131,7 +131,7 @@ public class ColorTests
         float r2, float g2, float b2, float a2)
     {
         var color1 = new Color(r1, g1, b1, a1);
-        var result = color1 * scalar;
+        Color result = color1 * scalar;
         Assert.Equal(new Color(r2, g2, b2, a2), result);
     }
 
@@ -144,7 +144,7 @@ public class ColorTests
     {
         var color1 = new Color(r1, g1, b1, a1);
         var color2 = new Color(r2, g2, b2, a2);
-        var result = color1 - color2;
+        Color result = color1 - color2;
         Assert.Equal(new Color(r3, g3, b3, a3), result);
     }
 

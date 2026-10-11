@@ -3,6 +3,7 @@
 
 using System.Collections.Generic;
 
+using Prowl.OrigamiUI.Gizmo;
 using Prowl.Quill;
 using Prowl.Runtime;
 using Prowl.Vector;
@@ -54,7 +55,7 @@ public static class TransformHandles
     /// <summary>Draw every handle driven this frame, then clear the pending set. Call from <c>DrawOverlay</c>.</summary>
     public static void Draw(Canvas canvas)
     {
-        foreach (var g in _pending) g.Draw(canvas);
+        foreach (TransformGizmo g in _pending) g.Draw(canvas);
         _pending.Clear();
     }
 
@@ -70,10 +71,10 @@ public static class TransformHandles
     {
         hot = false;
         Camera camera = ctx.Camera;
-        var camGo = camera.IsValid() ? camera.GameObject : null;
+        GameObject? camGo = camera.IsValid() ? camera.GameObject : null;
         if (camGo == null) return false;
 
-        if (!_gizmos.TryGetValue(id, out var g))
+        if (!_gizmos.TryGetValue(id, out TransformGizmo? g))
         {
             g = new Gizmo.TransformGizmo(mode);
             _gizmos[id] = g;
@@ -98,7 +99,7 @@ public static class TransformHandles
         g.IsMouseDown = ctx.TryBeginDrag(control);
         g.IsMouseUp = ctx.PrimaryUp;
 
-        var result = g.Update(ctx.MouseRay, ctx.MousePosition, ctx.Blocked);
+        GizmoResult? result = g.Update(ctx.MouseRay, ctx.MousePosition, ctx.Blocked);
         _pending.Add(g);
 
         // IsOver is fresh from the Update above. Guarded on Blocked because TransformGizmo only clears
@@ -109,7 +110,7 @@ public static class TransformHandles
         hot = ctx.IsActive(control);
 
         if (!result.HasValue || !ctx.IsHot(control)) return false;
-        var r = result.Value;
+        GizmoResult r = result.Value;
         bool changed = false;
         if (r.TranslationDelta.HasValue) { position += r.TranslationDelta.Value; changed = true; }
         if (r.RotationDelta.HasValue && r.RotationAxis.HasValue)

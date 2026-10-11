@@ -3,6 +3,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Numerics;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
@@ -30,7 +31,7 @@ internal static class PropertyApply
 
     public static void SetFloatCached(GraphicsProgram p, string name, float v)
     {
-        var cache = p.uniformCache;
+        GraphicsProgram.UniformCache cache = p.uniformCache;
         if (cache.floats.TryGetValue(name, out var cv) && cv == v) { Touch(name); return; }
         int loc = LocationOf(p, name);
         if (loc < 0) return;
@@ -41,7 +42,7 @@ internal static class PropertyApply
 
     public static void SetIntCached(GraphicsProgram p, string name, int v)
     {
-        var cache = p.uniformCache;
+        GraphicsProgram.UniformCache cache = p.uniformCache;
         if (cache.ints.TryGetValue(name, out var cv) && cv == v) { Touch(name); return; }
         int loc = LocationOf(p, name);
         if (loc < 0) return;
@@ -52,8 +53,8 @@ internal static class PropertyApply
 
     public static void SetVec2Cached(GraphicsProgram p, string name, Float2 v)
     {
-        var cache = p.uniformCache;
-        if (cache.vectors2.TryGetValue(name, out var cv) && cv.Equals(v)) { Touch(name); return; }
+        GraphicsProgram.UniformCache cache = p.uniformCache;
+        if (cache.vectors2.TryGetValue(name, out Float2 cv) && cv.Equals(v)) { Touch(name); return; }
         int loc = LocationOf(p, name);
         if (loc < 0) return;
         Touch(name);
@@ -63,8 +64,8 @@ internal static class PropertyApply
 
     public static void SetVec3Cached(GraphicsProgram p, string name, Float3 v)
     {
-        var cache = p.uniformCache;
-        if (cache.vectors3.TryGetValue(name, out var cv) && cv.Equals(v)) { Touch(name); return; }
+        GraphicsProgram.UniformCache cache = p.uniformCache;
+        if (cache.vectors3.TryGetValue(name, out Float3 cv) && cv.Equals(v)) { Touch(name); return; }
         int loc = LocationOf(p, name);
         if (loc < 0) return;
         Touch(name);
@@ -74,8 +75,8 @@ internal static class PropertyApply
 
     public static void SetVec4Cached(GraphicsProgram p, string name, Float4 v)
     {
-        var cache = p.uniformCache;
-        if (cache.vectors4.TryGetValue(name, out var cv) && cv.Equals(v)) { Touch(name); return; }
+        GraphicsProgram.UniformCache cache = p.uniformCache;
+        if (cache.vectors4.TryGetValue(name, out Float4 cv) && cv.Equals(v)) { Touch(name); return; }
         int loc = LocationOf(p, name);
         if (loc < 0) return;
         Touch(name);
@@ -85,8 +86,8 @@ internal static class PropertyApply
 
     public static void SetMatrixCached(GraphicsProgram p, string name, in Float4x4 m)
     {
-        var cache = p.uniformCache;
-        if (cache.matrices.TryGetValue(name, out var cv) && cv.Equals(m)) { Touch(name); return; }
+        GraphicsProgram.UniformCache cache = p.uniformCache;
+        if (cache.matrices.TryGetValue(name, out Float4x4 cv) && cv.Equals(m)) { Touch(name); return; }
         int loc = LocationOf(p, name);
         if (loc < 0) return;
         Touch(name);
@@ -176,7 +177,7 @@ internal static class PropertyApply
         WalkMatrices(state._matrices, p);
         WalkMatrixArrays(state._matrixArr, p);
         WalkBuffers(state._buffers, state._bufferBindings, p);
-        foreach (var kv in state._boundTextures)
+        foreach (KeyValuePair<string, GraphicsTexture> kv in state._boundTextures)
             BindTexUniform(p, kv.Key, kv.Value, exec);
     }
 
@@ -191,7 +192,7 @@ internal static class PropertyApply
     /// setters. Pass <c>null</c> overrides to apply all defaults unconditionally.</summary>
     public static void FillShaderDefaults(Resources.Shader shader, PropertyState? overrides, GraphicsProgram p, CommandExecutor exec)
     {
-        foreach (var prop in shader.LoadedProperties)
+        foreach (ShaderProperty prop in shader.LoadedProperties)
         {
             string name = prop.Name;
             switch (prop.PropertyType)
@@ -220,7 +221,7 @@ internal static class PropertyApply
                 case ShaderPropertyType.Matrix:
                     if (overrides == null || !overrides._matrices.ContainsKey(name))
                     {
-                        var m = prop.MatrixValue;
+                        Float4x4 m = prop.MatrixValue;
                         SetMatrixCached(p, name, in m);
                     }
                     break;
@@ -246,32 +247,32 @@ internal static class PropertyApply
 
     private static void WalkFloats(Dictionary<string, float> d, GraphicsProgram p)
     {
-        foreach (var kv in d) SetFloatCached(p, kv.Key, kv.Value);
+        foreach (KeyValuePair<string, float> kv in d) SetFloatCached(p, kv.Key, kv.Value);
     }
 
     private static void WalkInts(Dictionary<string, int> d, GraphicsProgram p)
     {
-        foreach (var kv in d) SetIntCached(p, kv.Key, kv.Value);
+        foreach (KeyValuePair<string, int> kv in d) SetIntCached(p, kv.Key, kv.Value);
     }
 
     private static void WalkVec2(Dictionary<string, Float2> d, GraphicsProgram p)
     {
-        foreach (var kv in d) SetVec2Cached(p, kv.Key, kv.Value);
+        foreach (KeyValuePair<string, Float2> kv in d) SetVec2Cached(p, kv.Key, kv.Value);
     }
 
     private static void WalkVec3(Dictionary<string, Float3> d, GraphicsProgram p)
     {
-        foreach (var kv in d) SetVec3Cached(p, kv.Key, kv.Value);
+        foreach (KeyValuePair<string, Float3> kv in d) SetVec3Cached(p, kv.Key, kv.Value);
     }
 
     private static void WalkVec4(Dictionary<string, Float4> d, GraphicsProgram p)
     {
-        foreach (var kv in d) SetVec4Cached(p, kv.Key, kv.Value);
+        foreach (KeyValuePair<string, Float4> kv in d) SetVec4Cached(p, kv.Key, kv.Value);
     }
 
     private static void WalkColors(Dictionary<string, Color> d, GraphicsProgram p)
     {
-        foreach (var kv in d)
+        foreach (KeyValuePair<string, Color> kv in d)
         {
             Float4 v = new((float)kv.Value.R, (float)kv.Value.G, (float)kv.Value.B, (float)kv.Value.A);
             SetVec4Cached(p, kv.Key, v);
@@ -280,12 +281,12 @@ internal static class PropertyApply
 
     private static void WalkMatrices(Dictionary<string, Float4x4> d, GraphicsProgram p)
     {
-        foreach (var kv in d) { var v = kv.Value; SetMatrixCached(p, kv.Key, in v); }
+        foreach (KeyValuePair<string, Float4x4> kv in d) { Float4x4 v = kv.Value; SetMatrixCached(p, kv.Key, in v); }
     }
 
     private static void WalkMatrixArrays(Dictionary<string, Float4x4[]> d, GraphicsProgram p)
     {
-        foreach (var kv in d)
+        foreach (KeyValuePair<string, Float4x4[]> kv in d)
         {
             if (kv.Value == null || kv.Value.Length == 0) continue;
             int loc = LocationOf(p, kv.Key);
@@ -297,7 +298,7 @@ internal static class PropertyApply
 
     private static void WalkMatrixArraysNumeric(Dictionary<string, System.Numerics.Matrix4x4[]> d, GraphicsProgram p)
     {
-        foreach (var kv in d)
+        foreach (KeyValuePair<string, Matrix4x4[]> kv in d)
         {
             if (kv.Value == null || kv.Value.Length == 0) continue;
             int loc = LocationOf(p, kv.Key);
@@ -309,12 +310,12 @@ internal static class PropertyApply
 
     private static void WalkBuffers(Dictionary<string, GraphicsBuffer> d, Dictionary<string, uint> bindings, GraphicsProgram p)
     {
-        var cache = p.uniformCache;
-        foreach (var kv in d)
+        GraphicsProgram.UniformCache cache = p.uniformCache;
+        foreach (KeyValuePair<string, GraphicsBuffer> kv in d)
         {
             // Storage binding points are shared by every program, so only a uniform block may skip a repeat bind
             bool uniformBlock = BlockIndexOf(p, kv.Key) != 0xFFFFFFFFu;
-            if (uniformBlock && cache.buffers.TryGetValue(kv.Key, out var cached) && ReferenceEquals(cached, kv.Value)) continue;
+            if (uniformBlock && cache.buffers.TryGetValue(kv.Key, out GraphicsBuffer? cached) && ReferenceEquals(cached, kv.Value)) continue;
             uint bp = bindings.TryGetValue(kv.Key, out uint b) ? b : 0u;
             BindUniformBuffer(p, kv.Key, kv.Value, bp);
             cache.buffers[kv.Key] = kv.Value;
@@ -323,7 +324,7 @@ internal static class PropertyApply
 
     private static void WalkGlobalTexturesCube(Dictionary<string, Cubemap> d, GraphicsProgram p, CommandExecutor exec)
     {
-        foreach (var kv in d)
+        foreach (KeyValuePair<string, Cubemap> kv in d)
         {
             if (kv.Value is { IsDisposed: false, HandleIfLoaded: { } handle })
                 BindTexUniform(p, kv.Key, handle, exec);
@@ -332,7 +333,7 @@ internal static class PropertyApply
 
     private static void WalkGlobalTextures(Dictionary<string, Texture2D> d, GraphicsProgram p, CommandExecutor exec)
     {
-        foreach (var kv in d)
+        foreach (KeyValuePair<string, Texture2D> kv in d)
         {
             if (kv.Value is { IsDisposed: false, HandleIfLoaded: { } handle })
                 BindTexUniform(p, kv.Key, handle, exec);
@@ -341,7 +342,7 @@ internal static class PropertyApply
 
     private static void WalkGlobalTextures3D(Dictionary<string, Texture3D> d, GraphicsProgram p, CommandExecutor exec)
     {
-        foreach (var kv in d)
+        foreach (KeyValuePair<string, Texture3D> kv in d)
         {
             if (kv.Value is { IsDisposed: false, HandleIfLoaded: { } handle })
                 BindTexUniform(p, kv.Key, handle, exec);

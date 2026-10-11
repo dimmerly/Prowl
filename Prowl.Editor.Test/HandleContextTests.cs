@@ -21,7 +21,7 @@ public class HandleContextTests
     private static (HandleContext ctx, Camera cam) MakeContext()
     {
         var go = new GameObject("HandleContextTestCamera");
-        var cam = go.AddComponent<Camera>();
+        Camera cam = go.AddComponent<Camera>();
         return (new HandleContext(), cam);
     }
 
@@ -34,7 +34,7 @@ public class HandleContextTests
     [Fact]
     public void HandleOutsideItsGrabRadius_DoesNotStarveObjectPicking()
     {
-        var (ctx, cam) = MakeContext();
+        (HandleContext? ctx, Camera? cam) = MakeContext();
 
         ctx.BeginFrame(cam, Viewport, Float2.Zero, true);
         ControlID handle = ctx.GetControlID("handle");
@@ -65,7 +65,7 @@ public class HandleContextTests
     [InlineData(float.NaN)]
     public void NonCandidateDistance_DoesNotStarveObjectPicking(float distance)
     {
-        var (ctx, cam) = MakeContext();
+        (HandleContext? ctx, Camera? cam) = MakeContext();
 
         ctx.BeginFrame(cam, Viewport, Float2.Zero, true);
         ControlID absent = ctx.GetControlID("absent");
@@ -87,7 +87,7 @@ public class HandleContextTests
     [InlineData(false)]
     public void OverlappingHandles_ResolveToTheOneInFront(bool nearRegistersFirst)
     {
-        var (ctx, cam) = MakeContext();
+        (HandleContext? ctx, Camera? cam) = MakeContext();
 
         ctx.BeginFrame(cam, Viewport, Float2.Zero, true);
         ControlID near = ctx.GetControlID("near");
@@ -116,7 +116,7 @@ public class HandleContextTests
     [Fact]
     public void DepthDoesNotOverrideAClearScreenDistanceWin()
     {
-        var (ctx, cam) = MakeContext();
+        (HandleContext? ctx, Camera? cam) = MakeContext();
 
         ctx.BeginFrame(cam, Viewport, Float2.Zero, true);
         ControlID onCursor = ctx.GetControlID("on_cursor");

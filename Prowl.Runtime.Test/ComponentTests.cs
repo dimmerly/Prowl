@@ -3,6 +3,7 @@
 
 using System;
 
+using Prowl.Runtime.Resources;
 using Prowl.Vector;
 
 
@@ -131,9 +132,9 @@ public class ComponentTests : RuntimeTestBase
     [Fact]
     public void ColorTint_WritesTheRendererColor()
     {
-        var sprite = CreateGameObject().AddComponent<SpriteRenderer>();
-        var skinned = CreateGameObject().AddComponent<SkinnedMeshRenderer>();
-        var text = CreateGameObject().AddComponent<TextMeshComponent>();
+        SpriteRenderer sprite = CreateGameObject().AddComponent<SpriteRenderer>();
+        SkinnedMeshRenderer skinned = CreateGameObject().AddComponent<SkinnedMeshRenderer>();
+        TextMeshComponent text = CreateGameObject().AddComponent<TextMeshComponent>();
 
         ((IColorTint)sprite).Tint = Color.Red;
         ((IColorTint)skinned).Tint = Color.Green;
@@ -153,9 +154,9 @@ public class ComponentTests : RuntimeTestBase
     [Fact]
     public void AddComponent_SelfRequirement_AddsOnceAndTerminates()
     {
-        var go = CreateGameObject();
+        GameObject go = CreateGameObject();
 
-        var comp = go.AddComponent<SelfRequiring>();
+        SelfRequiring comp = go.AddComponent<SelfRequiring>();
 
         Assert.NotNull(comp);
         Assert.Single(go.GetComponents<SelfRequiring>());
@@ -164,9 +165,9 @@ public class ComponentTests : RuntimeTestBase
     [Fact]
     public void AddComponent_MutualRequirement_AddsBothAndTerminates()
     {
-        var go = CreateGameObject();
+        GameObject go = CreateGameObject();
 
-        var comp = go.AddComponent<MutualA>();
+        MutualA comp = go.AddComponent<MutualA>();
 
         Assert.NotNull(comp);
         Assert.Single(go.GetComponents<MutualA>());
@@ -176,7 +177,7 @@ public class ComponentTests : RuntimeTestBase
     [Fact]
     public void AddComponent_RequirementRing_AddsEachOnceAndTerminates()
     {
-        var go = CreateGameObject();
+        GameObject go = CreateGameObject();
 
         go.AddComponent<RingA>();
 
@@ -196,9 +197,9 @@ public class ComponentTests : RuntimeTestBase
     [Fact]
     public void AddComponent_WhoseConstructorThrows_ReturnsNullInsteadOfPropagating()
     {
-        var go = CreateGameObject();
+        GameObject go = CreateGameObject();
 
-        var comp = go.AddComponent(typeof(ThrowsWhenConstructed));
+        Component comp = go.AddComponent(typeof(ThrowsWhenConstructed));
 
         Assert.Null(comp);
         Assert.Empty(go.GetComponents<ThrowsWhenConstructed>());
@@ -208,10 +209,10 @@ public class ComponentTests : RuntimeTestBase
     [Fact]
     public void AddComponent_AfterAConstructorThrows_TheObjectStillWorks()
     {
-        var go = CreateGameObject();
+        GameObject go = CreateGameObject();
 
         go.AddComponent(typeof(ThrowsWhenConstructed));
-        var plain = go.AddComponent<PlainComponent>();
+        PlainComponent plain = go.AddComponent<PlainComponent>();
 
         Assert.NotNull(plain);
         Assert.Single(go.GetComponents<PlainComponent>());
@@ -224,7 +225,7 @@ public class ComponentTests : RuntimeTestBase
     [Fact]
     public void Cloning_WhenAComponentsConstructorThrows_SkipsItRatherThanFailing()
     {
-        var go = CreateGameObject();
+        GameObject go = CreateGameObject();
         Assert.NotNull(go.AddComponent(typeof(ThrowsWhenArmed)));
         go.AddComponent<PlainComponent>();
 
@@ -247,9 +248,9 @@ public class ComponentTests : RuntimeTestBase
     [Fact]
     public void AddComponent_WithoutAParameterlessConstructor_ReturnsNull()
     {
-        var go = CreateGameObject();
+        GameObject go = CreateGameObject();
 
-        var comp = go.AddComponent(typeof(NoDefaultConstructor));
+        Component comp = go.AddComponent(typeof(NoDefaultConstructor));
 
         Assert.Null(comp);
         Assert.Empty(go.GetComponents<NoDefaultConstructor>());
@@ -259,9 +260,9 @@ public class ComponentTests : RuntimeTestBase
     [Fact]
     public void AddComponent_ReturnsInstance_WiredToGameObject()
     {
-        var go = CreateGameObject();
+        GameObject go = CreateGameObject();
 
-        var comp = go.AddComponent<PlainComponent>();
+        PlainComponent comp = go.AddComponent<PlainComponent>();
 
         Assert.NotNull(comp);
         Assert.Same(go, comp.GameObject);
@@ -272,7 +273,7 @@ public class ComponentTests : RuntimeTestBase
     [Fact]
     public void AddComponent_NonComponentType_ReturnsNull()
     {
-        var go = CreateGameObject();
+        GameObject go = CreateGameObject();
 
         Component? result = go.AddComponent(typeof(NotAComponent));
 
@@ -283,10 +284,10 @@ public class ComponentTests : RuntimeTestBase
     [Fact]
     public void AddComponent_SameTypeTwice_CreatesTwoInstances()
     {
-        var go = CreateGameObject();
+        GameObject go = CreateGameObject();
 
-        var a = go.AddComponent<PlainComponent>();
-        var b = go.AddComponent<PlainComponent>();
+        PlainComponent a = go.AddComponent<PlainComponent>();
+        PlainComponent b = go.AddComponent<PlainComponent>();
 
         Assert.NotSame(a, b);
         Assert.Equal(2, go.GetComponents<PlainComponent>().Count());
@@ -295,8 +296,8 @@ public class ComponentTests : RuntimeTestBase
     [Fact]
     public void AddComponent_DoesNotLeakToOtherGameObjects()
     {
-        var a = CreateGameObject("A");
-        var b = CreateGameObject("B");
+        GameObject a = CreateGameObject("A");
+        GameObject b = CreateGameObject("B");
 
         a.AddComponent<PlainComponent>();
 
@@ -309,15 +310,15 @@ public class ComponentTests : RuntimeTestBase
     [Fact]
     public void GetComponent_ReturnsNull_WhenAbsent()
     {
-        var go = CreateGameObject();
+        GameObject go = CreateGameObject();
         Assert.Null(go.GetComponent<PlainComponent>());
     }
 
     [Fact]
     public void GetComponent_ByBaseType_ReturnsDerivedInstance()
     {
-        var go = CreateGameObject();
-        var derived = go.AddComponent<DerivedTestComponent>();
+        GameObject go = CreateGameObject();
+        DerivedTestComponent derived = go.AddComponent<DerivedTestComponent>();
 
         // Lookup by base type isn't an exact cache key, so this exercises the assignable fallback.
         Assert.Same(derived, go.GetComponent<BaseTestComponent>());
@@ -326,8 +327,8 @@ public class ComponentTests : RuntimeTestBase
     [Fact]
     public void GetComponents_ByBaseType_IncludesDerived()
     {
-        var go = CreateGameObject();
-        var derived = go.AddComponent<DerivedTestComponent>();
+        GameObject go = CreateGameObject();
+        DerivedTestComponent derived = go.AddComponent<DerivedTestComponent>();
 
         var found = go.GetComponents<BaseTestComponent>().ToList();
 
@@ -338,8 +339,8 @@ public class ComponentTests : RuntimeTestBase
     [Fact]
     public void GetComponent_MultipleSameType_ReturnsFirstAdded()
     {
-        var go = CreateGameObject();
-        var first = go.AddComponent<PlainComponent>();
+        GameObject go = CreateGameObject();
+        PlainComponent first = go.AddComponent<PlainComponent>();
         go.AddComponent<PlainComponent>();
 
         Assert.Same(first, go.GetComponent<PlainComponent>());
@@ -348,21 +349,21 @@ public class ComponentTests : RuntimeTestBase
     [Fact]
     public void TryGetComponent_ReflectsPresence()
     {
-        var go = CreateGameObject();
+        GameObject go = CreateGameObject();
 
         Assert.False(go.TryGetComponent<PlainComponent>(out _));
 
-        var comp = go.AddComponent<PlainComponent>();
+        PlainComponent comp = go.AddComponent<PlainComponent>();
 
-        Assert.True(go.TryGetComponent<PlainComponent>(out var found));
+        Assert.True(go.TryGetComponent<PlainComponent>(out PlainComponent? found));
         Assert.Same(comp, found);
     }
 
     [Fact]
     public void GetComponentByIdentifier_FindsComponent_AndRejectsEmpty()
     {
-        var go = CreateGameObject();
-        var comp = go.AddComponent<PlainComponent>();
+        GameObject go = CreateGameObject();
+        PlainComponent comp = go.AddComponent<PlainComponent>();
 
         Assert.Same(comp, go.GetComponentByIdentifier(comp.Identifier));
         Assert.Null(go.GetComponentByIdentifier(Guid.Empty));
@@ -371,7 +372,7 @@ public class ComponentTests : RuntimeTestBase
     [Fact]
     public void GetComponents_NoArgs_ReturnsAllComponents()
     {
-        var go = CreateGameObject();
+        GameObject go = CreateGameObject();
         go.AddComponent<PlainComponent>();
         go.AddComponent<SecondComponent>();
 
@@ -383,8 +384,8 @@ public class ComponentTests : RuntimeTestBase
     [Fact]
     public void RemoveComponent_RemovesInstance()
     {
-        var go = CreateGameObject();
-        var comp = go.AddComponent<PlainComponent>();
+        GameObject go = CreateGameObject();
+        PlainComponent comp = go.AddComponent<PlainComponent>();
 
         go.RemoveComponent(comp);
 
@@ -395,9 +396,9 @@ public class ComponentTests : RuntimeTestBase
     [Fact]
     public void RemoveComponent_Generic_RemovesOnlyThatInstance()
     {
-        var go = CreateGameObject();
-        var a = go.AddComponent<PlainComponent>();
-        var b = go.AddComponent<PlainComponent>();
+        GameObject go = CreateGameObject();
+        PlainComponent a = go.AddComponent<PlainComponent>();
+        PlainComponent b = go.AddComponent<PlainComponent>();
 
         go.RemoveComponent<PlainComponent>(a);
 
@@ -409,8 +410,8 @@ public class ComponentTests : RuntimeTestBase
     [Fact]
     public void RemoveComponent_ByGuid_RemovesInstance()
     {
-        var go = CreateGameObject();
-        var comp = go.AddComponent<PlainComponent>();
+        GameObject go = CreateGameObject();
+        PlainComponent comp = go.AddComponent<PlainComponent>();
 
         go.RemoveComponent(comp.Identifier);
 
@@ -420,7 +421,7 @@ public class ComponentTests : RuntimeTestBase
     [Fact]
     public void RemoveAll_RemovesEveryInstanceOfType()
     {
-        var go = CreateGameObject();
+        GameObject go = CreateGameObject();
         go.AddComponent<PlainComponent>();
         go.AddComponent<PlainComponent>();
         go.AddComponent<SecondComponent>();
@@ -434,9 +435,9 @@ public class ComponentTests : RuntimeTestBase
     [Fact]
     public void RemoveComponent_LeavesOthersIntact()
     {
-        var go = CreateGameObject();
-        var plain = go.AddComponent<PlainComponent>();
-        var second = go.AddComponent<SecondComponent>();
+        GameObject go = CreateGameObject();
+        PlainComponent plain = go.AddComponent<PlainComponent>();
+        SecondComponent second = go.AddComponent<SecondComponent>();
 
         go.RemoveComponent(plain);
 
@@ -449,7 +450,7 @@ public class ComponentTests : RuntimeTestBase
     [Fact]
     public void RequireComponent_AddsDependency()
     {
-        var go = CreateGameObject();
+        GameObject go = CreateGameObject();
 
         go.AddComponent<NeedsPlain>();
 
@@ -460,8 +461,8 @@ public class ComponentTests : RuntimeTestBase
     [Fact]
     public void RequireComponent_DoesNotDuplicate_WhenDependencyAlreadyPresent()
     {
-        var go = CreateGameObject();
-        var existing = go.AddComponent<PlainComponent>();
+        GameObject go = CreateGameObject();
+        PlainComponent existing = go.AddComponent<PlainComponent>();
 
         go.AddComponent<NeedsPlain>();
 
@@ -473,7 +474,7 @@ public class ComponentTests : RuntimeTestBase
     [Fact]
     public void RequireComponent_Chain_AddsTransitiveDependencies()
     {
-        var go = CreateGameObject();
+        GameObject go = CreateGameObject();
 
         go.AddComponent<NeedsChain>();
 
@@ -485,7 +486,7 @@ public class ComponentTests : RuntimeTestBase
     [Fact]
     public void RequireComponent_Multiple_AddsAllDependencies()
     {
-        var go = CreateGameObject();
+        GameObject go = CreateGameObject();
 
         go.AddComponent<NeedsTwo>();
 
@@ -497,9 +498,9 @@ public class ComponentTests : RuntimeTestBase
     [Fact]
     public void RemoveComponent_RequiredByAnother_IsBlocked()
     {
-        var go = CreateGameObject();
+        GameObject go = CreateGameObject();
         go.AddComponent<NeedsPlain>(); // also adds PlainComponent
-        var plain = go.GetComponent<PlainComponent>();
+        PlainComponent? plain = go.GetComponent<PlainComponent>();
 
         // PlainComponent is required by NeedsPlain, so removal must be refused.
         go.RemoveComponent(plain!);
@@ -510,7 +511,7 @@ public class ComponentTests : RuntimeTestBase
     [Fact]
     public void RequireComponent_Stacked_AddsEveryDependency()
     {
-        var go = CreateGameObject();
+        GameObject go = CreateGameObject();
 
         go.AddComponent<NeedsStacked>();
 
@@ -521,7 +522,7 @@ public class ComponentTests : RuntimeTestBase
     [Fact]
     public void RemoveComponent_RequiredByStackedAttribute_IsBlocked()
     {
-        var go = CreateGameObject();
+        GameObject go = CreateGameObject();
         go.AddComponent<NeedsStacked>();
 
         go.RemoveComponent(go.GetComponent<SecondComponent>()!);
@@ -534,10 +535,10 @@ public class ComponentTests : RuntimeTestBase
     [Fact]
     public void DisallowMultiple_SecondAdd_IsRefused()
     {
-        var go = CreateGameObject();
-        var first = go.AddComponent<OnlyOne>();
+        GameObject go = CreateGameObject();
+        OnlyOne first = go.AddComponent<OnlyOne>();
 
-        var second = go.AddComponent<OnlyOne>();
+        OnlyOne second = go.AddComponent<OnlyOne>();
 
         Assert.Null(second);
         Assert.Same(first, Assert.Single(go.GetComponents<OnlyOne>()));
@@ -546,7 +547,7 @@ public class ComponentTests : RuntimeTestBase
     [Fact]
     public void DisallowMultiple_CoversSubclassesOfTheMarkedType()
     {
-        var go = CreateGameObject();
+        GameObject go = CreateGameObject();
         go.AddComponent<OnlyOneBase>();
 
         Assert.Null(go.AddComponent<OnlyOneDerived>());
@@ -556,9 +557,9 @@ public class ComponentTests : RuntimeTestBase
     [Fact]
     public void DisallowMultiple_AttachingAnInstance_IsRefused()
     {
-        var go = CreateGameObject();
+        GameObject go = CreateGameObject();
         go.AddComponent<OnlyOne>();
-        var loose = CreateGameObject().AddComponent<OnlyOne>();
+        OnlyOne loose = CreateGameObject().AddComponent<OnlyOne>();
 
         Assert.False(go.AddComponent(loose));
         Assert.Single(go.GetComponents<OnlyOne>());
@@ -578,12 +579,12 @@ public class ComponentTests : RuntimeTestBase
     [Fact]
     public void GetComponents_TolerartesAddDuringEnumeration()
     {
-        var go = CreateGameObject();
+        GameObject go = CreateGameObject();
         go.AddComponent<PlainComponent>();
         go.AddComponent<PlainComponent>();
 
         int seen = 0;
-        foreach (var _ in go.GetComponents<PlainComponent>())
+        foreach (PlainComponent _ in go.GetComponents<PlainComponent>())
         {
             seen++;
             go.AddComponent<PlainComponent>();
@@ -596,11 +597,11 @@ public class ComponentTests : RuntimeTestBase
     [Fact]
     public void GetComponents_TolerartesRemoveDuringEnumeration()
     {
-        var go = CreateGameObject();
-        var a = go.AddComponent<PlainComponent>();
+        GameObject go = CreateGameObject();
+        PlainComponent a = go.AddComponent<PlainComponent>();
         go.AddComponent<PlainComponent>();
 
-        foreach (var _ in go.GetComponents<PlainComponent>())
+        foreach (PlainComponent _ in go.GetComponents<PlainComponent>())
             go.RemoveComponent(a);
 
         Assert.Single(go.GetComponents<PlainComponent>());
@@ -611,10 +612,10 @@ public class ComponentTests : RuntimeTestBase
     [Fact]
     public void RemoveComponent_FromWrongGameObject_DoesNothing()
     {
-        var scene = CreateScene(enable: true);
-        var owner = CreateGameObject("Owner");
-        var other = CreateGameObject("Other");
-        var comp = owner.AddComponent<PlainComponent>();
+        Scene scene = CreateScene(enable: true);
+        GameObject owner = CreateGameObject("Owner");
+        GameObject other = CreateGameObject("Other");
+        PlainComponent comp = owner.AddComponent<PlainComponent>();
         scene.Add(owner); scene.Add(other);
 
         other.RemoveComponent(comp);       // non-generic overload
@@ -629,9 +630,9 @@ public class ComponentTests : RuntimeTestBase
     [Fact]
     public void AddComponent_Instance_MovesItOffItsPreviousGameObject()
     {
-        var a = CreateGameObject("A");
-        var b = CreateGameObject("B");
-        var comp = a.AddComponent<PlainComponent>();
+        GameObject a = CreateGameObject("A");
+        GameObject b = CreateGameObject("B");
+        PlainComponent comp = a.AddComponent<PlainComponent>();
 
         b.AddComponent(comp);
 
@@ -643,10 +644,10 @@ public class ComponentTests : RuntimeTestBase
     [Fact]
     public void AddComponent_Instance_SurvivesDisposalOfThePreviousGameObject()
     {
-        var scene = CreateScene(enable: true);
-        var a = CreateGameObject("A");
-        var b = CreateGameObject("B");
-        var comp = a.AddComponent<PlainComponent>();
+        Scene scene = CreateScene(enable: true);
+        GameObject a = CreateGameObject("A");
+        GameObject b = CreateGameObject("B");
+        PlainComponent comp = a.AddComponent<PlainComponent>();
         scene.Add(a); scene.Add(b);
 
         b.AddComponent(comp);
@@ -664,7 +665,7 @@ public class ComponentTests : RuntimeTestBase
     {
         // Component storage is insertion-ordered; execution order is applied by the scene update
         // loop, not by GetComponents() (see UpdateLoopTests for the execution-order behavior).
-        var go = CreateGameObject();
+        GameObject go = CreateGameObject();
         go.AddComponent<LateComponent>();   // [ExecutionOrder(100)]
         go.AddComponent<EarlyComponent>();  // [ExecutionOrder(-100)]
         go.AddComponent<PlainComponent>();  // default order 0

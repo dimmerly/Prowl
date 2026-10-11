@@ -169,8 +169,8 @@ public class TerrainHeightmapProxy : IDynamicTreeProxy, IRayCastable
         //  |    \  |
         //  d ----- c
 
-        var rayOrigin = localOrigin.ToJitter();
-        var rayDir = localDir.ToJitter();
+        JVector rayOrigin = localOrigin.ToJitter();
+        JVector rayDir = localDir.ToJitter();
 
         new JTriangle(a, c, b).RayIntersect(rayOrigin, rayDir, JTriangle.CullMode.BackFacing, out JVector normal0, out float lambda0);
         new JTriangle(a, d, c).RayIntersect(rayOrigin, rayDir, JTriangle.CullMode.BackFacing, out JVector normal1, out float lambda1);

@@ -39,7 +39,7 @@ public sealed class PreviewWidget : IDisposable
     public static void ReleaseUndrawn()
     {
         List<Guid>? undrawn = null;
-        foreach (var (asset, widget) in s_byAsset)
+        foreach ((Guid asset, PreviewWidget? widget) in s_byAsset)
         {
             if (!widget._drawn) (undrawn ??= []).Add(asset);
             widget._drawn = false;

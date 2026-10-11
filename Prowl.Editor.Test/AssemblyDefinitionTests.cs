@@ -31,7 +31,7 @@ public class AssemblyDefinitionTests : EditorTestHarness
         WriteAssemblyDefinition("B", new AssemblyDefinition { Name = "Cyc.B", References = { "Cyc.A" } });
         WriteScript(Path.Combine("B", "b.cs"), "namespace Cyc { public class B { } }");
 
-        var result = ScriptCompiler.CompileAll(Project);
+        ScriptCompiler.CompileResult result = ScriptCompiler.CompileAll(Project);
 
         Assert.False(result.Success);
         Assert.Contains("Cyclic", result.Errors, StringComparison.OrdinalIgnoreCase);
@@ -43,7 +43,7 @@ public class AssemblyDefinitionTests : EditorTestHarness
         WriteAssemblyDefinition("A", new AssemblyDefinition { Name = "Same.Name" });
         WriteAssemblyDefinition("B", new AssemblyDefinition { Name = "Same.Name" });
 
-        var result = ScriptCompiler.CompileAll(Project);
+        ScriptCompiler.CompileResult result = ScriptCompiler.CompileAll(Project);
 
         Assert.False(result.Success);
         Assert.Contains("Duplicate", result.Errors, StringComparison.OrdinalIgnoreCase);
@@ -54,7 +54,7 @@ public class AssemblyDefinitionTests : EditorTestHarness
     {
         WriteAssemblyDefinition("X", new AssemblyDefinition { Name = $"{Project.Name}.Game" });
 
-        var result = ScriptCompiler.CompileAll(Project);
+        ScriptCompiler.CompileResult result = ScriptCompiler.CompileAll(Project);
 
         Assert.False(result.Success);
         Assert.Contains("reserved", result.Errors, StringComparison.OrdinalIgnoreCase);
@@ -89,7 +89,7 @@ public class AssemblyDefinitionTests : EditorTestHarness
             }
             """);
 
-        var compile = ScriptCompiler.CompileAll(Project);
+        ScriptCompiler.CompileResult compile = ScriptCompiler.CompileAll(Project);
         Assert.True(compile.Success, $"Compile failed:\n{compile.Errors}\n{compile.Output}");
 
         string asmDir = Project.ScriptAssemblyPath;
@@ -114,7 +114,7 @@ public class AssemblyDefinitionTests : EditorTestHarness
         WriteAssemblyDefinition("S", new AssemblyDefinition { Name = "SelfRef", References = { "SelfRef" } });
         WriteScript(Path.Combine("S", "S.cs"), "namespace SelfNs { public class S { } }");
 
-        var result = ScriptCompiler.CompileAll(Project);
+        ScriptCompiler.CompileResult result = ScriptCompiler.CompileAll(Project);
 
         Assert.True(result.Success, $"Self-reference should be ignored, not a cycle:\n{result.Errors}");
     }
@@ -129,7 +129,7 @@ public class AssemblyDefinitionTests : EditorTestHarness
         WriteScript(Path.Combine("Win", "W.cs"), "namespace WinNs { public class W { } }");
         WriteScript("Loose.cs", "public class Loose { }");
 
-        var result = ScriptCompiler.CompileAll(Project);
+        ScriptCompiler.CompileResult result = ScriptCompiler.CompileAll(Project);
         Assert.True(result.Success, $"Compile failed:\n{result.Errors}");
 
         string gameProj = File.ReadAllText(Project.GameCsprojPath);

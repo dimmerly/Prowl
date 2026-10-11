@@ -62,7 +62,7 @@ public struct SphericalHarmonicsL2
         for (int i = 0; i < probes.Length; i++)
         {
             float w = weights[i];
-            ref readonly var p = ref probes[i];
+            ref readonly SphericalHarmonicsL2 p = ref probes[i];
             r.C0 += p.C0 * w; r.C1 += p.C1 * w; r.C2 += p.C2 * w; r.C3 += p.C3 * w; r.C4 += p.C4 * w;
             r.C5 += p.C5 * w; r.C6 += p.C6 * w; r.C7 += p.C7 * w; r.C8 += p.C8 * w;
         }

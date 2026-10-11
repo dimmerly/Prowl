@@ -66,15 +66,15 @@ public class BuildSystemProjectTests : EditorTestHarness
         string sentinel = Path.Combine(outDir, "important.txt");
         File.WriteAllText(sentinel, "keep me");
 
-        var build = EditorRegistries.GetSettings<BuildSettings>();
+        BuildSettings build = EditorRegistries.GetSettings<BuildSettings>();
         build.Scenes.Clear();
         build.Scenes.Add(new SceneBuildEntry { Path = "Main.scene", SceneGuid = sceneGuid, Enabled = true });
         build.OutputDirectory = outDir;
 
         try
         {
-            var first = new DesktopBuildPipeline().BuildAsync(Project.RootPath, build, outDir).GetAwaiter().GetResult();
-            var second = new DesktopBuildPipeline().BuildAsync(Project.RootPath, build, outDir).GetAwaiter().GetResult();
+            BuildResult first = new DesktopBuildPipeline().BuildAsync(Project.RootPath, build, outDir).GetAwaiter().GetResult();
+            BuildResult second = new DesktopBuildPipeline().BuildAsync(Project.RootPath, build, outDir).GetAwaiter().GetResult();
 
             Assert.True(first.Success, first.Errors);
             Assert.True(second.Success, second.Errors);
@@ -115,7 +115,7 @@ public class BuildSystemProjectTests : EditorTestHarness
         Assert.NotEqual(Guid.Empty, texGuid);
 
         TextureSpriteMeta.Save(texGuid, new SpriteImportSettings { Mode = SpriteMode.Single });
-        var subAssets = Assets.GetSubAssets(texGuid);
+        SubAssetEntry[] subAssets = Assets.GetSubAssets(texGuid);
         Assert.True(subAssets.Length > 0);
         Guid spriteGuid = subAssets[0].Guid;
 
@@ -162,21 +162,21 @@ public class BuildSystemProjectTests : EditorTestHarness
                 public Texture2D? MyTexture;
             }
             """);
-        var compile = ScriptCompiler.CompileAll(Project);
+        ScriptCompiler.CompileResult compile = ScriptCompiler.CompileAll(Project);
         Assert.True(compile.Success, $"Script compile failed:\n{compile.Errors}\n{compile.Output}");
 
         var gameAsm = Assembly.Load(File.ReadAllBytes(Project.GameAssemblyPath));
-        var compType = gameAsm.GetType("ParentRefComponent");
+        Type? compType = gameAsm.GetType("ParentRefComponent");
         Assert.NotNull(compType);
 
         var scene = new Scene();
         var go = new GameObject("Root");
-        var comp = go.AddComponent(compType!);
+        Component comp = go.AddComponent(compType!);
         compType!.GetField("MyTexture")!.SetValue(comp, AssetDatabase.Get<Texture2D>(texGuidA));
         scene.Add(go);
         Guid sceneGuid = CreateSceneAsset(scene, "Main.scene");
 
-        var collected = AssetCollector.Collect(EditorAssetBackend.Instance!, [sceneGuid], dependenciesOnly: true);
+        AssetCollector.CollectionResult collected = AssetCollector.Collect(EditorAssetBackend.Instance!, [sceneGuid], dependenciesOnly: true);
 
         Assert.Contains(spriteGuid, collected.AllAssets); // sub-asset itself, via parent backfill
         Assert.Contains(texGuidB, collected.AllAssets);   // what the sub-asset ITSELF depends on
@@ -193,7 +193,7 @@ public class BuildSystemProjectTests : EditorTestHarness
         Assert.NotEqual(Guid.Empty, texGuid);
 
         TextureSpriteMeta.Save(texGuid, new SpriteImportSettings { Mode = SpriteMode.Single });
-        var subAssets = Assets.GetSubAssets(texGuid);
+        SubAssetEntry[] subAssets = Assets.GetSubAssets(texGuid);
         Assert.True(subAssets.Length > 0);
         Guid spriteGuid = subAssets[0].Guid;
 
@@ -228,21 +228,21 @@ public class BuildSystemProjectTests : EditorTestHarness
                 public Texture2D? MyTexture;
             }
             """);
-        var compile = ScriptCompiler.CompileAll(Project);
+        ScriptCompiler.CompileResult compile = ScriptCompiler.CompileAll(Project);
         Assert.True(compile.Success, $"Script compile failed:\n{compile.Errors}\n{compile.Output}");
 
         var gameAsm = Assembly.Load(File.ReadAllBytes(Project.GameAssemblyPath));
-        var compType = gameAsm.GetType("EditorTexRefComponent");
+        Type? compType = gameAsm.GetType("EditorTexRefComponent");
         Assert.NotNull(compType);
 
         var scene = new Scene();
         var go = new GameObject("Root");
-        var comp = go.AddComponent(compType!);
+        Component comp = go.AddComponent(compType!);
         compType!.GetField("MyTexture")!.SetValue(comp, AssetDatabase.Get<Texture2D>(texGuid));
         scene.Add(go);
         Guid sceneGuid = CreateSceneAsset(scene, "Main.scene");
 
-        var collected = AssetCollector.Collect(EditorAssetBackend.Instance!, [sceneGuid], dependenciesOnly: true);
+        AssetCollector.CollectionResult collected = AssetCollector.Collect(EditorAssetBackend.Instance!, [sceneGuid], dependenciesOnly: true);
 
         Assert.Contains(texGuid, collected.AllAssets);
     }
@@ -260,7 +260,7 @@ public class BuildSystemProjectTests : EditorTestHarness
 
         Guid sceneGuid = AuthorEmptyScene("Main.scene");
 
-        var collected = AssetCollector.Collect(EditorAssetBackend.Instance!, [sceneGuid], dependenciesOnly: false);
+        AssetCollector.CollectionResult collected = AssetCollector.Collect(EditorAssetBackend.Instance!, [sceneGuid], dependenciesOnly: false);
 
         Assert.DoesNotContain(texGuid, collected.AllAssets);
     }
@@ -271,7 +271,7 @@ public class BuildSystemProjectTests : EditorTestHarness
     [Fact]
     public void GenerateManifest_IsByteIdenticalRegardlessOfSetOrder()
     {
-        var guids = Enumerable.Range(0, 64).Select(_ => Guid.NewGuid()).ToArray();
+        Guid[] guids = Enumerable.Range(0, 64).Select(_ => Guid.NewGuid()).ToArray();
         var resources = guids.Take(8).Select((g, i) => new ResourceEntry($"Textures/Asset{i}", g, "")).ToList();
         Guid defaultScene = guids[0];
 
@@ -389,7 +389,7 @@ public class BuildSystemProjectTests : EditorTestHarness
         Assert.NotEqual(Guid.Empty, texGuid);
 
         TextureSpriteMeta.Save(texGuid, new SpriteImportSettings { Mode = SpriteMode.Single });
-        var subAssets = Assets.GetSubAssets(texGuid);
+        SubAssetEntry[] subAssets = Assets.GetSubAssets(texGuid);
         Assert.True(subAssets.Length > 0, "Expected a Sprite sub-asset after enabling Sprite mode.");
         Guid spriteGuid = subAssets[0].Guid;
 
@@ -419,20 +419,20 @@ public class BuildSystemProjectTests : EditorTestHarness
             """);
 
         // 3. Compile the user scripts into {Project}.Game.dll.
-        var compile = ScriptCompiler.CompileAll(Project);
+        ScriptCompiler.CompileResult compile = ScriptCompiler.CompileAll(Project);
         Assert.True(compile.Success, $"Script compile failed:\n{compile.Errors}\n{compile.Output}");
         Assert.True(File.Exists(Project.GameAssemblyPath), "Game assembly was not produced.");
 
         // 4. Load the compiled assembly by bytes (no file lock, so the build can rebuild it) and grab
         //    the real component type so the authored scene references exactly what the build will ship.
         var gameAsm = Assembly.Load(File.ReadAllBytes(Project.GameAssemblyPath));
-        var compType = gameAsm.GetType("BuildLogComponent");
+        Type? compType = gameAsm.GetType("BuildLogComponent");
         Assert.NotNull(compType);
 
         // 5. Author a scene that uses the component and save it as an asset.
         var scene = new Scene();
         var go = new GameObject("Logger");
-        var comp = go.AddComponent(compType!);
+        Component comp = go.AddComponent(compType!);
         compType!.GetField("MyTexture")!.SetValue(comp, AssetDatabase.Get<Texture2D>(texGuid));
         compType!.GetField("MySprite")!.SetValue(comp, AssetDatabase.Get<Sprite>(spriteGuid));
         scene.Add(go);
@@ -441,7 +441,7 @@ public class BuildSystemProjectTests : EditorTestHarness
 
         // 6. Configure the build. AssetMode stays at its default (DependenciesOnly) - the mode the
         //    Sprite sub-asset dependency bug only reproduces under.
-        var build = EditorRegistries.GetSettings<BuildSettings>();
+        BuildSettings build = EditorRegistries.GetSettings<BuildSettings>();
         build.Scenes.Clear();
         build.Scenes.Add(new SceneBuildEntry { Path = "Main.scene", SceneGuid = sceneGuid, Enabled = true });
         build.PackagingMode = AssetPackagingMode.LooseFiles;
@@ -454,7 +454,7 @@ public class BuildSystemProjectTests : EditorTestHarness
         {
             // 7. Build.
             var pipeline = new DesktopBuildPipeline();
-            var result = pipeline.BuildAsync(Project.RootPath, build, buildOut).GetAwaiter().GetResult();
+            BuildResult result = pipeline.BuildAsync(Project.RootPath, build, buildOut).GetAwaiter().GetResult();
             Assert.True(result.Success, $"Build failed: {result.Errors}");
 
             string exe = pipeline.GetExecutablePath(result.OutputPath, build);
@@ -471,7 +471,7 @@ public class BuildSystemProjectTests : EditorTestHarness
                 UseShellExecute = false,
                 WorkingDirectory = result.OutputPath,
             };
-            using var proc = Process.Start(psi)!;
+            using Process proc = Process.Start(psi)!;
             string stdout = proc.StandardOutput.ReadToEnd();
             string stderr = proc.StandardError.ReadToEnd();
             bool exited = proc.WaitForExit(90_000);
@@ -565,11 +565,11 @@ public class BuildSystemProjectTests : EditorTestHarness
             }
             """);
 
-        var compile = ScriptCompiler.CompileAll(Project);
+        ScriptCompiler.CompileResult compile = ScriptCompiler.CompileAll(Project);
         Assert.True(compile.Success, $"Script compile failed:\n{compile.Errors}\n{compile.Output}");
 
         var gameAsm = Assembly.Load(File.ReadAllBytes(Project.GameAssemblyPath));
-        var compType = gameAsm.GetType("AsyncVoidComponent");
+        Type? compType = gameAsm.GetType("AsyncVoidComponent");
         Assert.NotNull(compType);
 
         var scene = new Scene();
@@ -578,12 +578,12 @@ public class BuildSystemProjectTests : EditorTestHarness
         scene.Add(go);
         Guid sceneGuid = CreateSceneAsset(scene, "Main.scene");
 
-        var build = EditorRegistries.GetSettings<BuildSettings>();
+        BuildSettings build = EditorRegistries.GetSettings<BuildSettings>();
         build.Scenes.Clear();
         build.Scenes.Add(new SceneBuildEntry { Path = "Main.scene", SceneGuid = sceneGuid, Enabled = true });
         build.PackagingMode = AssetPackagingMode.LooseFiles;
 
-        var profile = Profile();
+        DesktopBuildProfile profile = Profile();
         bool wasSelfContained = profile.SelfContained;
         profile.SelfContained = selfContained;
 
@@ -592,7 +592,7 @@ public class BuildSystemProjectTests : EditorTestHarness
 
         try
         {
-            var result = new DesktopBuildPipeline().BuildAsync(Project.RootPath, build, buildOut).GetAwaiter().GetResult();
+            BuildResult result = new DesktopBuildPipeline().BuildAsync(Project.RootPath, build, buildOut).GetAwaiter().GetResult();
             Assert.True(result.Success, $"Build failed: {result.Errors}");
 
             string stdout = RunPlayerHeadless(result.OutputPath, frames: 60);
@@ -620,12 +620,12 @@ public class BuildSystemProjectTests : EditorTestHarness
         scene.Add(new GameObject("Root"));
         Guid sceneGuid = CreateSceneAsset(scene, "Main.scene");
 
-        var build = EditorRegistries.GetSettings<BuildSettings>();
+        BuildSettings build = EditorRegistries.GetSettings<BuildSettings>();
         build.Scenes.Clear();
         build.Scenes.Add(new SceneBuildEntry { Path = "Main.scene", SceneGuid = sceneGuid, Enabled = true });
         build.PackagingMode = AssetPackagingMode.LooseFiles;
 
-        var profile = Profile();
+        DesktopBuildProfile profile = Profile();
         bool wasSelfContained = profile.SelfContained;
         profile.SelfContained = true;
 
@@ -635,7 +635,7 @@ public class BuildSystemProjectTests : EditorTestHarness
         try
         {
             var pipeline = new DesktopBuildPipeline();
-            var result = pipeline.BuildAsync(Project.RootPath, build, buildOut).GetAwaiter().GetResult();
+            BuildResult result = pipeline.BuildAsync(Project.RootPath, build, buildOut).GetAwaiter().GetResult();
             Assert.True(result.Success, $"Build failed: {result.Errors}");
 
             // The framework is what a self contained publish put in the root, so if any of it is here
@@ -691,7 +691,7 @@ public class BuildSystemProjectTests : EditorTestHarness
 
     private string RunBuildWith(DesktopBuildPipeline pipeline, Guid sceneGuid, out string outDir)
     {
-        var build = EditorRegistries.GetSettings<BuildSettings>();
+        BuildSettings build = EditorRegistries.GetSettings<BuildSettings>();
         build.Scenes.Clear();
         build.Scenes.Add(new SceneBuildEntry { Path = "Main.scene", SceneGuid = sceneGuid, Enabled = true });
         build.PackagingMode = AssetPackagingMode.LooseFiles;
@@ -699,7 +699,7 @@ public class BuildSystemProjectTests : EditorTestHarness
         outDir = Path.Combine(Path.GetTempPath(), "ProwlVariantOut", Guid.NewGuid().ToString("N"));
         build.OutputDirectory = outDir;
 
-        var result = pipeline.BuildAsync(Project.RootPath, build, outDir).GetAwaiter().GetResult();
+        BuildResult result = pipeline.BuildAsync(Project.RootPath, build, outDir).GetAwaiter().GetResult();
         Assert.True(result.Success, $"Build failed: {result.Errors}");
         return result.OutputPath;
     }
@@ -842,7 +842,7 @@ public class BuildSystemProjectTests : EditorTestHarness
         scene.Add(new GameObject("Root"));
         Guid sceneGuid = CreateSceneAsset(scene, "Main.scene");
 
-        var build = EditorRegistries.GetSettings<BuildSettings>();
+        BuildSettings build = EditorRegistries.GetSettings<BuildSettings>();
         build.Scenes.Clear();
         build.Scenes.Add(new SceneBuildEntry { Path = "Main.scene", SceneGuid = sceneGuid, Enabled = true });
         build.OutputDirectory = Path.Combine(Path.GetTempPath(), "ProwlTargetOut", Guid.NewGuid().ToString("N"));
@@ -855,9 +855,9 @@ public class BuildSystemProjectTests : EditorTestHarness
     [Fact]
     public void UniversalTarget_FailsInsteadOfBuildingOneArchitecture()
     {
-        var build = SettingsFor(BuiltInTargets.MacOSUniversal);
+        BuildSettings build = SettingsFor(BuiltInTargets.MacOSUniversal);
 
-        var result = new DesktopBuildPipeline()
+        BuildResult result = new DesktopBuildPipeline()
             .BuildAsync(Project.RootPath, build, build.OutputDirectory).GetAwaiter().GetResult();
 
         Assert.False(result.Success);

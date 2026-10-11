@@ -38,7 +38,7 @@ public sealed class BlockingWaitAnalyzer : DiagnosticAnalyzer
         context.EnableConcurrentExecution();
         context.RegisterCompilationStartAction(start =>
         {
-            var component = start.Compilation.GetTypeByMetadataName(ComponentMetadataName);
+            INamedTypeSymbol? component = start.Compilation.GetTypeByMetadataName(ComponentMetadataName);
             if (component is null) return;
 
             var tasks = ImmutableArray.Create(

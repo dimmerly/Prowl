@@ -87,7 +87,7 @@ public class PhysicsWorld
 
         lock (mesh)
         {
-            var cached = mesh.BakedPhysics;
+            BakedPhysicsMesh? cached = mesh.BakedPhysics;
             if (cached != null && cached.Version == mesh.Version)
                 return cached;
         }
@@ -98,7 +98,7 @@ public class PhysicsWorld
 
         lock (mesh)
         {
-            var cached = mesh.BakedPhysics;
+            BakedPhysicsMesh? cached = mesh.BakedPhysics;
             if (cached != null && cached.Version == mesh.Version)
                 return cached; // another thread baked the current version meanwhile
             mesh.BakedPhysics = baked;
@@ -596,7 +596,7 @@ public class PhysicsWorld
     public void SyncTransforms()
     {
         Tasks.MainThreadContext.AssertMainThread();
-        foreach (var body in _syncBodies)
+        foreach (Rigidbody3D body in _syncBodies)
             if (body.IsValid()) body.SyncTransformToBody();
     }
 
@@ -684,7 +684,7 @@ public class PhysicsWorld
     /// </summary>
     public Jitter2.Dynamics.RigidBody GetOrCreateStaticRigidBody(int layer)
     {
-        if (_staticRigidbodiesByLayer.TryGetValue(layer, out var staticBody))
+        if (_staticRigidbodiesByLayer.TryGetValue(layer, out RigidBody? staticBody))
         {
             return staticBody;
         }
@@ -783,7 +783,7 @@ public class PhysicsWorld
 
         // Record the pose each body just landed on, so interpolated bodies have two steps to render
         // between. Driven from here rather than a per-body event to keep it one pass with no delegates.
-        foreach (var body in _syncBodies)
+        foreach (Rigidbody3D body in _syncBodies)
             if (body.IsValid()) body.CapturePose();
 
         DispatchCollisions();
@@ -1037,13 +1037,13 @@ public class PhysicsWorld
         if (AutoSyncTransforms) SyncTransforms(); // eager transform->body sync so the query sees recent Transform edits
         direction = Float3.Normalize(direction);
 
-        var jOrigin = origin.ToJitter();
-        var jDirection = direction.ToJitter();
+        JVector jOrigin = origin.ToJitter();
+        JVector jDirection = direction.ToJitter();
         JVector sweep = jDirection * maxDistance;
 
         // Create a bounding box that encompasses the entire sweep
         JBoundingBox sweepBox = new();
-        var jOrientation = orientation.ToJitter();
+        JQuaternion jOrientation = orientation.ToJitter();
         ShapeHelper.CalculateBoundingBox(shape, jOrientation, jOrigin, out JBoundingBox startBox);
         ShapeHelper.CalculateBoundingBox(shape, jOrientation, jOrigin + sweep, out JBoundingBox endBox);
 
@@ -1339,7 +1339,7 @@ public class PhysicsWorld
         Float3 capsuleAxis = point2 - point1;
         float capsuleLength = Float3.Length(capsuleAxis);
 
-        var capsule = SupportPrimitives.CreateCapsule(radius, capsuleLength * 0.5f);
+        SupportPrimitives.Capsule capsule = SupportPrimitives.CreateCapsule(radius, capsuleLength * 0.5f);
 
         // Calculate orientation to align capsule with the segment
         Quaternion capsuleOrientation = Quaternion.FromToRotation(Float3.UnitY, capsuleAxis);
@@ -1372,7 +1372,7 @@ public class PhysicsWorld
         Float3 capsuleAxis = point2 - point1;
         float capsuleLength = Float3.Length(capsuleAxis);
 
-        var capsule = SupportPrimitives.CreateCapsule(radius, capsuleLength * 0.5f);
+        SupportPrimitives.Capsule capsule = SupportPrimitives.CreateCapsule(radius, capsuleLength * 0.5f);
 
         // Calculate orientation to align capsule with the segment
         Quaternion capsuleOrientation = Quaternion.FromToRotation(Float3.UnitY, capsuleAxis);
@@ -1400,7 +1400,7 @@ public class PhysicsWorld
     /// </summary>
     public bool BoxCast(Float3 origin, Float3 size, Quaternion orientation, Float3 direction, float maxDistance, out ShapeCastHit hitInfo, QueryFilter filter)
     {
-        var halfExtents = size.ToJitter() * 0.5f;
+        JVector halfExtents = size.ToJitter() * 0.5f;
         return ShapeCast(SupportPrimitives.CreateBox(halfExtents), orientation, origin, direction, maxDistance, out hitInfo, filter);
     }
 
@@ -1424,7 +1424,7 @@ public class PhysicsWorld
     /// </summary>
     public int BoxCastAll(Float3 origin, Float3 size, Quaternion orientation, Float3 direction, float maxDistance, List<ShapeCastHit> hits, QueryFilter filter)
     {
-        var halfExtents = size.ToJitter() * 0.5f;
+        JVector halfExtents = size.ToJitter() * 0.5f;
         return ShapeCastAll(SupportPrimitives.CreateBox(halfExtents), orientation, origin, direction, maxDistance, hits, filter);
     }
 
@@ -1559,10 +1559,10 @@ public class PhysicsWorld
         if (!ValidateQuery(position, nameof(Overlap))) return 0;
 
         if (AutoSyncTransforms) SyncTransforms(); // eager transform->body sync (also covers Overlap*/Check* which funnel here)
-        var jPosition = position.ToJitter();
+        JVector jPosition = position.ToJitter();
 
         // Create a bounding box for the shape
-        var jOrientation = orientation.ToJitter();
+        JQuaternion jOrientation = orientation.ToJitter();
         ShapeHelper.CalculateBoundingBox(shape, jOrientation, jPosition, out JBoundingBox shapeBounds);
         var sink = new OverlapSink<TShape>(this, shape, jOrientation, jPosition, shapeBounds, hits, filter);
         World.DynamicTree.Query(ref sink, in shapeBounds);
@@ -1621,7 +1621,7 @@ public class PhysicsWorld
         Float3 capsuleAxis = point2 - point1;
         float capsuleLength = Float3.Length(capsuleAxis);
 
-        var capsule = SupportPrimitives.CreateCapsule(radius, capsuleLength * 0.5f);
+        SupportPrimitives.Capsule capsule = SupportPrimitives.CreateCapsule(radius, capsuleLength * 0.5f);
 
         // Calculate orientation to align capsule with the segment
         Quaternion capsuleOrientation = Quaternion.FromToRotation(Float3.UnitY, capsuleAxis);
@@ -1647,7 +1647,7 @@ public class PhysicsWorld
     /// </summary>
     public int OverlapBox(Float3 position, Float3 size, Quaternion orientation, List<ShapeCastHit> hits, QueryFilter filter)
     {
-        var halfExtents = size.ToJitter() * 0.5f;
+        JVector halfExtents = size.ToJitter() * 0.5f;
         return Overlap(SupportPrimitives.CreateBox(halfExtents), orientation, position, hits, filter);
     }
 

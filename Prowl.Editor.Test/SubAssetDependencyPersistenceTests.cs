@@ -4,6 +4,7 @@
 
 using Prowl.Editor.Build;
 using Prowl.Editor.Importers;
+using Prowl.Editor.Projects.Scripting;
 using Prowl.Editor.Projects.Settings;
 using Prowl.Runtime;
 using Prowl.Runtime.Resources;
@@ -35,7 +36,7 @@ public class SubAssetDependencyPersistenceTests : EditorTestHarness
         Assert.NotEqual(Guid.Empty, texGuid);
 
         TextureSpriteMeta.Save(texGuid, new SpriteImportSettings { Mode = SpriteMode.Single });
-        var subAssets = Assets.GetSubAssets(texGuid);
+        SubAssetEntry[] subAssets = Assets.GetSubAssets(texGuid);
         Assert.True(subAssets.Length > 0, "Expected a Sprite sub-asset after enabling Sprite mode.");
         Guid spriteGuid = subAssets[0].Guid;
 
@@ -83,16 +84,16 @@ public class SubAssetDependencyPersistenceTests : EditorTestHarness
             }
             """);
 
-        var compile = Projects.Scripting.ScriptCompiler.CompileAll(Project);
+        ScriptCompiler.CompileResult compile = Projects.Scripting.ScriptCompiler.CompileAll(Project);
         Assert.True(compile.Success, $"Script compile failed:\n{compile.Errors}\n{compile.Output}");
 
         var gameAsm = System.Reflection.Assembly.Load(File.ReadAllBytes(Project.GameAssemblyPath));
-        var compType = gameAsm.GetType("PersistCheckComponent");
+        Type? compType = gameAsm.GetType("PersistCheckComponent");
         Assert.NotNull(compType);
 
         var scene = new Scene();
         var go = new GameObject("PersistChecker");
-        var comp = go.AddComponent(compType!);
+        Component comp = go.AddComponent(compType!);
         compType!.GetField("MySprite")!.SetValue(comp, AssetDatabase.Get<Sprite>(spriteGuid));
         scene.Add(go);
         Guid sceneGuid = CreateSceneAsset(scene, "Main.scene");

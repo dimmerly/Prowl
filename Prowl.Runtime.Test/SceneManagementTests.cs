@@ -18,9 +18,9 @@ public class SceneManagementTests : RuntimeTestBase
     [Fact]
     public void Dispose_MarksGameObjectsDisposed()
     {
-        var scene = CreateScene();
-        var root = CreateGameObject("root");
-        var child = CreateGameObject("child");
+        Scene scene = CreateScene();
+        GameObject root = CreateGameObject("root");
+        GameObject child = CreateGameObject("child");
         child.SetParent(root);
         scene.Add(root);
 
@@ -35,8 +35,8 @@ public class SceneManagementTests : RuntimeTestBase
     [Fact]
     public void Add_RegistersObject_AndSetsScene()
     {
-        var scene = CreateScene();
-        var go = CreateGameObject();
+        Scene scene = CreateScene();
+        GameObject go = CreateGameObject();
 
         scene.Add(go);
 
@@ -48,8 +48,8 @@ public class SceneManagementTests : RuntimeTestBase
     [Fact]
     public void Add_IsIdempotent()
     {
-        var scene = CreateScene();
-        var go = CreateGameObject();
+        Scene scene = CreateScene();
+        GameObject go = CreateGameObject();
 
         scene.Add(go);
         scene.Add(go);
@@ -60,9 +60,9 @@ public class SceneManagementTests : RuntimeTestBase
     [Fact]
     public void Add_RegistersChildrenRecursively()
     {
-        var scene = CreateScene();
-        var parent = CreateGameObject("Parent");
-        var child = CreateGameObject("Child");
+        Scene scene = CreateScene();
+        GameObject parent = CreateGameObject("Parent");
+        GameObject child = CreateGameObject("Child");
         child.SetParent(parent);
 
         scene.Add(parent);
@@ -74,8 +74,8 @@ public class SceneManagementTests : RuntimeTestBase
     [Fact]
     public void Remove_UnregistersObject_AndClearsScene()
     {
-        var scene = CreateScene();
-        var go = CreateGameObject();
+        Scene scene = CreateScene();
+        GameObject go = CreateGameObject();
         scene.Add(go);
 
         scene.Remove(go);
@@ -87,9 +87,9 @@ public class SceneManagementTests : RuntimeTestBase
     [Fact]
     public void Remove_UnregistersChildrenRecursively()
     {
-        var scene = CreateScene();
-        var parent = CreateGameObject("Parent");
-        var child = CreateGameObject("Child");
+        Scene scene = CreateScene();
+        GameObject parent = CreateGameObject("Parent");
+        GameObject child = CreateGameObject("Child");
         child.SetParent(parent);
         scene.Add(parent);
 
@@ -102,9 +102,9 @@ public class SceneManagementTests : RuntimeTestBase
     [Fact]
     public void Add_MovesObjectFromPreviousScene()
     {
-        var scene1 = CreateScene();
-        var scene2 = CreateScene();
-        var go = CreateGameObject();
+        Scene scene1 = CreateScene();
+        Scene scene2 = CreateScene();
+        GameObject go = CreateGameObject();
         scene1.Add(go);
 
         scene2.Add(go);
@@ -117,7 +117,7 @@ public class SceneManagementTests : RuntimeTestBase
     [Fact]
     public void Clear_RemovesAllObjects()
     {
-        var scene = CreateScene();
+        Scene scene = CreateScene();
         scene.Add(CreateGameObject("A"));
         scene.Add(CreateGameObject("B"));
 
@@ -130,9 +130,9 @@ public class SceneManagementTests : RuntimeTestBase
     [Fact]
     public void Flush_DropsDisposedObjects()
     {
-        var scene = CreateScene();
-        var keep = CreateGameObject("Keep");
-        var drop = CreateGameObject("Drop");
+        Scene scene = CreateScene();
+        GameObject keep = CreateGameObject("Keep");
+        GameObject drop = CreateGameObject("Drop");
         scene.Add(keep);
         scene.Add(drop);
 
@@ -153,9 +153,9 @@ public class SceneManagementTests : RuntimeTestBase
     [Fact]
     public void Count_ExcludesDisposedObjects()
     {
-        var scene = CreateScene();
-        var a = CreateGameObject("A");
-        var b = CreateGameObject("B");
+        Scene scene = CreateScene();
+        GameObject a = CreateGameObject("A");
+        GameObject b = CreateGameObject("B");
         scene.Add(a);
         scene.Add(b);
         Assert.Equal(2, scene.Count);
@@ -170,9 +170,9 @@ public class SceneManagementTests : RuntimeTestBase
     [Fact]
     public void RootObjects_ExcludesChildren()
     {
-        var scene = CreateScene();
-        var parent = CreateGameObject("Parent");
-        var child = CreateGameObject("Child");
+        Scene scene = CreateScene();
+        GameObject parent = CreateGameObject("Parent");
+        GameObject child = CreateGameObject("Child");
         child.SetParent(parent);
         scene.Add(parent);
 
@@ -184,9 +184,9 @@ public class SceneManagementTests : RuntimeTestBase
     [Fact]
     public void ActiveObjects_ExcludesDisabled()
     {
-        var scene = CreateScene();
-        var on = CreateGameObject("On");
-        var off = CreateGameObject("Off");
+        Scene scene = CreateScene();
+        GameObject on = CreateGameObject("On");
+        GameObject off = CreateGameObject("Off");
         off.Enabled = false;
         scene.Add(on);
         scene.Add(off);
@@ -200,9 +200,9 @@ public class SceneManagementTests : RuntimeTestBase
     [Fact]
     public void SaveableObjects_ExcludesDontSave()
     {
-        var scene = CreateScene();
-        var normal = CreateGameObject("Normal");
-        var hidden = CreateGameObject("Hidden");
+        Scene scene = CreateScene();
+        GameObject normal = CreateGameObject("Normal");
+        GameObject hidden = CreateGameObject("Hidden");
         hidden.HideFlags = HideFlags.DontSave;
         scene.Add(normal);
         scene.Add(hidden);
@@ -216,10 +216,10 @@ public class SceneManagementTests : RuntimeTestBase
     [Fact]
     public void IsEmpty_ReflectsContents()
     {
-        var scene = CreateScene();
+        Scene scene = CreateScene();
         Assert.True(scene.IsEmpty);
 
-        var go = CreateGameObject();
+        GameObject go = CreateGameObject();
         scene.Add(go);
         Assert.False(scene.IsEmpty);
 
@@ -232,9 +232,9 @@ public class SceneManagementTests : RuntimeTestBase
     [Fact]
     public void FindObjectsOfType_ReturnsGameObjectsAndComponents()
     {
-        var scene = CreateScene();
-        var go = CreateGameObject();
-        var comp = go.AddComponent<PlainComponent>();
+        Scene scene = CreateScene();
+        GameObject go = CreateGameObject();
+        PlainComponent comp = go.AddComponent<PlainComponent>();
         scene.Add(go);
 
         Assert.Contains(go, scene.FindObjectsOfType<GameObject>());
@@ -244,9 +244,9 @@ public class SceneManagementTests : RuntimeTestBase
     [Fact]
     public void FindObjectByID_FindsGameObjectAndComponent()
     {
-        var scene = CreateScene();
-        var go = CreateGameObject();
-        var comp = go.AddComponent<PlainComponent>();
+        Scene scene = CreateScene();
+        GameObject go = CreateGameObject();
+        PlainComponent comp = go.AddComponent<PlainComponent>();
         scene.Add(go);
 
         Assert.Same(go, scene.FindObjectByID<GameObject>(go.InstanceID));
@@ -257,9 +257,9 @@ public class SceneManagementTests : RuntimeTestBase
     [Fact]
     public void FindObjectByIdentifier_FindsGameObjectAndComponent()
     {
-        var scene = CreateScene();
-        var go = CreateGameObject();
-        var comp = go.AddComponent<PlainComponent>();
+        Scene scene = CreateScene();
+        GameObject go = CreateGameObject();
+        PlainComponent comp = go.AddComponent<PlainComponent>();
         scene.Add(go);
 
         Assert.Same(go, scene.FindObjectByIdentifier<GameObject>(go.Identifier));
@@ -293,7 +293,7 @@ public class SceneManagementTests : RuntimeTestBase
     [Fact]
     public void Load_SetsCurrent_EnablesScene_FiresEvent()
     {
-        var scene = CreateScene();
+        Scene scene = CreateScene();
         bool fired = false;
         Action handler = () => fired = true;
         Scene.OnSceneLoaded += handler;
@@ -316,7 +316,7 @@ public class SceneManagementTests : RuntimeTestBase
     public void Load_QueuedUntilProcessed()
     {
         Scene before = Scene.Current;
-        var scene = CreateScene();
+        Scene scene = CreateScene();
 
         Scene.Load(scene);
 
@@ -331,8 +331,8 @@ public class SceneManagementTests : RuntimeTestBase
     [Fact]
     public void Load_ReplacingCurrent_DisposesPrevious()
     {
-        var first = CreateScene();
-        var second = CreateScene();
+        Scene first = CreateScene();
+        Scene second = CreateScene();
 
         Scene.Load(first);
         Scene.ProcessPendingLoad();
@@ -352,8 +352,8 @@ public class SceneManagementTests : RuntimeTestBase
     [Fact]
     public void Load_LastRequestOfTheFrameWins()
     {
-        var first = CreateScene();
-        var second = CreateScene();
+        Scene first = CreateScene();
+        Scene second = CreateScene();
 
         Scene.Load(first);
         Scene.Load(second);
@@ -380,7 +380,7 @@ public class SceneManagementTests : RuntimeTestBase
     [Fact]
     public void Load_AnAlreadyEnabledScene_DoesNotThrow()
     {
-        var scene = CreateScene(enable: true);
+        Scene scene = CreateScene(enable: true);
 
         Scene.Load(scene);
         Scene.ProcessPendingLoad();
@@ -392,7 +392,7 @@ public class SceneManagementTests : RuntimeTestBase
     [Fact]
     public void EnableAndDisable_AreIdempotent()
     {
-        var scene = CreateScene();
+        Scene scene = CreateScene();
 
         scene.Enable();
         scene.Enable();
@@ -407,9 +407,9 @@ public class SceneManagementTests : RuntimeTestBase
     [Fact]
     public void FrameCallbacks_OnASceneDisposedMidCallback_DoNotThrow()
     {
-        var scene = CreateScene(enable: true);
-        var go = CreateGameObject();
-        var driver = go.AddComponent<UpdateActionComponent>();
+        Scene scene = CreateScene(enable: true);
+        GameObject go = CreateGameObject();
+        UpdateActionComponent driver = go.AddComponent<UpdateActionComponent>();
         driver.Action = () => scene.Dispose();
         scene.Add(go);
 
@@ -421,7 +421,7 @@ public class SceneManagementTests : RuntimeTestBase
     [Fact]
     public void FrameCallbacks_OnADisposedScene_AreNoOps()
     {
-        var scene = CreateScene(enable: true);
+        Scene scene = CreateScene(enable: true);
         scene.Dispose();
 
         scene.Update();
@@ -447,13 +447,13 @@ public class SceneManagementTests : RuntimeTestBase
     [Fact]
     public void ManualPreserve_RemoveFromOldSceneAndAddToTheNextOne_Survives()
     {
-        var first = CreateScene();
-        var keeper = CreateGameObject("Keeper");
+        Scene first = CreateScene();
+        GameObject keeper = CreateGameObject("Keeper");
         first.Add(keeper);
         Scene.Load(first);
         Scene.ProcessPendingLoad();
 
-        var second = CreateScene();
+        Scene second = CreateScene();
         first.Remove(keeper);
         second.Add(keeper);
         Scene.Load(second);
@@ -469,13 +469,13 @@ public class SceneManagementTests : RuntimeTestBase
     [Fact]
     public void ManualPreserve_AddingBackToSceneCurrentAfterLoad_LosesTheObject()
     {
-        var first = CreateScene();
-        var keeper = CreateGameObject("Keeper");
+        Scene first = CreateScene();
+        GameObject keeper = CreateGameObject("Keeper");
         first.Add(keeper);
         Scene.Load(first);
         Scene.ProcessPendingLoad();
 
-        var second = CreateScene();
+        Scene second = CreateScene();
         first.Remove(keeper);
         Scene.Load(second);
         Scene.Current.Add(keeper); // still `first` at this point
@@ -487,9 +487,9 @@ public class SceneManagementTests : RuntimeTestBase
     [Fact]
     public void DontDestroyOnLoad_SurvivesTheLoad_AndJoinsTheNewScene()
     {
-        var first = CreateScene();
-        var keeper = CreateGameObject("Keeper");
-        var doomed = CreateGameObject("Doomed");
+        Scene first = CreateScene();
+        GameObject keeper = CreateGameObject("Keeper");
+        GameObject doomed = CreateGameObject("Doomed");
         first.Add(keeper);
         first.Add(doomed);
         Scene.Load(first);
@@ -497,7 +497,7 @@ public class SceneManagementTests : RuntimeTestBase
 
         Scene.DontDestroyOnLoad(keeper);
 
-        var second = CreateScene();
+        Scene second = CreateScene();
         Scene.Load(second);
         Scene.ProcessPendingLoad();
 
@@ -510,9 +510,9 @@ public class SceneManagementTests : RuntimeTestBase
     [Fact]
     public void DontDestroyOnLoad_KeepsTicking_InTheNewScene()
     {
-        var first = CreateScene(enable: true);
-        var keeper = CreateGameObject("Keeper");
-        var comp = keeper.AddComponent<TickCounter>();
+        Scene first = CreateScene(enable: true);
+        GameObject keeper = CreateGameObject("Keeper");
+        TickCounter comp = keeper.AddComponent<TickCounter>();
         first.Add(keeper);
         Scene.Load(first);
         Scene.ProcessPendingLoad();
@@ -521,7 +521,7 @@ public class SceneManagementTests : RuntimeTestBase
         Update(first);
         Assert.Equal(1, comp.Updates);
 
-        var second = CreateScene();
+        Scene second = CreateScene();
         Scene.Load(second);
         Scene.ProcessPendingLoad();
 
@@ -532,17 +532,17 @@ public class SceneManagementTests : RuntimeTestBase
     [Fact]
     public void DontDestroyOnLoad_MovesSceneRegistrations_ToTheNewScene()
     {
-        var first = CreateScene(enable: true);
-        var keeper = CreateGameObject("Keeper");
+        Scene first = CreateScene(enable: true);
+        GameObject keeper = CreateGameObject("Keeper");
         keeper.AddComponent<ReflectionProbe>();
-        var canvas = keeper.AddComponent<GameCanvas>();
+        GameCanvas canvas = keeper.AddComponent<GameCanvas>();
         first.Add(keeper);
         Scene.Load(first);
         Scene.ProcessPendingLoad();
         Scene.DontDestroyOnLoad(keeper);
         Assert.Equal(1, first.ReflectionProbes.Count);
 
-        var second = CreateScene();
+        Scene second = CreateScene();
         Scene.Load(second);
         Scene.ProcessPendingLoad();
 
@@ -553,9 +553,9 @@ public class SceneManagementTests : RuntimeTestBase
     [Fact]
     public void DontDestroyOnLoad_DoesNotRestartTheObject()
     {
-        var first = CreateScene(enable: true);
-        var keeper = CreateGameObject("Keeper");
-        var comp = keeper.AddComponent<TickCounter>();
+        Scene first = CreateScene(enable: true);
+        GameObject keeper = CreateGameObject("Keeper");
+        TickCounter comp = keeper.AddComponent<TickCounter>();
         first.Add(keeper);
         Scene.Load(first);
         Scene.ProcessPendingLoad();
@@ -572,9 +572,9 @@ public class SceneManagementTests : RuntimeTestBase
     [Fact]
     public void DontDestroyOnLoad_OnAChild_PreservesItsRootInstead()
     {
-        var first = CreateScene();
-        var root = CreateGameObject("Root");
-        var child = CreateGameObject("Child");
+        Scene first = CreateScene();
+        GameObject root = CreateGameObject("Root");
+        GameObject child = CreateGameObject("Child");
         child.SetParent(root);
         first.Add(root);
         Scene.Load(first);
@@ -582,7 +582,7 @@ public class SceneManagementTests : RuntimeTestBase
 
         Scene.DontDestroyOnLoad(child);
 
-        var second = CreateScene();
+        Scene second = CreateScene();
         Scene.Load(second);
         Scene.ProcessPendingLoad();
 
@@ -596,8 +596,8 @@ public class SceneManagementTests : RuntimeTestBase
     [Fact]
     public void CancelDontDestroyOnLoad_LetsItDieWithTheScene()
     {
-        var first = CreateScene();
-        var go = CreateGameObject();
+        Scene first = CreateScene();
+        GameObject go = CreateGameObject();
         first.Add(go);
         Scene.Load(first);
         Scene.ProcessPendingLoad();
@@ -614,8 +614,8 @@ public class SceneManagementTests : RuntimeTestBase
     [Fact]
     public void DontDestroyOnLoad_ADestroyedObject_IsDroppedNotResurrected()
     {
-        var first = CreateScene();
-        var go = CreateGameObject();
+        Scene first = CreateScene();
+        GameObject go = CreateGameObject();
         first.Add(go);
         Scene.Load(first);
         Scene.ProcessPendingLoad();
@@ -623,7 +623,7 @@ public class SceneManagementTests : RuntimeTestBase
 
         go.Dispose();
 
-        var second = CreateScene();
+        Scene second = CreateScene();
         Scene.Load(second);
         Scene.ProcessPendingLoad(); // must not throw or re-add the corpse
 
@@ -635,8 +635,8 @@ public class SceneManagementTests : RuntimeTestBase
     [Fact]
     public void DestroyPreserved_KeepsThemOutOfTheNextScene()
     {
-        var play = CreateScene(enable: true);
-        var keeper = CreateGameObject("Keeper");
+        Scene play = CreateScene(enable: true);
+        GameObject keeper = CreateGameObject("Keeper");
         play.Add(keeper);
         Scene.Load(play);
         Scene.ProcessPendingLoad();
@@ -645,7 +645,7 @@ public class SceneManagementTests : RuntimeTestBase
         Scene.DestroyPreserved();
 
         // Same order the game loop uses: the destroy queue drains, then the scene swap applies.
-        var restored = CreateScene();
+        Scene restored = CreateScene();
         Scene.Load(restored);
         EngineObject.ProcessDestroyed();
         Scene.ProcessPendingLoad();
@@ -659,9 +659,9 @@ public class SceneManagementTests : RuntimeTestBase
     [Fact]
     public void DestroyPreserved_TearsDownAtTheEndOfTheFrame()
     {
-        var scene = CreateScene(enable: true);
-        var keeper = CreateGameObject("Keeper");
-        var comp = keeper.AddComponent<TickCounter>();
+        Scene scene = CreateScene(enable: true);
+        GameObject keeper = CreateGameObject("Keeper");
+        TickCounter comp = keeper.AddComponent<TickCounter>();
         scene.Add(keeper);
         Scene.Load(scene);
         Scene.ProcessPendingLoad();
@@ -681,8 +681,8 @@ public class SceneManagementTests : RuntimeTestBase
     [Fact]
     public void Shutdown_DestroysPreservedObjects()
     {
-        var scene = CreateScene(enable: true);
-        var keeper = CreateGameObject("Keeper");
+        Scene scene = CreateScene(enable: true);
+        GameObject keeper = CreateGameObject("Keeper");
         scene.Add(keeper);
         Scene.Load(scene);
         Scene.ProcessPendingLoad();
@@ -695,7 +695,7 @@ public class SceneManagementTests : RuntimeTestBase
         Assert.True(scene.IsDisposed);
 
         // And the registry is empty, so the next run does not inherit the last one's objects.
-        var next = CreateScene();
+        Scene next = CreateScene();
         Scene.Load(next);
         Scene.ProcessPendingLoad();
         Assert.Empty(next.AllObjects);
@@ -704,8 +704,8 @@ public class SceneManagementTests : RuntimeTestBase
     [Fact]
     public void Load_SkipsASceneDisposedBeforeItApplied()
     {
-        var current = CreateScene();
-        var queued = CreateScene();
+        Scene current = CreateScene();
+        Scene queued = CreateScene();
 
         Scene.Load(current);
         Scene.ProcessPendingLoad();

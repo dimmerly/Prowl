@@ -86,7 +86,7 @@ public class DesktopBuildPipeline : BuildPipeline
     {
         var sw = Stopwatch.StartNew();
 
-        var project = Project.Current;
+        Project? project = Project.Current;
         if (project == null)
             return new BuildResult { Success = false, Errors = "No project open." };
 
@@ -129,7 +129,7 @@ public class DesktopBuildPipeline : BuildPipeline
         {
             // Named, because the folder it half filled is the one the user will want to delete, and it
             // is a folder this build created rather than anything of theirs.
-            string partial = context.TryGetOutput<DesktopPlan>(out var cancelledPlan) && cancelledPlan != null
+            string partial = context.TryGetOutput<DesktopPlan>(out DesktopPlan? cancelledPlan) && cancelledPlan != null
                 ? cancelledPlan.OutputDirectory
                 : "";
 
@@ -143,11 +143,11 @@ public class DesktopBuildPipeline : BuildPipeline
 
         sw.Stop();
 
-        string resolvedOutput = context.TryGetOutput<DesktopPlan>(out var plan) && plan != null
+        string resolvedOutput = context.TryGetOutput<DesktopPlan>(out DesktopPlan? plan) && plan != null
             ? plan.OutputDirectory
             : settings.OutputDirectory;
 
-        int assetCount = context.TryGetOutput<PackagedAssets>(out var packaged) && packaged != null
+        int assetCount = context.TryGetOutput<PackagedAssets>(out PackagedAssets? packaged) && packaged != null
             ? packaged.Count
             : 0;
 
@@ -259,7 +259,7 @@ public class DesktopBuildPipeline : BuildPipeline
     private Task CompileScripts(IBuildContext context, CancellationToken ct)
     {
         context.Log("Compiling scripts...");
-        var compileResult = ScriptCompiler.CompileAll(_project);
+        ScriptCompiler.CompileResult compileResult = ScriptCompiler.CompileAll(_project);
         if (!compileResult.Success)
             throw new InvalidOperationException($"Script compilation failed:\n{compileResult.Errors}");
 
@@ -274,7 +274,7 @@ public class DesktopBuildPipeline : BuildPipeline
     private Task ValidateRequest(IBuildContext context, CancellationToken ct)
     {
         context.Log("Validating project...");
-        var request = context.Request;
+        BuildRequest request = context.Request;
 
         if (request.Scenes.Count == 0)
             throw new InvalidOperationException("No scenes in build. Add at least one scene.");
@@ -283,7 +283,7 @@ public class DesktopBuildPipeline : BuildPipeline
             throw new InvalidOperationException(
                 $"A desktop build needs a {nameof(DesktopBuildProfile)}, got {request.Profile?.GetType().Name ?? "none"}.");
 
-        var target = profile.Target;
+        PlatformTarget target = profile.Target;
 
         // Publish takes one identifier. A target naming several needs the architectures merged after the
         // fact, and shipping the first one under the target's name would be a lie about what was built.
@@ -345,11 +345,11 @@ public class DesktopBuildPipeline : BuildPipeline
     {
         // Everything the request carries is read from the request. Only the genuinely editor-owned
         // pieces below (the script compiler, the scene manager, the asset database) still reach out.
-        var request = context.Request;
+        BuildRequest request = context.Request;
         var profile = (DesktopBuildProfile)request.Profile!;
 
         string targetPlatform = profile.Target.AssemblyPlatform ?? BuildPlatforms.Windows;
-        var assemblies = ScriptCompiler.GetBuildAssemblies(_project, targetPlatform);
+        List<ScriptCompiler.BuildAssembly> assemblies = ScriptCompiler.GetBuildAssemblies(_project, targetPlatform);
 
         string outputDirectory = CreateBuildDirectory(request);
         context.Log($"Building into {outputDirectory}");
@@ -368,8 +368,8 @@ public class DesktopBuildPipeline : BuildPipeline
                 Runtime.Debug.LogWarning("[Build] Current scene has no save path. Save it first for accurate build.");
             }
 
-            var db = EditorAssetBackend.Instance;
-            foreach (var scene in request.Scenes)
+            EditorAssetBackend? db = EditorAssetBackend.Instance;
+            foreach (Guid scene in request.Scenes)
                 db?.Reimport(scene);
         });
 
@@ -397,15 +397,15 @@ public class DesktopBuildPipeline : BuildPipeline
 
     private Task CollectAndVerify(IBuildContext context, CancellationToken ct)
     {
-        var plan = context.GetOutput<DesktopPlan>();
+        DesktopPlan plan = context.GetOutput<DesktopPlan>();
 
         context.Log("Start collecting assets...");
-        var collection = CollectAssets(_settings, _progress);
+        AssetCollector.CollectionResult collection = CollectAssets(_settings, _progress);
         context.Log($"Collected {collection.AllAssets.Count} assets, {collection.ResourcesMap.Count} resources.");
 
-        var db = EditorAssetBackend.Instance;
+        EditorAssetBackend? db = EditorAssetBackend.Instance;
         int reimported = 0;
-        foreach (var guid in collection.AllAssets)
+        foreach (Guid guid in collection.AllAssets)
         {
             ct.ThrowIfCancellationRequested();
 
@@ -441,7 +441,7 @@ public class DesktopBuildPipeline : BuildPipeline
     /// <summary>Processed bytes when a processor claimed this asset, the imported ones otherwise.</summary>
     protected override Stream? OpenShippedAsset(Guid guid)
     {
-        if (_resolver != null && _variants.TryGetValue(guid, out var variant))
+        if (_resolver != null && _variants.TryGetValue(guid, out ResolvedVariant? variant))
             return _resolver.OpenAsync(variant).GetAwaiter().GetResult();
 
         return base.OpenShippedAsset(guid);
@@ -465,7 +465,7 @@ public class DesktopBuildPipeline : BuildPipeline
 
         if (AssetProcessors.Count == 0) return;
 
-        var source = EditorAssetBackend.Instance;
+        EditorAssetBackend? source = EditorAssetBackend.Instance;
         if (source == null) return;
 
         var cache = new LocalVariantCache(Path.Combine(_project.LibraryPath, "BuildCache"));
@@ -475,25 +475,25 @@ public class DesktopBuildPipeline : BuildPipeline
         // database: a Sprite lives inside its Texture's entry. Mapping them onto the parent is what lets
         // a processor see a path and an importer, and without it every sub-asset is silently skipped.
         var byGuid = new Dictionary<Guid, AssetEntry>();
-        foreach (var entry in source.GetAllEntries())
+        foreach (AssetEntry entry in source.GetAllEntries())
         {
             byGuid[entry.Guid] = entry;
-            foreach (var sub in entry.SubAssets)
+            foreach (SubAssetEntry sub in entry.SubAssets)
                 byGuid[sub.Guid] = entry;
         }
 
         int processed = 0, reused = 0;
 
-        foreach (var guid in collection.AllAssets.OrderBy(g => g))
+        foreach (Guid guid in collection.AllAssets.OrderBy(g => g))
         {
             ct.ThrowIfCancellationRequested();
 
-            if (!byGuid.TryGetValue(guid, out var asset)) continue;
+            if (!byGuid.TryGetValue(guid, out AssetEntry? asset)) continue;
 
             string imported = Path.Combine(context.Request.AssetCachePath, $"{guid}.asset");
             if (!File.Exists(imported)) continue;
 
-            var resolved = _resolver
+            ResolvedVariant resolved = _resolver
                 .ResolveAsync(asset, imported, plan.Profile.Target, ct)
                 .GetAwaiter().GetResult();
 
@@ -516,14 +516,14 @@ public class DesktopBuildPipeline : BuildPipeline
 
     private Task PrepareEmbeddedAssets(IBuildContext context, CancellationToken ct)
     {
-        var plan = context.GetOutput<DesktopPlan>();
-        var collected = context.GetOutput<CollectedAssets>();
+        DesktopPlan plan = context.GetOutput<DesktopPlan>();
+        CollectedAssets collected = context.GetOutput<CollectedAssets>();
 
         context.Log("Preparing embedded assets...");
         string embeddedDir = Path.Combine(plan.BuildTempDir, "Assets");
         Directory.CreateDirectory(embeddedDir);
 
-        var embeddedAssets = CopyLooseAssets(collected.Collection.AllAssets, embeddedDir, _progress, ct);
+        HashSet<Guid> embeddedAssets = CopyLooseAssets(collected.Collection.AllAssets, embeddedDir, _progress, ct);
         ReportMissingAssets(context, PrepareEmbedded, collected.Collection.AllAssets, embeddedAssets);
 
         GenerateManifest(Path.Combine(embeddedDir, "asset_manifest.bin"),
@@ -541,8 +541,8 @@ public class DesktopBuildPipeline : BuildPipeline
 
     private Task GeneratePlayer(IBuildContext context, CancellationToken ct)
     {
-        var plan = context.GetOutput<DesktopPlan>();
-        List<string>? embedded = context.TryGetOutput<EmbeddedAssetPaths>(out var e) ? e?.Paths : null;
+        DesktopPlan plan = context.GetOutput<DesktopPlan>();
+        List<string>? embedded = context.TryGetOutput<EmbeddedAssetPaths>(out EmbeddedAssetPaths? e) ? e?.Paths : null;
 
         GeneratePlayerSource(plan.BuildTempDir);
         GeneratePlayerCsproj(_project, _settings, plan.Profile, plan.BuildTempDir, embedded);
@@ -553,7 +553,7 @@ public class DesktopBuildPipeline : BuildPipeline
 
     private async Task PublishPlayer(IBuildContext context, CancellationToken ct)
     {
-        var plan = context.GetOutput<DesktopPlan>();
+        DesktopPlan plan = context.GetOutput<DesktopPlan>();
 
         context.Log("Compiling player...");
         string csprojPath = Path.Combine(plan.BuildTempDir, $"{context.Request.ProjectName}.Player.csproj");
@@ -568,7 +568,7 @@ public class DesktopBuildPipeline : BuildPipeline
         // Diagnostics land in the report with their code, file and line, so a caller can group and
         // navigate them instead of re-reading the log.
         int errors = 0;
-        var (exitCode, stdout, stderr) = await RunDotnetAsync(args.ToString(), _progress, ct,
+        (int exitCode, string? stdout, string? stderr) = await RunDotnetAsync(args.ToString(), _progress, ct,
             onDiagnostic: diagnostic =>
             {
                 if (diagnostic.Severity == BuildSeverity.Error) errors++;
@@ -589,10 +589,10 @@ public class DesktopBuildPipeline : BuildPipeline
 
     private Task CopyGameAssemblies(IBuildContext context, CancellationToken ct)
     {
-        var plan = context.GetOutput<DesktopPlan>();
+        DesktopPlan plan = context.GetOutput<DesktopPlan>();
         var copied = new List<string>();
 
-        foreach (var asm in plan.Assemblies)
+        foreach (ScriptCompiler.BuildAssembly asm in plan.Assemblies)
         {
             ct.ThrowIfCancellationRequested();
 
@@ -621,22 +621,22 @@ public class DesktopBuildPipeline : BuildPipeline
 
     private Task CopyPluginsStage(IBuildContext context, CancellationToken ct)
     {
-        var plan = context.GetOutput<DesktopPlan>();
+        DesktopPlan plan = context.GetOutput<DesktopPlan>();
         CopyPlugins(_project, plan.OutputDirectory, plan.TargetPlatform, _progress, ct);
         return Task.CompletedTask;
     }
 
     private Task OrganizeOutputStage(IBuildContext context, CancellationToken ct)
     {
-        var plan = context.GetOutput<DesktopPlan>();
-        var copied = context.GetOutput<CopiedAssemblies>();
+        DesktopPlan plan = context.GetOutput<DesktopPlan>();
+        CopiedAssemblies copied = context.GetOutput<CopiedAssemblies>();
         OrganizePublishOutput(plan.OutputDirectory, context.Request.ProjectName, copied.FileNames);
         return Task.CompletedTask;
     }
 
     private Task WritePlayerManifest(IBuildContext context, CancellationToken ct)
     {
-        var plan = context.GetOutput<DesktopPlan>();
+        DesktopPlan plan = context.GetOutput<DesktopPlan>();
         BuildPlayerManifest(context.Request, plan).Save(plan.OutputDirectory);
         context.Log($"Wrote {PlayerManifest.FileName}.");
         return Task.CompletedTask;
@@ -644,13 +644,13 @@ public class DesktopBuildPipeline : BuildPipeline
 
     private Task PackageAssets(IBuildContext context, CancellationToken ct)
     {
-        var plan = context.GetOutput<DesktopPlan>();
-        var collected = context.GetOutput<CollectedAssets>();
+        DesktopPlan plan = context.GetOutput<DesktopPlan>();
+        CollectedAssets collected = context.GetOutput<CollectedAssets>();
 
-        var request = context.Request;
+        BuildRequest request = context.Request;
 
         context.Log("Packaging assets...");
-        var all = collected.Collection.AllAssets;
+        HashSet<Guid> all = collected.Collection.AllAssets;
         int assetCount = all.Count;
 
         // Embedded assets were baked into the assembly at compile time, so there is nothing to place.
@@ -658,7 +658,7 @@ public class DesktopBuildPipeline : BuildPipeline
         {
             Directory.CreateDirectory(plan.ContentDir);
 
-            var shipped = request.Packaging switch
+            HashSet<Guid> shipped = request.Packaging switch
             {
                 AssetPackagingMode.ProwlPak => PackAssets(PlanChunks(request, collected), plan.ContentDir, request.MaxPackSizeMB, _progress, ct),
                 AssetPackagingMode.LooseFiles => CopyLooseAssets(all, plan.ContentDir, _progress, ct),
@@ -703,12 +703,12 @@ public class DesktopBuildPipeline : BuildPipeline
     /// </summary>
     private static IReadOnlyList<AssetChunk> PlanChunks(BuildRequest request, CollectedAssets collected)
     {
-        var source = EditorAssetBackend.Instance;
+        EditorAssetBackend? source = EditorAssetBackend.Instance;
         if (source == null)
             return [new AssetChunk(ChunkPlanner.CommonChunk, collected.Collection.AllAssets.OrderBy(g => g).ToList())];
 
         var subAssets = new Dictionary<Guid, IReadOnlyList<Guid>>();
-        foreach (var entry in source.GetAllEntries())
+        foreach (AssetEntry entry in source.GetAllEntries())
             if (entry.SubAssets.Length > 0)
                 subAssets[entry.Guid] = entry.SubAssets.Select(s => s.Guid).ToList();
 
@@ -718,7 +718,7 @@ public class DesktopBuildPipeline : BuildPipeline
 
     private Task ExportSettingsStage(IBuildContext context, CancellationToken ct)
     {
-        var plan = context.GetOutput<DesktopPlan>();
+        DesktopPlan plan = context.GetOutput<DesktopPlan>();
         ExportSettings(context, plan.SettingsDir, _progress);
         context.Log("Exported project settings.");
         return Task.CompletedTask;
@@ -726,7 +726,7 @@ public class DesktopBuildPipeline : BuildPipeline
 
     private Task FinalizeBuild(IBuildContext context, CancellationToken ct)
     {
-        var plan = context.GetOutput<DesktopPlan>();
+        DesktopPlan plan = context.GetOutput<DesktopPlan>();
 
         // Engine-custom natives (e.g. miniaudioex) that NuGet does not provide. The NuGet ones
         // (glfw3, soft_oal) are already handled by dotnet publish.
@@ -737,7 +737,7 @@ public class DesktopBuildPipeline : BuildPipeline
         if (plan.Profile.Target.AssemblyPlatform == BuildPlatforms.MacOS)
         {
             context.Log("Bundling macOS .app...");
-            var general = TryGetGeneralSettings();
+            GeneralSettings? general = TryGetGeneralSettings();
             BundleMacApp(plan.OutputDirectory, context.Request.ProjectName,
                 ProductNameFor(context.Request.ProjectName), general?.CompanyName ?? "", general?.Version ?? "0.0.0");
         }
@@ -805,7 +805,7 @@ public class DesktopBuildPipeline : BuildPipeline
     /// <summary>Describes the build to the player. Written after publish, which clears the output directory.</summary>
     private static PlayerManifest BuildPlayerManifest(BuildRequest request, DesktopPlan plan)
     {
-        var general = TryGetGeneralSettings();
+        GeneralSettings? general = TryGetGeneralSettings();
 
         return new PlayerManifest
         {
@@ -933,10 +933,10 @@ public class DesktopBuildPipeline : BuildPipeline
         // Read PackageReferences from assembly metadata embedded by the MSBuild
         // EmbedPackageReferences target in Prowl.Runtime.csproj. This works regardless
         // of whether the source tree is present - the data lives in the compiled DLL.
-        var packages = GetRuntimePackageReferences();
+        List<(string Name, string Version)> packages = GetRuntimePackageReferences();
 
         sb.AppendLine("  <ItemGroup>");
-        foreach (var (name, version) in packages)
+        foreach ((string? name, string? version) in packages)
             sb.AppendLine($"    <PackageReference Include=\"{name}\" Version=\"{version}\" />");
         sb.AppendLine("  </ItemGroup>");
     }
@@ -950,10 +950,10 @@ public class DesktopBuildPipeline : BuildPipeline
     private static List<(string Name, string Version)> GetRuntimePackageReferences()
     {
         var result = new List<(string, string)>();
-        var runtimeAssembly = typeof(Prowl.Runtime.EngineObject).Assembly;
+        Assembly runtimeAssembly = typeof(Prowl.Runtime.EngineObject).Assembly;
         const string prefix = "PackageReference:";
 
-        foreach (var attr in runtimeAssembly.GetCustomAttributes<System.Reflection.AssemblyMetadataAttribute>())
+        foreach (AssemblyMetadataAttribute attr in runtimeAssembly.GetCustomAttributes<System.Reflection.AssemblyMetadataAttribute>())
         {
             if (attr.Key == null || !attr.Key.StartsWith(prefix) || string.IsNullOrEmpty(attr.Value))
                 continue;
@@ -977,7 +977,7 @@ public class DesktopBuildPipeline : BuildPipeline
     /// </summary>
     public override string GetExecutablePath(string outputPath, BuildSettings settings)
     {
-        var profile = settings.GetProfile<DesktopBuildProfile>(GetType());
+        DesktopBuildProfile profile = settings.GetProfile<DesktopBuildProfile>(GetType());
         string platform = profile.Target.AssemblyPlatform ?? BuildPlatforms.Windows;
         string name = Project.Current!.Name;
 
@@ -1078,7 +1078,7 @@ public class DesktopBuildPipeline : BuildPipeline
         int managed = 0, native = 0;
         var written = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
-        foreach (var plugin in PluginScanner.ScanAll(project))
+        foreach (PluginInfo plugin in PluginScanner.ScanAll(project))
         {
             ct.ThrowIfCancellationRequested();
 
@@ -1195,7 +1195,7 @@ public class DesktopBuildPipeline : BuildPipeline
     private static void BundleMacApp(string outputDir, string executableName, string productName, string companyName, string version)
     {
         // Snapshot BEFORE creating the bundle folder so it never sweeps up itself.
-        var existingEntries = Directory.GetFileSystemEntries(outputDir).ToList();
+        List<string> existingEntries = Directory.GetFileSystemEntries(outputDir).ToList();
 
         string appDir = Path.Combine(outputDir, MacBundleName(productName));
         string macOsDir = Path.Combine(appDir, "Contents", "MacOS");

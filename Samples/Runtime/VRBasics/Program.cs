@@ -61,7 +61,7 @@ public sealed class VRBasicsGame : Game
             block.AddComponent<MeshRenderer>().Mesh = Mesh.CreateCube(new Float3(0.1f));
             block.GetComponent<MeshRenderer>()!.Material = Lit(new Color(0.6f - i * 0.1f, 0.2f, 0.05f + i * 0.1f, 1f));
             block.AddComponent<BoxCollider>().Size = new Float3(0.1f);
-            var body = block.AddComponent<Rigidbody3D>();
+            Rigidbody3D body = block.AddComponent<Rigidbody3D>();
             body.Mass = 0.3f;
             SimpleHand.Grabbables.Add(body);
             scene.Add(block);
@@ -74,7 +74,7 @@ public sealed class VRBasicsGame : Game
         var head = new GameObject("Head");
         head.SetParent(rig);
         head.Transform.LocalPosition = new Float3(0f, 1.65f, 0f);
-        var camera = head.AddComponent<Camera>();
+        Camera camera = head.AddComponent<Camera>();
         camera.NearClipPlane = 0.05f;
         camera.HDR = true;
         camera.Effects = [new TonemapperEffect()];

@@ -58,7 +58,7 @@ internal sealed class ClipEventTrack
     public void Draw(Paper paper, string id, Scribe.FontFile font, EchoObject settings, string clipName,
         float start, float duration, float playhead, Action<float> scrub)
     {
-        var m = Origami.Current.Metrics;
+        OrigamiMetrics m = Origami.Current.Metrics;
         List<ClipEvent> events = ModelImportOverrides.ReadEvents(ModelImportOverrides.ReadClipBlock(settings, clipName));
         if (_selected >= events.Count) _selected = -1;
 
@@ -71,7 +71,7 @@ internal sealed class ClipEventTrack
         void Write() => ModelImportOverrides.WriteEvents(settings, clipName, events);
         float TimeAt(float x) => start + Math.Clamp(x / _width, 0f, 1f) * duration;
 
-        var track = paper.Box($"{id}_track").Height(height)
+        ElementBuilder track = paper.Box($"{id}_track").Height(height)
             .Margin(m.PaddingLarge, m.PaddingLarge, m.Spacing, m.Spacing)
             .Rounded(m.SmallRounding).Clip()
             .BackgroundColor(EditorTheme.Neutral300)
@@ -228,7 +228,7 @@ internal sealed class ClipEventTrack
     private void DrawToolbar(Paper paper, string id, Scribe.FontFile font, List<ClipEvent> events,
         float start, float duration, float playhead, Action write)
     {
-        var m = Origami.Current.Metrics;
+        OrigamiMetrics m = Origami.Current.Metrics;
         using (paper.Row($"{id}_evTools").Height(26).Margin(m.PaddingLarge, m.PaddingLarge, 0, m.Spacing)
             .Gap(m.SpacingMedium).AlignItems(LayoutAlignment.Center).Enter())
         {
@@ -263,7 +263,7 @@ internal sealed class ClipEventTrack
     /// <summary>Every event as a row, including any the trim has put outside the clip, which the strip cannot show.</summary>
     private void DrawList(Paper paper, string id, Scribe.FontFile font, List<ClipEvent> events, float start, float duration)
     {
-        var m = Origami.Current.Metrics;
+        OrigamiMetrics m = Origami.Current.Metrics;
         for (int i = 0; i < events.Count; i++)
         {
             ClipEvent e = events[i];
@@ -335,7 +335,7 @@ internal sealed class ClipEventTrack
             EditorGUI.Row(paper, $"{sid}_blend", "Blend (s)", () =>
                 Origami.NumericField<float>(paper, $"{sid}_blend_v", e.BlendTime, v => { e.BlendTime = MathF.Max(0f, v); write(); }).Min(0f).Show());
 
-        var m = Origami.Current.Metrics;
+        OrigamiMetrics m = Origami.Current.Metrics;
         using (paper.Row($"{sid}_actions").Height(26).Margin(m.PaddingLarge, m.PaddingLarge, m.Spacing, m.Spacing).Enter())
             Origami.Button(paper, $"{sid}_delete", "Delete Event", () =>
             {

@@ -16,7 +16,7 @@ public class GradientPropertyEditor : PropertyEditor
 {
     public override void OnGUI(Paper paper, string id, string label, object? value, Action<object?> onChange, int depth)
     {
-        var gradient = value as Gradient ?? new Gradient();
+        Gradient gradient = value as Gradient ?? new Gradient();
 
         EditorGUI.Row(paper, id, label, () =>
             GradientField.Create(paper, $"{id}_gf", gradient,

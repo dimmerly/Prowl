@@ -68,7 +68,7 @@ public sealed class MeshCollider : Collider
         }
 
         // Shared, cached bake (built once per mesh, reused across all colliders and rebuilt on edit).
-        var baked = PhysicsWorld.BakeMesh(m);
+        BakedPhysicsMesh baked = PhysicsWorld.BakeMesh(m);
         if (baked.Triangles.Count == 0)
         {
             Debug.LogWarning("MeshCollider: mesh has no triangles.");
@@ -199,7 +199,7 @@ public sealed class MeshCollider : Collider
     {
         if (mesh == null)
         {
-            var mr = GetComponent<MeshRenderer>();
+            MeshRenderer? mr = GetComponent<MeshRenderer>();
             if (mr.IsValid())
                 mesh = mr.Mesh;
             else
@@ -212,10 +212,10 @@ public sealed class MeshCollider : Collider
 
     public override void DrawGizmos()
     {
-        var m = mesh;
+        Mesh? m = mesh;
         if (m == null)
         {
-            var mr = GetComponent<MeshRenderer>();
+            MeshRenderer? mr = GetComponent<MeshRenderer>();
             if (mr != null) m = mr.Mesh;
         }
         if (m == null) return;
@@ -261,7 +261,7 @@ public sealed class MeshCollider : Collider
     {
         if (_cachedConvexShape == null)
         {
-            var baked = PhysicsWorld.BakeMesh(m);
+            BakedPhysicsMesh baked = PhysicsWorld.BakeMesh(m);
             if (baked.Triangles.Count == 0) return;
             _cachedConvexShape = BuildSampledConvexShape(baked);
         }

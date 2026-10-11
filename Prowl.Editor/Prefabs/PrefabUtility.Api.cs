@@ -61,14 +61,14 @@ public static partial class PrefabUtility
     {
         if (go.IsNotValid() || !PrefabEditingMode.IsEditing) return false;
 
-        var scene = go.Scene;
+        Scene? scene = go.Scene;
         return scene.IsValid() && ReferenceEquals(scene, Scene.Current);
     }
 
     /// <summary>Every instance root of a prefab in the current scene.</summary>
     public static List<GameObject> FindInstancesOf(Guid prefabGuid)
     {
-        var scene = Scene.Current;
+        Scene scene = Scene.Current;
         return scene == null ? [] : FindInstancesOf(prefabGuid, scene);
     }
 
@@ -285,7 +285,7 @@ public static partial class PrefabUtility
         GameObject? source = GetCachedPrefabSource(prefabGuid);
         if (source == null) return false;
 
-        var previous = CapturePrefabState(go, go.PrefabAssetId);
+        List<PrefabState> previous = CapturePrefabState(go, go.PrefabAssetId);
 
         var unmatched = new List<string>();
         AdoptSourceIdentities(go, source, prefabGuid, unmatched);
@@ -370,7 +370,7 @@ public static partial class PrefabUtility
     /// </summary>
     public static bool SaveAsPrefabAsset(GameObject source, string relativeSavePath, bool overwrite = false)
     {
-        var previous = source.IsValid() ? CapturePrefabState(source, source.PrefabAssetId) : null;
+        List<PrefabState>? previous = source.IsValid() ? CapturePrefabState(source, source.PrefabAssetId) : null;
 
         if (!SaveAsPrefabAssetAndConnect(source, relativeSavePath, overwrite)) return false;
 

@@ -116,7 +116,7 @@ public class RuntimeUtilsTests
         Type live = DefineNamedType("HotReloadDuplicate", "Comp");
         Assert.NotSame(stale, live);
 
-        var previous = RuntimeUtils.AssemblySource;
+        Func<IEnumerable<Assembly>> previous = RuntimeUtils.AssemblySource;
         try
         {
             // Live first, exactly as the editor orders it. The stale build is still enumerable.
@@ -137,7 +137,7 @@ public class RuntimeUtilsTests
     {
         var assembly = AssemblyBuilder.DefineDynamicAssembly(
             new AssemblyName(assemblyName), AssemblyBuilderAccess.Run);
-        var module = assembly.DefineDynamicModule(assemblyName);
+        ModuleBuilder module = assembly.DefineDynamicModule(assemblyName);
         return module.DefineType(typeName, TypeAttributes.Public).CreateType()!;
     }
 

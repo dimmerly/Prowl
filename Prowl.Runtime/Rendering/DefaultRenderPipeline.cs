@@ -3,9 +3,11 @@
 
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Runtime.CompilerServices;
 
+using Prowl.Runtime.AssetImporting;
 using Prowl.Runtime.Resources;
 using Prowl.Runtime.UI;
 using Prowl.Vector;
@@ -97,8 +99,8 @@ public class DefaultRenderPipeline : RenderPipeline
 
         if (s_skyCube.IsNotValid())
         {
-            using var stream = EmbeddedResources.GetStream("Assets/Defaults/Cube.obj");
-            var skyImport = new AssetImporting.ModelImporter().Import(stream, "Cube.obj");
+            using Stream stream = EmbeddedResources.GetStream("Assets/Defaults/Cube.obj");
+            ModelImportResult skyImport = new AssetImporting.ModelImporter().Import(stream, "Cube.obj");
             s_skyCube = skyImport.Meshes.Count > 0 ? skyImport.Meshes[0] : new Resources.Mesh { Name = "SkyCube" };
         }
     }
@@ -171,14 +173,14 @@ public class DefaultRenderPipeline : RenderPipeline
     {
         // Both eyes share one shadow atlas, so the cascades are fitted to all the eyes drawn this frame
         int eyeCount = 0;
-        foreach (var (eye, mask) in s_eyes)
+        foreach ((StereoEye eye, StereoTargetEyeMask mask) in s_eyes)
             if ((camera.StereoTargetEye & mask) != 0)
                 s_eyeViews[eyeCount++] = XR.GetEyeView(eye);
         ShadowFitView shadowView = ShadowFitView.FromEyes(camera.Transform.Position, camera.Transform.Rotation, camera.NearClipPlane,
             s_eyeViews.AsSpan(0, eyeCount), camera.Transform.LocalToWorldMatrix);
 
         RenderTexture? mirror = null;
-        foreach (var (eye, mask) in s_eyes)
+        foreach ((StereoEye eye, StereoTargetEyeMask mask) in s_eyes)
         {
             if ((camera.StereoTargetEye & mask) == 0) continue;
 
@@ -219,7 +221,7 @@ public class DefaultRenderPipeline : RenderPipeline
         int srcX = (eye.Width - srcWidth) / 2;
         int srcY = (eye.Height - srcHeight) / 2;
 
-        using var cmd = Graphics.GetCommandBuffer("XRMirror");
+        using CommandBuffer cmd = Graphics.GetCommandBuffer("XRMirror");
         cmd.SetRenderTargets(hasTarget ? target.frameBuffer : null, eye.frameBuffer);
         cmd.BlitFramebuffer(srcX, srcY, srcX + srcWidth, srcY + srcHeight, 0, 0, dstWidth, dstHeight, ClearFlags.Color, BlitFilter.Linear);
         cmd.SetRenderTarget(null);
@@ -251,7 +253,7 @@ public class DefaultRenderPipeline : RenderPipeline
         if (effects == null || effects.Count == 0)
             return;
 
-        foreach (var effect in effects)
+        foreach (ImageEffect effect in effects)
         {
             try { effect.OnRenderEffect(context); }
             catch (Exception ex) { LogEffectSkipped(effect, "OnRenderEffect", ex); }
@@ -278,9 +280,9 @@ public class DefaultRenderPipeline : RenderPipeline
         // =======================================================
         // 0. Setup
         bool isHDR = camera.HDR;
-        var effectsByStage = GatherImageEffects(camera);
+        Dictionary<RenderStage, List<ImageEffect>> effectsByStage = GatherImageEffects(camera);
         var allEffects = new List<ImageEffect>();
-        foreach (var effects in effectsByStage.Values)
+        foreach (List<ImageEffect> effects in effectsByStage.Values)
             allEffects.AddRange(effects);
 
         // Fire OnDisable on effects that were active last frame but aren't now
@@ -303,7 +305,7 @@ public class DefaultRenderPipeline : RenderPipeline
 
         // =======================================================
         // 3. Collect and Cull Renderables
-        var (renderables, lights) = CollectRenderables(camera.GameObject.Scene, camera);
+        (List<IRenderable>? renderables, List<IRenderableLight>? lights) = CollectRenderables(camera.GameObject.Scene, camera);
 
         // Inject editor grid
         if (data.DisplayGrid)
@@ -323,7 +325,7 @@ public class DefaultRenderPipeline : RenderPipeline
         RenderStats.AddCamera();
 
         int dirCount = 0, pointCount = 0, spotCount = 0, shadowCount = 0;
-        foreach (var l in lights)
+        foreach (IRenderableLight l in lights)
         {
             switch (l.GetLightType())
             {
@@ -404,7 +406,7 @@ public class DefaultRenderPipeline : RenderPipeline
         try
         {
             // ─── Pre-pass + opaque CB ───
-            using var mainCmd = Graphics.GetCommandBuffer("ColorPass");
+            using CommandBuffer mainCmd = Graphics.GetCommandBuffer("ColorPass");
 
             // Single MRT prepass: depth + view-space normals + motion + roughness/metallic.
             // Cleared to zero so sky/background reads zero motion (and the unwritten normal/material
@@ -438,7 +440,7 @@ public class DefaultRenderPipeline : RenderPipeline
             {
                 case CameraClearFlags.Skybox:
                 {
-                    var skyColor = css.Scene.Skybox.Mode == Scene.SkyboxMode.SolidColor
+                        Color skyColor = css.Scene.Skybox.Mode == Scene.SkyboxMode.SolidColor
                         ? css.Scene.Skybox.SolidColor : camera.ClearColor;
                     mainCmd.ClearRenderTarget(ClearFlags.Color, skyColor);
                     RenderSkybox(mainCmd, css);
@@ -503,7 +505,7 @@ public class DefaultRenderPipeline : RenderPipeline
             RenderUIQueue(css, colorRT, UISurface.World, data);
 
             // ─── Transparents CB ───
-            using var transparentCmd = Graphics.GetCommandBuffer("Transparents");
+            using CommandBuffer transparentCmd = Graphics.GetCommandBuffer("Transparents");
             transparentCmd.SetRenderTarget(colorRT.frameBuffer);
             transparentCmd.SetViewport(0, 0, (uint)colorRT.Width, (uint)colorRT.Height);
             List<IRenderable> sortBackToFront = SortRenderables(renderables, culledRenderableIndices, css.CameraPosition, SortMode.BackToFront);
@@ -547,18 +549,18 @@ public class DefaultRenderPipeline : RenderPipeline
 
                 ExecuteImageEffects(postContext, effectsByStage[RenderStage.PostProcess]);
 
-                var replacedRTs = postContext.GetReplacedRTs();
+                List<RenderTexture> replacedRTs = postContext.GetReplacedRTs();
                 if (replacedRTs.Count > 0)
                 {
                     colorRT = postContext.SceneColor;
-                    foreach (var oldRT in replacedRTs)
+                    foreach (RenderTexture oldRT in replacedRTs)
                         RenderTexture.ReleaseTemporaryRT(oldRT);
                 }
             }
             RenderStats.EndPostFx();
 
             // ─── Gizmos + final blit CB ───
-            using var finalCmd = Graphics.GetCommandBuffer("FinalBlit");
+            using CommandBuffer finalCmd = Graphics.GetCommandBuffer("FinalBlit");
             if (data.DisplayGizmos)
             {
                 finalCmd.SetRenderTarget(colorRT.frameBuffer);
@@ -602,7 +604,7 @@ public class DefaultRenderPipeline : RenderPipeline
     /// <summary>Binds the backbuffer again for whatever draws after the pipeline, such as Paper UI.</summary>
     private static void ResetToBackbuffer(bool clearCameraTextures = false)
     {
-        using var resetCmd = Graphics.GetCommandBuffer("PipelineReset");
+        using CommandBuffer resetCmd = Graphics.GetCommandBuffer("PipelineReset");
         resetCmd.SetRenderTarget(null);
         resetCmd.SetViewport(0, 0, (uint)Window.InternalWindow.FramebufferSize.X, (uint)Window.InternalWindow.FramebufferSize.Y);
         if (clearCameraTextures)
@@ -682,7 +684,7 @@ public class DefaultRenderPipeline : RenderPipeline
             // Screen-space orthographic projection (origin bottom-left, +Y up to match RectTransform).
             AssignCameraMatrices(Float4x4.Identity, BuildScreenOrtho(css));
 
-            using var cmd = Graphics.GetCommandBuffer("UI");
+            using CommandBuffer cmd = Graphics.GetCommandBuffer("UI");
             if (targetRT != null)
             {
                 cmd.SetRenderTarget(targetRT.frameBuffer);
@@ -731,7 +733,7 @@ public class DefaultRenderPipeline : RenderPipeline
 
             s_uiTmp.Sort(static (a, b) => ((UIRenderItem)a).SortKey.CompareTo(((UIRenderItem)b).SortKey));
 
-            using var cmd = Graphics.GetCommandBuffer("UIWorld");
+            using CommandBuffer cmd = Graphics.GetCommandBuffer("UIWorld");
             if (targetRT != null)
             {
                 cmd.SetRenderTarget(targetRT.frameBuffer);
@@ -769,7 +771,7 @@ public class DefaultRenderPipeline : RenderPipeline
                 uiPass = cachedPass;
             else
             {
-                var uiPasses = material.Shader.GetPassesWithTag("RenderOrder", "UI");
+                List<int> uiPasses = material.Shader.GetPassesWithTag("RenderOrder", "UI");
                 uiPass = uiPasses.Count > 0 ? uiPasses[0] : -1;
                 cachedShader = material.Shader;
                 cachedPass = uiPass;
@@ -790,7 +792,7 @@ public class DefaultRenderPipeline : RenderPipeline
 
     private void RenderSkybox(CommandBuffer cmd, CameraSnapshot css)
     {
-        var skyParams = css.Scene.Skybox;
+        Scene.SkyboxParams skyParams = css.Scene.Skybox;
 
         switch (skyParams.Mode)
         {
@@ -814,7 +816,7 @@ public class DefaultRenderPipeline : RenderPipeline
 
             case Scene.SkyboxMode.Material:
             {
-                var customMat = skyParams.CustomMaterial;
+                    Material? customMat = skyParams.CustomMaterial;
                 if (customMat != null)
                     cmd.DrawMesh(s_skyCube, customMat);
                 else
@@ -874,13 +876,13 @@ public class DefaultRenderPipeline : RenderPipeline
             if (solid.IsValid()) cmd.DrawMesh(solid, s_gizmo);
         }
 
-        var icons = Debug.GetGizmoIcons();
+        List<GizmoBuilder.IconDrawCall> icons = Debug.GetGizmoIcons();
         if (icons.Count > 0)
         {
             if (s_iconMaterial.IsNotValid()) s_iconMaterial = new Material(Shader.LoadDefault(DefaultShader.GizmoIcon));
             if (s_iconQuad.IsNotValid()) s_iconQuad = Mesh.GetFullscreenQuad();
 
-            foreach (var icon in icons)
+            foreach (GizmoBuilder.IconDrawCall icon in icons)
             {
                 if (icon.Texture == null || icon.Texture.IsDisposed) continue;
                 s_iconMaterial.SetTexture("_MainTex", icon.Texture);

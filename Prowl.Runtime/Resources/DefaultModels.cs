@@ -5,6 +5,7 @@ using System;
 using System.IO;
 
 using Prowl.Echo;
+using Prowl.Runtime.AssetImporting;
 
 namespace Prowl.Runtime.Resources;
 
@@ -34,7 +35,7 @@ public static class DefaultModels
         // Import via the OBJ importer. Embedded defaults have no companion .mtl, so the
         // resulting GO just has a MeshRenderer with an empty Materials list callers that
         // use these meshes (e.g. BuiltInAssets, primitive creators) assign their own material.
-        var importResult = new AssetImporting.ModelImporter().Import(stream, fileName,
+        ModelImportResult importResult = new AssetImporting.ModelImporter().Import(stream, fileName,
             new AssetImporting.ModelImporterSettings
             {
                 RecalculateNormals = true,

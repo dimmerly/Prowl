@@ -52,7 +52,7 @@ public class MissingTypeReferenceGraphTests
         var root = new GameObject("Root");
         var child = new GameObject("Child");
         child.SetParent(root);
-        var misser = root.AddComponent<MissRefComp>();
+        MissRefComp misser = root.AddComponent<MissRefComp>();
         misser.TargetGO = child;
 
         var scene = new Scene();
@@ -62,10 +62,10 @@ public class MissingTypeReferenceGraphTests
             .Replace(nameof(MissRefComp), "GhostComp_DoesNotExist");
 
         // Mimic the editor: a caller-supplied context passed to the 3-arg Deserialize.
-        var loaded = Serializer.Deserialize<Scene>(EchoObject.ReadFromString(text), new SerializationContext())!;
+        Scene loaded = Serializer.Deserialize<Scene>(EchoObject.ReadFromString(text), new SerializationContext())!;
 
         Assert.DoesNotContain(loaded.AllObjects, o => o.Name == "New GameObject"); // no phantom placeholders
-        var loadedRoot = loaded.AllObjects.FirstOrDefault(o => o.Name == "Root");
+        GameObject? loadedRoot = loaded.AllObjects.FirstOrDefault(o => o.Name == "Root");
         Assert.NotNull(loadedRoot);
         Assert.Single(loadedRoot!.Children);
         Assert.Equal("Child", loadedRoot.Children[0].Name);
@@ -77,13 +77,13 @@ public class MissingTypeReferenceGraphTests
         // Missing component does NOT reference the holder, and is added AFTER it.
         var guid = Guid.NewGuid();
         var root = new GameObject("Root");
-        var holder = root.AddComponent<AssetHolderComp>();
+        AssetHolderComp holder = root.AddComponent<AssetHolderComp>();
         holder.Tex = AssetDatabase.Get<Texture2D>(guid);
         root.AddComponent<MissRefComp>(); // no targets
 
-        var loaded = RoundTripWithMissing(root, nameof(MissRefComp));
+        GameObject loaded = RoundTripWithMissing(root, nameof(MissRefComp));
 
-        var h = loaded.GetComponent<AssetHolderComp>();
+        AssetHolderComp? h = loaded.GetComponent<AssetHolderComp>();
         _out.WriteLine($"[control] holder present={h is not null}, assetId={h?.Tex.AssetID}");
         Assert.NotNull(h);
         Assert.Equal(guid, h!.Tex.AssetID); // GUID AssetRef survives when nothing points into the missing comp
@@ -96,14 +96,14 @@ public class MissingTypeReferenceGraphTests
         // AssetRef GUID) is emitted INLINE inside the missing component's data.
         var guid = Guid.NewGuid();
         var root = new GameObject("Root");
-        var misser = root.AddComponent<MissRefComp>();     // added FIRST
-        var holder = root.AddComponent<AssetHolderComp>();
+        MissRefComp misser = root.AddComponent<MissRefComp>();     // added FIRST
+        AssetHolderComp holder = root.AddComponent<AssetHolderComp>();
         holder.Tex = AssetDatabase.Get<Texture2D>(guid);
         misser.Target = holder;                            // holder defined inline here
 
-        var loaded = RoundTripWithMissing(root, nameof(MissRefComp));
+        GameObject loaded = RoundTripWithMissing(root, nameof(MissRefComp));
 
-        var h = loaded.GetComponent<AssetHolderComp>();
+        AssetHolderComp? h = loaded.GetComponent<AssetHolderComp>();
         _out.WriteLine($"[crossref] holder present={h is not null}, assetId={h?.Tex.AssetID}, expected={guid}");
         Assert.NotNull(h);
         Assert.Equal(guid, h!.Tex.AssetID); // EXPECTED to pass; if it fails, the AssetRef was lost -> bug reproduced
@@ -120,7 +120,7 @@ public class MissingTypeReferenceGraphTests
         var grandchild = new GameObject("Grandchild");
         grandchild.SetParent(child);
 
-        var misser = root.AddComponent<MissRefComp>();
+        MissRefComp misser = root.AddComponent<MissRefComp>();
         misser.TargetGO = grandchild;
 
         var scene = new Scene();
@@ -128,9 +128,9 @@ public class MissingTypeReferenceGraphTests
 
         string text = Serializer.Serialize(typeof(object), scene).WriteToString();
         text = text.Replace(nameof(MissRefComp), "GhostComp_DoesNotExist");
-        var loaded = Serializer.Deserialize<Scene>(EchoObject.ReadFromString(text))!;
+        Scene loaded = Serializer.Deserialize<Scene>(EchoObject.ReadFromString(text))!;
 
-        var loadedRoot = loaded.AllObjects.FirstOrDefault(o => o.Name == "Root");
+        GameObject? loadedRoot = loaded.AllObjects.FirstOrDefault(o => o.Name == "Root");
         string Structure(GameObject g, int d = 0) =>
             new string(' ', d * 2) + g.Name + "\n" + string.Concat(g.Children.Select(c => Structure(c, d + 1)));
         _out.WriteLine("[scene]\n" + (loadedRoot is null ? "<no Root>" : Structure(loadedRoot)));

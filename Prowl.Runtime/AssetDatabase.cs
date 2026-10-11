@@ -184,7 +184,7 @@ public static class AssetDatabase
         Asset asset = CreateShell(type);
         string path = GetAssetPath(assetId) ?? string.Empty;
         asset.SetIdentity(assetId, path);
-        if (path.Length > 0) asset.Name = BuiltInAssets.Entries.TryGetValue(assetId, out var builtIn) ? builtIn.Name : AssetNames.FromPath(path);
+        if (path.Length > 0) asset.Name = BuiltInAssets.Entries.TryGetValue(assetId, out BuiltInAssets.BuiltInEntry builtIn) ? builtIn.Name : AssetNames.FromPath(path);
         asset.SetState(state);
         asset.Registered = true;
         return asset;
@@ -230,10 +230,10 @@ public static class AssetDatabase
     public static IEnumerable<Asset> All => s_assets.Values;
 
     public static Type? GetAssetType(Guid assetId)
-        => BuiltInAssets.Entries.TryGetValue(assetId, out var builtIn) ? builtIn.AssetType : SourceOf(assetId)?.GetAssetType(assetId);
+        => BuiltInAssets.Entries.TryGetValue(assetId, out BuiltInAssets.BuiltInEntry builtIn) ? builtIn.AssetType : SourceOf(assetId)?.GetAssetType(assetId);
 
     private static string? GetAssetPath(Guid assetId)
-        => BuiltInAssets.Entries.TryGetValue(assetId, out var builtIn) ? builtIn.Path : SourceOf(assetId)?.GetAssetPath(assetId);
+        => BuiltInAssets.Entries.TryGetValue(assetId, out BuiltInAssets.BuiltInEntry builtIn) ? builtIn.Path : SourceOf(assetId)?.GetAssetPath(assetId);
 
     public static bool IsBuiltIn(Asset asset) => BuiltInAssets.IsBuiltIn(asset.AssetID);
 
@@ -534,7 +534,7 @@ public static class AssetDatabase
             var byPath = new Dictionary<string, List<ResourceEntry>>(StringComparer.OrdinalIgnoreCase);
             foreach (ResourceEntry entry in resources)
             {
-                if (!byPath.TryGetValue(entry.LoadPath, out var list))
+                if (!byPath.TryGetValue(entry.LoadPath, out List<ResourceEntry>? list))
                     byPath[entry.LoadPath] = list = [];
                 list.Add(entry);
             }
@@ -543,7 +543,7 @@ public static class AssetDatabase
         }
 
         string? key = ToLoadPath(loadPath);
-        if (key == null || !s_resourcesByPath.TryGetValue(key, out var entries)) return [];
+        if (key == null || !s_resourcesByPath.TryGetValue(key, out List<ResourceEntry>? entries)) return [];
         return entries.Where(entry => IsOfType(entry, type));
     }
 
@@ -672,7 +672,7 @@ public static class AssetDatabase
     {
         var owners = new List<object>();
         lock (s_holdLock)
-            foreach (var (owner, held) in s_holds)
+            foreach ((object? owner, HashSet<Asset>? held) in s_holds)
                 if (held.Contains(asset)) owners.Add(owner);
         return owners;
     }
@@ -761,7 +761,7 @@ public static class AssetDatabase
 
         lock (s_holdLock)
         {
-            foreach (var (_, held) in s_holds)
+            foreach ((object _, HashSet<Asset>? held) in s_holds)
                 foreach (Asset asset in held)
                     s_walker.Visit(asset);
 
@@ -1283,7 +1283,7 @@ internal sealed class AssetReferenceRule : IReferenceRule
 
     private static void PruneRuntimeLinks()
     {
-        foreach (var (id, link) in s_runtimeLinks)
+        foreach ((int id, WeakReference<Asset>? link) in s_runtimeLinks)
             if (!link.TryGetTarget(out _))
                 s_runtimeLinks.TryRemove(id, out _);
         s_pruneLinksAt = Math.Max(256, s_runtimeLinks.Count * 2);

@@ -20,7 +20,7 @@ public class HotReloadAnalyzerTests : EditorTestHarness
     {
         WriteScript("Gen.cs", "public class Box<T> { public static int Count; }");
 
-        var result = ScriptCompiler.CompileAll(Project);
+        ScriptCompiler.CompileResult result = ScriptCompiler.CompileAll(Project);
 
         Assert.True(result.Success, result.Errors);                 // it's a warning, not an error
         Assert.Contains(ReloadDiagnosticAnalyzer.StaticOnGenericType.Id, result.Output);
@@ -31,7 +31,7 @@ public class HotReloadAnalyzerTests : EditorTestHarness
     {
         WriteScript("Gen.cs", "public class Box<T> { public static int Count { get; set; } }");
 
-        var result = ScriptCompiler.CompileAll(Project);
+        ScriptCompiler.CompileResult result = ScriptCompiler.CompileAll(Project);
 
         Assert.True(result.Success, result.Errors);
         Assert.Contains(ReloadDiagnosticAnalyzer.StaticOnGenericType.Id, result.Output);
@@ -42,7 +42,7 @@ public class HotReloadAnalyzerTests : EditorTestHarness
     {
         WriteScript("Gen.cs", "public class Box<T> { [Prowl.Ember.ReloadIgnore] public static int Count; }");
 
-        var result = ScriptCompiler.CompileAll(Project);
+        ScriptCompiler.CompileResult result = ScriptCompiler.CompileAll(Project);
 
         Assert.True(result.Success, result.Errors);
         Assert.DoesNotContain(ReloadDiagnosticAnalyzer.StaticOnGenericType.Id, result.Output);
@@ -53,7 +53,7 @@ public class HotReloadAnalyzerTests : EditorTestHarness
     {
         WriteScript("Plain.cs", "public class Box { public static int Count; }");
 
-        var result = ScriptCompiler.CompileAll(Project);
+        ScriptCompiler.CompileResult result = ScriptCompiler.CompileAll(Project);
 
         Assert.True(result.Success, result.Errors);
         Assert.DoesNotContain(ReloadDiagnosticAnalyzer.StaticOnGenericType.Id, result.Output);

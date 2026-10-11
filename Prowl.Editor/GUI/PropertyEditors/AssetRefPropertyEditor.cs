@@ -44,7 +44,7 @@ public class AssetRefPropertyEditor : PropertyEditor
             onPick: Pick,
             acceptDrops: () =>
             {
-                var drop = DragDrop.AcceptDrop<AssetDragPayload>(paper.IsParentHovered,
+                AssetDragPayload? drop = DragDrop.AcceptDrop<AssetDragPayload>(paper.IsParentHovered,
                     dp => dp.AssetType != null && fieldType.IsAssignableFrom(dp.AssetType));
                 if (drop != null) Assign(AssetDatabase.Get(drop.AssetGuid));
             });

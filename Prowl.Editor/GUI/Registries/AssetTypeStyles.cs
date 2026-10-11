@@ -151,7 +151,7 @@ public static class AssetTypeStyles
     /// really TerrainData / a Texture / a Material).</summary>
     public static AssetTypeStyle For(string extension, string? typeLabel = null)
     {
-        if (!string.IsNullOrEmpty(extension) && _map.TryGetValue(extension, out var s))
+        if (!string.IsNullOrEmpty(extension) && _map.TryGetValue(extension, out AssetTypeStyle s))
             return s;
 
         if (!string.IsNullOrEmpty(typeLabel))

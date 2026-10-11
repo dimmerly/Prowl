@@ -7,6 +7,7 @@ using System.Text.Json.Nodes;
 using Prowl.Echo;
 using Prowl.Editor.Migration;
 using Prowl.Editor.Projects;
+using Prowl.Runtime;
 
 using Xunit;
 
@@ -143,7 +144,7 @@ public class ProjectMigrationTests : IDisposable
         WriteProwlFile("1.0-preview.5", appliedSteps: 1);
 
         Project project = Project.Open(_root);
-        var pending = ProjectMigration.PendingSteps(project);
+        List<(MigrationRelease Release, int Index)> pending = ProjectMigration.PendingSteps(project);
         Assert.Equal(1, pending[0].Index);
         Assert.All(pending, p => Assert.True(p.Index >= 1));
 
@@ -171,7 +172,7 @@ public class ProjectMigrationTests : IDisposable
 
         ProjectMigration.Migrate(Project.Open(_root));
 
-        var migrated = Serializer.Deserialize<Prowl.Runtime.GameObject>(EchoObject.ReadFromString(File.ReadAllText(prefab)))!;
+        GameObject migrated = Serializer.Deserialize<Prowl.Runtime.GameObject>(EchoObject.ReadFromString(File.ReadAllText(prefab)))!;
         Assert.True(Prowl.Vector.Float3.Distance(-oldForward, migrated.Transform.Forward) < 1e-4f);
         Assert.True(Prowl.Vector.Float3.Distance(oldUp, migrated.Transform.Up) < 1e-4f);
         Assert.Equal(lampRotation, migrated.Children[0].Transform.LocalRotation);

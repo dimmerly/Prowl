@@ -42,7 +42,7 @@ public class BlockingWaitAnalyzerTests : EditorTestHarness
     [InlineData("var t = Loader.Load(); if (!t.IsCompleted) { } int v = t.Result;")]
     public void WarnsOnEachWayOfBlockingInAComponent(string body)
     {
-        var result = Compile($"public class Comp : Prowl.Runtime.Component {{ public override void Start() {{ {body} }} }}");
+        ScriptCompiler.CompileResult result = Compile($"public class Comp : Prowl.Runtime.Component {{ public override void Start() {{ {body} }} }}");
 
         Assert.True(result.Success, result.Errors); // a warning, so the compile still succeeds
         Assert.Contains(BlockingWaitAnalyzer.BlockingWaitId, result.Output);
@@ -61,7 +61,7 @@ public class BlockingWaitAnalyzerTests : EditorTestHarness
     [InlineData("static int Local(System.Threading.Tasks.Task<int> t) => t.Result; Local(Loader.Load());")]
     public void SaysNothingAboutAReadThatCannotBlock(string body)
     {
-        var result = Compile($"public class Comp : Prowl.Runtime.Component {{ public override void Start() {{ {body} }} }}");
+        ScriptCompiler.CompileResult result = Compile($"public class Comp : Prowl.Runtime.Component {{ public override void Start() {{ {body} }} }}");
 
         Assert.True(result.Success, result.Errors);
         Assert.DoesNotContain(BlockingWaitAnalyzer.BlockingWaitId, result.Output);
@@ -71,7 +71,7 @@ public class BlockingWaitAnalyzerTests : EditorTestHarness
     [Fact]
     public void SaysNothingInAStaticMethod()
     {
-        var result = Compile("public class Comp : Prowl.Runtime.Component { static int Get() => Loader.Load().Result; }");
+        ScriptCompiler.CompileResult result = Compile("public class Comp : Prowl.Runtime.Component { static int Get() => Loader.Load().Result; }");
 
         Assert.True(result.Success, result.Errors);
         Assert.DoesNotContain(BlockingWaitAnalyzer.BlockingWaitId, result.Output);
@@ -80,7 +80,7 @@ public class BlockingWaitAnalyzerTests : EditorTestHarness
     [Fact]
     public void SaysNothingAboutAwait()
     {
-        var result = Compile("public class Comp : Prowl.Runtime.Component { public override async void Start() { int v = await Loader.Load(); } }");
+        ScriptCompiler.CompileResult result = Compile("public class Comp : Prowl.Runtime.Component { public override async void Start() { int v = await Loader.Load(); } }");
 
         Assert.True(result.Success, result.Errors);
         Assert.DoesNotContain(BlockingWaitAnalyzer.BlockingWaitId, result.Output);
@@ -90,7 +90,7 @@ public class BlockingWaitAnalyzerTests : EditorTestHarness
     [Fact]
     public void SaysNothingInsideALambda()
     {
-        var result = Compile(
+        ScriptCompiler.CompileResult result = Compile(
             "public class Comp : Prowl.Runtime.Component { public override void Start() " +
             "{ System.Threading.Tasks.Task.Run(() => Loader.Load().Result); } }");
 
@@ -101,7 +101,7 @@ public class BlockingWaitAnalyzerTests : EditorTestHarness
     [Fact]
     public void SaysNothingOutsideAComponent()
     {
-        var result = Compile("public class Plain { public int Get() => Loader.Load().Result; }");
+        ScriptCompiler.CompileResult result = Compile("public class Plain { public int Get() => Loader.Load().Result; }");
 
         Assert.True(result.Success, result.Errors);
         Assert.DoesNotContain(BlockingWaitAnalyzer.BlockingWaitId, result.Output);

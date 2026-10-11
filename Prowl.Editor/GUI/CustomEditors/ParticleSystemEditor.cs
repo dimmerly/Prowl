@@ -18,7 +18,7 @@ public class ParticleSystemComponentEditor : CustomEditor
     public override void OnGUI(Paper paper, string id, object target)
     {
         var ps = (ParticleSystemComponent)target;
-        var font = EditorTheme.DefaultFont;
+        Scribe.FontFile? font = EditorTheme.DefaultFont;
         if (font == null) return;
 
         // Pre-snapshot: captures entire component state before any widget mutates it

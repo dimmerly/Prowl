@@ -48,9 +48,9 @@ public class TerrainEditor : CustomEditor
         ActiveInstance = this;
 
         _terrain = (TerrainComponent)target;
-        var terrain = _terrain;
-        var terrainData = terrain.Data;
-        var font = EditorTheme.DefaultFont;
+        TerrainComponent terrain = _terrain;
+        TerrainData? terrainData = terrain.Data;
+        Scribe.FontFile? font = EditorTheme.DefaultFont;
         if (font == null) return;
 
         Undo.Snapshot(terrain);
@@ -149,7 +149,7 @@ public class TerrainEditor : CustomEditor
     /// <summary>Amber "Unsaved edits" banner with an inline save-to-asset button (design .tr-dirty).</summary>
     private void DrawDirtyBanner(Paper paper, string id, Prowl.Scribe.FontFile font, TerrainData data)
     {
-        var m = Origami.Current.Metrics;
+        OrigamiMetrics m = Origami.Current.Metrics;
         using (paper.Row(id).Width(UnitValue.StretchOne).Height(UnitValue.Auto).MinHeight(34)
             .Margin(m.PaddingLarge, m.PaddingLarge, m.Spacing, m.SpacingLarge)
             .Padding(9, 9, 6, 6).Rounded(m.ContainerRounding).Gap(m.SpacingMedium)
@@ -171,8 +171,8 @@ public class TerrainEditor : CustomEditor
     /// <summary>Mode-title strip: active mode's icon + name over a bottom divider (design .tr-mode-title).</summary>
     private static void DrawModeTitle(Paper paper, string id, Prowl.Scribe.FontFile font)
     {
-        var (icon, name) = ModeInfo(ActiveTab);
-        var semi = EditorTheme.FontSemiBold ?? font;
+        (IOrigamiIcon? icon, string? name) = ModeInfo(ActiveTab);
+        Scribe.FontFile semi = EditorTheme.FontSemiBold ?? font;
         using (paper.Column(id).Width(UnitValue.StretchOne).Height(UnitValue.Auto).Margin(0, 0, 0, 6).Enter())
         {
             using (paper.Row($"{id}_r").Width(UnitValue.StretchOne).Height(24)
@@ -207,7 +207,7 @@ public class TerrainEditor : CustomEditor
 
     private void DrawPaint(Paper paper, string id, Prowl.Scribe.FontFile font, TerrainData data)
     {
-        var m = Origami.Current.Metrics;
+        OrigamiMetrics m = Origami.Current.Metrics;
 
         // Clamp the persisted paint layer to the current layer set.
         if (PaintLayer >= data.LayerCount) PaintLayer = data.LayerCount - 1;
@@ -247,8 +247,8 @@ public class TerrainEditor : CustomEditor
                         paper.Box($"{id}_l{i}_bar").Width(2).Height(UnitValue.StretchOne)
                             .Margin(0, 0, UnitValue.Stretch(), UnitValue.Stretch())
                             .BackgroundColor(EditorTheme.Accent).IsNotInteractable();
-                    var albThumb = EditorAssetBackend.Instance?.GetThumbnailTexture(data.Layers[i].Albedo.AssetID);
-                    var swBox = paper.Box($"{id}_l{i}_sw").Width(16).Height(16).Rounded(m.SmallRounding)
+                    Texture2D? albThumb = EditorAssetBackend.Instance?.GetThumbnailTexture(data.Layers[i].Albedo.AssetID);
+                    ElementBuilder swBox = paper.Box($"{id}_l{i}_sw").Width(16).Height(16).Rounded(m.SmallRounding)
                         .Margin(0, 0, UnitValue.Stretch(), UnitValue.Stretch())
                         .BorderColor(EditorTheme.WithAlpha(SColor.White, 38)).BorderWidth(1).IsNotInteractable();
                     if (albThumb != null)
@@ -274,7 +274,7 @@ public class TerrainEditor : CustomEditor
         // Selected layer settings.
         if (data.LayerCount > 0)
         {
-            var sl = data.Layers[PaintLayer];
+            TerrainLayer sl = data.Layers[PaintLayer];
             EditorGUI.SectionHeader(paper, $"{id}_slh", $"Layer {PaintLayer}");
             PropertyGridUtils.DrawField(paper, $"{id}_alb", "Albedo", typeof(Texture2D), sl.Albedo,
                 v => { sl.Albedo = v as Texture2D; _isDirty = true; }, 0);
@@ -316,26 +316,26 @@ public class TerrainEditor : CustomEditor
             i => ActiveDetailIndex = i,
             i =>
             {
-                var p = data.DetailPrototypes[i];
+                DetailPrototype p = data.DetailPrototypes[i];
                 if (p.RenderMode == DetailRenderMode.Mesh)
                 {
-                    var mesh = p.Mesh;
+                    Mesh? mesh = p.Mesh;
                     return mesh.IsValid() ? mesh.Name : "Empty";
                 }
-                var tex = p.Texture;
+                Texture2D? tex = p.Texture;
                 return tex.IsValid() ? tex.Name : "Empty";
             },
             i => data.DetailPrototypes[i].RenderMode == DetailRenderMode.Mesh ? EditorIcons.Cube_I : EditorIcons.Seedling_I,
             () => { data.AddDetailPrototype(new DetailPrototype()); MarkDetailsDirty(); },
             i =>
             {
-                var p = data.DetailPrototypes[i];
+                DetailPrototype p = data.DetailPrototypes[i];
                 return p.RenderMode == DetailRenderMode.Mesh ? p.Mesh.AssetID : p.Texture.AssetID;
             });
 
         if (ActiveDetailIndex >= 0 && ActiveDetailIndex < data.DetailPrototypes.Count)
         {
-            var dp = data.DetailPrototypes[ActiveDetailIndex];
+            DetailPrototype dp = data.DetailPrototypes[ActiveDetailIndex];
             EditorGUI.SectionHeader(paper, $"{id}_sh", "Detail Settings");
 
             EditorGUI.Row(paper, $"{id}_mode", "Render Mode", () =>
@@ -408,7 +408,7 @@ public class TerrainEditor : CustomEditor
             i => ActiveTreePrototype = i,
             i =>
             {
-                var mesh = data.TreePrototypes[i].Mesh;
+                Mesh? mesh = data.TreePrototypes[i].Mesh;
                 return mesh.IsValid() ? mesh.Name : "Empty";
             },
             _ => EditorIcons.Leaf_I,
@@ -417,7 +417,7 @@ public class TerrainEditor : CustomEditor
 
         if (data.TreePrototypes.Count > 0 && ActiveTreePrototype >= 0 && ActiveTreePrototype < data.TreePrototypes.Count)
         {
-            var proto = data.TreePrototypes[ActiveTreePrototype];
+            TreePrototype proto = data.TreePrototypes[ActiveTreePrototype];
             EditorGUI.SectionHeader(paper, $"{id}_pth", "Prototype");
             PropertyGridUtils.DrawField(paper, $"{id}_mesh", "Mesh", typeof(Mesh), proto.Mesh,
                 v => { proto.Mesh = v as Mesh; _isDirty = true; }, 0);
@@ -529,7 +529,7 @@ public class TerrainEditor : CustomEditor
     /// <summary>Size / Strength / Falloff sliders (design .tr-brushrow).</summary>
     private static void DrawBrushBlock(Paper paper, string id, Prowl.Scribe.FontFile font, string title = "Brush")
     {
-        var m = Origami.Current.Metrics;
+        OrigamiMetrics m = Origami.Current.Metrics;
         EditorGUI.SectionHeader(paper, $"{id}_h", title);
         using (paper.Column($"{id}_col").Width(UnitValue.StretchOne).Height(UnitValue.Auto)
             .Padding(m.PaddingLarge, m.PaddingLarge, 0, 0).Enter())
@@ -546,8 +546,8 @@ public class TerrainEditor : CustomEditor
     /// <summary>Uppercase accent section header with right-aligned action buttons (design .tr-sec-h + .tr-sec-actions).</summary>
     private static void DrawSectionActions(Paper paper, string id, string text, Action drawActions)
     {
-        var m = Origami.Current.Metrics;
-        var semi = EditorTheme.FontSemiBold ?? EditorTheme.DefaultFont;
+        OrigamiMetrics m = Origami.Current.Metrics;
+        Scribe.FontFile? semi = EditorTheme.FontSemiBold ?? EditorTheme.DefaultFont;
         using (paper.Row(id).Width(UnitValue.StretchOne).Height(22)
             .Margin(m.PaddingLarge, m.PaddingLarge, 14, 4).Gap(4).Enter())
         {
@@ -562,7 +562,7 @@ public class TerrainEditor : CustomEditor
     /// <summary>Small 20x20 glass icon button (design .tr-mini).</summary>
     private static void MiniButton(Paper paper, string id, IOrigamiIcon icon, Action onClick, bool danger = false, bool enabled = true)
     {
-        var b = paper.Box(id).Width(20).Height(20).Rounded(Origami.Current.Metrics.SmallRounding)
+        ElementBuilder b = paper.Box(id).Width(20).Height(20).Rounded(Origami.Current.Metrics.SmallRounding)
             .Margin(0, 0, UnitValue.Stretch(), UnitValue.Stretch())
             .BackgroundColor(EditorTheme.Glass).BorderColor(EditorTheme.BorderSoft).BorderWidth(1);
         if (enabled)
@@ -576,7 +576,7 @@ public class TerrainEditor : CustomEditor
     /// <summary>Blue info pill (design .tr-hint).</summary>
     private static void HintPill(Paper paper, string id, Prowl.Scribe.FontFile font, string text)
     {
-        var m = Origami.Current.Metrics;
+        OrigamiMetrics m = Origami.Current.Metrics;
         using (paper.Row(id).Width(UnitValue.StretchOne).Height(UnitValue.Auto).MinHeight(32)
             .Margin(m.PaddingLarge, m.PaddingLarge, m.Spacing, m.Spacing)
             .Padding(10, 10, 8, 8).Rounded(m.ContainerRounding).Gap(7)
@@ -597,7 +597,7 @@ public class TerrainEditor : CustomEditor
         int selected, Action<int> onSelect, Func<int, string> getName, Func<int, IOrigamiIcon> getIcon,
         Action onAdd, Func<int, Guid> getThumbGuid)
     {
-        var m = Origami.Current.Metrics;
+        OrigamiMetrics m = Origami.Current.Metrics;
         const int cols = 4;
         int total = count + 1; // include the add tile
         int rows = (total + cols - 1) / cols;
@@ -613,7 +613,7 @@ public class TerrainEditor : CustomEditor
                     {
                         int capture = idx;
                         bool sel = selected == idx;
-                        var tint = SwatchColor(idx);
+                        SColor tint = SwatchColor(idx);
                         using (paper.Column($"{id}_t{idx}").Width(UnitValue.Stretch()).Height(UnitValue.Auto)
                             .Padding(3, 3, 6, 6).Gap(5).Rounded(m.ContainerRounding)
                             .BackgroundColor(sel ? EditorTheme.Selected : SColor.Transparent)
@@ -621,8 +621,8 @@ public class TerrainEditor : CustomEditor
                             .BorderColor(sel ? EditorTheme.WithAlpha(EditorTheme.Accent, 102) : SColor.Transparent).BorderWidth(1)
                             .OnClick(_ => onSelect(capture)).Enter())
                         {
-                            var thumb = EditorAssetBackend.Instance?.GetThumbnailTexture(getThumbGuid(idx));
-                            var thumbBox = paper.Box($"{id}_t{idx}_th").Width(46).Height(46).Rounded(m.Rounding)
+                            Texture2D? thumb = EditorAssetBackend.Instance?.GetThumbnailTexture(getThumbGuid(idx));
+                            ElementBuilder thumbBox = paper.Box($"{id}_t{idx}_th").Width(46).Height(46).Rounded(m.Rounding)
                                 .Margin(UnitValue.Stretch(), UnitValue.Stretch(), 0, 0)
                                 .BackgroundColor(EditorTheme.WithAlpha(tint, 34))
                                 .BorderColor(EditorTheme.WithAlpha(tint, 85)).BorderWidth(1)
@@ -688,7 +688,7 @@ public class TerrainEditor : CustomEditor
     /// </summary>
     private void DrawPrototypeMaterials(Paper paper, string id, string label, Mesh? mesh, List<Material?> materials)
     {
-        var m = Origami.Current.Metrics;
+        OrigamiMetrics m = Origami.Current.Metrics;
         // Left accent strip (design .tr-matlist) wrapping the per-submesh fields.
         using (paper.Row($"{id}_wrap").Width(UnitValue.StretchOne).Height(UnitValue.Auto)
             .Margin(16, m.PaddingLarge, 0, m.SpacingLarge).Enter())
@@ -876,7 +876,7 @@ public class TerrainEditor : CustomEditor
 
     private void SaveToAsset(TerrainData data)
     {
-        var db = EditorAssetBackend.Instance;
+        EditorAssetBackend? db = EditorAssetBackend.Instance;
         if (db != null && data.AssetID != Guid.Empty)
         {
             db.SaveAsset(data);
@@ -996,7 +996,7 @@ public class TerrainEditor : CustomEditor
 
         for (int i = data.Trees.Count - 1; i >= 0; i--)
         {
-            var diff = data.Trees[i].Position - uv;
+            Float2 diff = data.Trees[i].Position - uv;
             if (Float2.Dot(diff, diff) < radiusSq)
             {
                 data.Trees.RemoveAt(i);
@@ -1034,15 +1034,15 @@ public class TerrainEditor : CustomEditor
     static void OnSceneSaved()
     {
         if (Scene.Current == null) return;
-        var db = EditorAssetBackend.Instance;
+        EditorAssetBackend? db = EditorAssetBackend.Instance;
         if (db == null) return;
 
-        foreach (var go in Scene.Current.ActiveObjects)
+        foreach (GameObject go in Scene.Current.ActiveObjects)
         {
-            var terrain = go.GetComponent<Runtime.Terrain.TerrainComponent>();
+            TerrainComponent? terrain = go.GetComponent<Runtime.Terrain.TerrainComponent>();
             if (terrain == null) continue;
 
-            var terrainData = terrain.Data;
+            TerrainData? terrainData = terrain.Data;
             if (terrainData == null || terrainData.AssetID == Guid.Empty) continue;
 
             try
@@ -1066,15 +1066,15 @@ public class TerrainEditor : CustomEditor
     {
         if (Scene.Current == null) return;
 
-        foreach (var go in Scene.Current.ActiveObjects)
+        foreach (GameObject go in Scene.Current.ActiveObjects)
         {
-            var terrain = go.GetComponent<Runtime.Terrain.TerrainComponent>();
+            TerrainComponent? terrain = go.GetComponent<Runtime.Terrain.TerrainComponent>();
             if (terrain == null) continue;
 
             terrain.InvalidateDetailCache();
 
             // Re-mark GPU textures as dirty so they regenerate
-            var data = terrain.Data;
+            TerrainData? data = terrain.Data;
             if (data != null)
             {
                 data.SetHeightmapDirty();

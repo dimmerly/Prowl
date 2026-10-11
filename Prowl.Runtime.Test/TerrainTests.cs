@@ -205,7 +205,7 @@ public class TerrainTests
     [InlineData(TerrainInterpolation.Bicubic)]
     public void InterpolatedHeightFollowsTheVertexGrid(TerrainInterpolation mode)
     {
-        using var data = RampTerrain();
+        using TerrainData data = RampTerrain();
         data.Interpolation = mode;
 
         // Both filters reproduce a linear ramp exactly, so any drift here is a convention shift.
@@ -216,7 +216,7 @@ public class TerrainTests
     [Fact]
     public void HeightSamplesLandOnTheirOwnUV()
     {
-        using var data = RampTerrain();
+        using TerrainData data = RampTerrain();
         for (int x = 1; x < kRes - 1; x++)
         {
             Float2 uv = data.HeightmapToUV(x, 4);
@@ -448,7 +448,7 @@ public class TerrainTests
         for (int i = 0; i < 5; i++)
             data.AddDetailPrototype(new DetailPrototype());
 
-        var textures = data.GetDetailTextures();
+        IReadOnlyList<Texture2D> textures = data.GetDetailTextures();
 
         Assert.Equal(2, textures.Count); // 4 prototypes per texture, so 5 needs two
         Assert.Equal(32u, textures[0].Width);
@@ -459,10 +459,10 @@ public class TerrainTests
     {
         using var data = new TerrainData();
         data.ResizeDetailMaps(32);
-        var first = data.GetDetailTextures()[0];
+        Texture2D first = data.GetDetailTextures()[0];
 
         data.SetDetailDensity(0, 4, 4, 1f);
-        var second = data.GetDetailTextures()[0];
+        Texture2D second = data.GetDetailTextures()[0];
 
         Assert.NotSame(first, second);
     }
@@ -515,10 +515,10 @@ public class TerrainTests
     {
         using var data = new TerrainData();
         data.ResizeDetailMaps(64);
-        var before = data.GetDetailTextures()[0];
+        Texture2D before = data.GetDetailTextures()[0];
 
         data.ResizeDetailMaps(128);
-        var after = data.GetDetailTextures()[0];
+        Texture2D after = data.GetDetailTextures()[0];
 
         Assert.NotSame(before, after);
         Assert.Equal(128u, after.Width);
@@ -556,7 +556,7 @@ public class TerrainTests
         data.SetDetailDensity(0, 10, 20, 1f);
         data.SetDetailDensity(0, 11, 20, 0.5f);
 
-        using var clone = Serializer.Deserialize<TerrainData>(Serializer.Serialize(data))!;
+        using TerrainData clone = Serializer.Deserialize<TerrainData>(Serializer.Serialize(data))!;
 
         Assert.Equal(64, clone.DetailResolution);
         Assert.Equal(1f, clone.GetDetailDensity(0, 10, 20), 2);
@@ -573,10 +573,10 @@ public class TerrainTests
         data.ResizeDetailMaps(64);
         data.SetDetailDensity(0, 5, 5, 1f);
 
-        var echo = Serializer.Serialize(data);
+        EchoObject echo = Serializer.Serialize(data);
         echo.Get("DetailResolution")!.Value = 32;
 
-        using var clone = Serializer.Deserialize<TerrainData>(echo)!;
+        using TerrainData clone = Serializer.Deserialize<TerrainData>(echo)!;
 
         Assert.Equal(32, clone.DetailResolution);
         Assert.Equal(32 * 32, clone.DetailLayers[0].Length);
@@ -857,9 +857,9 @@ public class TerrainTests
         using var data = new TerrainData();
         data.ResizeHeightmap(33);
 
-        var echo = Serializer.Serialize(data);
+        EchoObject echo = Serializer.Serialize(data);
         echo.Get("HeightmapResolution")!.Value = 65;
-        using var clone = Serializer.Deserialize<TerrainData>(echo)!;
+        using TerrainData clone = Serializer.Deserialize<TerrainData>(echo)!;
 
         Assert.Equal(65 * 65, clone.Heights.Length);
         Assert.Equal(0f, clone.GetInterpolatedHeight(0.99f, 0.99f));
@@ -871,9 +871,9 @@ public class TerrainTests
         using var data = new TerrainData();
         data.SetHole(3, 3, 0);
 
-        var echo = Serializer.Serialize(data);
+        EchoObject echo = Serializer.Serialize(data);
         echo.Get("SplatmapResolution")!.Value = 64;
-        using var clone = Serializer.Deserialize<TerrainData>(echo)!;
+        using TerrainData clone = Serializer.Deserialize<TerrainData>(echo)!;
 
         Assert.Equal(64 * 64 * clone.LayerCount, clone.Splats.Length);
         Assert.Null(clone.Holes);
@@ -886,11 +886,11 @@ public class TerrainTests
         data.TreePrototypes.Add(new TreePrototype());
         data.Trees.Add(new TreeInstance { Tint = Color.Red });
 
-        var echo = Serializer.Serialize(data);
+        EchoObject echo = Serializer.Serialize(data);
         echo.Get("DetailPrototypes")!.List[0].Remove("HealthyColor");
         echo.Get("DetailPrototypes")!.List[0].Remove("DryColor");
         echo.Get("Trees")!.List[0].Remove("Tint");
-        using var clone = Serializer.Deserialize<TerrainData>(echo)!;
+        using TerrainData clone = Serializer.Deserialize<TerrainData>(echo)!;
 
         var defaults = new DetailPrototype();
         Assert.Equal(defaults.HealthyColor, clone.DetailPrototypes[0].HealthyColor);
@@ -909,7 +909,7 @@ public class TerrainSceneTests : RuntimeTestBase
         GameObject go = CreateGameObject("Terrain");
         scene.Add(go);
         go.Transform.Position = position;
-        var terrain = go.AddComponent<TerrainComponent>();
+        TerrainComponent terrain = go.AddComponent<TerrainComponent>();
         terrain.Data = data;
         return terrain;
     }
@@ -937,7 +937,7 @@ public class TerrainSceneTests : RuntimeTestBase
         GameObject cameraObject = CreateGameObject("Camera");
         scene.Add(cameraObject);
         cameraObject.Transform.Position = cameraPosition;
-        var camera = cameraObject.AddComponent<Camera>();
+        Camera camera = cameraObject.AddComponent<Camera>();
 
         var renderables = new List<IRenderable>();
         new TerrainMeshDetailRenderer().CollectRenderables(terrain.Data!, terrain, camera, renderables);
@@ -1062,14 +1062,14 @@ public class TerrainSceneTests : RuntimeTestBase
         data.ResizeHeightmap(33);
         TerrainComponent terrain = AddTerrain(scene, data, Float3.Zero);
         terrain.GameObject.AddComponent<TerrainCollider>();
-        var terrainRecorder = terrain.GameObject.AddComponent<TerrainContactRecorder>();
+        TerrainContactRecorder terrainRecorder = terrain.GameObject.AddComponent<TerrainContactRecorder>();
         Update(scene);
 
         GameObject box = CreateGameObject("Box");
         box.Transform.Position = new Float3(32, 1, 32);
         box.AddComponent<Rigidbody3D>();
         box.AddComponent<BoxCollider>();
-        var boxRecorder = box.AddComponent<TerrainContactRecorder>();
+        TerrainContactRecorder boxRecorder = box.AddComponent<TerrainContactRecorder>();
         scene.Add(box);
 
         Tick(scene, 120);
@@ -1087,7 +1087,7 @@ public class TerrainSceneTests : RuntimeTestBase
         var data = new TerrainData { Size = 64f, Height = 10f };
         data.ResizeHeightmap(33);
         TerrainComponent terrain = AddTerrain(scene, data, Float3.Zero);
-        var collider = terrain.GameObject.AddComponent<TerrainCollider>();
+        TerrainCollider collider = terrain.GameObject.AddComponent<TerrainCollider>();
         Update(scene);
         Assert.Equal(2f, collider.CellSize, 4);
 

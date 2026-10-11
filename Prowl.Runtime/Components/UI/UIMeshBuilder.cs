@@ -109,7 +109,7 @@ public sealed class UIMeshBuilder
 
         // Generate perimeter vertices clockwise starting at top-left arc.
         // Each corner contributes (cornerSegments + 1) points.
-        var corners = stackalloc Float2[4]
+        Float2* corners = stackalloc Float2[4]
         {
             new Float2(r.Min.X + radius, r.Min.Y + radius),  // TL arc center
             new Float2(r.Max.X - radius, r.Min.Y + radius),  // TR arc center
@@ -509,9 +509,9 @@ public sealed class UIMeshBuilder
                 }
 
                 polyCount = outCount;
-                var tmpP = inP; inP = outP; outP = tmpP;
-                var tmpU = inU; inU = outU; outU = tmpU;
-                var tmpC = inC; inC = outC; outC = tmpC;
+                Span<Float3> tmpP = inP; inP = outP; outP = tmpP;
+                Span<Float2> tmpU = inU; inU = outU; outU = tmpU;
+                Span<Color32> tmpC = inC; inC = outC; outC = tmpC;
             }
 
             if (polyCount < 3) continue;

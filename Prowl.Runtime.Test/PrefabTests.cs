@@ -41,7 +41,7 @@ public class PrefabTests : RuntimeTestBase
     public void Instantiate_StampsPrefabAssetId_AndMarksInstance()
     {
         var id = Guid.NewGuid();
-        var prefab = MakePrefab(CreateGameObject("Root"), id);
+        PrefabAsset prefab = MakePrefab(CreateGameObject("Root"), id);
 
         var instance = GameObject.InstantiateDetached(prefab);
 
@@ -53,13 +53,13 @@ public class PrefabTests : RuntimeTestBase
     [Fact]
     public void Instantiate_ClonesComponentsWithData()
     {
-        var source = CreateGameObject("Root");
+        GameObject source = CreateGameObject("Root");
         source.AddComponent<SerializableComponent>().IntField = 17;
-        var prefab = MakePrefab(source, Guid.NewGuid());
+        PrefabAsset prefab = MakePrefab(source, Guid.NewGuid());
 
         var instance = GameObject.InstantiateDetached(prefab);
 
-        var comp = instance!.GetComponent<SerializableComponent>();
+        SerializableComponent? comp = instance!.GetComponent<SerializableComponent>();
         Assert.NotNull(comp);
         Assert.Equal(17, comp!.IntField);
         Assert.Same(instance, comp.GameObject);
@@ -68,10 +68,10 @@ public class PrefabTests : RuntimeTestBase
     [Fact]
     public void Instantiate_ClonesChildren()
     {
-        var source = CreateGameObject("Root");
-        var child = CreateGameObject("Child");
+        GameObject source = CreateGameObject("Root");
+        GameObject child = CreateGameObject("Child");
         child.SetParent(source);
-        var prefab = MakePrefab(source, Guid.NewGuid());
+        PrefabAsset prefab = MakePrefab(source, Guid.NewGuid());
 
         var instance = GameObject.InstantiateDetached(prefab);
 
@@ -83,15 +83,15 @@ public class PrefabTests : RuntimeTestBase
     [Fact]
     public void Instantiate_ProducesIndependentCopies()
     {
-        var source = CreateGameObject("Root");
+        GameObject source = CreateGameObject("Root");
         source.AddComponent<SerializableComponent>().IntField = 5;
-        var sourceChild = CreateGameObject("Child");
+        GameObject sourceChild = CreateGameObject("Child");
         sourceChild.AddComponent<SerializableComponent>().IntField = 10;
         sourceChild.SetParent(source);
-        var prefab = MakePrefab(source, Guid.NewGuid());
+        PrefabAsset prefab = MakePrefab(source, Guid.NewGuid());
 
-        var a = GameObject.InstantiateDetached(prefab)!;
-        var b = GameObject.InstantiateDetached(prefab)!;
+        GameObject a = GameObject.InstantiateDetached(prefab)!;
+        GameObject b = GameObject.InstantiateDetached(prefab)!;
 
         // Mutate instance A.
         a.GetComponent<SerializableComponent>()!.IntField = 999;
@@ -106,16 +106,16 @@ public class PrefabTests : RuntimeTestBase
     [Fact]
     public void Instantiate_InTheEditor_RecordsWhereEachComponentAndChildCameFrom()
     {
-        var source = CreateGameObject("Root");
+        GameObject source = CreateGameObject("Root");
         source.AddComponent<SerializableComponent>();
         CreateGameObject("Child").SetParent(source);
-        var prefab = MakePrefab(source, Guid.NewGuid());
+        PrefabAsset prefab = MakePrefab(source, Guid.NewGuid());
 
         bool wasEditor = Application.IsEditor;
         Application.IsEditor = true;
         try
         {
-            var instance = GameObject.InstantiateDetached(prefab)!;
+            GameObject instance = GameObject.InstantiateDetached(prefab)!;
 
             // What tells a prefab-provided component from one the instance adds later. Position is
             // not used, so reordering cannot reclassify anything.
@@ -129,17 +129,17 @@ public class PrefabTests : RuntimeTestBase
     [Fact]
     public void Instantiate_OutsideTheEditor_RecordsOnlyWhichPrefabItIs()
     {
-        var source = CreateGameObject("Root");
+        GameObject source = CreateGameObject("Root");
         source.AddComponent<SerializableComponent>();
         CreateGameObject("Child").SetParent(source);
         Guid assetId = Guid.NewGuid();
-        var prefab = MakePrefab(source, assetId);
+        PrefabAsset prefab = MakePrefab(source, assetId);
 
         bool wasEditor = Application.IsEditor;
         Application.IsEditor = false;
         try
         {
-            var instance = GameObject.InstantiateDetached(prefab)!;
+            GameObject instance = GameObject.InstantiateDetached(prefab)!;
 
             // Which prefab an object came from is what a game can see and act on. Which prefab object
             // it was is bookkeeping for matching overrides, which nothing outside the editor does, and
@@ -158,16 +158,16 @@ public class PrefabTests : RuntimeTestBase
     [Fact]
     public void Instantiate_OutsideTheEditor_StillGivesEveryInstanceItsOwnIdentifiers()
     {
-        var source = CreateGameObject("Root");
+        GameObject source = CreateGameObject("Root");
         source.AddComponent<SerializableComponent>();
-        var prefab = MakePrefab(source, Guid.NewGuid());
+        PrefabAsset prefab = MakePrefab(source, Guid.NewGuid());
 
         bool wasEditor = Application.IsEditor;
         Application.IsEditor = false;
         try
         {
-            var a = GameObject.InstantiateDetached(prefab)!;
-            var b = GameObject.InstantiateDetached(prefab)!;
+            GameObject a = GameObject.InstantiateDetached(prefab)!;
+            GameObject b = GameObject.InstantiateDetached(prefab)!;
 
             // Skipping the bookkeeping must not mean two spawns wearing one identity.
             Assert.NotEqual(a.Identifier, b.Identifier);
@@ -180,11 +180,11 @@ public class PrefabTests : RuntimeTestBase
     [Fact]
     public void Instantiate_ComponentAddedAfterwardsHasNoSource()
     {
-        var source = CreateGameObject("Root");
+        GameObject source = CreateGameObject("Root");
         source.AddComponent<SerializableComponent>();
-        var prefab = MakePrefab(source, Guid.NewGuid());
+        PrefabAsset prefab = MakePrefab(source, Guid.NewGuid());
 
-        var instance = GameObject.InstantiateDetached(prefab)!;
+        GameObject instance = GameObject.InstantiateDetached(prefab)!;
         Component added = instance.AddComponent<SerializableComponent>();
 
         Assert.Equal(Guid.Empty, instance.GetComponentSourceIdentifier(added));
@@ -194,10 +194,10 @@ public class PrefabTests : RuntimeTestBase
     public void Instantiate_StampsChildrenWithSamePrefabId()
     {
         var id = Guid.NewGuid();
-        var source = CreateGameObject("Root");
-        var child = CreateGameObject("Child");
+        GameObject source = CreateGameObject("Root");
+        GameObject child = CreateGameObject("Child");
         child.SetParent(source);
-        var prefab = MakePrefab(source, id);
+        PrefabAsset prefab = MakePrefab(source, id);
 
         var instance = GameObject.InstantiateDetached(prefab);
 
@@ -216,18 +216,18 @@ public class PrefabTests : RuntimeTestBase
         var outerId = Guid.NewGuid();
         var nestedId = Guid.NewGuid();
 
-        var source = CreateGameObject("Root");
-        var normal = CreateGameObject("Normal");
+        GameObject source = CreateGameObject("Root");
+        GameObject normal = CreateGameObject("Normal");
         normal.SetParent(source);
-        var nested = CreateGameObject("Nested");
+        GameObject nested = CreateGameObject("Nested");
         nested.PrefabAssetId = nestedId;
         nested.SetParent(source);
 
-        var prefab = MakePrefab(source, outerId);
+        PrefabAsset prefab = MakePrefab(source, outerId);
         var instance = GameObject.InstantiateDetached(prefab);
 
-        var normalClone = instance!.Children.Single(c => c.Name == "Normal");
-        var nestedClone = instance.Children.Single(c => c.Name == "Nested");
+        GameObject normalClone = instance!.Children.Single(c => c.Name == "Normal");
+        GameObject nestedClone = instance.Children.Single(c => c.Name == "Nested");
 
         Assert.Equal(outerId, instance.PrefabAssetId);
         Assert.Equal(outerId, normalClone.PrefabAssetId);
@@ -237,10 +237,10 @@ public class PrefabTests : RuntimeTestBase
     [Fact]
     public void Instantiate_InstanceCanBeAddedToScene()
     {
-        var prefab = MakePrefab(CreateGameObject("Root"), Guid.NewGuid());
-        var scene = CreateScene(enable: true);
+        PrefabAsset prefab = MakePrefab(CreateGameObject("Root"), Guid.NewGuid());
+        Scene scene = CreateScene(enable: true);
 
-        var instance = GameObject.InstantiateDetached(prefab)!;
+        GameObject instance = GameObject.InstantiateDetached(prefab)!;
         scene.Add(instance);
 
         Assert.Same(scene, instance.Scene);
@@ -254,7 +254,7 @@ public class PrefabTests : RuntimeTestBase
     [Fact]
     public void IsPrefabInstance_ReflectsPrefabAssetId()
     {
-        var go = CreateGameObject();
+        GameObject go = CreateGameObject();
         Assert.False(go.IsPrefabInstance);
 
         go.PrefabAssetId = Guid.NewGuid();
@@ -267,7 +267,7 @@ public class PrefabTests : RuntimeTestBase
     [Fact]
     public void AnOrdinaryGameObjectCarriesNoPrefabLink()
     {
-        var go = CreateGameObject();
+        GameObject go = CreateGameObject();
 
         // The whole reason the data sits behind a reference: the overwhelming majority of objects in a
         // scene are not prefab instances and should cost one null field.
@@ -279,7 +279,7 @@ public class PrefabTests : RuntimeTestBase
     [Fact]
     public void AskingWhetherThereAreOverridesDoesNotAllocateALink()
     {
-        var go = CreateGameObject();
+        GameObject go = CreateGameObject();
 
         // PrefabOverrides itself is the mutable accessor, so reading it does create the link. The
         // cheap query is what callers sweeping a scene are meant to use, and it has to stay cheap or
@@ -291,7 +291,7 @@ public class PrefabTests : RuntimeTestBase
     [Fact]
     public void PrefabOverrides_IsNeverNull()
     {
-        var go = CreateGameObject();
+        GameObject go = CreateGameObject();
         Assert.NotNull(go.PrefabOverrides);
         Assert.Empty(go.PrefabOverrides);
     }
@@ -299,7 +299,7 @@ public class PrefabTests : RuntimeTestBase
     [Fact]
     public void ClearPrefabData_ResetsAllTracking()
     {
-        var go = CreateGameObject();
+        GameObject go = CreateGameObject();
         go.PrefabAssetId = Guid.NewGuid();
         go.PrefabOverrides.Add(new PropertyOverride { Path = $"{Guid.NewGuid()}/$/TagIndex" });
 
@@ -314,12 +314,12 @@ public class PrefabTests : RuntimeTestBase
     public void ClearPrefabDataRecursive_ClearsDescendants()
     {
         var id = Guid.NewGuid();
-        var root = CreateGameObject("Root");
-        var child = CreateGameObject("Child");
-        var grandchild = CreateGameObject("Grandchild");
+        GameObject root = CreateGameObject("Root");
+        GameObject child = CreateGameObject("Child");
+        GameObject grandchild = CreateGameObject("Grandchild");
         child.SetParent(root);
         grandchild.SetParent(child);
-        foreach (var go in new[] { root, child, grandchild })
+        foreach (GameObject? go in new[] { root, child, grandchild })
             go.PrefabAssetId = id;
 
         root.ClearPrefabDataRecursive();
@@ -333,8 +333,8 @@ public class PrefabTests : RuntimeTestBase
     public void ClearPrefabData_NonRecursive_LeavesChildren()
     {
         var id = Guid.NewGuid();
-        var root = CreateGameObject("Root");
-        var child = CreateGameObject("Child");
+        GameObject root = CreateGameObject("Root");
+        GameObject child = CreateGameObject("Child");
         child.SetParent(root);
         root.PrefabAssetId = id;
         child.PrefabAssetId = id;
@@ -354,7 +354,7 @@ public class PrefabTests : RuntimeTestBase
     {
         var id = Guid.NewGuid();
         var sourceId = Guid.NewGuid();
-        var go = CreateGameObject("Instance");
+        GameObject go = CreateGameObject("Instance");
         go.PrefabAssetId = id;
         go.PrefabOverrides.Add(new PropertyOverride
         {
@@ -362,7 +362,7 @@ public class PrefabTests : RuntimeTestBase
             Value = Serializer.Serialize(5)
         });
 
-        var clone = RoundTrip(go);
+        GameObject clone = RoundTrip(go);
 
         Assert.Equal(id, clone.PrefabAssetId);
         Assert.Single(clone.PrefabOverrides);
@@ -375,9 +375,9 @@ public class PrefabTests : RuntimeTestBase
     [Fact]
     public void NonPrefab_RoundTrip_CarriesNoPrefabData()
     {
-        var go = CreateGameObject("Plain");
+        GameObject go = CreateGameObject("Plain");
 
-        var clone = RoundTrip(go);
+        GameObject clone = RoundTrip(go);
 
         Assert.False(clone.IsPrefabInstance);
         Assert.Equal(Guid.Empty, clone.PrefabAssetId);

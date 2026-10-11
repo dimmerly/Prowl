@@ -10,6 +10,7 @@ using Prowl.Editor.Theming;
 using Prowl.OrigamiUI;
 using Prowl.PaperUI;
 using Prowl.Runtime;
+using Prowl.Runtime.Resources;
 
 namespace Prowl.Editor.Inspector;
 
@@ -80,7 +81,7 @@ public class NavMeshSurfaceEditor : CustomEditor
             else if (!bake.Start(surface)) Runtime.Debug.LogWarning("[Navigation] Another navmesh is already baking.");
         }).Show();
 
-        var data = surface.NavMeshData;
+        NavMeshData? data = surface.NavMeshData;
         if (data.IsValid() && data!.HasTiles)
         {
             Origami.Button(paper, $"{id}_clear", $"{EditorIcons.Trash}  Clear", () => NavMeshBakeService.Clear(surface)).Show();
@@ -104,7 +105,7 @@ public class NavMeshSurfaceEditor : CustomEditor
     /// surfaces are excluded: they have no registration to lose.</summary>
     private static NavMeshSurface? FindRival(NavMeshSurface surface)
     {
-        var scene = surface.Scene;
+        Scene? scene = surface.Scene;
         if (!scene.IsValid() || !surface.EnabledInHierarchy) return null;
 
         int key = RegistrationKey(surface);

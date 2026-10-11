@@ -7,6 +7,7 @@ using Jitter2.Collision.Shapes;
 using Jitter2.LinearMath;
 
 using Prowl.Echo;
+using Prowl.Runtime.Resources;
 using Prowl.Vector;
 
 namespace Prowl.Runtime;
@@ -115,7 +116,7 @@ public abstract class Collider : Component
     /// </summary>
     private void AttachToStatic()
     {
-        var scene = GameObject.IsValid() ? GameObject.Scene : null;
+        Scene? scene = GameObject.IsValid() ? GameObject.Scene : null;
         if (scene.IsNotValid() || scene.Physics == null)
             return;
 
@@ -215,7 +216,7 @@ public abstract class Collider : Component
 
         if (_attachedShapes != null)
         {
-            var scene = GameObject.IsValid() ? GameObject.Scene : null;
+            Scene? scene = GameObject.IsValid() ? GameObject.Scene : null;
             _registeredWorld = scene.IsValid() ? scene.Physics : null;
 
             foreach (RigidBodyShape shape in _attachedShapes)
@@ -320,7 +321,7 @@ public abstract class Collider : Component
             return shapes;
 
         Float4x4 linear = Float4x4.CreateTRS(Float3.Zero, rotation, scale);
-        var jTranslation = translation.ToJitter();
+        JVector jTranslation = translation.ToJitter();
         var jLinear = new JMatrix(
             linear[0, 0], linear[0, 1], linear[0, 2],
             linear[1, 0], linear[1, 1], linear[1, 2],

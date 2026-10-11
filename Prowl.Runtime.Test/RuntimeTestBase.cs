@@ -155,7 +155,7 @@ public abstract class RuntimeTestBase : IDisposable
 
         GameObject surfaceGo = CreateGameObject("NavMeshSurface");
         scene.Add(surfaceGo);
-        var surface = surfaceGo.AddComponent<NavMeshSurface>();
+        NavMeshSurface surface = surfaceGo.AddComponent<NavMeshSurface>();
         ApplyFastBakeSettings(surface);
         if (bake && !surface.BuildNavMesh())
             throw new InvalidOperationException("CreateFloorScene: the floor bake produced no walkable geometry.");
@@ -181,7 +181,7 @@ public abstract class RuntimeTestBase : IDisposable
         // registry for the next one. Immediate teardown: no frame follows to drain a destroy queue.
         Scene.DestroyPreserved(immediate: true);
 
-        foreach (var scene in _scenes)
+        foreach (Scene scene in _scenes)
         {
             if (scene.IsDisposed) continue;
             if (scene.IsActive)
@@ -190,7 +190,7 @@ public abstract class RuntimeTestBase : IDisposable
         }
         _scenes.Clear();
 
-        foreach (var go in _gameObjects)
+        foreach (GameObject go in _gameObjects)
         {
             if (!go.IsDisposed)
                 go.Dispose();

@@ -62,12 +62,12 @@ public class SceneLoadResilienceTests : RuntimeTestBase
     [Fact]
     public void ThrowingOnBeforeSerialize_KeepsEveryObject()
     {
-        var scene = CreateScene();
+        Scene scene = CreateScene();
         for (int i = 0; i < 5; i++)
             scene.Add(CreateGameObject("GO" + i));
         Find(scene, "GO3").AddComponent<ResilienceThrowsOnSave>();
 
-        var loaded = Load(Save(scene));
+        Scene loaded = Load(Save(scene));
 
         Assert.Equal(5, loaded.AllObjects.Count());
     }
@@ -75,19 +75,19 @@ public class SceneLoadResilienceTests : RuntimeTestBase
     [Fact]
     public void ThrowerReachedThroughAReference_KeepsTheObjectItsChildrenAndTheReference()
     {
-        var scene = CreateScene();
-        var a = CreateGameObject("A");
-        var b = CreateGameObject("B");
-        var kid = CreateGameObject("Kid");
+        Scene scene = CreateScene();
+        GameObject a = CreateGameObject("A");
+        GameObject b = CreateGameObject("B");
+        GameObject kid = CreateGameObject("Kid");
         kid.SetParent(b);
         a.AddComponent<ResilienceLinker>().Target = b;
         b.AddComponent<ResilienceThrowsOnSave>();
         scene.Add(a);
         scene.Add(b);
 
-        var loaded = Load(Save(scene));
+        Scene loaded = Load(Save(scene));
 
-        var loadedB = Find(loaded, "B");
+        GameObject loadedB = Find(loaded, "B");
         Assert.Same(loadedB, Find(loaded, "A").GetComponent<ResilienceLinker>()!.Target);
         Assert.Same(loadedB, Find(loaded, "Kid").Parent);
     }
@@ -95,17 +95,17 @@ public class SceneLoadResilienceTests : RuntimeTestBase
     [Fact]
     public void RecoveredScriptThrowingOnAfterDeserialize_KeepsTheHierarchy()
     {
-        var scene = CreateScene();
-        var root = CreateGameObject("Root");
-        var mid = CreateGameObject("Mid");
-        var leaf = CreateGameObject("Leaf");
+        Scene scene = CreateScene();
+        GameObject root = CreateGameObject("Root");
+        GameObject mid = CreateGameObject("Mid");
+        GameObject leaf = CreateGameObject("Leaf");
         mid.SetParent(root);
         leaf.SetParent(mid);
         leaf.AddComponent<ResilienceThrowsOnLoad>();
         scene.Add(root);
 
         string savedWhileMissing = Save(Load(Save(scene).Replace(nameof(ResilienceThrowsOnLoad), Ghost)));
-        var loaded = Load(savedWhileMissing.Replace(Ghost, nameof(ResilienceThrowsOnLoad)));
+        Scene loaded = Load(savedWhileMissing.Replace(Ghost, nameof(ResilienceThrowsOnLoad)));
 
         Assert.Same(Find(loaded, "Root"), Find(loaded, "Mid").Parent);
         Assert.Same(Find(loaded, "Mid"), Find(loaded, "Leaf").Parent);
@@ -114,16 +114,16 @@ public class SceneLoadResilienceTests : RuntimeTestBase
     [Fact]
     public void MissingScript_SurvivesSavesWhileMissing_AndKeepsItsDataWhenBack()
     {
-        var scene = CreateScene();
-        var a = CreateGameObject("A");
+        Scene scene = CreateScene();
+        GameObject a = CreateGameObject("A");
         a.AddComponent<ResilienceLinker>().Value = 42;
-        var marker = a.AddComponent<ResilienceMarker>();
+        ResilienceMarker marker = a.AddComponent<ResilienceMarker>();
         scene.Add(a);
 
         string whileMissing = Save(scene).Replace(nameof(ResilienceLinker), Ghost);
         string savedTwice = Save(Load(Save(Load(whileMissing))));
-        var stillMissing = Load(savedTwice);
-        var restored = Load(Save(stillMissing).Replace(Ghost, nameof(ResilienceLinker)));
+        Scene stillMissing = Load(savedTwice);
+        Scene restored = Load(Save(stillMissing).Replace(Ghost, nameof(ResilienceLinker)));
 
         Assert.IsType<MissingComponent>(Find(stillMissing, "A").GetComponents<Component>().First());
         Assert.Equal(marker.Identifier, Find(stillMissing, "A").GetComponent<ResilienceMarker>()!.Identifier);
@@ -133,18 +133,18 @@ public class SceneLoadResilienceTests : RuntimeTestBase
     [Fact]
     public void MissingScriptHoldingAnotherObjectsDefinition_KeepsItsIdentifiersAndAddsItToTheScene()
     {
-        var scene = CreateScene();
-        var a = CreateGameObject("A");
-        var b = CreateGameObject("B");
-        var marker = b.AddComponent<ResilienceMarker>();
+        Scene scene = CreateScene();
+        GameObject a = CreateGameObject("A");
+        GameObject b = CreateGameObject("B");
+        ResilienceMarker marker = b.AddComponent<ResilienceMarker>();
         a.AddComponent<ResilienceLinker>().Target = b;
         scene.Add(a);
         scene.Add(b);
 
-        var loaded = Load(Save(scene).Replace(nameof(ResilienceLinker), Ghost));
+        Scene loaded = Load(Save(scene).Replace(nameof(ResilienceLinker), Ghost));
 
-        var loadedB = Find(loaded, "B");
-        var loadedMarker = loadedB.GetComponent<ResilienceMarker>()!;
+        GameObject loadedB = Find(loaded, "B");
+        ResilienceMarker loadedMarker = loadedB.GetComponent<ResilienceMarker>()!;
         Assert.Equal(b.Identifier, loadedB.Identifier);
         Assert.Equal(marker.Identifier, loadedMarker.Identifier);
         Assert.True(loadedMarker.AddedToScene);
@@ -162,27 +162,27 @@ public class SceneLoadResilienceTests : RuntimeTestBase
     [InlineData(false)]
     public void RecoveredScript_KeepsItsReferencesToTheScene(bool missingScriptWrittenFirst)
     {
-        var scene = CreateScene();
-        var a = CreateGameObject("A");
-        var b = CreateGameObject("B");
-        var kid = CreateGameObject("Kid");
+        Scene scene = CreateScene();
+        GameObject a = CreateGameObject("A");
+        GameObject b = CreateGameObject("B");
+        GameObject kid = CreateGameObject("Kid");
         kid.SetParent(b);
-        var marker = b.AddComponent<ResilienceMarker>();
+        ResilienceMarker marker = b.AddComponent<ResilienceMarker>();
         var owned = new ResilienceOwned { Text = "owned" };
         owned.Self = owned;
-        var linker = a.AddComponent<ResilienceLinker>();
+        ResilienceLinker linker = a.AddComponent<ResilienceLinker>();
         linker.Target = kid;
         linker.Other = marker;
         linker.Owned = owned;
         linker.Value = 7;
-        var c = CreateGameObject("C");
+        GameObject c = CreateGameObject("C");
         c.AddComponent<ResiliencePointer>().Other = linker;
-        foreach (var go in missingScriptWrittenFirst ? new[] { a, b, c } : new[] { c, b, a })
+        foreach (GameObject? go in missingScriptWrittenFirst ? new[] { a, b, c } : new[] { c, b, a })
             scene.Add(go);
 
-        var loaded = MissingForTwoSaves(scene);
+        Scene loaded = MissingForTwoSaves(scene);
 
-        var loadedLinker = Find(loaded, "A").GetComponent<ResilienceLinker>()!;
+        ResilienceLinker loadedLinker = Find(loaded, "A").GetComponent<ResilienceLinker>()!;
         Assert.Equal(7, loadedLinker.Value);
         Assert.Same(Find(loaded, "Kid"), loadedLinker.Target);
         Assert.Same(Find(loaded, "B").GetComponent<ResilienceMarker>(), loadedLinker.Other);
@@ -198,11 +198,11 @@ public class SceneLoadResilienceTests : RuntimeTestBase
     [Fact]
     public void MissingScript_WritesEveryFieldAPlainComponentWrites()
     {
-        var plain = CreateGameObject("Plain").AddComponent<ResilienceEmpty>();
+        ResilienceEmpty plain = CreateGameObject("Plain").AddComponent<ResilienceEmpty>();
         var missing = new MissingComponent { ComponentData = EchoObject.NewCompound() };
 
-        var plainKeys = Serializer.Serialize(typeof(Component), plain).GetNames().Where(k => k != "$type");
-        var missingKeys = Serializer.Serialize(typeof(Component), missing).GetNames();
+        IEnumerable<string> plainKeys = Serializer.Serialize(typeof(Component), plain).GetNames().Where(k => k != "$type");
+        IEnumerable<string> missingKeys = Serializer.Serialize(typeof(Component), missing).GetNames();
 
         Assert.Empty(plainKeys.Except(missingKeys));
     }
@@ -210,14 +210,14 @@ public class SceneLoadResilienceTests : RuntimeTestBase
     [Fact]
     public void DuplicatedObjectBlock_KeepsTheOtherIdentifiers()
     {
-        var scene = CreateScene();
+        Scene scene = CreateScene();
         var objects = Enumerable.Range(0, 3).Select(i => CreateGameObject("GO" + i)).ToList();
         objects.ForEach(scene.Add);
 
-        var echo = Serializer.Serialize(typeof(object), scene);
-        var array = echo["serializeObj"]["array"];
+        EchoObject echo = Serializer.Serialize(typeof(object), scene);
+        EchoObject array = echo["serializeObj"]["array"];
         array.ListAdd(EchoObject.ReadFromString(array[0].WriteToString()));
-        var loaded = Load(echo.WriteToString());
+        Scene loaded = Load(echo.WriteToString());
 
         Assert.All(objects, o => Assert.Equal(o.Identifier, Find(loaded, o.Name).Identifier));
     }

@@ -5,6 +5,7 @@ using System;
 
 using Jitter2.LinearMath;
 
+using Prowl.Runtime.Resources;
 using Prowl.Runtime.Terrain;
 using Prowl.Vector;
 
@@ -64,7 +65,7 @@ public class TerrainCollider : Component, ITerrainHeightProvider
         _localToWorld = Transform.LocalToWorldMatrix;
         _worldToLocal = Transform.WorldToLocalMatrix;
 
-        var data = _terrain.IsValid() ? _terrain.Data : null;
+        TerrainData? data = _terrain.IsValid() ? _terrain.Data : null;
         if (data.IsNotValid() || data.HeightmapResolution < 2)
         {
             _cellSize = 0.0f;
@@ -101,7 +102,7 @@ public class TerrainCollider : Component, ITerrainHeightProvider
     public bool TryGetHeight(int x, int z, out float height)
     {
         height = 0;
-        var data = _terrain.IsValid() ? _terrain.Data : null;
+        TerrainData? data = _terrain.IsValid() ? _terrain.Data : null;
         if (data == null || data.Heights == null) return false;
 
         int res = data.HeightmapResolution;
@@ -119,7 +120,7 @@ public class TerrainCollider : Component, ITerrainHeightProvider
 
     public bool IsCellHole(int x, int z)
     {
-        var data = _terrain.IsValid() ? _terrain.Data : null;
+        TerrainData? data = _terrain.IsValid() ? _terrain.Data : null;
         return data != null && data.IsCellHole(x, z);
     }
 
@@ -158,17 +159,17 @@ public class TerrainCollider : Component, ITerrainHeightProvider
 
     private void RegisterWithPhysics()
     {
-        var scene = GameObject.IsValid() ? GameObject.Scene : null;
+        Scene? scene = GameObject.IsValid() ? GameObject.Scene : null;
         if (_isRegistered || scene.IsNotValid() || scene.Physics == null || _terrain == null)
             return;
 
         // Collider registration happens once: block-load the terrain data (prioritized) so a
         // transient null from async streaming doesn't leave the terrain without collision.
         if (_terrain.Data is { } stored) stored.Load();
-        var terrainData = _terrain.Data;
+        TerrainData? terrainData = _terrain.Data;
         if (terrainData == null) return;
 
-        var physics = GameObject.Scene.Physics;
+        PhysicsWorld physics = GameObject.Scene.Physics;
 
         RefreshPlacement();
 
@@ -193,7 +194,7 @@ public class TerrainCollider : Component, ITerrainHeightProvider
             return;
         }
 
-        var data = _terrain.IsValid() ? _terrain.Data : null;
+        TerrainData? data = _terrain.IsValid() ? _terrain.Data : null;
         if (data != _registeredData || data.IsNotValid() || data.HeightmapResolution != _registeredResolution)
         {
             UnregisterFromPhysics();
@@ -212,7 +213,7 @@ public class TerrainCollider : Component, ITerrainHeightProvider
         _registeredHeight = data.Height;
         RefreshPlacement();
 
-        var scene = GameObject.IsValid() ? GameObject.Scene : null;
+        Scene? scene = GameObject.IsValid() ? GameObject.Scene : null;
         if (scene.IsValid()) scene.Physics?.RefreshTerrain(_heightmapProxy);
     }
 
@@ -226,11 +227,11 @@ public class TerrainCollider : Component, ITerrainHeightProvider
 
     private void UnregisterFromPhysics()
     {
-        var scene = GameObject.IsValid() ? GameObject.Scene : null;
+        Scene? scene = GameObject.IsValid() ? GameObject.Scene : null;
         if (!_isRegistered || scene.IsNotValid() || scene.Physics == null)
             return;
 
-        var physics = GameObject.Scene.Physics;
+        PhysicsWorld physics = GameObject.Scene.Physics;
         physics.UnregisterTerrain(_heightmapProxy, _collisionFilter);
 
         _heightmapProxy = null;
@@ -244,7 +245,7 @@ public class TerrainCollider : Component, ITerrainHeightProvider
     /// </summary>
     public float GetWorldHeight(float worldX, float worldZ)
     {
-        var data = _terrain.IsValid() ? _terrain.Data : null;
+        TerrainData? data = _terrain.IsValid() ? _terrain.Data : null;
         if (data == null) return 0;
 
         Float3 localPos = Transform.InverseTransformPoint(new Float3(worldX, 0, worldZ));

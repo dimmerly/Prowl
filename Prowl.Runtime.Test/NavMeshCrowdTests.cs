@@ -21,7 +21,7 @@ public class NavMeshCrowdTests : RuntimeTestBase
         GameObject go = CreateGameObject("Agent");
         scene.Add(go);
         go.Transform.Position = position;
-        var agent = go.AddComponent<NavMeshAgent>();
+        NavMeshAgent agent = go.AddComponent<NavMeshAgent>();
         agent.Speed = 6f;
         agent.Acceleration = 100f;
         agent.Separation = false;       // lone-agent tests; separation adds noise
@@ -280,7 +280,7 @@ public class NavMeshCrowdTests : RuntimeTestBase
             {
                 GameObject surfaceGo = CreateGameObject($"Surface{typeId}");
                 scene.Add(surfaceGo);
-                var surface = surfaceGo.AddComponent<NavMeshSurface>();
+                NavMeshSurface surface = surfaceGo.AddComponent<NavMeshSurface>();
                 ApplyFastBakeSettings(surface);
                 surface.AgentTypeId = typeId;
                 Assert.True(surface.BuildNavMesh());
@@ -340,7 +340,7 @@ public class NavMeshCrowdTests : RuntimeTestBase
             {
                 GameObject surfaceGo = CreateGameObject($"Surface{typeId}");
                 scene.Add(surfaceGo);
-                var surface = surfaceGo.AddComponent<NavMeshSurface>();
+                NavMeshSurface surface = surfaceGo.AddComponent<NavMeshSurface>();
                 ApplyFastBakeSettings(surface);
                 surface.AgentTypeId = typeId;
                 Assert.True(surface.BuildNavMesh());
@@ -352,8 +352,8 @@ public class NavMeshCrowdTests : RuntimeTestBase
             scout.AgentTypeId = 3;
             Tick(scene, 2);
 
-            var humanoidCrowd = scene.Navigation.GetNativeCrowd(0);
-            var scoutCrowd = scene.Navigation.GetNativeCrowd(3);
+            DtCrowd? humanoidCrowd = scene.Navigation.GetNativeCrowd(0);
+            DtCrowd? scoutCrowd = scene.Navigation.GetNativeCrowd(3);
             scout.SetDestination(new Float3(8, 0, 8));
             humanoid.SetDestination(new Float3(8, 0, -8));
             Tick(scene, 30);
@@ -407,7 +407,7 @@ public class NavMeshCrowdTests : RuntimeTestBase
             {
                 GameObject surfaceGo = CreateGameObject($"Surface{typeId}");
                 scene.Add(surfaceGo);
-                var surface = surfaceGo.AddComponent<NavMeshSurface>();
+                NavMeshSurface surface = surfaceGo.AddComponent<NavMeshSurface>();
                 ApplyFastBakeSettings(surface);
                 surface.AgentTypeId = typeId;
                 Assert.True(surface.BuildNavMesh());
@@ -417,7 +417,7 @@ public class NavMeshCrowdTests : RuntimeTestBase
             NavMeshAgent agent = AddAgent(scene, new Float3(0, 0, 0));
             Tick(scene, 2);
             Assert.True(agent.IsOnNavMesh);
-            var typeZeroCrowd = scene.Navigation.GetNativeCrowd(0)!;
+            DtCrowd typeZeroCrowd = scene.Navigation.GetNativeCrowd(0)!;
             Assert.Single(typeZeroCrowd.GetActiveAgents());
 
             // The race: gameplay retypes the agent, then a navmesh event (here a partial tile
@@ -470,7 +470,7 @@ public class NavMeshCrowdTests : RuntimeTestBase
         Scene scene = CreateScene(enable: true);
         GameObject surfaceGo = CreateGameObject("NavMeshSurface");
         scene.Add(surfaceGo);
-        var surface = surfaceGo.AddComponent<NavMeshSurface>();
+        NavMeshSurface surface = surfaceGo.AddComponent<NavMeshSurface>();
         ApplyFastBakeSettings(surface);
 
         NavMeshData? data = NavMeshBuilder.Build(surface.ResolveBuildSettings(),
@@ -566,7 +566,7 @@ public class NavMeshCrowdTests : RuntimeTestBase
 
         GameObject surfaceGo = CreateGameObject("NavMeshSurface");
         scene.Add(surfaceGo);
-        var surface = surfaceGo.AddComponent<NavMeshSurface>();
+        NavMeshSurface surface = surfaceGo.AddComponent<NavMeshSurface>();
         ApplyFastBakeSettings(surface);
         Assert.True(surface.BuildNavMesh());
         return (scene, surface);

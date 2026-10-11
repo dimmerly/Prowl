@@ -68,7 +68,7 @@ public class AnimatorTests : RuntimeTestBase
         GameObject root = BuildHierarchy(CreateGameObject("Rig"));
         scene.Add(root);
 
-        var animator = root.AddComponent<Animator>();
+        Animator animator = root.AddComponent<Animator>();
         animator.Avatar = avatar;
         animator.Clips = new List<AnimationClip> { SlideClip(skeleton, avatar, distance, rootMotionEnd) };
 
@@ -216,7 +216,7 @@ public class AnimatorTests : RuntimeTestBase
     public void LateUpdateSeesThePoseAlreadyWritten()
     {
         (Scene scene, _, GameObject root) = Setup();
-        var observer = root.AddComponent<SpineObserver>();
+        SpineObserver observer = root.AddComponent<SpineObserver>();
         observer.Spine = Spine(root);
 
         Update(scene, 31);

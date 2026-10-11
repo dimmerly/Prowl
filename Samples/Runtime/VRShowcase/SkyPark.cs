@@ -78,10 +78,10 @@ public sealed partial class VRShowcaseGame
             total += volume;
         }
 
-        var body = go.AddComponent<Rigidbody3D>();
+        Rigidbody3D body = go.AddComponent<Rigidbody3D>();
         body.Mass = mass;
         body.CenterOfMassOverride = weighted / total;
-        var grabbable = go.AddComponent<Grabbable>();
+        Grabbable grabbable = go.AddComponent<Grabbable>();
         grabbable.Points.AddRange(grips);
         grabbable.Size = SocketSize.Medium;
         Add(go);
@@ -109,7 +109,7 @@ public sealed partial class VRShowcaseGame
         ], GrabPoint.At(Float3.Zero));
         // The flame points back from the nozzle and stretches with the throttle.
         GameObject fire = Decoration(rocket.GameObject, "Flame", Mesh.CreateCube(new Float3(0.06f, 0.06f, 0.3f)), flame, new Float3(0f, 0f, -0.38f));
-        var thruster = rocket.AddComponent<Thruster>();
+        Thruster thruster = rocket.AddComponent<Thruster>();
         thruster.Flame = fire.Transform;
         fire.Transform.LocalScale = Float3.Zero;
     }
@@ -126,7 +126,7 @@ public sealed partial class VRShowcaseGame
             (new Float3(0.8f, 0.02f, 0.55f), new Float3(0f, 0.07f, 0.08f), skin),
         ], GrabPoint.At(Float3.Zero));
         wing.Size = SocketSize.Large;
-        var surface = wing.AddComponent<AeroSurface>();
+        AeroSurface surface = wing.AddComponent<AeroSurface>();
         surface.Center = new Float3(0f, 0.07f, 0.08f);
         surface.Area = 0.44f;
         surface.Strength = 640f;
@@ -145,7 +145,7 @@ public sealed partial class VRShowcaseGame
         lamp.SetParent(torch.GameObject);
         lamp.Transform.LocalPosition = new Float3(0f, 0f, 0.17f);
         lamp.Transform.LocalRotation = Quaternion.Identity;
-        var light = lamp.AddComponent<SpotLight>();
+        SpotLight light = lamp.AddComponent<SpotLight>();
         light.Range = 30f;
         light.SpotAngle = 40f;
         light.InnerSpotAngle = 25f;
@@ -164,10 +164,10 @@ public sealed partial class VRShowcaseGame
         body.GetComponent<Grabbable>()!.Size = SocketSize.Small;
         Decoration(body.GameObject, "Fuse", Mesh.CreateCube(new Float3(0.015f, 0.04f, 0.015f)), glow, new Float3(0f, radius + 0.015f, 0f));
 
-        var blast = Model("Blast", Mesh.CreateSphere(0.5f, 12, 16), Unlit(new Color(1f, 0.6f, 0.15f, 1f)), at);
+        GameObject blast = Model("Blast", Mesh.CreateSphere(0.5f, 12, 16), Unlit(new Color(1f, 0.6f, 0.15f, 1f)), at);
         blast.Transform.LocalScale = Float3.Zero;
         Add(blast);
-        var bomb = body.AddComponent<Bomb>();
+        Bomb bomb = body.AddComponent<Bomb>();
         bomb.Player = _rig.Body;
         bomb.Visual = body.GetComponent<MeshRenderer>()!;
         bomb.Blast = blast.Transform;
@@ -232,17 +232,17 @@ public sealed partial class VRShowcaseGame
         GameObject go = Model("Button", Mesh.CreateCube(new Float3(0.055f, 0.055f, 0.03f)), cap, at + rotation * new Float3(0f, 0f, 0.035f));
         go.Transform.Rotation = rotation;
         go.AddComponent<BoxCollider>().Size = new Float3(0.055f, 0.055f, 0.03f);
-        var body = go.AddComponent<Rigidbody3D>();
+        Rigidbody3D body = go.AddComponent<Rigidbody3D>();
         body.Mass = 0.1f;
         body.AffectedByGravity = false;
-        var slide = go.AddComponent<PrismaticJoint>();
+        PrismaticJoint slide = go.AddComponent<PrismaticJoint>();
         slide.Axis = Float3.UnitZ;
         slide.Pinned = true;
         slide.MinDistance = -0.018f;
         slide.MaxDistance = 0f;
         slide.HasMotor = true;
         slide.MotorMaxForce = 6f;
-        var button = go.AddComponent<PushButton>();
+        PushButton button = go.AddComponent<PushButton>();
         button.Slide = slide;
         button.Travel = 0.018f;
         Add(go);
@@ -300,7 +300,7 @@ public sealed partial class VRShowcaseGame
         arm.Transform.LocalPosition = Float3.Zero;
         Decoration(arm, "Shaft", Mesh.CreateCube(new Float3(0.03f, 0.35f, 0.03f)), metal, new Float3(0f, 0.175f, 0f));
         Decoration(arm, "Knob", Mesh.CreateSphere(0.045f, 10, 14), knob, new Float3(0f, 0.35f, 0f));
-        var lever = pivot.AddComponent<Lever>();
+        Lever lever = pivot.AddComponent<Lever>();
         lever.Arm = arm.Transform;
         lever.Changed += SetTimeOfDay;
         Add(pivot);
@@ -351,13 +351,13 @@ public sealed partial class VRShowcaseGame
 
         var cable = new GameObject("Zip Line");
         cable.Transform.Position = high;
-        var anchor = cable.AddComponent<Rigidbody3D>();
+        Rigidbody3D anchor = cable.AddComponent<Rigidbody3D>();
         anchor.MotionType = Jitter2.Dynamics.MotionType.Static;
         cable.AddComponent<SphereCollider>().Radius = 0.01f;
-        var zip = cable.AddComponent<ZipLine>();
+        ZipLine zip = cable.AddComponent<ZipLine>();
         zip.Top = high;
         zip.Bottom = low;
-        var line = cable.AddComponent<LineRenderer>();
+        LineRenderer line = cable.AddComponent<LineRenderer>();
         line.Material = new Material(Shader.LoadDefault(DefaultShader.Line));
         line.StartWidth = line.EndWidth = 0.02f;
         line.StartColor = line.EndColor = new Color(0.2f, 0.2f, 0.22f, 1f);

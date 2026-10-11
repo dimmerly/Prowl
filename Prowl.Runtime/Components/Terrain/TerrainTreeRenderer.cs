@@ -32,8 +32,8 @@ internal class TerrainTreeRenderer
 
         for (int protoIdx = 0; protoIdx < data.TreePrototypes.Count; protoIdx++)
         {
-            var proto = data.TreePrototypes[protoIdx];
-            var mesh = proto.Mesh;
+            TreePrototype proto = data.TreePrototypes[protoIdx];
+            Mesh? mesh = proto.Mesh;
             if (mesh == null) continue;
 
             if (s_defaultStandardMat.IsNotValid()) s_defaultStandardMat = Material.LoadDefault(DefaultMaterial.Standard);
@@ -42,7 +42,7 @@ internal class TerrainTreeRenderer
             _colors.Clear();
             _instanceDataList.Clear();
 
-            foreach (var tree in data.Trees)
+            foreach (TreeInstance tree in data.Trees)
             {
                 if (tree.PrototypeIndex != protoIdx) continue;
                 if (data.IsHoleAt(tree.Position.X, tree.Position.Y)) continue;
@@ -62,7 +62,7 @@ internal class TerrainTreeRenderer
                     * Float4x4.FromAxisAngle(new Float3(0, 1, 0), tree.Rotation)
                     * Float4x4.CreateScale(new Float3(tree.WidthScale, tree.HeightScale, tree.WidthScale));
 
-                var worldTransform = terrain.Transform.LocalToWorldMatrix * localTransform;
+                Float4x4 worldTransform = terrain.Transform.LocalToWorldMatrix * localTransform;
                 var color = new Float4(tree.Tint.R, tree.Tint.G, tree.Tint.B, tree.Tint.A);
                 _transforms.Add(worldTransform);
                 _colors.Add(color);
@@ -75,7 +75,7 @@ internal class TerrainTreeRenderer
             float meshExtent = mesh.bounds.Size.X > 0 ? MathF.Max(mesh.bounds.Size.X, mesh.bounds.Size.Z) * 0.5f : 5f;
             float meshHeight = mesh.bounds.Size.Y > 0 ? mesh.bounds.Size.Y : 20f;
             Float3 bmin = new(float.MaxValue), bmax = new(float.MinValue);
-            foreach (var tr in _transforms)
+            foreach (Float4x4 tr in _transforms)
             {
                 float tx = tr[0, 3], ty = tr[1, 3], tz = tr[2, 3];
                 bmin = new Float3(MathF.Min(bmin.X, tx - meshExtent), MathF.Min(bmin.Y, ty), MathF.Min(bmin.Z, tz - meshExtent));
@@ -85,7 +85,7 @@ internal class TerrainTreeRenderer
             // One instanced draw per submesh so trees with multi-material meshes render each
             // submesh with its own material.
             int subMeshCount = mesh.SubMeshCount;
-            var instanceArr = _instanceDataList.ToArray();
+            InstanceData[] instanceArr = _instanceDataList.ToArray();
             Float3 sortPos = (bmin + bmax) * 0.5f;
             AABB worldBounds = new AABB(bmin, bmax);
 

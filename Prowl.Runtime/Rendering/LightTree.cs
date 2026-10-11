@@ -164,8 +164,8 @@ internal sealed class LightTreeBuilder
 
         EnsureCapacity(count);
 
-        var rootBounds = LightBounds.Empty;
-        var rootCentroids = LightBounds.Empty;
+        LightBounds rootBounds = LightBounds.Empty;
+        LightBounds rootCentroids = LightBounds.Empty;
         for (int i = 0; i < count; i++)
         {
             Vector4 sphere = spheres[i];
@@ -337,8 +337,8 @@ internal sealed class LightTreeBuilder
             float scale = Bins / span;
             Bin(first, count, axis, min, scale, wide, binBounds, binCounts, binCentroids);
 
-            var right = LightBounds.Empty;
-            var rightCentroid = LightBounds.Empty;
+            LightBounds right = LightBounds.Empty;
+            LightBounds rightCentroid = LightBounds.Empty;
             int rightCount = 0;
             for (int b = Bins - 1; b > 0; b--)
             {
@@ -350,8 +350,8 @@ internal sealed class LightTreeBuilder
                 suffixCount[b] = rightCount;
             }
 
-            var left = LightBounds.Empty;
-            var leftCentroid = LightBounds.Empty;
+            LightBounds left = LightBounds.Empty;
+            LightBounds leftCentroid = LightBounds.Empty;
             int leftCount = 0;
             for (int b = 0; b < Bins - 1; b++)
             {
@@ -631,7 +631,7 @@ internal sealed class LightTreeBuilder
     {
         if (count <= _maxLeafSize || depth >= MaxBinaryDepth)
         {
-            var leaf = LightBounds.Empty;
+            LightBounds leaf = LightBounds.Empty;
             for (int i = first; i < first + count; i++)
                 leaf.Add(_primBounds[_indices[i]]);
             _nodes[nodeIndex] = new BinaryNode { Bounds = leaf, LeftFirst = first, Count = count };
@@ -657,7 +657,7 @@ internal sealed class LightTreeBuilder
             rightBounds = BuildMorton(left + 1, split + 1, count - leftCount, depth + 1);
         }
 
-        var bounds = leftBounds;
+        LightBounds bounds = leftBounds;
         bounds.Add(rightBounds);
         _nodes[nodeIndex] = new BinaryNode { Bounds = bounds, LeftFirst = left, Count = 0 };
         return bounds;

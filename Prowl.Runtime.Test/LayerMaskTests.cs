@@ -11,7 +11,7 @@ public class LayerMaskTests
     [Fact]
     public void SetHasRemoveLayer()
     {
-        var m = LayerMask.Nothing;
+        LayerMask m = LayerMask.Nothing;
         Assert.False(m.HasLayer(3));
 
         m.SetLayer(3);
@@ -49,7 +49,7 @@ public class LayerMaskTests
     {
         // Isolates the top bit: Everything (all bits set) can't distinguish a signed 1<<31 shift bug,
         // but setting only layer 31 and checking it directly does (the regression this guards).
-        var m = LayerMask.Nothing;
+        LayerMask m = LayerMask.Nothing;
         m.SetLayer(31);
 
         Assert.True(m.HasLayer(31));
@@ -60,10 +60,10 @@ public class LayerMaskTests
     [Fact]
     public void OrCombinesMasks()
     {
-        var a = LayerMask.Nothing; a.SetLayer(1);
-        var b = LayerMask.Nothing; b.SetLayer(2);
+        LayerMask a = LayerMask.Nothing; a.SetLayer(1);
+        LayerMask b = LayerMask.Nothing; b.SetLayer(2);
 
-        var or = a | b;
+        LayerMask or = a | b;
 
         Assert.True(or.HasLayer(1));
         Assert.True(or.HasLayer(2));
@@ -73,9 +73,9 @@ public class LayerMaskTests
     [Fact]
     public void AndFiltersMasks()
     {
-        var a = LayerMask.Nothing; a.SetLayer(1);
+        LayerMask a = LayerMask.Nothing; a.SetLayer(1);
 
-        var and = LayerMask.Everything & a;
+        LayerMask and = LayerMask.Everything & a;
 
         Assert.True(and.HasLayer(1));
         Assert.False(and.HasLayer(2));
@@ -84,7 +84,7 @@ public class LayerMaskTests
     [Fact]
     public void Clear_ResetsToZero()
     {
-        var m = LayerMask.Nothing;
+        LayerMask m = LayerMask.Nothing;
         m.SetLayer(5);
         m.SetLayer(9);
 
@@ -96,7 +96,7 @@ public class LayerMaskTests
     [Fact]
     public void SettingSameLayerTwice_IsIdempotent()
     {
-        var m = LayerMask.Nothing;
+        LayerMask m = LayerMask.Nothing;
         m.SetLayer(7);
         uint once = m.Mask;
         m.SetLayer(7);

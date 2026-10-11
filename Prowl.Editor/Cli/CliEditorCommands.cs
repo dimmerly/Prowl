@@ -24,6 +24,9 @@ using Prowl.Runtime;
 using Prowl.Runtime.Rendering.Shaders;
 using Prowl.Runtime.Resources;
 using Prowl.Vector;
+using Prowl.Echo;
+using Prowl.Runtime.Rendering;
+using Prowl.Editor.Build;
 
 namespace Prowl.Editor;
 
@@ -58,7 +61,7 @@ public static class LogHistory
             long first = Math.Max(since, Math.Max(1, s_next - Capacity));
             for (long seq = first; seq < s_next && result.Count < limit; seq++)
             {
-                var entry = s_ring[seq % Capacity];
+                Entry entry = s_ring[seq % Capacity];
                 if (entry.Seq == seq && filter(entry.Severity)) result.Add(entry);
             }
         }
@@ -74,7 +77,7 @@ public static class LogHistory
             long oldest = Math.Max(1, s_next - Capacity);
             for (long seq = s_next - 1; seq >= oldest && result.Count < limit; seq--)
             {
-                var entry = s_ring[seq % Capacity];
+                Entry entry = s_ring[seq % Capacity];
                 if (entry.Seq == seq && filter(entry.Severity)) result.Add(entry);
             }
         }
@@ -127,7 +130,7 @@ public static class CliEditorCommands
             _ => _ => true,
         };
         limit = Math.Clamp(limit, 1, 1000);
-        var entries = since > 0 ? LogHistory.Since(since, filter, limit) : LogHistory.Latest(filter, limit);
+        List<LogHistory.Entry> entries = since > 0 ? LogHistory.Since(since, filter, limit) : LogHistory.Latest(filter, limit);
         return new
         {
             nextSeq = since > 0 && entries.Count == limit ? entries[^1].Seq + 1 : LogHistory.NextSeq,
@@ -169,7 +172,7 @@ public static class CliEditorCommands
             if (!wait) return new { queued = true };
 
             // A compile already running finishes first, then the one asked for here runs.
-            var report = await finished.Task;
+            ScriptAssemblyManager.CompileReport report = await finished.Task;
             while (ScriptAssemblyManager.IsCompiling)
             {
                 finished = new TaskCompletionSource<ScriptAssemblyManager.CompileReport>(TaskCreationOptions.RunContinuationsAsynchronously);
@@ -287,7 +290,7 @@ public static class CliEditorCommands
 
     private static JsonObject Node(GameObject go, int depth, bool components)
     {
-        var node = CliRefs.Summary(go);
+        JsonObject node = CliRefs.Summary(go);
         if (!go.Enabled) node["active"] = false;
         if (go.IsPrefabInstance) node["prefab"] = true;
         if (components) node["components"] = new JsonArray(go.GetComponents().Select(c => (JsonNode)JsonValue.Create(c.GetType().Name)).ToArray());
@@ -304,9 +307,9 @@ public static class CliEditorCommands
         [CliArg("refs", "Comma separated refs")] string refs = "",
         [CliArg("frame", "Frame the selection in the scene view")] bool frame = false)
     {
-        var targets = refs.Trim().Length == 0 ? [] : CliRefs.ResolveGameObjects(refs);
+        List<GameObject> targets = refs.Trim().Length == 0 ? [] : CliRefs.ResolveGameObjects(refs);
         Selection.Clear();
-        foreach (var go in targets) Selection.AddToSelection(go);
+        foreach (GameObject go in targets) Selection.AddToSelection(go);
         if (targets.Count > 0) Selection.Ping(targets[0].Identifier);
         if (frame && targets.Count > 0) SceneViewPanel.ActiveCamera?.FocusSelection();
         return targets.Select(CliRefs.Summary).ToList();
@@ -327,7 +330,7 @@ public static class CliEditorCommands
         [CliArg("active", "For active: whether the objects are active")] bool active = true,
         [CliArg("index", "Sibling index for create and parent")] int index = -1)
     {
-        var scene = CliRefs.Scene;
+        Scene scene = CliRefs.Scene;
         switch (action)
         {
             case GoAction.Create:
@@ -357,25 +360,25 @@ public static class CliEditorCommands
 
             case GoAction.Delete:
             {
-                var targets = Targets(target);
+                    List<GameObject> targets = Targets(target);
                 if (PrefabUtility.NeedsBreaking(targets))
                     throw new CliException("Deleting this would change a prefab instance's structure. Run 'prefab --action unpack' on the instance first.");
                 var summaries = targets.Select(CliRefs.Summary).ToList();
-                CliEdit.Run("Delete", () => { foreach (var go in targets) if (go.IsValid()) HierarchyPanel.DeleteOneGameObject(go); });
+                CliEdit.Run("Delete", () => { foreach (GameObject go in targets) if (go.IsValid()) HierarchyPanel.DeleteOneGameObject(go); });
                 return new { deleted = summaries };
             }
 
             case GoAction.Duplicate:
                 return CliEdit.Run("Duplicate", () =>
                 {
-                    var copies = GameObjectClipboard.Duplicate(Targets(target));
-                    foreach (var copy in copies) Undo.RegisterCreatedObject(copy, "CLI: Duplicate");
+                    List<GameObject> copies = GameObjectClipboard.Duplicate(Targets(target));
+                    foreach (GameObject copy in copies) Undo.RegisterCreatedObject(copy, "CLI: Duplicate");
                     return copies.Select(CliRefs.Summary).ToList();
                 });
 
             case GoAction.Rename:
             {
-                var go = CliRefs.ResolveGameObject(Require(target, "target"));
+                    GameObject go = CliRefs.ResolveGameObject(Require(target, "target"));
                 string newName = Require(name, "name");
                 CliEdit.Run("Rename", () =>
                 {
@@ -387,11 +390,11 @@ public static class CliEditorCommands
 
             case GoAction.Parent:
             {
-                var targets = Targets(target);
+                    List<GameObject> targets = Targets(target);
                 GameObject? newParent = parent.Length == 0 || parent == "/" ? null : CliRefs.ResolveGameObject(parent);
                 if (PrefabUtility.NeedsBreaking(targets))
                     throw new CliException("Moving this would change a prefab instance's structure. Run 'prefab --action unpack' on the instance first.");
-                foreach (var go in targets)
+                foreach (GameObject go in targets)
                     if (newParent != null && GameObject.IsChildOrSameTransform(newParent, go))
                         throw new CliException($"{CliRefs.PathOf(newParent)} is {go.Name} or inside it.");
 
@@ -405,19 +408,19 @@ public static class CliEditorCommands
 
             case GoAction.Active:
             {
-                var targets = Targets(target);
+                    List<GameObject> targets = Targets(target);
                 CliEdit.Run("Active", () => Undo.ApplyGameObjectChanges(targets, "CLI: Active", g => g.Enabled, (g, v) => g.Enabled = v, active));
                 return targets.Select(CliRefs.Summary).ToList();
             }
 
             case GoAction.Transform:
             {
-                var go = CliRefs.ResolveGameObject(Require(target, "target"));
-                var before = (go.Transform.LocalPosition, go.Transform.LocalRotation, go.Transform.LocalScale);
+                    GameObject go = CliRefs.ResolveGameObject(Require(target, "target"));
+                    (Float3 LocalPosition, Quaternion LocalRotation, Float3 LocalScale) before = (go.Transform.LocalPosition, go.Transform.LocalRotation, go.Transform.LocalScale);
                 CliEdit.Run("Transform", () =>
                 {
                     ApplyTransform(go, position, rotation, scale, world);
-                    var after = (go.Transform.LocalPosition, go.Transform.LocalRotation, go.Transform.LocalScale);
+                    (Float3 LocalPosition, Quaternion LocalRotation, Float3 LocalScale) after = (go.Transform.LocalPosition, go.Transform.LocalRotation, go.Transform.LocalScale);
                     Undo.RecordGameObjectChange(go, "CLI: Transform", before, after, (g, v) =>
                     {
                         g.Transform.LocalPosition = v.Item1;
@@ -441,12 +444,12 @@ public static class CliEditorCommands
     {
         if (position.Length > 0)
         {
-            var p = CliRefs.ParseFloat3(position, "position");
+            Float3 p = CliRefs.ParseFloat3(position, "position");
             if (world) go.Transform.Position = p; else go.Transform.LocalPosition = p;
         }
         if (rotation.Length > 0)
         {
-            var r = CliRefs.ParseFloat3(rotation, "rotation");
+            Float3 r = CliRefs.ParseFloat3(rotation, "rotation");
             if (world) go.Transform.EulerAngles = r; else go.Transform.LocalEulerAngles = r;
         }
         if (scale.Length > 0) go.Transform.LocalScale = CliRefs.ParseFloat3(scale, "scale");
@@ -454,7 +457,7 @@ public static class CliEditorCommands
 
     private static JsonObject Described(GameObject go)
     {
-        var node = CliRefs.Summary(go);
+        JsonObject node = CliRefs.Summary(go);
         node["position"] = CliRefs.Json(go.Transform.Position);
         node["localPosition"] = CliRefs.Json(go.Transform.LocalPosition);
         node["localRotation"] = CliRefs.Json(go.Transform.LocalEulerAngles);
@@ -476,7 +479,7 @@ public static class CliEditorCommands
 
         void Move(GameObject g, Guid parentId, int siblingIndex)
         {
-            var p = parentId == Guid.Empty ? null : Undo.FindGO(parentId);
+            GameObject? p = parentId == Guid.Empty ? null : Undo.FindGO(parentId);
             g.SetParent(p!, keepWorld);
             if (siblingIndex < 0) return;
             if (p.IsValid()) g.SetSiblingIndex(siblingIndex);
@@ -498,12 +501,12 @@ public static class CliEditorCommands
 
             case ComponentAction.Add:
             {
-                var go = CliRefs.ResolveGameObject(target);
+                    GameObject go = CliRefs.ResolveGameObject(target);
                 Type componentType = CliRefs.FindType(Require(type, "type"), typeof(Component));
-                var fieldValues = ParseValues(values);
+                    List<(string Path, string Json)> fieldValues = ParseValues(values);
                 return CliEdit.Run("Add Component", () =>
                 {
-                    var added = go.AddComponent(componentType);
+                    Component added = go.AddComponent(componentType);
                     if (added.IsNotValid()) throw new CliException($"{componentType.Name} could not be added to {go.Name}. See the logs.");
                     try
                     {
@@ -515,7 +518,7 @@ public static class CliEditorCommands
                         throw;
                     }
                     RecordAdd(go, added);
-                    var summary = CliRefs.Summary(added);
+                    JsonObject summary = CliRefs.Summary(added);
                     summary["fields"] = CliRefs.GetFields(added, "");
                     return summary;
                 });
@@ -526,7 +529,7 @@ public static class CliEditorCommands
                 if (CliRefs.Resolve(target) is not Component component) throw new CliException("Give a component ref, for example /Player:Rigidbody3D.");
                 if (!component.CanDestroy()) throw new CliException($"{component.GetType().Name} can not be removed. Something else needs it.");
                 if (PrefabUtility.NeedsBreaking(component)) throw new CliException("This component comes from a prefab. Run 'prefab --action unpack' on the instance first.");
-                var summary = CliRefs.Summary(component);
+                    JsonObject summary = CliRefs.Summary(component);
                 CliEdit.Run("Remove Component", () => GameObjectInspector.RemoveComponentWithUndo(component));
                 return new { removed = summary };
             }
@@ -539,7 +542,7 @@ public static class CliEditorCommands
     {
         Guid goId = go.Identifier, compId = added.Identifier;
         Type compType = added.GetType();
-        var serialized = Echo.Serializer.Serialize(compType, added);
+        EchoObject serialized = Echo.Serializer.Serialize(compType, added);
         Undo.RegisterAction("CLI: Add Component",
             undo: () => { if (Undo.FindGO(goId) is { } g && g.GetComponentByIdentifier(compId) is { } c) g.RemoveComponent(c); },
             redo: () =>
@@ -572,7 +575,7 @@ public static class CliEditorCommands
         if (resolved is GameObject go)
         {
             if (path.Length > 0) throw new CliException("A GameObject has no field paths. Address a component, for example /Player:CharacterController.");
-            var node = Described(go);
+            JsonObject node = Described(go);
             node["active"] = go.Enabled;
             node["tag"] = go.Tag;
             node["layer"] = go.LayerIndex;
@@ -582,9 +585,9 @@ public static class CliEditorCommands
             return node;
         }
 
-        var fields = CliRefs.GetFields(resolved, path);
+        JsonNode? fields = CliRefs.GetFields(resolved, path);
         if (path.Length > 0) return fields;
-        var result = CliRefs.Summary(resolved);
+        JsonObject result = CliRefs.Summary(resolved);
         result["fields"] = fields;
         return result;
     }
@@ -596,7 +599,7 @@ public static class CliEditorCommands
         [CliArg("value", "JSON value. A bare word is a string, a ref sets a reference")] string value = "",
         [CliArg("values", "JSON object of field path to value, to set several at once")] string values = "")
     {
-        var list = ParseValues(values);
+        List<(string Path, string Json)> list = ParseValues(values);
         if (path.Length > 0) list.Insert(0, (path, value));
         if (list.Count == 0) throw new CliException("Give --path and --value, or --values with a JSON object.");
         return CliRefs.SetFields(CliRefs.Resolve(target), list);
@@ -657,7 +660,7 @@ public static class CliEditorCommands
 
     private static void ListMenu(IReadOnlyList<AppMenuItem> items, string prefix, List<object> output)
     {
-        foreach (var item in items)
+        foreach (AppMenuItem item in items)
         {
             if (item.IsSeparator) continue;
             string path = prefix + Label(item);
@@ -684,7 +687,7 @@ public static class CliEditorCommands
         [CliArg("overwrite", "Allow create to replace an existing file")] bool overwrite = false,
         [CliArg("confirm", "Required to delete, since deleting removes the file")] bool confirm = false)
     {
-        var assets = CliRefs.Assets;
+        EditorAssetBackend assets = CliRefs.Assets;
         switch (action)
         {
             case AssetAction.Find:
@@ -706,7 +709,7 @@ public static class CliEditorCommands
             case AssetAction.Info:
             {
                 Guid guid = CliRefs.ResolveAssetGuid(Require(path, "path"));
-                var entry = assets.GetEntry(guid);
+                    AssetEntry? entry = assets.GetEntry(guid);
                 if (entry == null) return CliRefs.AssetSummary(guid, AssetDatabase.GetAssetType(guid));
                 return new
                 {
@@ -738,7 +741,7 @@ public static class CliEditorCommands
                     return new { created = relative, type = "Folder" };
                 }
 
-                var entry = EditorRegistries.AssetMenuEntries.FirstOrDefault(e => e.Type.Name.Equals(Require(type, "type"), StringComparison.OrdinalIgnoreCase)
+                    AssetMenuEntry entry = EditorRegistries.AssetMenuEntries.FirstOrDefault(e => e.Type.Name.Equals(Require(type, "type"), StringComparison.OrdinalIgnoreCase)
                                                                                || e.Name.Equals(type, StringComparison.OrdinalIgnoreCase));
                 if (entry.Type == null)
                     throw new CliException($"No creatable asset type '{type}'. Run 'asset --action types' to list them.");
@@ -815,7 +818,7 @@ public static class CliEditorCommands
         string absolute = Path.Combine(Project.Current!.AssetsPath, relative);
         if (File.Exists(absolute)) throw new CliException($"'{relative}' already exists. Edit it directly instead.");
 
-        var tpl = EditorRegistries.ScriptTemplates.FirstOrDefault(t => t.Name.Equals(template, StringComparison.OrdinalIgnoreCase)
+        ScriptTemplate tpl = EditorRegistries.ScriptTemplates.FirstOrDefault(t => t.Name.Equals(template, StringComparison.OrdinalIgnoreCase)
                                                                        || t.Name.Replace(" ", "").Equals(template, StringComparison.OrdinalIgnoreCase))
             ?? throw new CliException($"No script template '{template}'. Templates: {string.Join(", ", EditorRegistries.ScriptTemplates.Select(t => t.Name))}.");
 
@@ -842,7 +845,7 @@ public static class CliEditorCommands
         [CliArg("path", "Prefab path relative to Assets, for create")] string path = "",
         [CliArg("overwrite", "Replace an existing prefab on create")] bool overwrite = false)
     {
-        var go = CliRefs.ResolveGameObject(target);
+        GameObject go = CliRefs.ResolveGameObject(target);
         GameObject Root() => PrefabUtility.GetPrefabInstanceRoot(go) is { } root && root.IsValid()
             ? root : throw new CliException($"{CliRefs.PathOf(go)} is not part of a prefab instance.");
 
@@ -860,19 +863,19 @@ public static class CliEditorCommands
             }
             case PrefabAction.Apply:
             {
-                var root = Root();
+                    GameObject root = Root();
                 Guid rootId = root.Identifier;
                 int overrides = PrefabUtility.CountOverrides(root);
-                var additions = PrefabUtility.DescribeAdditions(root);
+                    List<PrefabUtility.AdditionDescription> additions = PrefabUtility.DescribeAdditions(root);
                 CliEdit.Run("Apply Prefab", () =>
                 {
                     PrefabUtility.ApplyOverrides(root);
                     // Each apply refreshes the instance, which can replace its objects, so the root is found again every time.
-                    foreach (var addition in additions)
+                    foreach (PrefabUtility.AdditionDescription addition in additions)
                         if (Undo.FindGO(rootId) is { } live && live.IsValid())
                             PrefabUtility.ApplyAddition(live, addition);
                 });
-                var applied = Undo.FindGO(rootId);
+                    GameObject? applied = Undo.FindGO(rootId);
                 return new
                 {
                     instance = applied.IsValid() ? CliRefs.Summary(applied!) : null,
@@ -882,19 +885,19 @@ public static class CliEditorCommands
             }
             case PrefabAction.Revert:
             {
-                var root = Root();
+                    GameObject root = Root();
                 CliEdit.Run("Revert Prefab", () => PrefabUtility.RevertOverrides(root));
                 return CliRefs.Summary(root);
             }
             case PrefabAction.Unpack:
             {
-                var root = Root();
+                    GameObject root = Root();
                 CliEdit.Run("Unpack Prefab", () => PrefabUtility.UnpackPrefabInstance(root));
                 return CliRefs.Summary(root);
             }
             case PrefabAction.Overrides:
             {
-                var root = Root();
+                    GameObject root = Root();
                 return new
                 {
                     overrides = PrefabUtility.DescribeOverrides(root)
@@ -917,7 +920,7 @@ public static class CliEditorCommands
         [CliArg("shader", "Shader asset ref to switch to")] string shader = "")
     {
         if (CliRefs.Resolve(target) is not Material material) throw new CliException($"'{target}' is not a material.");
-        var changes = ParseValues(values);
+        List<(string Path, string Json)> changes = ParseValues(values);
 
         if (changes.Count > 0 || shader.Length > 0)
         {
@@ -925,12 +928,12 @@ public static class CliEditorCommands
             if (shader.Length > 0)
                 newShader = CliRefs.ResolveAsset(shader) is Shader s ? s : throw new CliException($"'{shader}' is not a shader.");
             Shader? effective = newShader.IsValid() ? newShader : material.Shader;
-            var properties = effective.IsValid() ? effective.Properties.ToDictionary(p => p.Name) : [];
+            Dictionary<string, ShaderProperty> properties = effective.IsValid() ? effective.Properties.ToDictionary(p => p.Name) : [];
 
             var writes = new List<Action>();
-            foreach (var (name, json) in changes)
+            foreach ((string? name, string? json) in changes)
             {
-                if (!properties.TryGetValue(name, out var property))
+                if (!properties.TryGetValue(name, out ShaderProperty? property))
                     throw new CliException($"The shader has no property '{name}'. It has: {string.Join(", ", properties.Keys)}.");
                 writes.Add(MaterialWrite(material, property, json));
             }
@@ -938,7 +941,7 @@ public static class CliEditorCommands
             CliEdit.EditAsset(material, "Material", () =>
             {
                 if (newShader.IsValid()) material.Shader = newShader;
-                foreach (var write in writes) write();
+                foreach (Action write in writes) write();
             });
         }
 
@@ -979,7 +982,7 @@ public static class CliEditorCommands
 
     private static JsonNode? MaterialValue(Material material, ShaderProperty property)
     {
-        var state = material._properties;
+        PropertyState state = material._properties;
         string name = property.Name;
         bool set = material.IsOverridden(name);
         object? value = property.PropertyType switch
@@ -1093,19 +1096,19 @@ public static class CliEditorCommands
             case InputAction.Key:
                 var parsed = CliRefs.SplitList(Require(keys, "keys")).Select(k => Enum.TryParse(k, ignoreCase: true, out KeyCode code)
                     ? code : throw new CliException($"No key named '{k}'. Names follow the KeyCode enum, such as W, Space, ShiftLeft, Number1, Enter.")).ToList();
-                foreach (var code in parsed) SimulatedInput.Press(code, hold);
+                foreach (KeyCode code in parsed) SimulatedInput.Press(code, hold);
                 break;
             case InputAction.Mouse:
                 Int2? at = null;
                 if (position.Length > 0)
                 {
-                    var xy = JsonNode.Parse(position) as JsonArray ?? throw new CliException("--position expects [x, y].");
+                    JsonArray xy = JsonNode.Parse(position) as JsonArray ?? throw new CliException("--position expects [x, y].");
                     at = new Int2((int)xy[0]!.GetValue<float>(), (int)xy[1]!.GetValue<float>());
                 }
                 SimulatedInput.PressButton(button, hold, at);
                 break;
             case InputAction.Look:
-                var look = JsonNode.Parse(Require(delta, "delta")) as JsonArray ?? throw new CliException("--delta expects [x, y].");
+                JsonArray look = JsonNode.Parse(Require(delta, "delta")) as JsonArray ?? throw new CliException("--delta expects [x, y].");
                 SimulatedInput.Look(new Float2(look[0]!.GetValue<float>(), look[1]!.GetValue<float>()), hold);
                 break;
             case InputAction.Clear:
@@ -1173,11 +1176,11 @@ public static class CliEditorCommands
         [CliArg("wait", "Wait for the build to finish")] bool wait = true)
     {
         string path = Path.GetFullPath(Path.IsPathRooted(@out) ? @out : Path.Combine(Project.Current!.RootPath, @out));
-        var progress = Build.ProjectBuilder.StartBuildAsync(run, path) ?? throw new CliException("The build did not start. See the logs.");
+        BuildProgress progress = Build.ProjectBuilder.StartBuildAsync(run, path) ?? throw new CliException("The build did not start. See the logs.");
         if (!wait) return new { started = true, output = path };
 
         await CliServer.WaitUntil(() => progress.IsComplete, TimeSpan.FromHours(2));
-        var result = progress.Result;
+        BuildResult? result = progress.Result;
         return new
         {
             ok = result?.Success ?? false,
@@ -1215,15 +1218,15 @@ public static class CliEditorCommands
         void Change()
         {
             var ids = new Dictionary<string, string>(StringComparer.Ordinal);
-            foreach (var op in list)
+            foreach (JsonNode? op in list)
                 results.Add(CliGraph.Apply(graph, op as JsonObject ?? throw new CliException("Each op must be a JSON object."), ids));
             graph.Invalidate();
         }
 
         // Dry run on a copy first, so a bad op fails before anything changes.
-        var copy = Echo.Serializer.Deserialize<AnimationGraph>(Echo.Serializer.Serialize(typeof(AnimationGraph), graph))!;
+        AnimationGraph copy = Echo.Serializer.Deserialize<AnimationGraph>(Echo.Serializer.Serialize(typeof(AnimationGraph), graph))!;
         var dryIds = new Dictionary<string, string>(StringComparer.Ordinal);
-        foreach (var op in list) CliGraph.Apply(copy, op as JsonObject ?? throw new CliException("Each op must be a JSON object."), dryIds);
+        foreach (JsonNode? op in list) CliGraph.Apply(copy, op as JsonObject ?? throw new CliException("Each op must be a JSON object."), dryIds);
 
         if (!AnimationGraphWindow.TryEditOpen(graph.AssetID, "CLI: Graph", Change, save))
             CliEdit.EditAsset(graph, "Graph", Change);
@@ -1254,21 +1257,21 @@ public static class CliEditorCommands
         [CliArg("values", "JSON object of settings key to value")] string values = "")
     {
         Guid guid = CliRefs.ResolveAssetGuid(target);
-        var entry = CliRefs.Assets.GetEntry(guid) ?? throw new CliException($"'{target}' is a sub asset. Import settings belong to the file it came from.");
+        AssetEntry entry = CliRefs.Assets.GetEntry(guid) ?? throw new CliException($"'{target}' is a sub asset. Import settings belong to the file it came from.");
         string metaPath = MetaFile.GetMetaPath(Path.Combine(Project.Current!.AssetsPath, entry.Path));
         if (!File.Exists(metaPath)) throw new CliException($"'{entry.Path}' has no .meta file yet. Run 'asset --action import' first.");
 
-        var meta = MetaFile.Read(metaPath);
-        var settings = meta.Settings ?? Echo.EchoObject.NewCompound();
-        var defaults = EditorRegistries.CreateImporterByName(entry.ImporterType)?.DefaultSettings();
+        MetaFileData meta = MetaFile.Read(metaPath);
+        EchoObject settings = meta.Settings ?? Echo.EchoObject.NewCompound();
+        EchoObject? defaults = EditorRegistries.CreateImporterByName(entry.ImporterType)?.DefaultSettings();
         if (defaults != null)
-            foreach (var (key, value) in defaults.Tags)
+            foreach ((string? key, EchoObject? value) in defaults.Tags)
                 if (!settings.TryGet(key, out _)) settings[key] = value.Clone();
 
-        var changes = ParseValues(values);
+        List<(string Path, string Json)> changes = ParseValues(values);
         if (changes.Count > 0)
         {
-            foreach (var (key, json) in changes) CliRefs.SetEchoPath(settings, key, json);
+            foreach ((string? key, string? json) in changes) CliRefs.SetEchoPath(settings, key, json);
             meta.Settings = settings;
             MetaFile.Write(metaPath, meta);
             ImportSettingsEditor.Forget(guid);
@@ -1316,9 +1319,9 @@ internal static class CliGraph
     public static JsonObject Describe(AnimationGraph graph)
     {
         var nodes = new JsonArray();
-        foreach (var record in graph.Nodes)
+        foreach (GraphNodeRecord record in graph.Nodes)
         {
-            var type = AnimationNodeRegistry.Get(record.Type);
+            AnimationGraphNode? type = AnimationNodeRegistry.Get(record.Type);
             var node = new JsonObject { ["id"] = record.Id, ["type"] = record.Type };
             if (record.Name.Length > 0) node["name"] = record.Name;
             if (record.Owner.Length > 0) node["owner"] = record.Owner;
@@ -1326,7 +1329,7 @@ internal static class CliGraph
             var inputs = new JsonArray();
             for (int i = 0; i < record.Inputs.Count; i++)
             {
-                var input = record.Inputs[i];
+                GraphInputRecord input = record.Inputs[i];
                 var pin = new JsonObject { ["pin"] = i, ["name"] = type?.PinAt(i)?.Name };
                 if (input.Node.Length > 0) pin["from"] = input.Node;
                 if (input.Value != 1f) pin["value"] = input.Value;
@@ -1341,7 +1344,7 @@ internal static class CliGraph
             if (record.Properties.Count > 0)
             {
                 var props = new JsonObject();
-                foreach (var (key, value) in record.Properties) props[key] = ValueJson(value);
+                foreach ((string? key, NodeValue? value) in record.Properties) props[key] = ValueJson(value);
                 node["settings"] = props;
             }
             if (record.PropertyInputs.Count > 0)
@@ -1418,9 +1421,9 @@ internal static class CliGraph
             case "add":
             {
                 string typeId = Str(op, "type") ?? throw new CliException("add needs a \"type\". See 'graph --action types'.");
-                var type = AnimationNodeRegistry.Get(typeId) ?? throw new CliException($"No node type '{typeId}'. See 'graph --action types'.");
+                    AnimationGraphNode type = AnimationNodeRegistry.Get(typeId) ?? throw new CliException($"No node type '{typeId}'. See 'graph --action types'.");
                 string owner = Id(op, "owner", ids, graph, required: false) ?? "";
-                var record = graph.AddNode(type.Id);
+                    GraphNodeRecord record = graph.AddNode(type.Id);
                 record.Owner = owner;
                 record.Name = Str(op, "name") ?? "";
                 for (int i = 0; i < type.Inputs.Count; i++) record.Inputs.Add(new GraphInputRecord());
@@ -1433,7 +1436,7 @@ internal static class CliGraph
             case "connect":
             {
                 string from = Id(op, "from", ids, graph)!;
-                var target = Node(graph, Id(op, "to", ids, graph)!);
+                    GraphNodeRecord target = Node(graph, Id(op, "to", ids, graph)!);
                 if (Node(graph, from) == target) throw new CliException("A node can not feed itself.");
                 string? pinText = op["pin"] is JsonValue v && v.TryGetValue(out string? s) ? s : null;
                 if (pinText != null && pinText.StartsWith("setting:", StringComparison.OrdinalIgnoreCase))
@@ -1452,7 +1455,7 @@ internal static class CliGraph
 
             case "disconnect":
             {
-                var target = Node(graph, Id(op, "to", ids, graph)!);
+                    GraphNodeRecord target = Node(graph, Id(op, "to", ids, graph)!);
                 if (op["pin"] is JsonValue v && v.TryGetValue(out string? s) && s.StartsWith("setting:", StringComparison.OrdinalIgnoreCase))
                 {
                     if (target.PropertyInputs.ContainsKey(s[8..])) target.PropertyInputs[s[8..]] = string.Empty;
@@ -1466,10 +1469,10 @@ internal static class CliGraph
 
             case "input":
             {
-                var target = Node(graph, Id(op, "node", ids, graph)!);
+                    GraphNodeRecord target = Node(graph, Id(op, "node", ids, graph)!);
                 int pin = PinIndex(target, op["pin"], allowNext: false);
                 while (target.Inputs.Count <= pin) target.Inputs.Add(new GraphInputRecord());
-                var input = target.Inputs[pin];
+                    GraphInputRecord input = target.Inputs[pin];
                 if (op["value"] is { } value) input.Value = value.GetValue<float>();
                 if (op["flag"] is { } flag) input.Flag = flag.GetValue<bool>();
                 if (op["name"] is { } name) input.Name = name.GetValue<string>();
@@ -1480,11 +1483,11 @@ internal static class CliGraph
 
             case "set":
             {
-                var target = Node(graph, Id(op, "node", ids, graph)!);
+                    GraphNodeRecord target = Node(graph, Id(op, "node", ids, graph)!);
                 if (op["name"] is { } newName && op["key"] == null) { target.Name = newName.GetValue<string>(); return null; }
                 string key = Str(op, "key") ?? throw new CliException("set needs a \"key\", or a \"name\" to rename the node.");
-                var type = AnimationNodeRegistry.Get(target.Type);
-                var setting = type?.Properties.FirstOrDefault(p => p.Key.Equals(key, StringComparison.OrdinalIgnoreCase));
+                    AnimationGraphNode? type = AnimationNodeRegistry.Get(target.Type);
+                    NodeSetting? setting = type?.Properties.FirstOrDefault(p => p.Key.Equals(key, StringComparison.OrdinalIgnoreCase));
                 if (type != null && setting == null)
                     throw new CliException($"{target.Type} has no setting '{key}'. It has: {string.Join(", ", type.Properties.Select(p => p.Key))}.");
                 target.Properties[setting?.Key ?? key] = ToValue(op["value"], setting?.Kind ?? Infer(op["value"]), setting);
@@ -1493,16 +1496,16 @@ internal static class CliGraph
 
             case "remove":
             {
-                var target = Node(graph, Id(op, "node", ids, graph)!);
+                    GraphNodeRecord target = Node(graph, Id(op, "node", ids, graph)!);
                 if (target.Type is AnimationNodeIds.StateOutput or AnimationNodeIds.GraphOutput)
                     throw new CliException("Output nodes go with their state or graph. Remove the state instead.");
 
                 var inside = new HashSet<string> { target.Id };
-                foreach (var state in target.States) inside.Add(state.Id);
+                foreach (GraphStateRecord state in target.States) inside.Add(state.Id);
                 graph.Nodes.Remove(target);
-                foreach (var record in graph.Nodes)
+                foreach (GraphNodeRecord record in graph.Nodes)
                 {
-                    foreach (var input in record.Inputs) if (input.Node == target.Id) input.Node = string.Empty;
+                    foreach (GraphInputRecord input in record.Inputs) if (input.Node == target.Id) input.Node = string.Empty;
                     foreach (string driven in record.PropertyInputs.Keys.ToList())
                         if (record.PropertyInputs[driven] == target.Id) record.PropertyInputs[driven] = string.Empty;
                     AnimationGraphView.TrimVariadic(record);
@@ -1514,7 +1517,7 @@ internal static class CliGraph
 
             case "root":
             {
-                var target = Node(graph, Id(op, "node", ids, graph)!);
+                    GraphNodeRecord target = Node(graph, Id(op, "node", ids, graph)!);
                 if (target.Owner.Length > 0) throw new CliException("The root must be a node of the graph itself, not one inside a state.");
                 graph.RootNode = target.Id;
                 return null;
@@ -1523,21 +1526,21 @@ internal static class CliGraph
             case "param":
             {
                 string name = Str(op, "name") ?? throw new CliException("param needs a \"name\".");
-                var existing = graph.Parameters.FirstOrDefault(p => p.Name == name);
+                    GraphParameterRecord? existing = graph.Parameters.FirstOrDefault(p => p.Name == name);
                 if (op["remove"]?.GetValue<bool>() == true)
                 {
                     if (existing != null) graph.Parameters.Remove(existing);
                     return null;
                 }
 
-                var parameter = existing ?? new GraphParameterRecord { Name = name };
+                    GraphParameterRecord parameter = existing ?? new GraphParameterRecord { Name = name };
                 if (Str(op, "kind") is { } kindText)
                     parameter.Kind = Enum.TryParse(kindText, ignoreCase: true, out NodeValueKind parsed) ? parsed
                         : throw new CliException($"Parameter kind must be one of {string.Join(", ", Enum.GetNames<NodeValueKind>())}.");
                 if (op["trigger"] is { } trigger) parameter.Trigger = trigger.GetValue<bool>();
                 if (op["value"] is { } value)
                 {
-                    var converted = ToValue(value, parameter.Kind, null);
+                        NodeValue converted = ToValue(value, parameter.Kind, null);
                     parameter.Number = converted.Number;
                     parameter.Flag = converted.Flag;
                     parameter.Integer = converted.Integer;
@@ -1550,7 +1553,7 @@ internal static class CliGraph
 
             case "state":
             {
-                var machine = Node(graph, Id(op, "machine", ids, graph)!);
+                    GraphNodeRecord machine = Node(graph, Id(op, "machine", ids, graph)!);
                 if (machine.Type != AnimationNodeIds.StateMachine)
                     throw new CliException($"{machine.Id} is a {machine.Type}, not a state machine.");
                 string name = Str(op, "name") ?? throw new CliException("state needs a \"name\".");
@@ -1564,14 +1567,14 @@ internal static class CliGraph
                 };
                 if (op["default"]?.GetValue<bool>() == true)
                 {
-                    foreach (var other in machine.States) other.IsDefault = false;
+                    foreach (GraphStateRecord other in machine.States) other.IsDefault = false;
                     state.IsDefault = true;
                 }
                 if (Str(op, "graph") is { } played)
                     state.Graph = CliRefs.ResolveAsset(played) is AnimationGraph playedGraph ? playedGraph : throw new CliException($"'{played}' is not an animation graph.");
 
                 machine.States.Add(state);
-                var output = AnimationGraphView.EnsureOutput(graph, state.Id, AnimationNodeIds.StateOutput);
+                    GraphNodeRecord output = AnimationGraphView.EnsureOutput(graph, state.Id, AnimationNodeIds.StateOutput);
                 Alias(op, ids, state.Id);
                 if (Str(op, "as") is { } alias) ids[alias.TrimStart('$') + ".output"] = output.Id;
                 return new JsonObject { ["state"] = state.Id, ["output"] = output.Id };
@@ -1579,13 +1582,13 @@ internal static class CliGraph
 
             case "transition":
             {
-                var machine = Node(graph, Id(op, "machine", ids, graph)!);
-                var from = StateNamed(machine, Str(op, "from"));
-                var to = StateNamed(machine, Str(op, "to"));
+                    GraphNodeRecord machine = Node(graph, Id(op, "machine", ids, graph)!);
+                    GraphStateRecord from = StateNamed(machine, Str(op, "from"));
+                    GraphStateRecord to = StateNamed(machine, Str(op, "to"));
                 if (to.IsAny) throw new CliException("Nothing transitions into Any State.");
                 if (ReferenceEquals(from, to)) throw new CliException("A transition needs two different states.");
 
-                var transition = from.Transitions.FirstOrDefault(t => t.To == to.Name);
+                    GraphTransitionRecord? transition = from.Transitions.FirstOrDefault(t => t.To == to.Name);
                 if (op["remove"]?.GetValue<bool>() == true)
                 {
                     if (transition != null) from.Transitions.Remove(transition);
@@ -1603,7 +1606,7 @@ internal static class CliGraph
             case "gate":
             {
                 string stateId = Id(op, "state", ids, graph)!;
-                var output = graph.OwnedNode(stateId, AnimationNodeIds.StateOutput)
+                    GraphNodeRecord output = graph.OwnedNode(stateId, AnimationNodeIds.StateOutput)
                     ?? throw new CliException($"No state '{stateId}'. Use the id a state op returned, or \"as\" to name it.");
                 while (output.Inputs.Count < 3) output.Inputs.Add(new GraphInputRecord());
                 if (op["enter"] is { } enter) output.Inputs[1].Flag = enter.GetValue<bool>();
@@ -1641,14 +1644,14 @@ internal static class CliGraph
 
     private static int PinIndex(GraphNodeRecord target, JsonNode? pin, bool allowNext)
     {
-        var type = AnimationNodeRegistry.Get(target.Type);
+        AnimationGraphNode? type = AnimationNodeRegistry.Get(target.Type);
         if (pin is JsonValue value && value.TryGetValue(out int index)) return index;
 
         string? name = pin is JsonValue named && named.TryGetValue(out string? text) ? text : null;
         if (name == null && !allowNext) throw new CliException("Give a \"pin\": an index or a pin name.");
         if (type == null) return name == null ? target.Inputs.Count : throw new CliException($"Unknown node type {target.Type}, so pins must be given by index.");
 
-        var declared = name == null ? null : type.Inputs.FirstOrDefault(p => p.Name.Equals(name, StringComparison.OrdinalIgnoreCase))
+        InputPin? declared = name == null ? null : type.Inputs.FirstOrDefault(p => p.Name.Equals(name, StringComparison.OrdinalIgnoreCase))
             ?? throw new CliException($"{target.Type} has no pin '{name}'. Pins: {string.Join(", ", type.Inputs.Select(p => p.Name))}.");
 
         if (declared is { Variadic: false }) return declared.Index;
@@ -1656,7 +1659,7 @@ internal static class CliGraph
         // A repeating pin, or no pin given: the first free one of that name, or the same pin in a new group.
         for (int i = 0; i < target.Inputs.Count; i++)
         {
-            var at = type.PinAt(i);
+            InputPin? at = type.PinAt(i);
             bool fits = declared == null ? (i >= type.VariadicStart || at is { Variadic: false }) : at?.Name == declared.Name;
             if (fits && target.Inputs[i].Node.Length == 0) return i;
         }
@@ -1795,8 +1798,8 @@ internal static class CliApi
             members = members.Take(300).Select(m =>
             {
                 string id = DocId(m);
-                var docs = DocsFor(m.DeclaringType!.Assembly);
-                XElement? element = docs != null && docs.TryGetValue(id, out var found) ? found : null;
+                Dictionary<string, XElement>? docs = DocsFor(m.DeclaringType!.Assembly);
+                XElement? element = docs != null && docs.TryGetValue(id, out XElement? found) ? found : null;
                 return new
                 {
                     signature = Signature(m),
@@ -1846,9 +1849,9 @@ internal static class CliApi
                 string generic = method.IsGenericMethodDefinition ? $"<{string.Join(", ", method.GetGenericArguments().Select(a => a.Name))}>" : "";
                 return $"{Access(method)}{Modifiers(method)}{TypeName(method.ReturnType, full: false)} {method.Name}{generic}({Parameters(method)})";
             case PropertyInfo property:
-                var getter = property.GetMethod;
-                var setter = property.SetMethod;
-                var any = getter ?? setter!;
+                MethodInfo? getter = property.GetMethod;
+                MethodInfo? setter = property.SetMethod;
+                MethodInfo any = getter ?? setter!;
                 string index = property.GetIndexParameters() is { Length: > 0 } ip ? $"[{string.Join(", ", ip.Select(p => $"{TypeName(p.ParameterType, full: false)} {p.Name}"))}]" : "";
                 string accessors = (getter is { IsPublic: true } || getter is { IsFamily: true } ? "get; " : "") + (setter is { IsPublic: true } || setter is { IsFamily: true } ? "set; " : "");
                 return $"{Access(any)}{Modifiers(any)}{TypeName(property.PropertyType, full: false)} {(index.Length > 0 ? "this" + index : property.Name)} {{ {accessors}}}";
@@ -1911,7 +1914,7 @@ internal static class CliApi
         if (type.IsNested && type.DeclaringType != null) name = TypeName(type.DeclaringType, full) + "." + name;
         else if (full && type.Namespace != null) name = type.Namespace + "." + name;
 
-        var args = type.GetGenericArguments();
+        Type[] args = type.GetGenericArguments();
         if (type.IsNested && type.DeclaringType != null) args = args.Skip(type.DeclaringType.GetGenericArguments().Length).ToArray();
         return args.Length > 0 ? $"{name}<{string.Join(", ", args.Select(a => TypeName(a, full: false)))}>" : name;
     }
@@ -1924,7 +1927,7 @@ internal static class CliApi
     {
         lock (s_docs)
         {
-            if (s_docs.TryGetValue(assembly, out var cached)) return cached;
+            if (s_docs.TryGetValue(assembly, out Dictionary<string, XElement>? cached)) return cached;
             Dictionary<string, XElement>? docs = null;
             try
             {
@@ -1944,14 +1947,14 @@ internal static class CliApi
     private static string? Summary(Assembly assembly, string id) => Doc(assembly, id, "summary");
 
     private static string? Doc(Assembly assembly, string id, string tag)
-        => DocsFor(assembly) is { } docs && docs.TryGetValue(id, out var element) ? Text(element.Element(tag)) : null;
+        => DocsFor(assembly) is { } docs && docs.TryGetValue(id, out XElement? element) ? Text(element.Element(tag)) : null;
 
     // Doc text with cross references shown by name and whitespace collapsed.
     private static string? Text(XElement? element)
     {
         if (element == null) return null;
         var sb = new System.Text.StringBuilder();
-        foreach (var node in element.Nodes())
+        foreach (XNode node in element.Nodes())
         {
             if (node is XText text) sb.Append(text.Value);
             else if (node is XElement e)
@@ -1990,7 +1993,7 @@ internal static class CliApi
 
     private static string DocParameters(MethodBase method)
     {
-        var parameters = method.GetParameters();
+        ParameterInfo[] parameters = method.GetParameters();
         return parameters.Length == 0 ? "" : "(" + string.Join(",", parameters.Select(p => DocType(p.ParameterType))) + ")";
     }
 
@@ -2010,7 +2013,7 @@ internal static class CliApi
         if (type.IsGenericParameter) return (type.DeclaringMethod != null ? "``" : "`") + type.GenericParameterPosition;
         if (type.IsGenericType && !type.IsGenericTypeDefinition)
         {
-            var definition = type.GetGenericTypeDefinition();
+            Type definition = type.GetGenericTypeDefinition();
             string baseName = DocName(definition);
             int tick = baseName.LastIndexOf('`');
             if (tick >= 0) baseName = baseName[..tick];

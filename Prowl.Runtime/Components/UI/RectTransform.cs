@@ -295,7 +295,7 @@ public sealed class RectTransform : Component
     {
         foreach (UIBehaviour ui in GameObject.GetComponents<UIBehaviour>())
             ui.MarkDirty(UIDirtyFlags.Layout | UIDirtyFlags.Vertices);
-        var canvas = GameObject.GetComponentInParent<GameCanvas>(includeSelf: true);
+        GameCanvas? canvas = GameObject.GetComponentInParent<GameCanvas>(includeSelf: true);
         if (canvas.IsValid()) canvas.MarkDirty(UIDirtyFlags.Layout);
     }
 

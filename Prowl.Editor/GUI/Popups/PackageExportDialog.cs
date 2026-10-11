@@ -48,7 +48,7 @@ public static class PackageExportDialog
         _includeProjectSettings = false;
 
         // Default output path
-        var project = Project.Current;
+        Project? project = Project.Current;
         if (project != null)
             _outputPath = Path.Combine(project.PackagesPath, project.Name + ".prowlpackage");
 
@@ -72,7 +72,7 @@ public static class PackageExportDialog
     {
         _dependencyPaths.Clear();
 
-        var db = EditorAssetBackend.Instance;
+        EditorAssetBackend? db = EditorAssetBackend.Instance;
         if (db == null) return;
 
         var explicitSet = new HashSet<string>(_explicitPaths, StringComparer.OrdinalIgnoreCase);
@@ -84,10 +84,10 @@ public static class PackageExportDialog
             string path = queue.Dequeue();
             if (!visited.Add(path)) continue;
 
-            var entry = db.GetEntry(path);
+            AssetEntry? entry = db.GetEntry(path);
             if (entry?.Dependencies == null) continue;
 
-            foreach (var depGuid in entry.Dependencies)
+            foreach (Guid depGuid in entry.Dependencies)
             {
                 string? depPath = db.GuidToPathIncludingSubAssets(depGuid);
                 if (depPath == null || visited.Contains(depPath)) continue;
@@ -127,7 +127,7 @@ public static class PackageExportDialog
     private static void DrawInternal(Paper paper, int layer)
     {
         if (!_handle.IsOpen) return;
-        var font = EditorTheme.DefaultFont;
+        Scribe.FontFile? font = EditorTheme.DefaultFont;
         if (font == null) return;
 
         if (_includeDependencies != _lastIncludeDependencies)
@@ -184,7 +184,7 @@ public static class PackageExportDialog
     {
         float treeHeight = DialogHeight - 32 - 90 - 60; // title - options - bottom bar
 
-        var nodes = BuildFlatNodeList();
+        List<TreeNode> nodes = BuildFlatNodeList();
 
         Origami.Tree(paper, "pkgexp_tree", DialogWidth - 16, treeHeight)
             .Nodes(nodes)
@@ -271,7 +271,7 @@ public static class PackageExportDialog
         void EmitChildren(string parentKey, int depth)
         {
             // Emit folders first, sorted
-            if (childFolders.TryGetValue(parentKey, out var folders))
+            if (childFolders.TryGetValue(parentKey, out List<string>? folders))
             {
                 folders.Sort(StringComparer.OrdinalIgnoreCase);
                 foreach (string folderPath in folders)
@@ -300,7 +300,7 @@ public static class PackageExportDialog
             }
 
             // Then files, sorted
-            if (childFiles.TryGetValue(parentKey, out var files))
+            if (childFiles.TryGetValue(parentKey, out List<string>? files))
             {
                 files.Sort(StringComparer.OrdinalIgnoreCase);
                 foreach (string filePath in files)
@@ -331,7 +331,7 @@ public static class PackageExportDialog
 
         void CheckDescendants(string folderPath, ref bool allChecked, ref bool anyChecked)
         {
-            if (childFiles.TryGetValue(folderPath, out var files))
+            if (childFiles.TryGetValue(folderPath, out List<string>? files))
             {
                 foreach (string f in files)
                 {
@@ -339,7 +339,7 @@ public static class PackageExportDialog
                     else allChecked = false;
                 }
             }
-            if (childFolders.TryGetValue(folderPath, out var folders))
+            if (childFolders.TryGetValue(folderPath, out List<string>? folders))
             {
                 foreach (string sub in folders)
                     CheckDescendants(sub, ref allChecked, ref anyChecked);

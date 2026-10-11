@@ -1,6 +1,8 @@
 // This file is part of the Prowl Game Engine
 // Licensed under the MIT License. See the LICENSE file in the project root for details.
 
+using System.Collections.Generic;
+
 using Prowl.Runtime;
 using Prowl.Runtime.Resources;
 using Prowl.Runtime.UI;
@@ -77,7 +79,7 @@ internal static class UIPicker
     /// </summary>
     private static (GameObject? go, float t) PickTopmost(GameCanvas canvas, GameObject parent, Ray ray)
     {
-        var children = parent.Children;
+        List<GameObject> children = parent.Children;
         for (int i = children.Count - 1; i >= 0; i--)
         {
             GameObject child = children[i];

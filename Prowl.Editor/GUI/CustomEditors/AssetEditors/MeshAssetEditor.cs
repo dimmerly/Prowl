@@ -9,6 +9,7 @@ using Prowl.PaperUI.LayoutEngine;
 using Prowl.Runtime;
 using Prowl.Runtime.MeshFeatures;
 using Prowl.Runtime.Resources;
+using Prowl.Vector;
 
 using static Prowl.Editor.GUI.EditorGUI;
 
@@ -46,9 +47,9 @@ public class MeshAssetEditor : AssetImporterEditor
         id = $"{id}_{parentEntry.Guid:N}";
         if (subEntry != null) id = $"{id}_{subEntry.Guid:N}";
 
-        var font = EditorTheme.DefaultFont;
+        Scribe.FontFile? font = EditorTheme.DefaultFont;
         if (font == null) return;
-        var m = Origami.Current.Metrics;
+        OrigamiMetrics m = Origami.Current.Metrics;
 
         if (mesh == null)
         {
@@ -86,7 +87,7 @@ public class MeshAssetEditor : AssetImporterEditor
     {
         int verts = mesh.Vertices?.Length ?? 0;
         int tris = (mesh.Indices?.Length ?? 0) / 3;
-        var size = mesh.bounds.Max - mesh.bounds.Min;
+        Float3 size = mesh.bounds.Max - mesh.bounds.Min;
 
         using (paper.Row($"{id}_stats").Height(UnitValue.Auto)
             .Margin(m.PaddingLarge, m.PaddingLarge, 0, m.SpacingLarge).Gap(m.SpacingMedium).Enter())
@@ -120,7 +121,7 @@ public class MeshAssetEditor : AssetImporterEditor
     {
         EditorGUI.SectionHeader(paper, $"{id}_h_feat", "Mesh Features");
 
-        var sdf = FindSDF(parentEntry, subEntry, mesh);
+        MeshSDF? sdf = FindSDF(parentEntry, subEntry, mesh);
         string sdfText = sdf != null
             ? $"{sdf.Resolution.X}x{sdf.Resolution.Y}x{sdf.Resolution.Z}  voxel={sdf.VoxelSize:F3}"
             : "Not generated (see the Assets project settings)";
@@ -139,7 +140,7 @@ public class MeshAssetEditor : AssetImporterEditor
     private static MeshSDF? FindSDF(AssetEntry parentEntry, SubAssetEntry? subEntry, Mesh mesh)
     {
         string meshName = subEntry?.Name ?? mesh.Name ?? "Mesh";
-        var sdfGuid = AssetEntry.DeriveSubAssetGuid(parentEntry.Guid, $"{meshName}_sdf");
+        Guid sdfGuid = AssetEntry.DeriveSubAssetGuid(parentEntry.Guid, $"{meshName}_sdf");
         return Runtime.AssetDatabase.Get(sdfGuid) as MeshSDF;
     }
 }

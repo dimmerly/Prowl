@@ -326,16 +326,16 @@ public sealed class RenderTexture : Asset, ISerializable
 
         // Clean up empty dictionary entries to prevent unbounded key accumulation
         List<RenderTextureKey>? emptyKeys = null;
-        foreach (var pair in pool)
+        foreach (KeyValuePair<RenderTextureKey, List<(RenderTexture, long frameCreated)>> pair in pool)
             if (pair.Value.Count == 0)
                 (emptyKeys ??= []).Add(pair.Key);
-        if (emptyKeys != null) foreach (var k in emptyKeys) pool.Remove(k);
+        if (emptyKeys != null) foreach (RenderTextureKey k in emptyKeys) pool.Remove(k);
 
         emptyKeys = null;
-        foreach (var pair in active)
+        foreach (KeyValuePair<RenderTextureKey, List<(RenderTexture, long frameAcquired)>> pair in active)
             if (pair.Value.Count == 0)
                 (emptyKeys ??= []).Add(pair.Key);
-        if (emptyKeys != null) foreach (var k in emptyKeys) active.Remove(k);
+        if (emptyKeys != null) foreach (RenderTextureKey k in emptyKeys) active.Remove(k);
     }
 
     #endregion

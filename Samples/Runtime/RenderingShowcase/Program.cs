@@ -114,7 +114,7 @@ public sealed class RenderingShowcaseGame : StationGame
     // Shift flies about three times faster, as the fly camera does by default
     private void SetFlightSpeed(float speed)
     {
-        var fly = CameraObject.GetComponent<FlyCamera>();
+        FlyCamera fly = CameraObject.GetComponent<FlyCamera>();
         fly.Speed = speed;
         fly.FastSpeed = speed * 3f;
     }
@@ -231,7 +231,7 @@ public sealed class RenderingShowcaseGame : StationGame
         // the time of day, one face a frame.
         var probeObject = new GameObject("Reflection Probe");
         probeObject.Transform.Position = c + new Float3(0f, 3f, -2f);
-        var probe = probeObject.AddComponent<ReflectionProbe>();
+        ReflectionProbe probe = probeObject.AddComponent<ReflectionProbe>();
         probe.Mode = ReflectionProbeMode.Realtime;
         probe.RefreshMode = ReflectionProbeRefreshMode.EveryFrame;
         probe.TimeSlicing = ReflectionProbeTimeSlicing.IndividualFaces;
@@ -340,7 +340,7 @@ public sealed class RenderingShowcaseGame : StationGame
         _orbitLight.Range = 14f;
         _orbitLight.Intensity = 6f;
         _orbitLight.ShadowResolution = PointLight.Resolution._1024;
-        var orbiter = orbit.AddComponent<Orbit>();
+        Orbit orbiter = orbit.AddComponent<Orbit>();
         orbiter.Center = c + new Float3(0f, 1.2f, 0f);
         orbiter.Radius = 4.5f;
 
@@ -353,7 +353,7 @@ public sealed class RenderingShowcaseGame : StationGame
         _spotLight.InnerSpotAngle = 25f;
         _spotLight.ShadowResolution = SpotLight.Resolution._1024;
         spot.Transform.Position = c + new Float3(-6f, 7f, -5f);
-        var sweep = spot.AddComponent<Sweep>();
+        Sweep sweep = spot.AddComponent<Sweep>();
         sweep.Target = c;
         sweep.Width = 4f;
         Add(spot);
@@ -394,7 +394,7 @@ public sealed class RenderingShowcaseGame : StationGame
             light.Range = 1.25f;
             light.Intensity = 1.5f;
             light.CastShadows = false;
-            var wanderer = go.AddComponent<Wanderer>();
+            Wanderer wanderer = go.AddComponent<Wanderer>();
             wanderer.Center = c + new Float3(0f, 0.5f, 0f);
             wanderer.Extent = new Float3(9f, 1.5f, 9f);
             _wanderers.Add(wanderer);
@@ -434,7 +434,7 @@ public sealed class RenderingShowcaseGame : StationGame
             spot.InnerSpotAngle = 15f;
             go.AddComponent<FogLight>().IntensityMultiplier = 4f;
             go.Transform.Position = c + new Float3((i - 1) * 5f, 8f, 1f);
-            var sweep = go.AddComponent<Sweep>();
+            Sweep sweep = go.AddComponent<Sweep>();
             sweep.Target = c + new Float3((i - 1) * 5f, 0f, 1f);
             sweep.Width = 2f;
             sweep.Speed = 0.4f + i * 0.15f;
@@ -497,7 +497,7 @@ public sealed class RenderingShowcaseGame : StationGame
                 go.SetParent(_cubeRoot);
                 cubes.Add(go.Transform);
             }
-        var wave = _cubeRoot.AddComponent<Wave>();
+        Wave wave = _cubeRoot.AddComponent<Wave>();
         wave.Cubes = cubes;
         wave.Center = c;
 
@@ -551,7 +551,7 @@ public sealed class RenderingShowcaseGame : StationGame
         security.FieldOfView = 70f;
         security.Effects = [new TonemapperEffect()];
         security.HDR = true;
-        var pan = head.AddComponent<Pan>();
+        Pan pan = head.AddComponent<Pan>();
         pan.Pitch = 15f;
         pan.Center = 150f;
         head.SetParent(pole);

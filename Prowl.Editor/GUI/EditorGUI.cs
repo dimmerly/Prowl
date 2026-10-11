@@ -34,7 +34,7 @@ public static class EditorGUI
     public static void Row(Paper paper, string id, string label, Action drawControl,
         bool separator = false, float? labelWidth = null, bool compact = false, float minHeight = 0f)
     {
-        var m = Origami.Current.Metrics;
+        OrigamiMetrics m = Origami.Current.Metrics;
 
         if (!separator)
         {
@@ -58,12 +58,12 @@ public static class EditorGUI
     private static void DrawRowLine(Paper paper, string id, string label, Action drawControl,
         OrigamiMetrics m, float? labelWidth, bool compact, float minHeight, float vpad, float bottomMargin)
     {
-        var font = EditorTheme.DefaultFont;
+        Scribe.FontFile? font = EditorTheme.DefaultFont;
         float rh = minHeight > 0f ? minHeight : m.RowHeight;
         // Compact rows (theme editor) use a brighter, smaller label and no horizontal padding since the
         // hosting column already pads; standard rows use the muted label + a PaddingLarge gutter.
         float hpad = compact ? 0f : m.PaddingLarge;
-        var labelColor = compact ? EditorTheme.Ink500 : Origami.Current.Ink.C300;
+        Color labelColor = compact ? EditorTheme.Ink500 : Origami.Current.Ink.C300;
         float labelSize = compact ? EditorTheme.FontSizeSmall : m.FontSize;
         using (paper.Row(id).Height(UnitValue.Auto).MinHeight(rh)
             .Padding(hpad, hpad, vpad, vpad).Gap(m.Padding)
@@ -86,9 +86,9 @@ public static class EditorGUI
     /// the column instead of overlapping the next field.</summary>
     public static void MultiSelectRow(Paper paper, string id, string label, Action drawControl)
     {
-        var theme = Origami.Current;
-        var m = theme.Metrics;
-        var font = EditorTheme.DefaultFont;
+        OrigamiTheme theme = Origami.Current;
+        OrigamiMetrics m = theme.Metrics;
+        Scribe.FontFile? font = EditorTheme.DefaultFont;
 
         using (paper.Row(id).Height(UnitValue.Auto).MinHeight(m.RowHeight).Padding(m.PaddingLarge, m.PaddingLarge, 0, 0).Gap(m.Padding).Enter())
         {
@@ -175,7 +175,7 @@ public static class EditorGUI
         Action<float> setter, string format = "F2", bool bipolar = false)
         => Row(paper, id, label, () =>
         {
-            var s = Origami.Slider(paper, $"{id}_v", value, setter, min, max).Format(format);
+            SliderBuilder<float> s = Origami.Slider(paper, $"{id}_v", value, setter, min, max).Format(format);
             if (bipolar) s.Bipolar();
             s.Show();
         });
@@ -196,7 +196,7 @@ public static class EditorGUI
     /// <summary>A two-axis text-alignment selector row (horizontal + vertical ButtonGroups).</summary>
     public static void TextAlignmentRow(Paper paper, string id, string label, TextAlign value, Action<TextAlign> setter)
     {
-        var font = EditorTheme.DefaultFont;
+        Scribe.FontFile? font = EditorTheme.DefaultFont;
         using (paper.Row(id).Height(EditorTheme.RowHeight).Gap(6).Enter())
         {
             if (font != null)
@@ -245,14 +245,14 @@ public static class EditorGUI
     public static float Sidebar(Paper paper, string id, (string id, string label, string icon)[] cats,
         string active, Action<string> onSelect, float width = 148f, float rowHeight = 30f, Action? footer = null)
     {
-        var font = EditorTheme.DefaultFont;
+        Scribe.FontFile? font = EditorTheme.DefaultFont;
         if (font == null) return width;
 
         using (paper.Column(id).Width(width).BackgroundColor(Color.FromArgb(36, 0, 0, 0)).Enter())
         using (paper.Column($"{id}_grp").Height(UnitValue.Auto).Margin(0, 0, 0, UnitValue.StretchOne)
             .Padding(8, 8, 10, 10).Gap(2).BackgroundColor(Color.FromArgb(36, 0, 0, 0)).Enter())
         {
-            foreach (var (cid, label, icon) in cats)
+            foreach ((string? cid, string? label, string? icon) in cats)
             {
                 bool on = cid == active;
                 using (paper.Row($"{id}_{cid}").Height(rowHeight).Rounded(EditorTheme.Roundness).Padding(10, 10, 0, 0)
@@ -278,9 +278,9 @@ public static class EditorGUI
     /// variant (theme editor) is shorter and sits flush-left since its host column already pads.</summary>
     public static void SectionHeader(Paper paper, string id, string text, bool first = false, bool compact = false)
     {
-        var font = EditorTheme.FontSemiBold ?? EditorTheme.DefaultFont;
+        Scribe.FontFile? font = EditorTheme.FontSemiBold ?? EditorTheme.DefaultFont;
         if (font == null) return;
-        var m = Origami.Current.Metrics;
+        OrigamiMetrics m = Origami.Current.Metrics;
         float h = compact ? 18f : 22f;
         float leftPad = compact ? 0f : m.PaddingLarge;
         float topGap = compact ? (first ? 0f : EditorTheme.Spacing * 2f) : (first ? 2f : 14f);
@@ -293,7 +293,7 @@ public static class EditorGUI
     /// <summary>Full-width 1px separator. <paramref name="verticalMargin"/> adds equal top and bottom gap.</summary>
     public static void Divider(Paper paper, string id, float verticalMargin = 0f)
     {
-        var b = paper.Box(id).Height(1).BackgroundColor(EditorTheme.BorderSoft).IsNotInteractable();
+        ElementBuilder b = paper.Box(id).Height(1).BackgroundColor(EditorTheme.BorderSoft).IsNotInteractable();
         if (verticalMargin > 0f) b.Margin(0, 0, verticalMargin, verticalMargin);
     }
 
@@ -303,13 +303,13 @@ public static class EditorGUI
     /// </summary>
     public static void Group(Paper paper, string id, string? title, Action body, string? icon = null)
     {
-        var m = Origami.Current.Metrics;
+        OrigamiMetrics m = Origami.Current.Metrics;
         using (paper.Column(id).Height(UnitValue.Auto)
             .Margin(m.PaddingLarge, m.PaddingLarge, 0, m.SpacingLarge)
             .Rounded(m.ContainerRounding).Clip()
             .BackgroundColor(Color.FromArgb(38, 0, 0, 0)).BorderColor(EditorTheme.BorderSoft).BorderWidth(1).Enter())
         {
-            var font = EditorTheme.FontSemiBold ?? EditorTheme.DefaultFont;
+            Scribe.FontFile? font = EditorTheme.FontSemiBold ?? EditorTheme.DefaultFont;
             if (!string.IsNullOrEmpty(title) && font != null)
             {
                 using (paper.Row($"{id}_gh").Height(32).Padding(m.PaddingLarge, m.PaddingLarge, 0, 0)
@@ -336,7 +336,7 @@ public static class EditorGUI
     /// from a previous chip.</summary>
     public static void Chip(Paper paper, string id, string label, Action onClick, float leftGap = 0f)
     {
-        var font = EditorTheme.DefaultFont;
+        Scribe.FontFile? font = EditorTheme.DefaultFont;
         paper.Box(id).Width(UnitValue.Auto).Height(28).Margin(leftGap, 0, UnitValue.StretchOne, UnitValue.StretchOne).Rounded(EditorTheme.Roundness).Padding(11, 11, 0, 0)
             .BackgroundColor(EditorTheme.Neutral400).BorderColor(EditorTheme.BorderSoft).BorderWidth(1)
             .Hovered.BorderColor(EditorTheme.BorderStrong).End()
@@ -348,10 +348,10 @@ public static class EditorGUI
     /// <summary>A small pill that toggles, lit with the accent while on.</summary>
     public static void Chip(Paper paper, string id, string label, bool on, Action toggle, float height = 20f)
     {
-        var font = EditorTheme.DefaultFont;
+        Scribe.FontFile? font = EditorTheme.DefaultFont;
         if (font == null) return;
 
-        var m = Origami.Current.Metrics;
+        OrigamiMetrics m = Origami.Current.Metrics;
         paper.Box(id).Width(UnitValue.Auto).Height(height).Margin(0, 6, 0, 0).Padding(8, 8, 0, 0)
             .Rounded(m.SmallRounding)
             .BackgroundColor(on ? EditorTheme.WithAlpha(EditorTheme.Accent, 60) : EditorTheme.WithAlpha(EditorTheme.Ink300, 22))
@@ -365,7 +365,7 @@ public static class EditorGUI
     /// <summary>A small panel button, filled with the accent while <paramref name="active"/>.</summary>
     public static ElementBuilder PillButton(Paper paper, string id, string label, bool active, Action onClick)
     {
-        var m = Origami.Current.Metrics;
+        OrigamiMetrics m = Origami.Current.Metrics;
         return paper.Box(id).Width(UnitValue.Auto).Height(26).Padding(12, 12, 0, 0).Rounded(m.SmallRounding)
             .BackgroundColor(active ? EditorTheme.Accent : EditorTheme.Neutral300)
             .BorderColor(EditorTheme.BorderSoft).BorderWidth(1)
@@ -378,7 +378,7 @@ public static class EditorGUI
     /// <summary>A quiet explanatory line, for the places an inspector has something to say.</summary>
     public static void Note(Paper paper, string id, string text)
     {
-        var m = Origami.Current.Metrics;
+        OrigamiMetrics m = Origami.Current.Metrics;
         paper.Box(id).Height(UnitValue.Auto).MinHeight(m.RowHeight)
             .Margin(m.PaddingLarge, m.PaddingLarge, m.Spacing, m.Spacing)
             .Padding(m.Padding, m.Padding, m.SpacingMedium, m.SpacingMedium)
@@ -391,7 +391,7 @@ public static class EditorGUI
     /// <summary>A colored call-to-action button. Pass <paramref name="grow"/> = true to stretch width.</summary>
     public static void CtaButton(Paper paper, string id, string label, Color bg, Action onClick, bool grow = false, float height = 28f)
     {
-        var font = EditorTheme.FontSemiBold ?? EditorTheme.DefaultFont;
+        Scribe.FontFile? font = EditorTheme.FontSemiBold ?? EditorTheme.DefaultFont;
         paper.Box(id).Width(grow ? UnitValue.StretchOne : UnitValue.Auto).Height(height).Margin(0, 0, UnitValue.StretchOne, UnitValue.StretchOne).Rounded(EditorTheme.Roundness).Padding(16, 16, 0, 0)
             .BackgroundColor(bg)
             .Hovered.BackgroundColor(Color.FromArgb(230, bg.R, bg.G, bg.B)).End()
@@ -403,7 +403,7 @@ public static class EditorGUI
     /// <summary>A small 24x24 icon button used in panel tab-bar headers.</summary>
     public static void HeaderIconButton(Paper paper, string id, string icon, Action onClick)
     {
-        var font = EditorTheme.DefaultFont;
+        Scribe.FontFile? font = EditorTheme.DefaultFont;
         if (font == null) return;
         paper.Box(id).Width(24).Height(24).Rounded(EditorTheme.Roundness).Margin(0, 0, UnitValue.StretchOne, UnitValue.StretchOne)
             .Hovered.BackgroundColor(EditorTheme.Hover).End()
@@ -414,7 +414,7 @@ public static class EditorGUI
     /// <summary>A 26x26 icon button used in panel toolbars. Highlights with accent when active.</summary>
     public static void ToolbarIconBtn(Paper paper, string id, string glyph, bool active, Action onClick)
     {
-        var font = EditorTheme.DefaultFont;
+        Scribe.FontFile? font = EditorTheme.DefaultFont;
         if (font == null) return;
         paper.Box(id).Width(26).Height(26).Rounded(EditorTheme.Roundness).Margin(0, 0, UnitValue.StretchOne, UnitValue.StretchOne)
             .BackgroundColor(active ? EditorTheme.Selected : Color.Transparent)
@@ -446,7 +446,7 @@ public static class EditorGUI
     /// <summary>A purple-tinted banner shown when a drag payload can be dropped in the current area.</summary>
     public static void DropBanner(Paper paper, string id, string text)
     {
-        var font = EditorTheme.DefaultFont;
+        Scribe.FontFile? font = EditorTheme.DefaultFont;
         paper.Box(id).Height(24)
             .BackgroundColor(Color.FromArgb(40, EditorTheme.Purple400))
             .Rounded(Origami.Current.Metrics.SmallRounding)
@@ -493,7 +493,7 @@ public static class EditorGUI
 
         void Swatch(string hex)
         {
-            var col = ColorRamp.ParseHex(hex);
+            Color col = ColorRamp.ParseHex(hex);
             bool on = string.Equals(ramp.Primary, hex, StringComparison.OrdinalIgnoreCase);
             float round = Origami.Current.Metrics.SmallRounding;
             float ringRound = round > 0f ? round + 2f : 0f;
@@ -511,7 +511,7 @@ public static class EditorGUI
                     canvas.Stroke();
                     if (on)
                     {
-                        var acc = EditorTheme.Accent;
+                        Color acc = EditorTheme.Accent;
                         const float ring = 27f;
                         canvas.RoundedRect(cx - ring / 2, cy - ring / 2, ring, ring, ringRound);
                         canvas.SetStrokeColor(Prowl.Vector.Color32.FromArgb(255, acc.R, acc.G, acc.B));
@@ -547,7 +547,7 @@ public static class EditorGUI
     /// <summary>Hex string ("#RRGGBB") to a <see cref="VColor"/> (alpha 1).</summary>
     public static VColor HexToVColor(string hex)
     {
-        var c = ColorRamp.ParseHex(hex);
+        Color c = ColorRamp.ParseHex(hex);
         return new VColor(c.R / 255f, c.G / 255f, c.B / 255f, 1f);
     }
 

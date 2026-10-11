@@ -39,11 +39,11 @@ public class MetaFileTests : IDisposable
     {
         string asset = AssetPath("thing.scene");
 
-        var meta = MetaFile.EnsureMeta(asset, "SceneImporter", 2);
+        MetaFileData meta = MetaFile.EnsureMeta(asset, "SceneImporter", 2);
 
         Assert.True(File.Exists(asset + ".meta"));
         // Re-read from disk so we verify what was actually written, not just the returned object.
-        var onDisk = MetaFile.Read(asset + ".meta");
+        MetaFileData onDisk = MetaFile.Read(asset + ".meta");
         Assert.NotEqual(Guid.Empty, onDisk.Guid);
         Assert.Equal(meta.Guid, onDisk.Guid);
         Assert.Equal("SceneImporter", onDisk.ImporterType);
@@ -55,8 +55,8 @@ public class MetaFileTests : IDisposable
     {
         string asset = AssetPath("thing.scene");
 
-        var first = MetaFile.EnsureMeta(asset, "SceneImporter");
-        var second = MetaFile.EnsureMeta(asset, "SceneImporter");
+        MetaFileData first = MetaFile.EnsureMeta(asset, "SceneImporter");
+        MetaFileData second = MetaFile.EnsureMeta(asset, "SceneImporter");
 
         Assert.Equal(first.Guid, second.Guid); // honors the existing .meta, doesn't mint a new GUID
     }
@@ -70,7 +70,7 @@ public class MetaFileTests : IDisposable
         var data = new MetaFileData { Guid = Guid.NewGuid(), ImporterType = "TextureImporter", ImporterVersion = 7, Settings = settings };
 
         MetaFile.Write(metaPath, data);
-        var read = MetaFile.Read(metaPath);
+        MetaFileData read = MetaFile.Read(metaPath);
 
         Assert.Equal(data.Guid, read.Guid);
         Assert.Equal("TextureImporter", read.ImporterType);
@@ -87,7 +87,7 @@ public class MetaFileTests : IDisposable
         var fixedGuid = Guid.NewGuid();
         MetaFile.Write(asset + ".meta", new MetaFileData { Guid = fixedGuid, ImporterType = "PrefabImporter", ImporterVersion = 1 });
 
-        var meta = MetaFile.EnsureMeta(asset, "PrefabImporter");
+        MetaFileData meta = MetaFile.EnsureMeta(asset, "PrefabImporter");
 
         Assert.Equal(fixedGuid, meta.Guid);
     }
@@ -98,10 +98,10 @@ public class MetaFileTests : IDisposable
         string asset = AssetPath("broken.scene");
         File.WriteAllText(asset + ".meta", "}{ this is not valid echo");
 
-        var meta = MetaFile.EnsureMeta(asset, "SceneImporter");
+        MetaFileData meta = MetaFile.EnsureMeta(asset, "SceneImporter");
 
         // The corrupt .meta must be rewritten to a valid, re-readable file - not just returned in-memory.
-        var recovered = MetaFile.Read(asset + ".meta");
+        MetaFileData recovered = MetaFile.Read(asset + ".meta");
         Assert.NotEqual(Guid.Empty, recovered.Guid);
         Assert.Equal(meta.Guid, recovered.Guid);
         Assert.Equal("SceneImporter", recovered.ImporterType);
@@ -115,7 +115,7 @@ public class MetaFileTests : IDisposable
         string asset = AssetPath("blank.bytes");
         MetaFile.Write(asset + ".meta", new MetaFileData { Guid = Guid.Empty, ImporterType = "DefaultImporter" });
 
-        var meta = MetaFile.EnsureMeta(asset, "DefaultImporter");
+        MetaFileData meta = MetaFile.EnsureMeta(asset, "DefaultImporter");
 
         Assert.NotEqual(Guid.Empty, meta.Guid);
         Assert.NotEqual(Guid.Empty, MetaFile.Read(asset + ".meta").Guid); // persisted back

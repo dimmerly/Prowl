@@ -25,7 +25,7 @@ public sealed class InspectorNameEnumDrawer : OrigamiUI.FieldDrawer
     public static string GetEnumDisplayName(Type enumType, object value)
     {
         string name = Enum.GetName(enumType, value) ?? value.ToString() ?? "";
-        var attr = enumType.GetField(name)?.GetCustomAttribute<InspectorNameAttribute>();
+        InspectorNameAttribute? attr = enumType.GetField(name)?.GetCustomAttribute<InspectorNameAttribute>();
         return attr?.DisplayName ?? PropertyGridUtils.NicifyName(name);
     }
 

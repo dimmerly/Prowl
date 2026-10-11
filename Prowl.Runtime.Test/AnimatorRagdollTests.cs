@@ -35,7 +35,7 @@ public class AnimatorRagdollTests : RuntimeTestBase
         ragdoll.Properties["Default"] = NodeValue.FromNumber(active);
         graph.RootNode = ragdoll.Id;
 
-        var animator = root.AddComponent<Animator>();
+        Animator animator = root.AddComponent<Animator>();
         animator.Avatar = avatar;
         animator.Graph = graph;
         scene.Enable();
@@ -157,7 +157,7 @@ public class AnimatorRagdollTests : RuntimeTestBase
         Scene scene = CreateScene();
         scene.Add(root);
 
-        var floor = CreateGameObject("Floor");
+        GameObject floor = CreateGameObject("Floor");
         floor.Transform.Position = new Float3(0f, FloorTop - 0.5f, 0f);
         floor.AddComponent<BoxCollider>().Size = new Float3(100f, 1f, 100f);
         scene.Add(floor);
@@ -179,7 +179,7 @@ public class AnimatorRagdollTests : RuntimeTestBase
         ragdoll.Properties["Blend"] = NodeValue.FromNumber(0f);
         graph.RootNode = ragdoll.Id;
 
-        var animator = root.AddComponent<Animator>();
+        Animator animator = root.AddComponent<Animator>();
         animator.Avatar = avatar;
         animator.Graph = graph;
         scene.Enable();
@@ -279,7 +279,7 @@ public class AnimatorRagdollTests : RuntimeTestBase
         RagdollPinning pinning = RagdollPinning.All)
     {
         Scene scene = CreateScene();
-        var floor = CreateGameObject("Floor");
+        GameObject floor = CreateGameObject("Floor");
         floor.Transform.Position = new Float3(0f, -0.5f, 0f);
         floor.AddComponent<BoxCollider>().Size = new Float3(400f, 1f, 400f);
         scene.Add(floor);
@@ -311,7 +311,7 @@ public class AnimatorRagdollTests : RuntimeTestBase
                 graph.RootNode = node.Id;
             }
 
-            var animator = character.AddComponent<Animator>();
+            Animator animator = character.AddComponent<Animator>();
             animator.Avatar = avatar;
             animator.Graph = graph;
 
@@ -325,8 +325,8 @@ public class AnimatorRagdollTests : RuntimeTestBase
             return (player, bones);
         }
 
-        var plain = Spawn(-3f, false);
-        var ragdolled = Spawn(3f, true);
+        (GameObject Player, Dictionary<string, Transform> Bones) plain = Spawn(-3f, false);
+        (GameObject Player, Dictionary<string, Transform> Bones) ragdolled = Spawn(3f, true);
         scene.Enable();
         scene.Physics.UseMultithreading = false;
 

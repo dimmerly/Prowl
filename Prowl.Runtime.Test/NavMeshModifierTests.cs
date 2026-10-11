@@ -31,7 +31,7 @@ public class NavMeshModifierTests : RuntimeTestBase
     {
         GameObject surfaceGo = CreateGameObject("NavMeshSurface");
         scene.Add(surfaceGo);
-        var surface = surfaceGo.AddComponent<NavMeshSurface>();
+        NavMeshSurface surface = surfaceGo.AddComponent<NavMeshSurface>();
         ApplyFastBakeSettings(surface);
         surface.AgentTypeId = agentTypeId;
         return surface;
@@ -52,7 +52,7 @@ public class NavMeshModifierTests : RuntimeTestBase
         Scene scene = CreateScene(enable: true);
         AddFloorBox(scene, "Plain", new Float3(-5, -0.5f, 0), new Float3(10, 1, 10));
         GameObject marked = AddFloorBox(scene, "Marked", new Float3(5, -0.5f, 0), new Float3(10, 1, 10));
-        var modifier = marked.AddComponent<NavMeshModifier>();
+        NavMeshModifier modifier = marked.AddComponent<NavMeshModifier>();
         modifier.OverrideArea = true;
         modifier.Area = Mud;
 
@@ -85,7 +85,7 @@ public class NavMeshModifierTests : RuntimeTestBase
 
         GameObject parent = CreateGameObject("Parent");
         scene.Add(parent);
-        var parentModifier = parent.AddComponent<NavMeshModifier>();
+        NavMeshModifier parentModifier = parent.AddComponent<NavMeshModifier>();
         parentModifier.OverrideArea = true;
         parentModifier.Area = Mud;
         parentModifier.ApplyToChildren = true;
@@ -94,7 +94,7 @@ public class NavMeshModifierTests : RuntimeTestBase
         inheriting.SetParent(parent);
         GameObject overriding = AddFloorBox(scene, "Overriding", new Float3(5, -0.5f, 0), new Float3(10, 1, 10));
         overriding.SetParent(parent);
-        var childModifier = overriding.AddComponent<NavMeshModifier>();
+        NavMeshModifier childModifier = overriding.AddComponent<NavMeshModifier>();
         childModifier.OverrideArea = true;
         childModifier.Area = NavMeshAreas.Jump;
 
@@ -118,7 +118,7 @@ public class NavMeshModifierTests : RuntimeTestBase
 
             Scene scene = CreateScene(enable: true);
             GameObject floor = AddFloorBox(scene, "Floor", new Float3(0, -0.5f, 0), new Float3(20, 1, 20));
-            var modifier = floor.AddComponent<NavMeshModifier>();
+            NavMeshModifier modifier = floor.AddComponent<NavMeshModifier>();
             modifier.IgnoreFromBuild = true;
             modifier.AgentTypes = NavMeshAgentTypeSet.Of(3);
 
@@ -145,7 +145,7 @@ public class NavMeshModifierTests : RuntimeTestBase
 
         GameObject grandparent = CreateGameObject("Grandparent");
         scene.Add(grandparent);
-        var grandModifier = grandparent.AddComponent<NavMeshModifier>();
+        NavMeshModifier grandModifier = grandparent.AddComponent<NavMeshModifier>();
         grandModifier.OverrideArea = true;
         grandModifier.Area = Mud;
         grandModifier.ApplyToChildren = true;
@@ -153,7 +153,7 @@ public class NavMeshModifierTests : RuntimeTestBase
         GameObject parent = CreateGameObject("Parent");
         scene.Add(parent);
         parent.SetParent(grandparent);
-        var parentModifier = parent.AddComponent<NavMeshModifier>();
+        NavMeshModifier parentModifier = parent.AddComponent<NavMeshModifier>();
         parentModifier.OverrideArea = true;
         parentModifier.Area = NavMeshAreas.Jump;
         parentModifier.ApplyToChildren = true;
@@ -176,7 +176,7 @@ public class NavMeshModifierTests : RuntimeTestBase
 
         GameObject parent = CreateGameObject("Parent");
         scene.Add(parent);
-        var parentModifier = parent.AddComponent<NavMeshModifier>();
+        NavMeshModifier parentModifier = parent.AddComponent<NavMeshModifier>();
         parentModifier.OverrideArea = true;
         parentModifier.Area = Mud;
         parentModifier.ApplyToChildren = true;
@@ -205,7 +205,7 @@ public class NavMeshModifierTests : RuntimeTestBase
         GameObject volumeGo = CreateGameObject("MudZone");
         scene.Add(volumeGo);
         volumeGo.Transform.Position = new Float3(5, 0, 5);
-        var volume = volumeGo.AddComponent<NavMeshModifierVolume>();
+        NavMeshModifierVolume volume = volumeGo.AddComponent<NavMeshModifierVolume>();
         volume.Size = new Float3(6, 3, 6); // covers x/z 2..8
         volume.Area = Mud;
 
@@ -226,7 +226,7 @@ public class NavMeshModifierTests : RuntimeTestBase
         GameObject volumeGo = CreateGameObject("Hole");
         scene.Add(volumeGo);
         volumeGo.Transform.Position = new Float3(0, 0, 0);
-        var volume = volumeGo.AddComponent<NavMeshModifierVolume>();
+        NavMeshModifierVolume volume = volumeGo.AddComponent<NavMeshModifierVolume>();
         volume.Size = new Float3(4, 3, 4);
         volume.Area = NavMeshAreas.NotWalkable;
 
@@ -255,7 +255,7 @@ public class NavMeshModifierTests : RuntimeTestBase
 
         GameObject volumeGo = CreateGameObject("Hole");
         scene.Add(volumeGo);
-        var volume = volumeGo.AddComponent<NavMeshModifierVolume>();
+        NavMeshModifierVolume volume = volumeGo.AddComponent<NavMeshModifierVolume>();
         volume.Size = new Float3(4, 3, 4); // faces at +-2
         volume.Area = NavMeshAreas.NotWalkable;
 
@@ -279,7 +279,7 @@ public class NavMeshModifierTests : RuntimeTestBase
         scene.Add(volumeGo);
         volumeGo.Transform.Position = new Float3(0, 0, 0);
         volumeGo.Transform.Rotation = Quaternion.FromEuler(new Float3(0, 45, 0));
-        var volume = volumeGo.AddComponent<NavMeshModifierVolume>();
+        NavMeshModifierVolume volume = volumeGo.AddComponent<NavMeshModifierVolume>();
         volume.Size = new Float3(8, 3, 8); // rotated 45°: a diamond with tips at ±5.66 on the axes
         volume.Area = Mud;
 
@@ -309,7 +309,7 @@ public class NavMeshModifierTests : RuntimeTestBase
         GameObject volumeGo = CreateGameObject("Hole");
         scene.Add(volumeGo);
         volumeGo.Transform.Position = new Float3(0, 0, 0);
-        var volume = volumeGo.AddComponent<NavMeshModifierVolume>();
+        NavMeshModifierVolume volume = volumeGo.AddComponent<NavMeshModifierVolume>();
         volume.Size = new Float3(4, 3, 4);
         volume.Area = NavMeshAreas.NotWalkable;
 
@@ -333,7 +333,7 @@ public class NavMeshModifierTests : RuntimeTestBase
         AddFloorBox(scene, "Floor", new Float3(0, -0.5f, 0), new Float3(20, 1, 20));
         // A wall segment initially ignored by the bake (a ghost preview, say).
         GameObject wall = AddFloorBox(scene, "Wall", new Float3(0, 2, 0), new Float3(2, 4, 20));
-        var modifier = wall.AddComponent<NavMeshModifier>();
+        NavMeshModifier modifier = wall.AddComponent<NavMeshModifier>();
         modifier.IgnoreFromBuild = true;
 
         NavMeshSurface surface = AddSurface(scene);
@@ -366,7 +366,7 @@ public class NavMeshModifierTests : RuntimeTestBase
         // Thin and flush with the floor, so the two span tops land within the climb threshold and
         // their areas merge — the case where the null area would be discarded.
         GameObject blocked = AddFloorBox(scene, "Blocked", new Float3(0, 0.05f, 0), new Float3(6, 0.1f, 6));
-        var modifier = blocked.AddComponent<NavMeshModifier>();
+        NavMeshModifier modifier = blocked.AddComponent<NavMeshModifier>();
         modifier.OverrideArea = true;
         modifier.Area = NavMeshAreas.NotWalkable;
 

@@ -62,14 +62,14 @@ public static class ScriptCompiler
     /// <summary>Generate .csproj files for all user assemblies and compile them in dependency order.</summary>
     public static CompileResult CompileAll(Project project)
     {
-        var (units, error) = BuildPlan(project);
+        (List<CompilationUnit>? units, string? error) = BuildPlan(project);
         if (error != null)
             return new CompileResult { Success = false, Errors = error };
 
         // Generate the default Game/Editor csproj (and any asmdef unit that owns scripts) up front so
         // NuGet packages restore and IDEs resolve references even before the first script exists.
         var generated = units.Where(u => u.Source == null || u.Scripts.Count > 0).ToList();
-        foreach (var unit in generated)
+        foreach (CompilationUnit? unit in generated)
             GenerateCsproj(project, unit, units);
 
         GenerateSolutionIfMissing(project, generated);
@@ -79,7 +79,7 @@ public static class ScriptCompiler
             return RestorePackagesOnly(project, units);
 
         // Resolve NuGet references once (restores only when Directory.Build.props changed).
-        var nugetRefs = NuGetReferenceResolver.Resolve(project, compileUnits);
+        Dictionary<string, List<string>> nugetRefs = NuGetReferenceResolver.Resolve(project, compileUnits);
 
         var output = new StringBuilder();
         var errors = new StringBuilder();
@@ -90,18 +90,18 @@ public static class ScriptCompiler
         Directory.CreateDirectory(project.ScriptAssemblyPath);
 
         // Compile in dependency order so each unit can reference the ones before it.
-        foreach (var unit in compileUnits)
+        foreach (CompilationUnit? unit in compileUnits)
         {
             string stateKey = $"{project.RootPath}::{unit.Name}";
-            var outcome = RoslynScriptBackend.Compile(stateKey, unit, peerRefs,
-                nugetRefs.TryGetValue(unit.Name, out var pkgs) ? pkgs : Array.Empty<string>());
+            RoslynScriptBackend.CompileOutcome outcome = RoslynScriptBackend.Compile(stateKey, unit, peerRefs,
+                nugetRefs.TryGetValue(unit.Name, out List<string>? pkgs) ? pkgs : Array.Empty<string>());
 
-            foreach (var d in outcome.Diagnostics)
+            foreach (Microsoft.CodeAnalysis.Diagnostic d in outcome.Diagnostics)
             {
                 string line = d.ToString();
                 output.AppendLine(line);
 
-                var span = d.Location.GetMappedLineSpan();
+                Microsoft.CodeAnalysis.FileLinePositionSpan span = d.Location.GetMappedLineSpan();
                 diagnostics.Add(new CompileDiagnostic(
                     d.Severity.ToString(), d.Id, span.IsValid ? span.Path : "",
                     span.IsValid ? span.StartLinePosition.Line + 1 : 0, span.IsValid ? span.StartLinePosition.Character + 1 : 0,
@@ -152,10 +152,10 @@ public static class ScriptCompiler
         var output = new StringBuilder();
         var errors = new StringBuilder();
 
-        foreach (var unit in units.Where(u => u.Source == null))
+        foreach (CompilationUnit? unit in units.Where(u => u.Source == null))
         {
             Runtime.Debug.Log($"[ScriptCompiler] Restoring packages for {unit.Name}...");
-            var result = RunDotnetCommand($"restore \"{unit.CsprojPath}\"", project.RootPath);
+            (int exitCode, string stdout, string stderr) result = RunDotnetCommand($"restore \"{unit.CsprojPath}\"", project.RootPath);
             output.AppendLine(result.stdout);
             if (!string.IsNullOrEmpty(result.stderr))
                 errors.AppendLine(result.stderr);
@@ -178,7 +178,7 @@ public static class ScriptCompiler
     /// </summary>
     public static List<string> GetEditorAssemblyPaths(Project project)
     {
-        var (units, _) = BuildPlan(project);
+        (List<CompilationUnit>? units, string _) = BuildPlan(project);
         return units.Where(u => u.Scripts.Count > 0).Select(u => u.OutputDllPath).ToList();
     }
 
@@ -191,9 +191,9 @@ public static class ScriptCompiler
     /// </summary>
     public static List<BuildAssembly> GetBuildAssemblies(Project project, string targetPlatform)
     {
-        var (units, _) = BuildPlan(project);
+        (List<CompilationUnit>? units, string _) = BuildPlan(project);
         var result = new List<BuildAssembly>();
-        foreach (var unit in units)
+        foreach (CompilationUnit unit in units)
         {
             if (unit.IsEditorOnly || unit.Scripts.Count == 0) continue;
             if (unit.Source != null && !unit.Source.Definition.IncludedFor(targetPlatform)) continue;
@@ -208,7 +208,7 @@ public static class ScriptCompiler
 
     private static (List<CompilationUnit> units, string? error) BuildPlan(Project project)
     {
-        var asmdefs = AssemblyDefinitionDatabase.LoadAll(project);
+        List<AsmDefFile> asmdefs = AssemblyDefinitionDatabase.LoadAll(project);
 
         // Reject duplicate assembly names early - they would clobber each other's output.
         var dupes = asmdefs.GroupBy(a => a.Name, StringComparer.OrdinalIgnoreCase).Where(g => g.Count() > 1).ToList();
@@ -236,7 +236,7 @@ public static class ScriptCompiler
 
         // Asmdef-defined assemblies (only those whose define constraints are satisfied).
         var asmdefUnits = new List<(AsmDefFile file, CompilationUnit unit)>();
-        foreach (var file in asmdefs)
+        foreach (AsmDefFile file in asmdefs)
         {
             if (!EvaluateDefineConstraints(file.Definition.DefineConstraints, activeDefines))
                 continue;
@@ -253,7 +253,7 @@ public static class ScriptCompiler
             asmdefUnits.Add((file, unit));
         }
 
-        foreach (var unit in units)
+        foreach (CompilationUnit unit in units)
             byName[unit.Name] = unit;
 
         // Classify scripts into their owning assembly.
@@ -261,12 +261,12 @@ public static class ScriptCompiler
         {
             foreach (var script in Directory.EnumerateFiles(project.AssetsPath, "*.cs", SearchOption.AllDirectories))
             {
-                var owner = AssemblyDefinitionDatabase.FindOwner(script, asmdefs);
+                AsmDefFile? owner = AssemblyDefinitionDatabase.FindOwner(script, asmdefs);
                 if (owner != null)
                 {
                     // Owned by an asmdef. If that asmdef was excluded by define constraints it has no
                     // unit, so the script is simply not compiled (it must NOT leak into the defaults).
-                    if (byName.TryGetValue(owner.Name, out var ownerUnit))
+                    if (byName.TryGetValue(owner.Name, out CompilationUnit? ownerUnit))
                         ownerUnit.Scripts.Add(script);
                 }
                 else
@@ -277,17 +277,17 @@ public static class ScriptCompiler
         }
 
         // Resolve plugin and assembly references.
-        var plugins = PluginScanner.ScanAll(project);
+        List<PluginInfo> plugins = PluginScanner.ScanAll(project);
         var autoManaged = plugins.Where(p => p.IsManaged && p.AutoReferenced).ToList();
         // TryAdd (not ToDictionary) so duplicate plugin file names don't throw; first one wins.
         var managedByFile = new Dictionary<string, PluginInfo>(StringComparer.OrdinalIgnoreCase);
-        foreach (var p in plugins.Where(p => p.IsManaged))
+        foreach (PluginInfo? p in plugins.Where(p => p.IsManaged))
             managedByFile.TryAdd(p.FileName, p);
 
         // Set of unit names that actually produce a DLL (have scripts) - only these are referenceable.
         var producing = new HashSet<string>(units.Where(u => u.Scripts.Count > 0).Select(u => u.Name), StringComparer.OrdinalIgnoreCase);
 
-        foreach (var unit in units)
+        foreach (CompilationUnit unit in units)
         {
             // Managed plugin references.
             IEnumerable<PluginInfo> pluginRefs;
@@ -303,7 +303,7 @@ public static class ScriptCompiler
                 // editor-only assemblies can reference everything.
                 pluginRefs = autoManaged.Where(p => unit.IsEditorOnly || !p.EditorOnly);
             }
-            foreach (var p in pluginRefs)
+            foreach (PluginInfo p in pluginRefs)
                 unit.ManagedPluginPaths.Add(p!.AbsolutePath);
 
             // Assembly references.
@@ -325,7 +325,7 @@ public static class ScriptCompiler
 
         // Default assemblies auto-reference auto-referenced asmdef assemblies, so loose scripts can
         // use asmdef code without an explicit reference.
-        foreach (var (file, unit) in asmdefUnits)
+        foreach ((AsmDefFile? file, CompilationUnit? unit) in asmdefUnits)
         {
             if (unit.Scripts.Count == 0 || !file.Definition.AutoReferenced) continue;
 
@@ -341,14 +341,14 @@ public static class ScriptCompiler
             defaultEditor.AssemblyReferences.Add(defaultGame.Name);
 
         // Fill in generated file paths.
-        foreach (var unit in units)
+        foreach (CompilationUnit unit in units)
         {
             unit.CsprojPath = Path.Combine(project.RootPath, $"{unit.Name}.csproj");
             unit.OutputDllPath = Path.Combine(project.ScriptAssemblyPath, $"{unit.Name}.dll");
         }
 
         // Order by dependency (referenced assemblies build first).
-        var (ordered, cycle) = TopologicalSort(units, byName);
+        (List<CompilationUnit>? ordered, string? cycle) = TopologicalSort(units, byName);
         if (cycle != null)
             return (new(), $"Cyclic assembly references detected: {cycle}");
 
@@ -376,14 +376,14 @@ public static class ScriptCompiler
             state[u.Name] = 1;
             stack.Add(u.Name);
             foreach (var dep in u.AssemblyReferences)
-                if (byName.TryGetValue(dep, out var depUnit))
+                if (byName.TryGetValue(dep, out CompilationUnit? depUnit))
                     Visit(depUnit, stack);
             stack.RemoveAt(stack.Count - 1);
             state[u.Name] = 2;
             ordered.Add(u);
         }
 
-        foreach (var u in units)
+        foreach (CompilationUnit u in units)
             Visit(u, new List<string>());
 
         return (cycle == null ? ordered : new(), cycle);
@@ -495,7 +495,7 @@ public static class ScriptCompiler
 
         var sb = new StringBuilder();
         sb.AppendLine("<Solution>");
-        foreach (var unit in generatedUnits.OrderBy(u => u.Name, StringComparer.OrdinalIgnoreCase))
+        foreach (CompilationUnit? unit in generatedUnits.OrderBy(u => u.Name, StringComparer.OrdinalIgnoreCase))
             sb.AppendLine($"  <Project Path=\"{Xml(Path.GetRelativePath(project.RootPath, unit.CsprojPath))}\" />");
         sb.AppendLine("</Solution>");
 

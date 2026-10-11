@@ -60,7 +60,7 @@ public sealed class NavMeshWorld
         CrowdMaxAgentRadius = settings.CrowdMaxAgentRadius;
         TileCacheMaxObstacles = settings.TileCacheMaxObstacles;
         MaxTileUpdatesPerFrame = settings.MaxTileUpdatesPerFrame;
-        for (var quality = ObstacleAvoidanceType.LowQualityObstacleAvoidance; quality <= ObstacleAvoidanceType.HighQualityObstacleAvoidance; quality++)
+        for (ObstacleAvoidanceType quality = ObstacleAvoidanceType.LowQualityObstacleAvoidance; quality <= ObstacleAvoidanceType.HighQualityObstacleAvoidance; quality++)
             SetObstacleAvoidance(quality, settings.GetAvoidance(quality));
     }
 

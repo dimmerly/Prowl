@@ -27,7 +27,7 @@ public static class MeshFeatureImporter
     /// every later one onto the wrong GUID.</param>
     public static void GenerateAll(IReadOnlyList<Mesh> meshes, EchoObject? settings, ImportContext ctx, IReadOnlyList<string> ownerIdentities)
     {
-        var specs = MeshFeatureRegistry.Specs.ToArray();
+        MeshFeatureSpec[] specs = MeshFeatureRegistry.Specs.ToArray();
 
         // Meshes generate side by side, then register in order so the import stays deterministic
         var features = new Asset?[meshes.Count, specs.Length];

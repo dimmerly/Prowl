@@ -116,7 +116,7 @@ public static class MeshLODGenerator
         // Blend shape normals and tangents follow their positions, so they are not seams of their own. Leaving
         // them out also keeps the per corner comparisons cheap on meshes with dozens of shapes.
         var seams = new HashSet<string>();
-        foreach (var def in geometry.LoopAttributes)
+        foreach (GeometryData.AttributeDefinition def in geometry.LoopAttributes)
         {
             bool shapeShading = def.Name.StartsWith(MeshGeometry.BlendShapePrefix, StringComparison.Ordinal)
                 && (def.Name.EndsWith("/normal", StringComparison.Ordinal) || def.Name.EndsWith("/tangent", StringComparison.Ordinal));
@@ -130,7 +130,7 @@ public static class MeshLODGenerator
             SeamAttributes = seams,
         };
 
-        var weights = simplify.AttributeWeights;
+        Dictionary<string, float> weights = simplify.AttributeWeights;
         weights[MeshGeometry.Normal] = options.NormalWeight;
         weights[MeshGeometry.UV] = options.UVWeight;
         weights[MeshGeometry.VertexColor] = options.ColorWeight;
@@ -142,7 +142,7 @@ public static class MeshLODGenerator
         Float3 size = geometry.GetAABB().Size;
         float extent = MathF.Max(size.X, MathF.Max(size.Y, size.Z));
         float shapeWeight = extent > 0 ? options.BlendShapeWeight / (extent * extent) : options.BlendShapeWeight;
-        foreach (var def in geometry.LoopAttributes)
+        foreach (GeometryData.AttributeDefinition def in geometry.LoopAttributes)
         {
             if (def.Name.StartsWith(MeshGeometry.BlendShapePrefix, StringComparison.Ordinal) && def.Name.EndsWith("/position", StringComparison.Ordinal))
                 weights[def.Name] = shapeWeight;

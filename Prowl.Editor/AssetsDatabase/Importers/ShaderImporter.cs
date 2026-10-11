@@ -3,6 +3,7 @@ using System.IO;
 using Prowl.Editor.Projects;
 using Prowl.Runtime;
 using Prowl.Runtime.AssetImporting;
+using Prowl.Runtime.Resources;
 
 namespace Prowl.Editor.Importers;
 
@@ -18,7 +19,7 @@ public class ShaderImporter : AssetImporter
         string source = File.ReadAllText(ctx.AbsolutePath);
         string dir = Path.GetDirectoryName(ctx.AbsolutePath) ?? "";
 
-        if (!ShaderParser.ParseShader(ctx.AbsolutePath, source, path => ResolveInclude(dir, path), out var shader) || shader == null)
+        if (!ShaderParser.ParseShader(ctx.AbsolutePath, source, path => ResolveInclude(dir, path), out Shader? shader) || shader == null)
         {
             Debug.LogError($"Failed to parse shader: {ctx.AbsolutePath}");
             return false;

@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 
 using Prowl.Editor.Core;
@@ -64,7 +65,7 @@ public class GameViewPanel : DockPanel
 
     public override void OnGUI(Paper paper, float width, float height)
     {
-        var font = EditorTheme.DefaultFont;
+        Scribe.FontFile? font = EditorTheme.DefaultFont;
         if (font == null) return;
 
         using (paper.Column("gv_root").Size(width, height).Enter())
@@ -110,7 +111,7 @@ public class GameViewPanel : DockPanel
         _resolutionIndex = index;
         InvalidateRT();
 
-        var settings = EditorRegistries.GetSettings<ProjectsEditorSettings>();
+        ProjectsEditorSettings settings = EditorRegistries.GetSettings<ProjectsEditorSettings>();
         if (settings.SelectedResolutionIndex == index) return;
         settings.SelectedResolutionIndex = index;
         EditorRegistries.SaveSettings();
@@ -120,7 +121,7 @@ public class GameViewPanel : DockPanel
     {
         using (paper.Box("gv_game").Enter())
         {
-            var scene = Scene.Current;
+            Scene scene = Scene.Current;
             if (scene == null)
             {
                 paper.Box("gv_no_scene")
@@ -133,7 +134,7 @@ public class GameViewPanel : DockPanel
             }
 
             // Determine render size from resolution/aspect setting
-            var (_, targetW, targetH) = Resolutions[ResolutionIndex];
+            (string _, int targetW, int targetH) = Resolutions[ResolutionIndex];
             int rtW, rtH;
             if (targetW == 0 && targetH == 0)
             {
@@ -167,16 +168,16 @@ public class GameViewPanel : DockPanel
             EnsureRT(rtW, rtH);
 
             // Render all cameras.
-            var cameras = scene.GatherActiveCameras();
+            List<Camera> cameras = scene.GatherActiveCameras();
             cameras.RemoveAll(c => c.GameObject.HideFlags.HasFlag(HideFlags.HideAndDontSave));
 
             RenderStats.BeginFrame();
-            foreach (var cam in cameras)
+            foreach (Camera cam in cameras)
             {
                 try
                 {
-                    var camPipeline = cam.Pipeline;
-                    var pipeline = camPipeline.IsValid() ? camPipeline : DefaultRenderPipeline.Default;
+                    RenderPipeline? camPipeline = cam.Pipeline;
+                    RenderPipeline pipeline = camPipeline.IsValid() ? camPipeline : DefaultRenderPipeline.Default;
                     pipeline.Render(cam, new RenderingData { FallbackTarget = _rt });
                 }
                 catch (Exception ex)
@@ -244,7 +245,7 @@ public class GameViewPanel : DockPanel
                 _gamePaperRenderer.Target = _rt.frameBuffer;
 
                 {
-                    using var bind = Graphics.GetCommandBuffer("GameViewPanel.GUI Bind");
+                    using CommandBuffer bind = Graphics.GetCommandBuffer("GameViewPanel.GUI Bind");
                     bind.SetRenderTarget(_rt.frameBuffer);
                     bind.SetViewport(0, 0, (uint)rtW, (uint)rtH);
                     Graphics.Submit(bind);
@@ -266,7 +267,7 @@ public class GameViewPanel : DockPanel
                 }
 
                 {
-                    using var unbind = Graphics.GetCommandBuffer("GameViewPanel.GUI Unbind");
+                    using CommandBuffer unbind = Graphics.GetCommandBuffer("GameViewPanel.GUI Unbind");
                     unbind.SetRenderTarget(null);
                     unbind.SetViewport(0, 0, (uint)Window.InternalWindow.FramebufferSize.X, (uint)Window.InternalWindow.FramebufferSize.Y);
                     Graphics.Submit(unbind);
@@ -317,7 +318,7 @@ public class GameViewPanel : DockPanel
 
                 // Game viewport - rounded rect with purple border (matches SceneView)
                 bool playing = Application.IsPlaying;
-                var capturedRT = _rt;
+                RenderTexture capturedRT = _rt;
                 paper.Box("gv_display")
                     .PositionType(PositionType.SelfDirected)
                     .Position(offsetX, offsetY).Size(displayW, displayH)
@@ -378,7 +379,7 @@ public class GameViewPanel : DockPanel
         float y = top + 6;
         float fs = EditorTheme.FontSizeSmall;
 
-        var s = _gameStats;
+        RenderStats.Frame s = _gameStats;
         float fps = s.FrameTimeMs > 0 ? 1000f / s.FrameTimeMs : 0;
 
         using (paper.Column("gv_stats")
@@ -497,7 +498,7 @@ public class GameViewPanel : DockPanel
             float ms = history[(head + i) % len];
             if (ms <= 0) continue;
             float barH = MathF.Min((ms / maxMs) * gh, gh);
-            var col = ms < 16.67f ? Prowl.Vector.Color32.FromArgb(200, 70, 190, 110)
+            Vector.Color col = ms < 16.67f ? Prowl.Vector.Color32.FromArgb(200, 70, 190, 110)
                 : ms < 33.33f ? Prowl.Vector.Color32.FromArgb(200, 210, 170, 50)
                 : Prowl.Vector.Color32.FromArgb(200, 210, 55, 55);
             canvas.RectFilled(gx + i * barW, gy + gh - barH, MathF.Max(1, barW - 0.5f), barH, col);
@@ -544,7 +545,7 @@ public class GameViewPanel : DockPanel
     {
         using (paper.Row(id).Height(h).Enter())
         {
-            var lbl = paper.Box($"{id}_l").Text(left, font).TextColor(Dim).FontSize(fs).Alignment(TextAlignment.MiddleLeft);
+            ElementBuilder lbl = paper.Box($"{id}_l").Text(left, font).TextColor(Dim).FontSize(fs).Alignment(TextAlignment.MiddleLeft);
             if (tooltip != null) lbl.Tooltip(tooltip);
             paper.Box($"{id}_r").Text(right, font).TextColor(Val).FontSize(fs).Alignment(TextAlignment.MiddleRight);
         }

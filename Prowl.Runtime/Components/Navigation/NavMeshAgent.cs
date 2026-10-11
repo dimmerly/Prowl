@@ -245,7 +245,7 @@ public class NavMeshAgent : Component
         if (_crowdEntry == null) return null;
         if (_crowdEntry.Instance.NativeNavMesh.GetTileAndPolyByRef(polyRef, out DtMeshTile tile, out DtPoly poly).Failed())
             return null;
-        var cons = tile?.data?.offMeshCons;
+        DtOffMeshConnection[]? cons = tile?.data?.offMeshCons;
         if (cons == null) return null;
         foreach (DtOffMeshConnection con in cons)
             if (ReferenceEquals(tile!.data.polys[con.poly], poly))

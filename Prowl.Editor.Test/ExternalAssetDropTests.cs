@@ -40,9 +40,9 @@ public class ExternalAssetDropTests : IDisposable
         string src = MakeExternalFile("Grass.png");
         Directory.CreateDirectory(Path.Combine(_assets, "Textures"));
 
-        var plan = ExternalAssetDrop.PlanCopy([src], _assets, "Textures");
+        ExternalAssetDrop.CopyPlan plan = ExternalAssetDrop.PlanCopy([src], _assets, "Textures");
 
-        var file = Assert.Single(plan.Files);
+        (string SourceAbs, string DestAbs, string DestRel) file = Assert.Single(plan.Files);
         Assert.Equal(src, file.SourceAbs);
         Assert.Equal(Path.Combine(_assets, "Textures", "Grass.png"), file.DestAbs);
         Assert.Equal("Textures/Grass.png", file.DestRel);
@@ -60,7 +60,7 @@ public class ExternalAssetDropTests : IDisposable
             MakeExternalFile(".hidden"),
         };
 
-        var plan = ExternalAssetDrop.PlanCopy(sources, _assets, "");
+        ExternalAssetDrop.CopyPlan plan = ExternalAssetDrop.PlanCopy(sources, _assets, "");
 
         Assert.Empty(plan.Files);
     }
@@ -71,7 +71,7 @@ public class ExternalAssetDropTests : IDisposable
         File.WriteAllText(Path.Combine(_assets, "Grass.png"), "x");
         string src = MakeExternalFile("Grass.png");
 
-        var plan = ExternalAssetDrop.PlanCopy([src], _assets, "");
+        ExternalAssetDrop.CopyPlan plan = ExternalAssetDrop.PlanCopy([src], _assets, "");
 
         Assert.Equal("Grass (1).png", Path.GetFileName(Assert.Single(plan.Files).DestAbs));
     }
@@ -82,7 +82,7 @@ public class ExternalAssetDropTests : IDisposable
         string a = MakeExternalFile(Path.Combine("A", "Grass.png"));
         string b = MakeExternalFile(Path.Combine("B", "Grass.png"));
 
-        var plan = ExternalAssetDrop.PlanCopy([a, b], _assets, "");
+        ExternalAssetDrop.CopyPlan plan = ExternalAssetDrop.PlanCopy([a, b], _assets, "");
 
         Assert.Equal(2, plan.Files.Count);
         Assert.Equal("Grass.png", plan.Files[0].DestRel);
@@ -97,7 +97,7 @@ public class ExternalAssetDropTests : IDisposable
         MakeExternalFile(Path.Combine("Pack", "Textures", "Skin.png"));
         Directory.CreateDirectory(Path.Combine(_external, "Pack", ".git"));
 
-        var plan = ExternalAssetDrop.PlanCopy([Path.Combine(_external, "Pack")], _assets, "");
+        ExternalAssetDrop.CopyPlan plan = ExternalAssetDrop.PlanCopy([Path.Combine(_external, "Pack")], _assets, "");
 
         Assert.Equal(
             [Path.Combine(_assets, "Pack"), Path.Combine(_assets, "Pack", "Textures")],
@@ -113,7 +113,7 @@ public class ExternalAssetDropTests : IDisposable
         Directory.CreateDirectory(Path.Combine(_assets, "Pack"));
         MakeExternalFile(Path.Combine("Pack", "Robot.fbx"));
 
-        var plan = ExternalAssetDrop.PlanCopy([Path.Combine(_external, "Pack")], _assets, "");
+        ExternalAssetDrop.CopyPlan plan = ExternalAssetDrop.PlanCopy([Path.Combine(_external, "Pack")], _assets, "");
 
         Assert.Equal(Path.Combine(_assets, "Pack (1)"), Assert.Single(plan.Directories));
         Assert.Equal("Pack (1)/Robot.fbx", Assert.Single(plan.Files).DestRel);
@@ -125,7 +125,7 @@ public class ExternalAssetDropTests : IDisposable
         string existing = Path.Combine(_assets, "Old.png");
         File.WriteAllText(existing, "x");
 
-        var plan = ExternalAssetDrop.PlanCopy([existing], _assets, "Sub");
+        ExternalAssetDrop.CopyPlan plan = ExternalAssetDrop.PlanCopy([existing], _assets, "Sub");
 
         Assert.Empty(plan.Files);
         Assert.Equal("Old.png", Assert.Single(plan.AlreadyInProject));
@@ -134,7 +134,7 @@ public class ExternalAssetDropTests : IDisposable
     [Fact]
     public void FolderContainingDestination_IsSkipped()
     {
-        var plan = ExternalAssetDrop.PlanCopy([_root], _assets, "");
+        ExternalAssetDrop.CopyPlan plan = ExternalAssetDrop.PlanCopy([_root], _assets, "");
 
         Assert.Empty(plan.Files);
         Assert.Empty(plan.Directories);
@@ -145,7 +145,7 @@ public class ExternalAssetDropTests : IDisposable
     {
         Directory.CreateDirectory(Path.Combine(_external, "Empty"));
 
-        var plan = ExternalAssetDrop.PlanCopy([Path.Combine(_external, "Empty")], _assets, "");
+        ExternalAssetDrop.CopyPlan plan = ExternalAssetDrop.PlanCopy([Path.Combine(_external, "Empty")], _assets, "");
 
         Assert.Equal(Path.Combine(_assets, "Empty"), Assert.Single(plan.Directories));
         Assert.Empty(plan.Files);
@@ -164,7 +164,7 @@ public class ExternalAssetDropTests : IDisposable
         mklink!.WaitForExit();
         if (!Directory.Exists(Path.Combine(pack, "loop"))) return;
 
-        var plan = ExternalAssetDrop.PlanCopy([pack], _assets, "");
+        ExternalAssetDrop.CopyPlan plan = ExternalAssetDrop.PlanCopy([pack], _assets, "");
 
         Assert.Equal(Path.Combine(_assets, "Cycle"), Assert.Single(plan.Directories));
         Assert.Single(plan.Files);

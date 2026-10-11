@@ -103,9 +103,9 @@ public sealed class SceneReferenceResolver : IExternalReferenceResolver
         {
             objects.Add(go);
             objects.Add(go.Transform);
-            foreach (var component in go.GetComponents<Component>())
+            foreach (Component component in go.GetComponents<Component>())
                 objects.Add(component);
-            foreach (var child in go.Children)
+            foreach (GameObject child in go.Children)
                 Collect(child);
         }
     }

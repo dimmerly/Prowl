@@ -71,12 +71,12 @@ public static class PackageImportDialog
             // Compute import actions for each asset
             _assetActions.Clear();
             _enabledPaths.Clear();
-            var project = Project.Current;
+            Project? project = Project.Current;
             string assetsPath = project?.AssetsPath ?? "";
 
-            foreach (var asset in _manifest.Assets)
+            foreach (PackageAssetEntry asset in _manifest.Assets)
             {
-                var action = ProwlPackage.DetermineAction(_archive, asset, assetsPath);
+                ImportAction action = ProwlPackage.DetermineAction(_archive, asset, assetsPath);
                 _assetActions[asset.Path] = action;
 
                 _enabledPaths.Add(asset.Path);
@@ -100,7 +100,7 @@ public static class PackageImportDialog
         _assetActions.Clear();
         _enabledPaths.Clear();
         _selectedAssetPath = null;
-        foreach (var tex in _thumbCache.Values)
+        foreach (Texture2D? tex in _thumbCache.Values)
             if (tex.IsValid()) tex.Dispose();
         _thumbCache.Clear();
     }
@@ -162,7 +162,7 @@ public static class PackageImportDialog
                 folderChildren[folderPath] = new();
         }
 
-        foreach (var asset in _manifest.Assets)
+        foreach (PackageAssetEntry asset in _manifest.Assets)
         {
             string dir = Path.GetDirectoryName(asset.Path)?.Replace('\\', '/') ?? "";
             EnsureFolder(dir);
@@ -173,7 +173,7 @@ public static class PackageImportDialog
         }
 
         // Sort each level: folders first, then alphabetical
-        foreach (var list in folderChildren.Values)
+        foreach (List<(string name, string fullPath, bool isFolder)> list in folderChildren.Values)
         {
             list.Sort((a, b) =>
             {
@@ -190,10 +190,10 @@ public static class PackageImportDialog
 
         void Flatten(string parentPath, int depth)
         {
-            if (!folderChildren.TryGetValue(parentPath, out var children))
+            if (!folderChildren.TryGetValue(parentPath, out List<(string name, string fullPath, bool isFolder)>? children))
                 return;
 
-            foreach (var (name, fullPath, isFolder) in children)
+            foreach ((string? name, string? fullPath, bool isFolder) in children)
             {
                 if (isFolder)
                 {
@@ -223,9 +223,9 @@ public static class PackageImportDialog
                 }
                 else
                 {
-                    var action = _assetActions.GetValueOrDefault(fullPath, ImportAction.Add);
+                    ImportAction action = _assetActions.GetValueOrDefault(fullPath, ImportAction.Add);
                     bool enabled = _enabledPaths.Contains(fullPath);
-                    var color = GetActionColor(action);
+                    Color color = GetActionColor(action);
 
                     result.Add(new TreeNode
                     {
@@ -247,10 +247,10 @@ public static class PackageImportDialog
 
         void CountDescendantFiles(string folderPath, ref int total, ref int enabled)
         {
-            if (!folderChildren.TryGetValue(folderPath, out var children))
+            if (!folderChildren.TryGetValue(folderPath, out List<(string name, string fullPath, bool isFolder)>? children))
                 return;
 
-            foreach (var (_, childPath, childIsFolder) in children)
+            foreach ((string _, string? childPath, bool childIsFolder) in children)
             {
                 if (childIsFolder)
                     CountDescendantFiles(childPath, ref total, ref enabled);
@@ -298,7 +298,7 @@ public static class PackageImportDialog
     private static void DrawInternal(Paper paper, int layer)
     {
         if (!_handle.IsOpen) return;
-        var font = EditorTheme.DefaultFont;
+        Scribe.FontFile? font = EditorTheme.DefaultFont;
         if (font == null) return;
 
         using (paper.Column("pkgimp_window")
@@ -388,7 +388,7 @@ public static class PackageImportDialog
             .Enter())
         {
             // Left: file tree using Origami Tree widget
-            var nodes = BuildFlatNodes();
+            List<TreeNode> nodes = BuildFlatNodes();
             Origami.Tree(paper, "pkgimp_tree", TreeWidth, bodyHeight)
                 .Nodes(nodes)
                 .Checkboxes()
@@ -443,15 +443,15 @@ public static class PackageImportDialog
                 return;
             }
 
-            var asset = _manifest.Assets.FirstOrDefault(a =>
+            PackageAssetEntry? asset = _manifest.Assets.FirstOrDefault(a =>
                 a.Path.Equals(_selectedAssetPath, StringComparison.OrdinalIgnoreCase));
 
             if (asset == null) return;
 
-            var action = _assetActions.GetValueOrDefault(asset.Path, ImportAction.Add);
+            ImportAction action = _assetActions.GetValueOrDefault(asset.Path, ImportAction.Add);
 
             // Thumbnail
-            var thumbTex = GetPackageThumbnail(asset.Path);
+            Texture2D? thumbTex = GetPackageThumbnail(asset.Path);
             float thumbDisplaySize = Math.Min(detailWidth - 32, 128);
             if (thumbTex != null)
             {
@@ -578,13 +578,13 @@ public static class PackageImportDialog
     {
         if (_archive == null || _manifest == null) return;
 
-        var project = Project.Current;
+        Project? project = Project.Current;
         if (project == null) return;
 
         int imported = 0;
         int failed = 0;
 
-        foreach (var asset in _manifest.Assets)
+        foreach (PackageAssetEntry asset in _manifest.Assets)
         {
             if (!_enabledPaths.Contains(asset.Path)) continue;
 
@@ -619,7 +619,7 @@ public static class PackageImportDialog
         Close();
 
         // Trigger asset database rescan to pick up the new/changed files
-        var db = EditorAssetBackend.Instance;
+        EditorAssetBackend? db = EditorAssetBackend.Instance;
         if (db != null)
             db.Dispose();
 
@@ -641,7 +641,7 @@ public static class PackageImportDialog
     {
         if (_archive == null) return null;
 
-        if (_thumbCache.TryGetValue(assetPath, out var cached))
+        if (_thumbCache.TryGetValue(assetPath, out Texture2D? cached))
             return cached;
 
         try

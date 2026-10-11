@@ -247,12 +247,12 @@ public class CharacterController : Component
         {
             Float3 bottom = feet + _up * Radius;
             Float3 top = feet + _up * Maths.Max(Height - Radius, Radius + 0.001f);
-            var capsule = SupportPrimitives.CreateCapsule(Radius, Float3.Length(top - bottom) * 0.5f);
+            SupportPrimitives.Capsule capsule = SupportPrimitives.CreateCapsule(Radius, Float3.Length(top - bottom) * 0.5f);
             return NarrowPhase.MprEpa(shape, capsule, queryOrientation, Orientation.ToJitter(), queryPosition, ((top + bottom) * 0.5f).ToJitter(),
                 out _, out _, out _, out _);
         }
 
-        var cylinder = SupportPrimitives.CreateCylinder(Radius, Height * 0.5f);
+        SupportPrimitives.Cylinder cylinder = SupportPrimitives.CreateCylinder(Radius, Height * 0.5f);
         return NarrowPhase.MprEpa(shape, cylinder, queryOrientation, Orientation.ToJitter(), queryPosition, ShapeCenter(feet).ToJitter(),
             out _, out _, out _, out _);
     }

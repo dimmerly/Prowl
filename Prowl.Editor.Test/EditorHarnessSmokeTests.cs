@@ -3,6 +3,7 @@
 
 using Prowl.Editor.Projects;
 using Prowl.Runtime;
+using Prowl.Runtime.Resources;
 
 using Xunit;
 
@@ -46,7 +47,7 @@ public class EditorHarnessSmokeTests : EditorTestHarness
         Guid guid = CreatePrefabAsset(source, "Enemy.prefab");
         Assert.NotEqual(Guid.Empty, guid);
 
-        var prefab = GetPrefab(guid);
+        PrefabAsset? prefab = GetPrefab(guid);
         Assert.NotNull(prefab);
 
         var instance = GameObject.InstantiateDetached(prefab!);

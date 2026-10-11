@@ -53,7 +53,7 @@ public sealed class BuildSettings : ProjectSettingsBase
     /// </summary>
     public T GetProfile<T>(Type pipelineType) where T : PlatformBuildProfile
     {
-        var profile = PlatformProfiles.FirstOrDefault(profile => pipelineType == profile.GetPipelineType());
+        PlatformBuildProfile? profile = PlatformProfiles.FirstOrDefault(profile => pipelineType == profile.GetPipelineType());
         if (profile == null)
         {
             profile = System.Activator.CreateInstance<T>();
@@ -68,13 +68,13 @@ public sealed class BuildSettings : ProjectSettingsBase
     /// </summary>
     public PlatformBuildProfile GetOrCreateProfile(Type pipelineType)
     {
-        var profile = PlatformProfiles.FirstOrDefault(profile => pipelineType == profile.GetPipelineType());
+        PlatformBuildProfile? profile = PlatformProfiles.FirstOrDefault(profile => pipelineType == profile.GetPipelineType());
 
         // If the profile is null, create the profile
         if (profile == null)
         {
             Type targetType = null;
-            foreach (var type in EditorUtils.GetAllTypes())
+            foreach (Type type in EditorUtils.GetAllTypes())
             {
                 if (!type.IsSubclassOf(typeof(PlatformBuildProfile)) || type == typeof(PlatformBuildProfile)) continue;
                 var check = Activator.CreateInstance(type) as PlatformBuildProfile;
@@ -98,7 +98,7 @@ public sealed class BuildSettings : ProjectSettingsBase
     /// <summary> Draws the build settings UI in the project settings panel. </summary>
     public override void OnGUI(Paper paper, float width)
     {
-        var font = EditorTheme.DefaultFont;
+        Scribe.FontFile? font = EditorTheme.DefaultFont;
         if (font == null) return;
 
         // Scene List
@@ -107,7 +107,7 @@ public sealed class BuildSettings : ProjectSettingsBase
         for (int i = 0; i < Scenes.Count; i++)
         {
             int idx = i;
-            var scene = Scenes[i];
+            SceneBuildEntry scene = Scenes[i];
 
             using (paper.Row($"bld_scene_{i}").Height(EditorTheme.RowHeight).Gap(4).PaddingLeft(4).Enter())
             {
@@ -168,8 +168,8 @@ public sealed class BuildSettings : ProjectSettingsBase
                 {
                     if (EditorSceneManager.CurrentScenePath != null)
                     {
-                        var db = EditorAssetBackend.Instance;
-                        var entry = db?.GetEntry(EditorSceneManager.CurrentScenePath);
+                        EditorAssetBackend? db = EditorAssetBackend.Instance;
+                        AssetEntry? entry = db?.GetEntry(EditorSceneManager.CurrentScenePath);
                         if (entry != null && !Scenes.Any(s => s.SceneGuid == entry.Guid))
                         {
                             Scenes.Add(new SceneBuildEntry { Path = entry.Path, SceneGuid = entry.Guid });

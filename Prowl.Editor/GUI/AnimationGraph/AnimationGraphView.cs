@@ -348,7 +348,7 @@ internal sealed class AnimationGraphView
 
     private static void DrawProblems(Paper paper, List<GraphProblem> problems)
     {
-        var font = EditorTheme.DefaultFont;
+        Scribe.FontFile? font = EditorTheme.DefaultFont;
         if (font == null) return;
 
         for (int i = 0; i < problems.Count; i++)
@@ -455,7 +455,7 @@ internal sealed class AnimationGraphView
     /// <summary>The line on a card that has no settings of its own to show.</summary>
     private static void DrawBody(NodeBodyContext ctx, string summary)
     {
-        var font = EditorTheme.DefaultFont;
+        Scribe.FontFile? font = EditorTheme.DefaultFont;
         if (font == null) return;
 
         ctx.Paper.Box(ctx.Id("summary")).Width(ctx.Paper.Percent(100)).Height(ctx.Paper.Percent(100))
@@ -891,7 +891,7 @@ internal sealed class AnimationGraphView
         if (around.Count > 0)
         {
             const float margin = 24f, header = 32f;
-            var metrics = Origami.Current.Metrics;
+            OrigamiMetrics metrics = Origami.Current.Metrics;
             float minX = float.MaxValue, minY = float.MaxValue, maxX = float.MinValue, maxY = float.MinValue;
 
             foreach (GraphNode node in around)
@@ -1221,7 +1221,7 @@ internal sealed class AnimationGraphStateView
 
     private static void DrawPoseName(NodeBodyContext ctx, string text)
     {
-        var font = EditorTheme.DefaultFont;
+        Scribe.FontFile? font = EditorTheme.DefaultFont;
         if (font == null) return;
 
         ctx.Paper.Box(ctx.Id("pose")).Width(ctx.Paper.Percent(100)).Height(ctx.Paper.Percent(100))
@@ -1420,7 +1420,7 @@ internal sealed class AnimationGraphProbe
     /// <summary>What a record's node is doing, or null when it is not running.</summary>
     public NodeState? Read(AnimationGraph? asset, GraphNodeRecord record)
     {
-        if (!TryMaps(asset, out MotionGraphInstance instance, out var nodes, out _)) return null;
+        if (!TryMaps(asset, out MotionGraphInstance instance, out IReadOnlyDictionary<string, int>? nodes, out _)) return null;
         if (!nodes.TryGetValue(record.Id, out int index) || index < 0) return null;
 
         GraphNodeInstance? node = instance.TryGetNodeInstance(index);
@@ -1437,7 +1437,7 @@ internal sealed class AnimationGraphProbe
     /// <summary>A value node's current number, or null when it is not running or is not a number.</summary>
     public float? ReadNumber(AnimationGraph? asset, GraphNodeRecord record)
     {
-        if (!TryMaps(asset, out MotionGraphInstance instance, out var nodes, out _)) return null;
+        if (!TryMaps(asset, out MotionGraphInstance instance, out IReadOnlyDictionary<string, int>? nodes, out _)) return null;
         if (!nodes.TryGetValue(record.Id, out int index) || index < 0) return null;
 
         return instance.TryReadValueNode(index, out ParameterValue value) ? value.AsFloat() : null;
@@ -1446,7 +1446,7 @@ internal sealed class AnimationGraphProbe
     /// <summary>The share of a blend an input carries right now, or null when there is none to report.</summary>
     public float? WeightInto(AnimationGraph? asset, GraphNodeRecord target, GraphNodeRecord source)
     {
-        if (!TryMaps(asset, out MotionGraphInstance instance, out var nodes, out _)) return null;
+        if (!TryMaps(asset, out MotionGraphInstance instance, out IReadOnlyDictionary<string, int>? nodes, out _)) return null;
         if (!nodes.TryGetValue(target.Id, out int into) || !nodes.TryGetValue(source.Id, out int from)) return null;
 
         return instance.TryGetNodeInstance(into) is IBlendWeights blend ? blend.WeightOf(from) : null;
@@ -1455,7 +1455,7 @@ internal sealed class AnimationGraphProbe
     /// <summary>The state a machine is in, as an index into the record's own states, or -1.</summary>
     public int ActiveState(AnimationGraph? asset, GraphNodeRecord machine)
     {
-        if (!TryMaps(asset, out MotionGraphInstance instance, out var nodes, out var machines)) return -1;
+        if (!TryMaps(asset, out MotionGraphInstance instance, out IReadOnlyDictionary<string, int>? nodes, out IReadOnlyDictionary<string, int[]>? machines)) return -1;
         if (!nodes.TryGetValue(machine.Id, out int index) || index < 0) return -1;
         if (!machines.TryGetValue(machine.Id, out int[]? states)) return -1;
 

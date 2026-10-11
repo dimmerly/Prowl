@@ -104,7 +104,7 @@ public class ConsolePanel : DockPanel
     /// <summary>Icon + color for a log severity, matching the console rows.</summary>
     public static (IOrigamiIcon icon, Color color) SeverityStyle(LogSeverity severity)
     {
-        var (icon, color, _) = LevelOf(severity);
+        (IOrigamiIcon? icon, Color color, string _) = LevelOf(severity);
         return (icon, color);
     }
 
@@ -115,7 +115,7 @@ public class ConsolePanel : DockPanel
         {
             DrainPending();
             int info = 0, warn = 0, err = 0;
-            foreach (var m in _messages)
+            foreach (LogEntry m in _messages)
             {
                 if (m.Severity == LogSeverity.Warning) warn += m.Count;
                 else if (m.Severity is LogSeverity.Error or LogSeverity.Exception) err += m.Count;
@@ -132,7 +132,7 @@ public class ConsolePanel : DockPanel
         {
             DrainPending();
             if (_messages.Count == 0) return null;
-            var m = _messages[^1];
+            LogEntry m = _messages[^1];
             return (m.Severity, m.Message, SourceOf(m), m.Count);
         }
     }
@@ -152,7 +152,7 @@ public class ConsolePanel : DockPanel
         {
             DrainPending();
             int count = 0;
-            foreach (var m in _messages)
+            foreach (LogEntry m in _messages)
                 if (m.FullMessage == message) count += m.Count;
             return count;
         }
@@ -161,7 +161,7 @@ public class ConsolePanel : DockPanel
     // Callers hold s_messagesLock.
     private static void DrainPending()
     {
-        while (s_pending.TryDequeue(out var log))
+        while (s_pending.TryDequeue(out (string Message, DebugStackTrace? StackTrace, LogSeverity Severity, DateTime Time) log))
             Append(log.Message, log.StackTrace, log.Severity, log.Time);
     }
 
@@ -171,7 +171,7 @@ public class ConsolePanel : DockPanel
 
         if (_messages.Count > 0)
         {
-            var last = _messages[^1];
+            LogEntry last = _messages[^1];
             if (last.FullMessage == message && last.Severity == severity)
             {
                 last.Count += 1;
@@ -203,7 +203,7 @@ public class ConsolePanel : DockPanel
     {
         lock (s_messagesLock) DrainPending();
 
-        var font = EditorTheme.DefaultFont;
+        FontFile? font = EditorTheme.DefaultFont;
         if (font == null) return;
 
         using (paper.Column("con_root").Size(width, height).Enter())
@@ -219,7 +219,7 @@ public class ConsolePanel : DockPanel
     private void DrawToolbar(Paper paper, FontFile font, float width)
     {
         int infoCount = 0, warnCount = 0, errCount = 0;
-        foreach (var m in _messages)
+        foreach (LogEntry m in _messages)
         {
             if (m.Severity == LogSeverity.Warning) warnCount += m.Count;
             else if (m.Severity is LogSeverity.Error or LogSeverity.Exception) errCount += m.Count;
@@ -255,7 +255,7 @@ public class ConsolePanel : DockPanel
     // cs-lvl chip: icon + optional label + optional count; "on" gets a glass inset, "off" dims.
     private void LevelChip(Paper p, FontFile font, string id, IOrigamiIcon icon, Color iconColor, string? label, string? count, bool on, bool dim, Action onClick)
     {
-        var mono = EditorTheme.FontMono ?? font;
+        FontFile mono = EditorTheme.FontMono ?? font;
         Color ic = dim ? Color.FromArgb(115, iconColor.R, iconColor.G, iconColor.B) : iconColor;
 
         using (p.Row(id).Width(UnitValue.Auto).Height(24).Rounded(EditorTheme.Roundness).Padding(8, 8, 0, 0).Gap(5).Margin(0, 0, UnitValue.StretchOne, UnitValue.StretchOne)
@@ -329,8 +329,8 @@ public class ConsolePanel : DockPanel
                 })
                 .OnPostLayout((handle, contentRect) =>
                 {
-                    var container = paper.GetElementData(handle.Data.ParentIndex);
-                    var clip = paper.GetElementData(container.ParentIndex);
+                    ElementData container = paper.GetElementData(handle.Data.ParentIndex);
+                    ElementData clip = paper.GetElementData(container.ParentIndex);
                     float contentTop = (float)contentRect.Min.Y;
                     int first = Math.Max(0, (int)(((float)clip.LayoutRect.Min.Y - contentTop) / rowH) - 1);
                     int last = Math.Min(count - 1, (int)(((float)clip.LayoutRect.Max.Y - contentTop) / rowH) + 1);
@@ -341,14 +341,14 @@ public class ConsolePanel : DockPanel
 
     private void DrawRows(Paper paper, Canvas canvas, Rect r, FontFile font, float rowH, int first, int last)
     {
-        var mono = EditorTheme.FontMono ?? font;
-        var semi = EditorTheme.FontSemiBold ?? font;
-        var bold = EditorTheme.FontBold ?? font;
+        FontFile mono = EditorTheme.FontMono ?? font;
+        FontFile semi = EditorTheme.FontSemiBold ?? font;
+        FontFile bold = EditorTheme.FontBold ?? font;
 
         float left = (float)r.Min.X, right = (float)r.Max.X, top = (float)r.Min.Y, w = (float)r.Size.X;
         const float padL = 12f, padR = 12f, gap = 8f, iconSize = 14f;
 
-        var ptr = paper.PointerPos;
+        Float2 ptr = paper.PointerPos;
         int hoverRow = (ptr.X >= left && ptr.X <= right && ptr.Y >= top && ptr.Y <= (float)r.Max.Y)
             ? (int)(((float)ptr.Y - top) / rowH) : -1;
 
@@ -381,7 +381,7 @@ public class ConsolePanel : DockPanel
             if (vi < 0 || vi >= _filteredIndices.Count) break;
             int msgIdx = _filteredIndices[vi];
             if (msgIdx < 0 || msgIdx >= _messages.Count) continue;
-            var msg = _messages[msgIdx];
+            LogEntry msg = _messages[msgIdx];
             (IOrigamiIcon icon, Color color, string name) = LevelOf(msg.Severity);
             bool selected = vi == _selectedFilteredIndex;
 
@@ -457,7 +457,7 @@ public class ConsolePanel : DockPanel
     // Class the log originated from (first captured frame's declaring type), for the source label.
     private static string? SourceOf(LogEntry msg)
     {
-        var frames = msg.StackTrace?.StackFrames;
+        DebugStackFrame[]? frames = msg.StackTrace?.StackFrames;
         if (frames == null || frames.Length == 0) return null;
         string? method = frames[0].Method;
         if (string.IsNullOrEmpty(method)) return null;
@@ -478,7 +478,7 @@ public class ConsolePanel : DockPanel
         _filteredIndices.Clear();
         for (int i = _messages.Count - 1; i >= 0; i--)
         {
-            var msg = _messages[i];
+            LogEntry msg = _messages[i];
             if (!ShouldShow(msg.Severity)) continue;
             if (!EditorUtils.MatchesSearch(msg.Message, _searchText))
                 continue;

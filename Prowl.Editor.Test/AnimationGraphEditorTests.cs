@@ -39,7 +39,7 @@ public class AnimationGraphEditorTests
     public void ANewNodeGetsItsDeclaredPins()
     {
         var graph = new AnimationGraph();
-        var view = ViewOver(graph);
+        AnimationGraphView view = ViewOver(graph);
 
         GraphNodeRecord? layers = view.Add(AnimationNodeIds.LayerBlend, new Float2(0, 0));
 
@@ -51,7 +51,7 @@ public class AnimationGraphEditorTests
     public void WiringTheOpenSocketFillsTheTrailingGroupBeforeStartingANewOne()
     {
         var graph = new AnimationGraph();
-        var view = ViewOver(graph);
+        AnimationGraphView view = ViewOver(graph);
 
         GraphNodeRecord layers = view.Add(AnimationNodeIds.LayerBlend, new Float2(0, 0))!;
         GraphNodeRecord poseA = view.Add(AnimationNodeIds.Clip, new Float2(0, 0))!;
@@ -75,7 +75,7 @@ public class AnimationGraphEditorTests
     public void ANumberDroppedOnTheSameSocketTakesTheWeightBesideItsLayer()
     {
         var graph = new AnimationGraph();
-        var view = ViewOver(graph);
+        AnimationGraphView view = ViewOver(graph);
 
         GraphNodeRecord layers = view.Add(AnimationNodeIds.LayerBlend, new Float2(0, 0))!;
         GraphNodeRecord pose = view.Add(AnimationNodeIds.Clip, new Float2(0, 0))!;
@@ -95,7 +95,7 @@ public class AnimationGraphEditorTests
     public void UnwiringATrailingGroupDropsItsPins()
     {
         var graph = new AnimationGraph();
-        var view = ViewOver(graph);
+        AnimationGraphView view = ViewOver(graph);
 
         GraphNodeRecord blend = view.Add(AnimationNodeIds.Blend1D, new Float2(0, 0))!;
         GraphNodeRecord pose = view.Add(AnimationNodeIds.Clip, new Float2(0, 0))!;
@@ -119,7 +119,7 @@ public class AnimationGraphEditorTests
     public void DeletingANodeUnwiresIt()
     {
         var graph = new AnimationGraph();
-        var view = ViewOver(graph);
+        AnimationGraphView view = ViewOver(graph);
 
         GraphNodeRecord pose = view.Add(AnimationNodeIds.Clip, new Float2(0, 0))!;
         GraphNodeRecord speed = view.Add(AnimationNodeIds.SpeedScale, new Float2(0, 0))!;
@@ -161,7 +161,7 @@ public class AnimationGraphEditorTests
     public void AStateStartsWithAnOutputThatWaitsToBeEntered()
     {
         var graph = new AnimationGraph();
-        var view = ViewOver(graph);
+        AnimationGraphView view = ViewOver(graph);
         (_, GraphStateRecord state, _) = MachineWithState(graph, view);
 
         GraphNodeRecord output = graph.OwnedNode(state.Id, AnimationNodeIds.StateOutput)!;
@@ -173,7 +173,7 @@ public class AnimationGraphEditorTests
     public void EachGraphShowsOnlyItsOwnNodes()
     {
         var graph = new AnimationGraph();
-        var view = ViewOver(graph);
+        AnimationGraphView view = ViewOver(graph);
         (GraphNodeRecord machine, GraphStateRecord state, GraphNodeRecord clip) = MachineWithState(graph, view);
 
         Assert.Contains(view.Nodes, n => n.Id == machine.Id);
@@ -189,7 +189,7 @@ public class AnimationGraphEditorTests
     public void DeletingAStateMachineTakesItsStatesGraphsWithIt()
     {
         var graph = new AnimationGraph();
-        var view = ViewOver(graph);
+        AnimationGraphView view = ViewOver(graph);
         (GraphNodeRecord machine, GraphStateRecord state, GraphNodeRecord clip) = MachineWithState(graph, view);
         graph.Groups.Add(new GraphGroupRecord { Id = "g", Owner = state.Id });
 
@@ -203,7 +203,7 @@ public class AnimationGraphEditorTests
     public void AStateOutputCannotBeDeleted()
     {
         var graph = new AnimationGraph();
-        var view = ViewOver(graph);
+        AnimationGraphView view = ViewOver(graph);
         (_, GraphStateRecord state, _) = MachineWithState(graph, view);
 
         view.Scope = state.Id;
@@ -218,7 +218,7 @@ public class AnimationGraphEditorTests
     public void ANewSubGraphIsEmbeddedWithItsOwnOutput()
     {
         var graph = new AnimationGraph();
-        var view = ViewOver(graph);
+        AnimationGraphView view = ViewOver(graph);
 
         GraphNodeRecord sub = view.Add(AnimationNodeIds.SubGraph, new Float2(0, 0))!;
 
@@ -230,7 +230,7 @@ public class AnimationGraphEditorTests
     public void DuplicatingANodeCopiesItsSettingsButNotItsWires()
     {
         var graph = new AnimationGraph();
-        var view = ViewOver(graph);
+        AnimationGraphView view = ViewOver(graph);
 
         GraphNodeRecord pose = view.Add(AnimationNodeIds.Clip, new Float2(0, 0))!;
         GraphNodeRecord speed = view.Add(AnimationNodeIds.SpeedScale, new Float2(0, 0))!;
@@ -251,7 +251,7 @@ public class AnimationGraphEditorTests
     public void ANodeIsNamedAfterWhatItIsSetTo()
     {
         var graph = new AnimationGraph();
-        var view = ViewOver(graph);
+        AnimationGraphView view = ViewOver(graph);
 
         GraphNodeRecord clip = view.Add(AnimationNodeIds.Clip, new Float2(0, 0))!;
         GraphNodeRecord parameter = view.Add(AnimationNodeIds.Parameter, new Float2(0, 0))!;
@@ -275,7 +275,7 @@ public class AnimationGraphEditorTests
     public void AWireBetweenMismatchedKindsIsRefused()
     {
         var graph = new AnimationGraph();
-        var view = ViewOver(graph);
+        AnimationGraphView view = ViewOver(graph);
 
         GraphNodeRecord pose = view.Add(AnimationNodeIds.Clip, new Float2(0, 0))!;
         GraphNodeRecord blend = view.Add(AnimationNodeIds.Blend1D, new Float2(0, 0))!;
@@ -291,7 +291,7 @@ public class AnimationGraphEditorTests
     public void AWireThatWouldCloseALoopIsRefused()
     {
         var graph = new AnimationGraph();
-        var view = ViewOver(graph);
+        AnimationGraphView view = ViewOver(graph);
 
         GraphNodeRecord a = view.Add(AnimationNodeIds.Clip, new Float2(0, 0))!;
         GraphNodeRecord b = view.Add(AnimationNodeIds.SpeedScale, new Float2(0, 0))!;
@@ -312,7 +312,7 @@ public class AnimationGraphEditorTests
     public void AGraphWithNoOutputSaysSo()
     {
         var graph = new AnimationGraph();
-        var view = ViewOver(graph);
+        AnimationGraphView view = ViewOver(graph);
 
         Assert.Contains(view.Problems, p => p.Blocking && p.Message.Contains("no output", System.StringComparison.OrdinalIgnoreCase));
     }
@@ -321,7 +321,7 @@ public class AnimationGraphEditorTests
     public void AParameterNodeNamingNothingDeclaredSaysSo()
     {
         var graph = new AnimationGraph();
-        var view = ViewOver(graph);
+        AnimationGraphView view = ViewOver(graph);
 
         GraphNodeRecord pose = view.Add(AnimationNodeIds.Clip, new Float2(0, 0))!;
         GraphNodeRecord parameter = view.Add(AnimationNodeIds.Parameter, new Float2(0, 0))!;
@@ -413,7 +413,7 @@ public class AnimationGraphEditorTests
     private static (AnimationGraph, GraphNodeRecord, AnimationGraphStateView) Machine()
     {
         var graph = new AnimationGraph();
-        var view = ViewOver(graph);
+        AnimationGraphView view = ViewOver(graph);
         GraphNodeRecord machine = view.Add(AnimationNodeIds.StateMachine, new Float2(0, 0))!;
 
         var states = new AnimationGraphStateView { Machine = machine };
@@ -427,7 +427,7 @@ public class AnimationGraphEditorTests
     public void AGraphSurvivesTheTextRoundTripTheWindowSavesWith()
     {
         var graph = new AnimationGraph();
-        var view = ViewOver(graph);
+        AnimationGraphView view = ViewOver(graph);
 
         GraphNodeRecord pose = view.Add(AnimationNodeIds.Clip, new Float2(12, 34))!;
         GraphNodeRecord layers = view.Add(AnimationNodeIds.LayerBlend, new Float2(0, 0))!;
@@ -447,7 +447,7 @@ public class AnimationGraphEditorTests
         graph.Parameters.Add(new GraphParameterRecord { Name = "Speed", Kind = NodeValueKind.Number, Number = 1.5f });
 
         string text = Serializer.Serialize(typeof(object), graph).WriteToString();
-        var loaded = Serializer.Deserialize<AnimationGraph>(EchoObject.ReadFromString(text));
+        AnimationGraph? loaded = Serializer.Deserialize<AnimationGraph>(EchoObject.ReadFromString(text));
 
         Assert.NotNull(loaded);
         Assert.Equal(graph.RootNode, loaded!.RootNode);
@@ -475,7 +475,7 @@ public class AnimationGraphEditorTests
         graph.Notes.Add(new GraphNoteRecord { Id = "n", Text = "Speed is in metres per second", Position = new Float2(5, 5) });
 
         string text = Serializer.Serialize(typeof(object), graph).WriteToString();
-        var loaded = Serializer.Deserialize<AnimationGraph>(EchoObject.ReadFromString(text))!;
+        AnimationGraph loaded = Serializer.Deserialize<AnimationGraph>(EchoObject.ReadFromString(text))!;
 
         Assert.Equal("Locomotion", loaded.Groups.Single().Title);
         Assert.Equal(new Float2(300, 200), loaded.Groups.Single().Size);
@@ -488,7 +488,7 @@ public class AnimationGraphEditorTests
     public void CopyingSeveralNodesKeepsTheWiresBetweenThemAndDropsTheRest()
     {
         var graph = new AnimationGraph();
-        var view = ViewOver(graph);
+        AnimationGraphView view = ViewOver(graph);
 
         GraphNodeRecord outside = view.Add(AnimationNodeIds.ConstFloat, new Float2(0, 0))!;
         GraphNodeRecord clip = view.Add(AnimationNodeIds.Clip, new Float2(0, 0))!;
@@ -499,7 +499,7 @@ public class AnimationGraphEditorTests
         view.Connect(Wire(clip.Id, speed.Id, 0));
         view.Connect(Wire(outside.Id, speed.Id, 1));
 
-        var copies = view.Copy(new[] { clip, speed }, new Float2(28, 28));
+        List<GraphNodeRecord> copies = view.Copy(new[] { clip, speed }, new Float2(28, 28));
 
         GraphNodeRecord clipCopy = copies.Single(c => c.Type == AnimationNodeIds.Clip);
         GraphNodeRecord speedCopy = copies.Single(c => c.Type == AnimationNodeIds.SpeedScale);
@@ -517,7 +517,7 @@ public class AnimationGraphEditorTests
     public void ACopiedStateMachineCopiesItsStatesGraphs()
     {
         var graph = new AnimationGraph();
-        var view = ViewOver(graph);
+        AnimationGraphView view = ViewOver(graph);
         (GraphNodeRecord machine, GraphStateRecord state, _) = MachineWithState(graph, view);
 
         GraphNodeRecord copy = view.Copy(new[] { machine }, new Float2(0, 0)).Single();
@@ -535,12 +535,12 @@ public class AnimationGraphEditorTests
     public void AStateMachinePastesIntoAnotherGraphWithWhatIsInsideIt()
     {
         var graph = new AnimationGraph();
-        var view = ViewOver(graph);
+        AnimationGraphView view = ViewOver(graph);
         (GraphNodeRecord machine, _, _) = MachineWithState(graph, view);
         AnimationGraphView.Fragment clipboard = view.Capture(new[] { machine });
 
         var other = new AnimationGraph();
-        var otherView = ViewOver(other);
+        AnimationGraphView otherView = ViewOver(other);
         GraphNodeRecord pasted = otherView.Paste(clipboard, new Float2(0, 0)).Single();
 
         Assert.Equal(3, other.Nodes.Count);
@@ -551,7 +551,7 @@ public class AnimationGraphEditorTests
     public void ACopiedStateMachineKeepsItsAnyState()
     {
         var graph = new AnimationGraph();
-        var view = ViewOver(graph);
+        AnimationGraphView view = ViewOver(graph);
         (GraphNodeRecord machine, _, _) = MachineWithState(graph, view);
         machine.States.Add(new GraphStateRecord { Id = AnimationGraphView.NewStateId(), Name = "Any State", IsAny = true });
 
@@ -570,7 +570,7 @@ public class AnimationGraphEditorTests
     {
         var graph = new AnimationGraph();
         graph.Parameters.Add(new GraphParameterRecord { Name = "Input", Kind = declared });
-        var view = ViewOver(graph);
+        AnimationGraphView view = ViewOver(graph);
 
         GraphNodeRecord parameter = view.Add(AnimationNodeIds.Parameter, new Float2(0, 0))!;
         parameter.Properties["Name"] = NodeValue.FromText("Input");
@@ -583,7 +583,7 @@ public class AnimationGraphEditorTests
     {
         var graph = new AnimationGraph();
         graph.Parameters.Add(new GraphParameterRecord { Name = "Grounded", Kind = NodeValueKind.Flag });
-        var view = ViewOver(graph);
+        AnimationGraphView view = ViewOver(graph);
 
         GraphNodeRecord parameter = view.Add(AnimationNodeIds.Parameter, new Float2(0, 0))!;
         parameter.Properties["Name"] = NodeValue.FromText("Grounded");

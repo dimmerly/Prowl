@@ -77,7 +77,7 @@ public abstract class BuildPipeline
 
         bool depsOnly = settings.AssetMode == AssetExportMode.DependenciesOnly;
 
-        var source = EditorAssetBackend.Instance;
+        EditorAssetBackend? source = EditorAssetBackend.Instance;
         if (source == null)
             return new AssetCollector.CollectionResult { AllAssets = new(), ResourcesMap = new() };
 
@@ -184,7 +184,7 @@ public abstract class BuildPipeline
     /// </summary>
     private static Stream? TryStripEditorOnlyPrefabData(Guid guid, string cachePath)
     {
-        var entry = EditorAssetBackend.Instance?.GetEntry(guid);
+        AssetEntry? entry = EditorAssetBackend.Instance?.GetEntry(guid);
         if (entry == null) return null;
         if (entry.ImporterType is not ("SceneImporter" or "PrefabImporter")) return null;
 
@@ -239,18 +239,18 @@ public abstract class BuildPipeline
         {
             // Scoped to the prefab block rather than matched by name anywhere, so a component field
             // that happens to be called Overrides is not caught by this.
-            if (echo.TryGet("Prefab", out var link) && link.TagType == EchoType.Compound)
+            if (echo.TryGet("Prefab", out EchoObject? link) && link.TagType == EchoType.Compound)
                 foreach (var key in EditorOnlyPrefabKeys)
                     removed |= link.Remove(key);
 
             removed |= echo.Remove(EditorOnlyComponentKey);
 
-            foreach (var child in echo.Tags.Values)
+            foreach (EchoObject child in echo.Tags.Values)
                 removed |= StripEditorOnlyPrefabData(child);
         }
         else if (echo.TagType == EchoType.List && echo.List != null)
         {
-            foreach (var item in echo.List)
+            foreach (EchoObject item in echo.List)
                 removed |= StripEditorOnlyPrefabData(item);
         }
 
@@ -264,16 +264,16 @@ public abstract class BuildPipeline
         Directory.CreateDirectory(outputAssetsDir);
         var written = new HashSet<Guid>();
 
-        foreach (var guid in InBuildOrder(assets))
+        foreach (Guid guid in InBuildOrder(assets))
         {
             // Per asset, because a stage is one operation and this loop is most of a large build.
             ct.ThrowIfCancellationRequested();
 
-            using (var source = OpenShippedAsset(guid))
+            using (Stream? source = OpenShippedAsset(guid))
             {
                 if (source != null)
                 {
-                    using var destination = File.Create(Path.Combine(outputAssetsDir, $"{guid}.asset"));
+                    using FileStream destination = File.Create(Path.Combine(outputAssetsDir, $"{guid}.asset"));
                     source.CopyTo(destination);
                     written.Add(guid);
                 }
@@ -310,7 +310,7 @@ public abstract class BuildPipeline
         int total = chunks.Sum(c => c.Assets.Count);
         var packed = new HashSet<Guid>();
 
-        foreach (var chunk in chunks)
+        foreach (AssetChunk chunk in chunks)
         {
             int part = 0;
             long size = 0;
@@ -318,11 +318,11 @@ public abstract class BuildPipeline
 
             try
             {
-                foreach (var guid in chunk.Assets)
+                foreach (Guid guid in chunk.Assets)
                 {
                     ct.ThrowIfCancellationRequested();
 
-                    using var source = OpenShippedAsset(guid);
+                    using Stream? source = OpenShippedAsset(guid);
                     if (source == null) continue;
 
                     long length = source.CanSeek ? source.Length : 0;
@@ -358,10 +358,10 @@ public abstract class BuildPipeline
 
     private static void WriteEntry(ZipArchive archive, Stream source, string entryName)
     {
-        var entry = archive.CreateEntry(entryName, CompressionLevel.Optimal);
+        ZipArchiveEntry entry = archive.CreateEntry(entryName, CompressionLevel.Optimal);
         entry.LastWriteTime = DeterministicTimestamp;
 
-        using var destination = entry.Open();
+        using Stream destination = entry.Open();
         source.CopyTo(destination);
     }
 
@@ -377,12 +377,12 @@ public abstract class BuildPipeline
 
     internal static string FinalizeDefineString(BuildSettings settings, BuildPipeline pipeline)
     {
-        var profile = settings.GetOrCreateProfile(pipeline.GetType());
+        PlatformBuildProfile profile = settings.GetOrCreateProfile(pipeline.GetType());
         var symbols = new List<string>(profile.ScriptingDefineSymbols);
 
         profile.ModifyDefines(symbols);
 
-        var config = settings.Config;
+        BuildConfiguration config = settings.Config;
 
         // For when profiling will be implemented
         if (config == BuildConfiguration.Debug)
@@ -404,15 +404,15 @@ public abstract class BuildPipeline
 
         // Enough per asset that a player knows what a GUID is, how big it is and what it loads with,
         // without opening a single file.
-        var db = EditorAssetBackend.Instance;
+        EditorAssetBackend? db = EditorAssetBackend.Instance;
         var assetsTag = EchoObject.NewCompound();
-        foreach (var guid in InBuildOrder(assets))
+        foreach (Guid guid in InBuildOrder(assets))
         {
             var item = EchoObject.NewCompound();
             item["file"] = new EchoObject($"{guid}.asset");
             if (db != null)
             {
-                var (typeName, hard, soft) = db.GetManifestInfo(guid);
+                (string? typeName, Guid[]? hard, Guid[]? soft) = db.GetManifestInfo(guid);
                 item["path"] = new EchoObject(db.GetAssetPath(guid) ?? "");
                 item["type"] = new EchoObject(typeName);
                 item["size"] = new EchoObject(db.GetEstimatedSize(guid));
@@ -426,7 +426,7 @@ public abstract class BuildPipeline
 
         // Kept in the order collected, since that order decides which asset wins a shared load path.
         var resTag = EchoObject.NewList();
-        foreach (var resource in resourcesMap.Where(r => assets.Contains(r.Guid)))
+        foreach (ResourceEntry resource in resourcesMap.Where(r => assets.Contains(r.Guid)))
         {
             var item = EchoObject.NewCompound();
             item["path"] = new EchoObject(resource.LoadPath);
@@ -461,7 +461,7 @@ public abstract class BuildPipeline
         // Serialize the live (in-memory) settings instances. The in-memory registry is the source
         // of truth at build time. TypeMode.None keeps the output a flat compound keyed by field name
         // so the player (PlayerSettingsLoader) can read it without referencing the settings types.
-        foreach (var entry in EditorRegistries.SettingsEntries)
+        foreach (EditorRegistries.SettingsEntry entry in EditorRegistries.SettingsEntries)
         {
             if (!entry.ExportToBuild) continue;
 
@@ -516,10 +516,10 @@ public abstract class BuildPipeline
             CreateNoWindow = true,
         };
 
-        foreach (var (key, value) in MSBuildDiagnostics.InvariantEnvironment)
+        foreach ((string? key, string? value) in MSBuildDiagnostics.InvariantEnvironment)
             psi.Environment[key] = value;
 
-        using var process = Process.Start(psi)
+        using Process process = Process.Start(psi)
             ?? throw new InvalidOperationException("Failed to start dotnet process.");
 
         var stdoutBuilder = new StringBuilder();
@@ -532,7 +532,7 @@ public abstract class BuildPipeline
             {
                 stdoutBuilder.AppendLine(line);
 
-                if (MSBuildDiagnostics.TryParse(line, stage, out var diagnostic))
+                if (MSBuildDiagnostics.TryParse(line, stage, out BuildIssue? diagnostic))
                 {
                     onDiagnostic?.Invoke(diagnostic);
                     progress?.Log(line, diagnostic.Severity == BuildSeverity.Error

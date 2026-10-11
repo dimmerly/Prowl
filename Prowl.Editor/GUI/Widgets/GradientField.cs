@@ -10,6 +10,7 @@ using Prowl.PaperUI;
 using Prowl.PaperUI.LayoutEngine;
 using Prowl.Quill;
 using Prowl.Runtime;
+using Prowl.Scribe;
 using Prowl.Vector;
 
 using Color = System.Drawing.Color;
@@ -52,10 +53,10 @@ public sealed class GradientFieldBuilder
     public void Show()
     {
         if (Origami.IsReadOnly) _readOnly = true;
-        var theme = Origami.Current;
-        var m = theme.Metrics;
+        OrigamiTheme theme = Origami.Current;
+        OrigamiMetrics m = theme.Metrics;
 
-        var swatch = _paper.Box($"{_id}_swatch")
+        ElementBuilder swatch = _paper.Box($"{_id}_swatch")
             .Width(_width).Height(_previewHeight)
             .BorderColor(theme.Neutral.C400).BorderWidth(1)
             .Hovered.BorderColor(theme.Primary.C400).End()
@@ -63,8 +64,8 @@ public sealed class GradientFieldBuilder
 
         if (!_readOnly)
         {
-            var gradient = _value;
-            var setter = _setter;
+            Gradient gradient = _value;
+            Action<Gradient> setter = _setter;
             var id = _id;
             swatch.OnClick(e =>
             {
@@ -76,7 +77,7 @@ public sealed class GradientFieldBuilder
 
         using (swatch.Enter())
         {
-            var gradient = _value;
+            Gradient gradient = _value;
             _paper.Box($"{_id}_preview")
                 .Width(UnitValue.Stretch()).Height(_previewHeight)
                 .IsNotInteractable()
@@ -129,7 +130,7 @@ public static class GradientRenderer
         for (int i = 0; i < steps; i++)
         {
             float t = i / (float)steps;
-            var col = gradient.Evaluate(t);
+            VColor col = gradient.Evaluate(t);
             canvas.RectFilled(x + i, y, 1.5f, h,
                 Color32.FromArgb((byte)(col.A * 255), (byte)(col.R * 255), (byte)(col.G * 255), (byte)(col.B * 255)));
         }
@@ -169,10 +170,10 @@ internal sealed class GradientEditorModal : IModal
 
     public void Draw(Paper paper, int layer, int stackIndex)
     {
-        var theme = Origami.Current;
-        var m = theme.Metrics;
-        var font = theme.Font;
-        var ink = theme.Ink;
+        OrigamiTheme theme = Origami.Current;
+        OrigamiMetrics m = theme.Metrics;
+        FontFile? font = theme.Font;
+        OrigamiRamp ink = theme.Ink;
 
         using (paper.Column($"{_id}_gmod")
             .PositionType(PositionType.SelfDirected)
@@ -202,7 +203,7 @@ internal sealed class GradientEditorModal : IModal
     private void DrawGradientArea(Paper paper, Scribe.FontFile? font, OrigamiRamp ink, OrigamiTheme theme, float barW)
     {
         float totalH = MarkerH + BarHeight + MarkerH;
-        var gradient = _gradient;
+        Gradient gradient = _gradient;
         var id = _id;
         int selKey = _selectedKey;
         bool selIsColor = _selectedIsColor;
@@ -228,7 +229,7 @@ internal sealed class GradientEditorModal : IModal
                     }
                     else
                     {
-                        var col = gradient.Evaluate(t);
+                        VColor col = gradient.Evaluate(t);
                         _selectedKey = gradient.AddColorKey(t, new VColor(col.R, col.G, col.B, 1));
                         _setter(gradient);
                     }
@@ -275,13 +276,13 @@ internal sealed class GradientEditorModal : IModal
                 for (int i = 0; i < steps; i++)
                 {
                     float t = i / (float)steps;
-                    var col = gradient.Evaluate(t);
+                    VColor col = gradient.Evaluate(t);
                     canvas.RectFilled(x + i, barY, 1.5f, BarHeight,
                         Color32.FromArgb((byte)(col.A * 255), (byte)(col.R * 255), (byte)(col.G * 255), (byte)(col.B * 255)));
                 }
 
                 // Border
-                var borderCol = Color32.FromArgb(255, (byte)ink.C300.R, (byte)ink.C300.G, (byte)ink.C300.B);
+                VColor borderCol = Color32.FromArgb(255, (byte)ink.C300.R, (byte)ink.C300.G, (byte)ink.C300.B);
                 canvas.SetStrokeColor(borderCol);
                 canvas.SetStrokeWidth(1);
                 canvas.BeginPath();
@@ -290,16 +291,16 @@ internal sealed class GradientEditorModal : IModal
                 canvas.Stroke();
 
                 // Color markers (top)
-                var primary = theme.Primary;
+                OrigamiRamp primary = theme.Primary;
                 for (int i = 0; i < gradient.ColorKeys.Count; i++)
                 {
-                    var key = gradient.ColorKeys[i];
+                    GradientColorKey key = gradient.ColorKeys[i];
                     float mx = x + key.Time * w;
                     float my = y + MarkerH - 2;
                     bool sel = selIsColor && selKey == i;
 
-                    var kc = Color32.FromArgb(255, (byte)(key.Color.R * 255), (byte)(key.Color.G * 255), (byte)(key.Color.B * 255));
-                    var ring = sel ? Color32.FromArgb(255, (byte)primary.C400.R, (byte)primary.C400.G, (byte)primary.C400.B) : borderCol;
+                    VColor kc = Color32.FromArgb(255, (byte)(key.Color.R * 255), (byte)(key.Color.G * 255), (byte)(key.Color.B * 255));
+                    VColor ring = sel ? Color32.FromArgb(255, (byte)primary.C400.R, (byte)primary.C400.G, (byte)primary.C400.B) : borderCol;
                     canvas.CircleFilled(mx, my - 2, sel ? 5.5f : 4.5f, ring);
                     canvas.CircleFilled(mx, my - 2, sel ? 3.5f : 2.5f, kc);
                 }
@@ -307,14 +308,14 @@ internal sealed class GradientEditorModal : IModal
                 // Alpha markers (bottom)
                 for (int i = 0; i < gradient.AlphaKeys.Count; i++)
                 {
-                    var key = gradient.AlphaKeys[i];
+                    GradientAlphaKey key = gradient.AlphaKeys[i];
                     float mx = x + key.Time * w;
                     float my = barY + BarHeight + 2;
                     bool sel = !selIsColor && selKey == i;
 
                     byte g = (byte)(key.Alpha * 255);
-                    var kc = Color32.FromArgb(255, g, g, g);
-                    var ring = sel ? Color32.FromArgb(255, (byte)primary.C400.R, (byte)primary.C400.G, (byte)primary.C400.B) : borderCol;
+                    VColor kc = Color32.FromArgb(255, g, g, g);
+                    VColor ring = sel ? Color32.FromArgb(255, (byte)primary.C400.R, (byte)primary.C400.G, (byte)primary.C400.B) : borderCol;
                     canvas.CircleFilled(mx, my + 2, sel ? 5.5f : 4.5f, ring);
                     canvas.CircleFilled(mx, my + 2, sel ? 3.5f : 2.5f, kc);
                 }
@@ -324,18 +325,18 @@ internal sealed class GradientEditorModal : IModal
     private void DrawSelectedKeyEditor(Paper paper, Scribe.FontFile? font, OrigamiTheme theme)
     {
         if (_selectedKey < 0) return;
-        var m = theme.Metrics;
-        var gradient = _gradient;
+        OrigamiMetrics m = theme.Metrics;
+        Gradient gradient = _gradient;
 
         if (_selectedIsColor && _selectedKey < gradient.ColorKeys.Count)
         {
-            var key = gradient.ColorKeys[_selectedKey];
+            GradientColorKey key = gradient.ColorKeys[_selectedKey];
             int idx = _selectedKey;
 
             // Time slider
             Origami.Slider(paper, $"{_id}_gt", key.Time, v =>
             {
-                var k = gradient.ColorKeys[idx];
+                GradientColorKey k = gradient.ColorKeys[idx];
                 k.Time = v;
                 _selectedKey = gradient.SetColorKey(idx, k);
                 _setter(gradient);
@@ -344,7 +345,7 @@ internal sealed class GradientEditorModal : IModal
             // Color field
             Origami.ColorField(paper, $"{_id}_gc", key.Color, v =>
             {
-                var k = gradient.ColorKeys[idx];
+                GradientColorKey k = gradient.ColorKeys[idx];
                 k.Color = v;
                 gradient.SetColorKey(idx, k);
                 _setter(gradient);
@@ -363,13 +364,13 @@ internal sealed class GradientEditorModal : IModal
         }
         else if (!_selectedIsColor && _selectedKey < gradient.AlphaKeys.Count)
         {
-            var key = gradient.AlphaKeys[_selectedKey];
+            GradientAlphaKey key = gradient.AlphaKeys[_selectedKey];
             int idx = _selectedKey;
 
             // Time slider
             Origami.Slider(paper, $"{_id}_at", key.Time, v =>
             {
-                var k = gradient.AlphaKeys[idx];
+                GradientAlphaKey k = gradient.AlphaKeys[idx];
                 k.Time = v;
                 _selectedKey = gradient.SetAlphaKey(idx, k);
                 _setter(gradient);
@@ -378,7 +379,7 @@ internal sealed class GradientEditorModal : IModal
             // Alpha slider
             Origami.Slider(paper, $"{_id}_aa", key.Alpha, v =>
             {
-                var k = gradient.AlphaKeys[idx];
+                GradientAlphaKey k = gradient.AlphaKeys[idx];
                 k.Alpha = v;
                 gradient.SetAlphaKey(idx, k);
                 _setter(gradient);

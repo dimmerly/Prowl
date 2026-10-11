@@ -134,8 +134,8 @@ public class ComponentClipboardTests : EditorTestHarness, IDisposable
     [Fact]
     public void Copy_PasteAsNew_CopiesFieldValues()
     {
-        MakeScene(out var a, out var b);
-        var src = a.AddComponent<ClipComp>();
+        MakeScene(out GameObject? a, out GameObject? b);
+        ClipComp src = a.AddComponent<ClipComp>();
         src.Value = 42;
         src.Label = "hello";
         src.Offset = new Float3(1, 2, 3);
@@ -153,11 +153,11 @@ public class ComponentClipboardTests : EditorTestHarness, IDisposable
     [Fact]
     public void PasteAsNew_GetsFreshIdentifier()
     {
-        MakeScene(out var a, out var b);
-        var src = a.AddComponent<ClipComp>();
+        MakeScene(out GameObject? a, out GameObject? b);
+        ClipComp src = a.AddComponent<ClipComp>();
 
         ComponentClipboard.Copy(src);
-        var pasted = ComponentClipboard.PasteAsNew(b);
+        Component? pasted = ComponentClipboard.PasteAsNew(b);
 
         Assert.NotNull(pasted);
         Assert.NotEqual(src.Identifier, pasted!.Identifier);
@@ -166,8 +166,8 @@ public class ComponentClipboardTests : EditorTestHarness, IDisposable
     [Fact]
     public void PasteAsNew_OntoSameGameObject_AddsSecondInstance()
     {
-        MakeScene(out var a, out _);
-        var src = a.AddComponent<ClipComp>();
+        MakeScene(out GameObject? a, out _);
+        ClipComp src = a.AddComponent<ClipComp>();
         src.Value = 7;
 
         ComponentClipboard.Copy(src);
@@ -182,8 +182,8 @@ public class ComponentClipboardTests : EditorTestHarness, IDisposable
     public void PasteAsNew_OntoSameGameObject_RealEngineComponent()
     {
         // Stacking several colliders on one object is the motivating case for same-object paste.
-        MakeScene(out var a, out _);
-        var src = a.AddComponent<BoxCollider>();
+        MakeScene(out GameObject? a, out _);
+        BoxCollider src = a.AddComponent<BoxCollider>();
         src.Size = new Float3(2, 3, 4);
         src.Center = new Float3(1, 0, 0);
 
@@ -200,9 +200,9 @@ public class ComponentClipboardTests : EditorTestHarness, IDisposable
     [Fact]
     public void CopiedComponent_IsUnmodifiedByCopy()
     {
-        MakeScene(out var a, out _);
-        var target = a.AddComponent<ClipComp>();
-        var src = a.AddComponent<ClipRefComp>();
+        MakeScene(out GameObject? a, out _);
+        ClipComp target = a.AddComponent<ClipComp>();
+        ClipRefComp src = a.AddComponent<ClipRefComp>();
         src.TargetGO = a;
         src.TargetComp = target;
         src.TargetTransform = a.Transform;
@@ -220,7 +220,7 @@ public class ComponentClipboardTests : EditorTestHarness, IDisposable
     [Fact]
     public void CanPasteValues_OnlyForMatchingType()
     {
-        MakeScene(out var a, out _);
+        MakeScene(out GameObject? a, out _);
         ComponentClipboard.Copy(a.AddComponent<ClipComp>());
 
         Assert.True(ComponentClipboard.CanPasteValues(typeof(ClipComp)));
@@ -231,9 +231,9 @@ public class ComponentClipboardTests : EditorTestHarness, IDisposable
     [Fact]
     public void PasteValues_WrongType_IsRejected()
     {
-        MakeScene(out var a, out var b);
+        MakeScene(out GameObject? a, out GameObject? b);
         ComponentClipboard.Copy(a.AddComponent<ClipComp>());
-        var other = b.AddComponent<OtherClipComp>();
+        OtherClipComp other = b.AddComponent<OtherClipComp>();
         other.Value = 99;
 
         Assert.False(ComponentClipboard.PasteValues(other));
@@ -243,7 +243,7 @@ public class ComponentClipboardTests : EditorTestHarness, IDisposable
     [Fact]
     public void EmptyClipboard_PasteIsNoOp()
     {
-        MakeScene(out _, out var b);
+        MakeScene(out _, out GameObject? b);
         Assert.False(ComponentClipboard.CanPasteAsNew());
         Assert.Null(ComponentClipboard.PasteAsNew(b));
     }
@@ -251,7 +251,7 @@ public class ComponentClipboardTests : EditorTestHarness, IDisposable
     [Fact]
     public void ForeignClipboardText_IsIgnored()
     {
-        MakeScene(out _, out var b);
+        MakeScene(out _, out GameObject? b);
         Input.Clipboard = "just some text a user copied";
 
         Assert.False(ComponentClipboard.CanPasteAsNew());
@@ -263,15 +263,15 @@ public class ComponentClipboardTests : EditorTestHarness, IDisposable
     [Fact]
     public void PasteValues_OverwritesDataButKeepsIdentity()
     {
-        MakeScene(out var a, out var b);
-        var src = a.AddComponent<ClipComp>();
+        MakeScene(out GameObject? a, out GameObject? b);
+        ClipComp src = a.AddComponent<ClipComp>();
         src.Value = 5;
         src.Label = "src";
 
-        var dst = b.AddComponent<ClipComp>();
+        ClipComp dst = b.AddComponent<ClipComp>();
         dst.Value = 100;
         dst.Label = "dst";
-        var dstId = dst.Identifier;
+        Guid dstId = dst.Identifier;
 
         ComponentClipboard.Copy(src);
         Assert.True(ComponentClipboard.PasteValues(dst));
@@ -285,11 +285,11 @@ public class ComponentClipboardTests : EditorTestHarness, IDisposable
     [Fact]
     public void PasteValues_CopiesEnabledState()
     {
-        MakeScene(out var a, out var b);
-        var src = a.AddComponent<ClipComp>();
+        MakeScene(out GameObject? a, out GameObject? b);
+        ClipComp src = a.AddComponent<ClipComp>();
         src.Enabled = false;
 
-        var dst = b.AddComponent<ClipComp>();
+        ClipComp dst = b.AddComponent<ClipComp>();
         Assert.True(dst.Enabled);
 
         ComponentClipboard.Copy(src);
@@ -302,12 +302,12 @@ public class ComponentClipboardTests : EditorTestHarness, IDisposable
     [Fact]
     public void PasteValues_DoesNotChangeSiblingIndex()
     {
-        MakeScene(out var a, out var b);
-        var src = a.AddComponent<ClipComp>();
+        MakeScene(out GameObject? a, out GameObject? b);
+        ClipComp src = a.AddComponent<ClipComp>();
         src.Value = 3;
 
         b.AddComponent<OtherClipComp>();
-        var dst = b.AddComponent<ClipComp>();
+        ClipComp dst = b.AddComponent<ClipComp>();
         b.AddComponent<OtherClipComp>();
 
         ComponentClipboard.Copy(src);
@@ -323,9 +323,9 @@ public class ComponentClipboardTests : EditorTestHarness, IDisposable
     [Fact]
     public void SceneReferences_ResolveToOriginalObjects_NotClones()
     {
-        var scene = MakeScene(out var a, out var b);
-        var target = a.AddComponent<ClipComp>();
-        var src = a.AddComponent<ClipRefComp>();
+        Scene scene = MakeScene(out GameObject? a, out GameObject? b);
+        ClipComp target = a.AddComponent<ClipComp>();
+        ClipRefComp src = a.AddComponent<ClipRefComp>();
         src.TargetGO = a;
         src.TargetComp = target;
         src.TargetTransform = a.Transform;
@@ -347,8 +347,8 @@ public class ComponentClipboardTests : EditorTestHarness, IDisposable
     [Fact]
     public void SceneReferences_PastedIntoDifferentScene_AreNull()
     {
-        MakeScene(out var a, out _);
-        var src = a.AddComponent<ClipRefComp>();
+        MakeScene(out GameObject? a, out _);
+        ClipRefComp src = a.AddComponent<ClipRefComp>();
         src.TargetGO = a;
         src.TargetComp = a.AddComponent<ClipComp>();
         src.TargetTransform = a.Transform;
@@ -378,19 +378,19 @@ public class ComponentClipboardTests : EditorTestHarness, IDisposable
         // Prefab editing mode serializes the scene away and deserializes it back; identifiers are
         // restored by Scene.OnBefore/OnAfterDeserialize, so an identifier captured before the
         // round-trip must still resolve after it.
-        var scene = MakeScene(out var a, out _);
-        var src = a.AddComponent<ClipRefComp>();
+        Scene scene = MakeScene(out GameObject? a, out _);
+        ClipRefComp src = a.AddComponent<ClipRefComp>();
         src.TargetGO = a;
 
         ComponentClipboard.Copy(src);
         Guid originalId = a.Identifier;
 
-        var echo = Echo.Serializer.Serialize(scene);
-        var restored = Echo.Serializer.Deserialize<Scene>(echo)!;
+        EchoObject echo = Echo.Serializer.Serialize(scene);
+        Scene restored = Echo.Serializer.Deserialize<Scene>(echo)!;
         Scene.Load(restored);
         Scene.ProcessPendingLoad();
 
-        var restoredA = restored.AllObjects.First(g => g.Identifier == originalId);
+        GameObject restoredA = restored.AllObjects.First(g => g.Identifier == originalId);
         var host = new GameObject("Host");
         restored.Add(host);
 
@@ -406,8 +406,8 @@ public class ComponentClipboardTests : EditorTestHarness, IDisposable
         // A Transform with no GameObject can't be anchored to an id. It must still be linked rather
         // than serialized by value - otherwise paste produces an orphan Transform with a null
         // GameObject that NREs the first time anything touches it. It resolves to null on paste.
-        var scene = MakeScene(out var a, out var b);
-        var src = a.AddComponent<ClipRefComp>();
+        Scene scene = MakeScene(out GameObject? a, out GameObject? b);
+        ClipRefComp src = a.AddComponent<ClipRefComp>();
         src.TargetTransform = new Transform(); // never attached to a GameObject
 
         int rootsBefore = scene.RootObjects.Count();
@@ -425,11 +425,11 @@ public class ComponentClipboardTests : EditorTestHarness, IDisposable
     {
         // The payoff of Echo owning the traversal: references nested inside a list or a plain data
         // class are linked too, which the old top-level-only tokenizer could not reach.
-        var scene = MakeScene(out var a, out var b);
+        Scene scene = MakeScene(out GameObject? a, out GameObject? b);
         var c = new GameObject("C");
         scene.Add(c);
 
-        var src = a.AddComponent<ClipNestedRefComp>();
+        ClipNestedRefComp src = a.AddComponent<ClipNestedRefComp>();
         src.Targets.Add(a);
         src.Targets.Add(c);
         src.Wrapper = new ClipNestedRefComp.RefBox { GO = c };
@@ -454,13 +454,13 @@ public class ComponentClipboardTests : EditorTestHarness, IDisposable
     {
         // The whole point: state that lives only behind ISerializable, invisible to a field copy,
         // still round-trips because the values paste routes through the component's Deserialize.
-        MakeScene(out var a, out var b);
-        var src = a.AddComponent<ClipSerializableComp>();
+        MakeScene(out GameObject? a, out GameObject? b);
+        ClipSerializableComp src = a.AddComponent<ClipSerializableComp>();
         src.Hidden = 123;
 
-        var dst = b.AddComponent<ClipSerializableComp>();
+        ClipSerializableComp dst = b.AddComponent<ClipSerializableComp>();
         dst.Hidden = 7;
-        var dstId = dst.Identifier;
+        Guid dstId = dst.Identifier;
 
         ComponentClipboard.Copy(src);
         Assert.True(ComponentClipboard.PasteValues(dst));
@@ -472,8 +472,8 @@ public class ComponentClipboardTests : EditorTestHarness, IDisposable
     [Fact]
     public void PasteAsNew_ISerializableComponent_CopiesCustomState()
     {
-        MakeScene(out var a, out var b);
-        var src = a.AddComponent<ClipSerializableComp>();
+        MakeScene(out GameObject? a, out GameObject? b);
+        ClipSerializableComp src = a.AddComponent<ClipSerializableComp>();
         src.Hidden = 55;
 
         ComponentClipboard.Copy(src);
@@ -487,11 +487,11 @@ public class ComponentClipboardTests : EditorTestHarness, IDisposable
     [Fact]
     public void PasteValues_ISerializable_Undo_RestoresCustomState()
     {
-        MakeScene(out var a, out var b);
-        var src = a.AddComponent<ClipSerializableComp>();
+        MakeScene(out GameObject? a, out GameObject? b);
+        ClipSerializableComp src = a.AddComponent<ClipSerializableComp>();
         src.Hidden = 900;
 
-        var dst = b.AddComponent<ClipSerializableComp>();
+        ClipSerializableComp dst = b.AddComponent<ClipSerializableComp>();
         dst.Hidden = 3;
 
         ComponentClipboard.Copy(src);
@@ -513,7 +513,7 @@ public class ComponentClipboardTests : EditorTestHarness, IDisposable
     public void UnknownComponentType_FailsGracefully()
     {
         // A script component copied from a project that has the script, pasted into one that doesn't.
-        MakeScene(out _, out var b);
+        MakeScene(out _, out GameObject? b);
         Input.Clipboard = "ProwlComponent:Some.Missing.Namespace.GhostComponent, GhostAssembly\n{ }";
 
         Assert.False(ComponentClipboard.CanPasteAsNew());
@@ -524,7 +524,7 @@ public class ComponentClipboardTests : EditorTestHarness, IDisposable
     [Fact]
     public void MalformedPayload_FailsGracefully()
     {
-        MakeScene(out var a, out var b);
+        MakeScene(out GameObject? a, out GameObject? b);
         string typeName = typeof(ClipComp).AssemblyQualifiedName!;
 
         // Header resolves, body is garbage.
@@ -545,8 +545,8 @@ public class ComponentClipboardTests : EditorTestHarness, IDisposable
     [Fact]
     public void PasteValues_OnDetachedComponent_DoesNotThrow()
     {
-        MakeScene(out var a, out _);
-        var src = a.AddComponent<ClipComp>();
+        MakeScene(out GameObject? a, out _);
+        ClipComp src = a.AddComponent<ClipComp>();
         src.Value = 12;
         ComponentClipboard.Copy(src);
 
@@ -561,8 +561,8 @@ public class ComponentClipboardTests : EditorTestHarness, IDisposable
     [Fact]
     public void PasteAsNew_Undo_Redo()
     {
-        MakeScene(out var a, out var b);
-        var src = a.AddComponent<ClipComp>();
+        MakeScene(out GameObject? a, out GameObject? b);
+        ClipComp src = a.AddComponent<ClipComp>();
         src.Value = 77;
 
         ComponentClipboard.Copy(src);
@@ -585,8 +585,8 @@ public class ComponentClipboardTests : EditorTestHarness, IDisposable
     {
         // The redo lambda looks its GameObject back up by identifier rather than capturing it, so a
         // redo whose target no longer exists must no-op instead of throwing out of the undo stack.
-        var scene = MakeScene(out var a, out var b);
-        var src = a.AddComponent<ClipComp>();
+        Scene scene = MakeScene(out GameObject? a, out GameObject? b);
+        ClipComp src = a.AddComponent<ClipComp>();
 
         ComponentClipboard.Copy(src);
         ComponentClipboard.PasteAsNew(b);
@@ -604,8 +604,8 @@ public class ComponentClipboardTests : EditorTestHarness, IDisposable
     [Fact]
     public void PasteAsNew_Undo_AfterTargetDeleted_FailsGracefully()
     {
-        var scene = MakeScene(out var a, out var b);
-        var src = a.AddComponent<ClipComp>();
+        Scene scene = MakeScene(out GameObject? a, out GameObject? b);
+        ClipComp src = a.AddComponent<ClipComp>();
 
         ComponentClipboard.Copy(src);
         ComponentClipboard.PasteAsNew(b);
@@ -621,11 +621,11 @@ public class ComponentClipboardTests : EditorTestHarness, IDisposable
     [Fact]
     public void PasteValues_Undo_AfterComponentRemoved_FailsGracefully()
     {
-        MakeScene(out var a, out var b);
-        var src = a.AddComponent<ClipComp>();
+        MakeScene(out GameObject? a, out GameObject? b);
+        ClipComp src = a.AddComponent<ClipComp>();
         src.Value = 1;
 
-        var dst = b.AddComponent<ClipComp>();
+        ClipComp dst = b.AddComponent<ClipComp>();
         dst.Value = 999;
 
         ComponentClipboard.Copy(src);
@@ -641,12 +641,12 @@ public class ComponentClipboardTests : EditorTestHarness, IDisposable
     [Fact]
     public void PasteValues_Undo_RestoresPreviousValues()
     {
-        MakeScene(out var a, out var b);
-        var src = a.AddComponent<ClipComp>();
+        MakeScene(out GameObject? a, out GameObject? b);
+        ClipComp src = a.AddComponent<ClipComp>();
         src.Value = 1;
         src.Label = "new";
 
-        var dst = b.AddComponent<ClipComp>();
+        ClipComp dst = b.AddComponent<ClipComp>();
         dst.Value = 999;
         dst.Label = "old";
 
@@ -668,13 +668,13 @@ public class ComponentClipboardTests : EditorTestHarness, IDisposable
     [Fact]
     public void PasteValues_Undo_RestoresSceneReferences()
     {
-        MakeScene(out var a, out var b);
-        var dstTarget = b.AddComponent<ClipComp>();
+        MakeScene(out GameObject? a, out GameObject? b);
+        ClipComp dstTarget = b.AddComponent<ClipComp>();
 
-        var src = a.AddComponent<ClipRefComp>();
+        ClipRefComp src = a.AddComponent<ClipRefComp>();
         src.TargetGO = a;
 
-        var dst = b.AddComponent<ClipRefComp>();
+        ClipRefComp dst = b.AddComponent<ClipRefComp>();
         dst.TargetGO = b;
         dst.TargetComp = dstTarget;
 

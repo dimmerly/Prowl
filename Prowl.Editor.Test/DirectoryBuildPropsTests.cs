@@ -38,7 +38,7 @@ public class DirectoryBuildPropsTests : EditorTestHarness
     [Trait("Category", "Build")]
     public void NoScriptsNoPackages_GeneratesDefaultCsprojs_WithoutBuilding()
     {
-        var result = ScriptCompiler.CompileAll(Project);
+        ScriptCompiler.CompileResult result = ScriptCompiler.CompileAll(Project);
 
         Assert.True(result.Success);
         Assert.False(result.RequiresReload);
@@ -60,7 +60,7 @@ public class DirectoryBuildPropsTests : EditorTestHarness
             WriteBuildProps(PropsWithPackage("GamePkgLib", "1.0.0"));
             // No scripts written on purpose - this is the "add a package first" flow.
 
-            var result = ScriptCompiler.CompileAll(Project);
+            ScriptCompiler.CompileResult result = ScriptCompiler.CompileAll(Project);
 
             Assert.True(result.Success, $"Restore failed:\n{result.Errors}\n{result.Output}");
             Assert.False(result.RequiresReload);                 // restore only, no hot-reload
@@ -86,7 +86,7 @@ public class DirectoryBuildPropsTests : EditorTestHarness
             WriteScript(Path.Combine("Editor", "UsesFromEditor.cs"),
                 "using GamePkgLib; public class UsesFromEditor { public static int X => GameApi.Value; }");
 
-            var result = ScriptCompiler.CompileAll(Project);
+            ScriptCompiler.CompileResult result = ScriptCompiler.CompileAll(Project);
             Assert.True(result.Success, $"Compile failed:\n{result.Errors}\n{result.Output}");
             Assert.True(result.RequiresReload);
             Assert.True(File.Exists(Project.GameAssemblyPath));
@@ -117,13 +117,13 @@ public class DirectoryBuildPropsTests : EditorTestHarness
             WriteScript(Path.Combine("Editor", "UsesEditorPackage.cs"),
                 "using EditorPkgLib; public class UsesEditorPackage { public static int X => EditorApi.Value; }");
 
-            var ok = ScriptCompiler.CompileAll(Project);
+            ScriptCompiler.CompileResult ok = ScriptCompiler.CompileAll(Project);
             Assert.True(ok.Success, $"Editor code should see editor-only packages:\n{ok.Errors}\n{ok.Output}");
             Assert.True(File.Exists(Project.EditorAssemblyPath));
 
             // Now let game code try to use it - the game assembly must not resolve the editor-only package.
             WriteScript("GameUsesEditorPackage.cs", "using EditorPkgLib; public class GameUsesEditorPackage { public static int X => EditorApi.Value; }");
-            var fail = ScriptCompiler.CompileAll(Project);
+            ScriptCompiler.CompileResult fail = ScriptCompiler.CompileAll(Project);
             Assert.False(fail.Success, "Game code must not see editor-only packages.");
         }
         finally { TryDeleteDir(feed); }
@@ -161,7 +161,7 @@ public class DirectoryBuildPropsTests : EditorTestHarness
                 </Project>
                 """);
 
-            var (exit, stdout, stderr) = RunDotnet(
+            (int exit, string? stdout, string? stderr) = RunDotnet(
                 $"publish \"{Path.Combine(playerDir, "TestPlayer.csproj")}\" -c Release -o \"{outDir}\"", playerDir);
             Assert.True(exit == 0, $"Player publish failed:\n{stdout}\n{stderr}");
             Assert.True(File.Exists(Path.Combine(outDir, "GamePkgLib.dll")),
@@ -218,7 +218,7 @@ public class DirectoryBuildPropsTests : EditorTestHarness
             </Project>
             """);
 
-        var (exit, stdout, stderr) = RunDotnet($"pack \"{Path.Combine(src, packageId + ".csproj")}\" -c Release -o \"{feedDir}\"", src);
+        (int exit, string? stdout, string? stderr) = RunDotnet($"pack \"{Path.Combine(src, packageId + ".csproj")}\" -c Release -o \"{feedDir}\"", src);
         Assert.True(exit == 0, $"Packing '{packageId}' failed:\n{stdout}\n{stderr}");
         TryDeleteDir(src);
     }

@@ -384,57 +384,57 @@ public partial class PropertyState
     // PropertyApply's enumeration.
     public static void SetGlobalColor(string name, Color value)
     {
-        using var cmd = Graphics.GetCommandBuffer("SetGlobalColor");
+        using CommandBuffer cmd = Graphics.GetCommandBuffer("SetGlobalColor");
         cmd.SetGlobalColor(name, value); Graphics.Submit(cmd);
     }
     public static void SetGlobalVector(string name, Float2 value)
     {
-        using var cmd = Graphics.GetCommandBuffer("SetGlobalVec2");
+        using CommandBuffer cmd = Graphics.GetCommandBuffer("SetGlobalVec2");
         cmd.SetGlobalVector(name, value); Graphics.Submit(cmd);
     }
     public static void SetGlobalVector(string name, Float3 value)
     {
-        using var cmd = Graphics.GetCommandBuffer("SetGlobalVec3");
+        using CommandBuffer cmd = Graphics.GetCommandBuffer("SetGlobalVec3");
         cmd.SetGlobalVector(name, value); Graphics.Submit(cmd);
     }
     public static void SetGlobalVector(string name, Float4 value)
     {
-        using var cmd = Graphics.GetCommandBuffer("SetGlobalVec4");
+        using CommandBuffer cmd = Graphics.GetCommandBuffer("SetGlobalVec4");
         cmd.SetGlobalVector(name, value); Graphics.Submit(cmd);
     }
     public static void SetGlobalFloat(string name, float value)
     {
-        using var cmd = Graphics.GetCommandBuffer("SetGlobalFloat");
+        using CommandBuffer cmd = Graphics.GetCommandBuffer("SetGlobalFloat");
         cmd.SetGlobalFloat(name, value); Graphics.Submit(cmd);
     }
     public static void SetGlobalInt(string name, int value)
     {
-        using var cmd = Graphics.GetCommandBuffer("SetGlobalInt");
+        using CommandBuffer cmd = Graphics.GetCommandBuffer("SetGlobalInt");
         cmd.SetGlobalInt(name, value); Graphics.Submit(cmd);
     }
     public static void SetGlobalMatrix(string name, Float4x4 value)
     {
-        using var cmd = Graphics.GetCommandBuffer("SetGlobalMatrix");
+        using CommandBuffer cmd = Graphics.GetCommandBuffer("SetGlobalMatrix");
         cmd.SetGlobalMatrix(name, value); Graphics.Submit(cmd);
     }
     public static void SetGlobalMatrices(string name, Float4x4[] value)
     {
-        using var cmd = Graphics.GetCommandBuffer("SetGlobalMatrices");
+        using CommandBuffer cmd = Graphics.GetCommandBuffer("SetGlobalMatrices");
         cmd.SetGlobalMatrices(name, value); Graphics.Submit(cmd);
     }
     public static void SetGlobalTexture(string name, Texture2D value)
     {
-        using var cmd = Graphics.GetCommandBuffer("SetGlobalTexture");
+        using CommandBuffer cmd = Graphics.GetCommandBuffer("SetGlobalTexture");
         cmd.SetGlobalTexture(name, value); Graphics.Submit(cmd);
     }
     public static void SetGlobalTexture3D(string name, Texture3D value)
     {
-        using var cmd = Graphics.GetCommandBuffer("SetGlobalTexture3D");
+        using CommandBuffer cmd = Graphics.GetCommandBuffer("SetGlobalTexture3D");
         cmd.SetGlobalTexture3D(name, value); Graphics.Submit(cmd);
     }
     public static void SetGlobalTextureCube(string name, Cubemap? value)
     {
-        using var cmd = Graphics.GetCommandBuffer("SetGlobalTextureCube");
+        using CommandBuffer cmd = Graphics.GetCommandBuffer("SetGlobalTextureCube");
         cmd.SetGlobalTextureCube(name, value); Graphics.Submit(cmd);
     }
     /// <summary>Binds a compute buffer to the storage block of that name in every shader that declares it.</summary>
@@ -445,7 +445,7 @@ public partial class PropertyState
 
     public static void SetGlobalBuffer(string name, GraphicsBuffer value, uint bindingPoint = 0)
     {
-        using var cmd = Graphics.GetCommandBuffer("SetGlobalBuffer");
+        using CommandBuffer cmd = Graphics.GetCommandBuffer("SetGlobalBuffer");
         cmd.SetGlobalBuffer(name, value, bindingPoint); Graphics.Submit(cmd);
     }
 
@@ -487,7 +487,7 @@ public partial class PropertyState
 
     public static void ClearGlobals()
     {
-        using var cmd = Graphics.GetCommandBuffer("ClearAllGlobals");
+        using CommandBuffer cmd = Graphics.GetCommandBuffer("ClearAllGlobals");
         cmd.ClearAllGlobals();
         Graphics.Submit(cmd);
     }

@@ -161,7 +161,7 @@ public sealed class ParticleShowcaseGame : StationGame
     {
         AddStation("Fountain", "Cone emission with gravity. Particles bounce off the physics floor and lose lifetime on every hit.", c, DefaultView, 3f);
 
-        var ps = CreateSystem("Fountain", c + new Float3(0f, 0.2f, 0f), _dotAlpha);
+        ParticleSystemComponent ps = CreateSystem("Fountain", c + new Float3(0f, 0.2f, 0f), _dotAlpha);
         ps.MaxParticles = 3000;
         ps.SimulationSpace = SimulationSpace.World;
         ps.Initial.StartLifetime = new MinMaxCurve(2.5f, 3.5f);
@@ -202,7 +202,7 @@ public sealed class ParticleShowcaseGame : StationGame
         logs.Transform.LocalEulerAngles = new Float3(0f, 35f, 0f);
         _roots.Add(logs);
 
-        var flames = CreateSystem("Flames", c + new Float3(0f, 0.2f, 0f), _flame);
+        ParticleSystemComponent flames = CreateSystem("Flames", c + new Float3(0f, 0.2f, 0f), _flame);
         flames.Initial.StartLifetime = new MinMaxCurve(0.8f, 1.2f);
         flames.Initial.StartSpeed = new MinMaxCurve(0.3f, 0.8f);
         flames.Initial.StartSize = new MinMaxCurve(1.2f, 1.8f);
@@ -241,7 +241,7 @@ public sealed class ParticleShowcaseGame : StationGame
         flames.Renderer.BlendMode = ParticleBlendMode.Additive;
         flames.Renderer.SoftParticleDistance = 0.5f;
 
-        var embers = CreateSystem("Embers", c + new Float3(0f, 0.4f, 0f), _dotAdditive, flames.GameObject);
+        ParticleSystemComponent embers = CreateSystem("Embers", c + new Float3(0f, 0.4f, 0f), _dotAdditive, flames.GameObject);
         embers.Initial.StartLifetime = new MinMaxCurve(1f, 2.5f);
         embers.Initial.StartSpeed = new MinMaxCurve(1f, 3f);
         embers.Initial.StartSize = new MinMaxCurve(0.03f, 0.06f);
@@ -263,7 +263,7 @@ public sealed class ParticleShowcaseGame : StationGame
         embers.Renderer.VelocityScale = 0.04f;
         embers.Renderer.BlendMode = ParticleBlendMode.Additive;
 
-        var smoke = CreateSystem("Smoke", c + new Float3(0f, 1.6f, 0f), _smoke, flames.GameObject);
+        ParticleSystemComponent smoke = CreateSystem("Smoke", c + new Float3(0f, 1.6f, 0f), _smoke, flames.GameObject);
         smoke.MaxParticles = 200;
         smoke.Initial.StartLifetime = new MinMaxCurve(4f, 6f);
         smoke.Initial.StartSpeed = new MinMaxCurve(0.3f, 0.8f);
@@ -303,7 +303,7 @@ public sealed class ParticleShowcaseGame : StationGame
              (0.75f, new Color(0.4f, 1.2f, 3f, 1f)), (1f, new Color(2.5f, 0.5f, 3f, 1f))],
             [(0f, 1f), (1f, 1f)]);
 
-        var shells = CreateSystem("Shells", c, _dotAdditive);
+        ParticleSystemComponent shells = CreateSystem("Shells", c, _dotAdditive);
         shells.Duration = 2.5f;
         shells.SimulationSpace = SimulationSpace.World;
         shells.Initial.StartLifetime = new MinMaxCurve(1.1f, 1.4f);
@@ -324,7 +324,7 @@ public sealed class ParticleShowcaseGame : StationGame
         shells.Trails.ColorOverTrail = new MinMaxGradient(Grad([(0f, Color.White), (1f, Color.White)], [(0f, 1f), (1f, 0f)]));
         shells.Renderer.BlendMode = ParticleBlendMode.Additive;
 
-        var burst = CreateSystem("Explosion", c, _dotAdditive, shells.GameObject);
+        ParticleSystemComponent burst = CreateSystem("Explosion", c, _dotAdditive, shells.GameObject);
         burst.MaxParticles = 4000;
         burst.SimulationSpace = SimulationSpace.World;
         burst.Initial.StartLifetime = new MinMaxCurve(1.2f, 1.8f);
@@ -370,7 +370,7 @@ public sealed class ParticleShowcaseGame : StationGame
         plane.Transform.Position = c;
         _roots.Add(plane);
 
-        var sparks = CreateSystem("Sparks", c + new Float3(-3f, 1.4f, 0f), _dotAdditive);
+        ParticleSystemComponent sparks = CreateSystem("Sparks", c + new Float3(-3f, 1.4f, 0f), _dotAdditive);
         sparks.Transform.LocalEulerAngles = new Float3(0f, 0f, -65f);
         sparks.MaxParticles = 3000;
         sparks.SimulationSpace = SimulationSpace.World;
@@ -401,7 +401,7 @@ public sealed class ParticleShowcaseGame : StationGame
         sparks.Renderer.VelocityScale = 0.05f;
         sparks.Renderer.BlendMode = ParticleBlendMode.Additive;
 
-        var splash = CreateSystem("Splash", c, _dotAdditive, sparks.GameObject);
+        ParticleSystemComponent splash = CreateSystem("Splash", c, _dotAdditive, sparks.GameObject);
         splash.SimulationSpace = SimulationSpace.World;
         splash.Initial.StartLifetime = new MinMaxCurve(0.3f, 0.5f);
         splash.Initial.StartSpeed = new MinMaxCurve(1f, 3f);
@@ -423,7 +423,7 @@ public sealed class ParticleShowcaseGame : StationGame
     {
         AddStation("Vortex", "Particles orbit and fall inward with orbital and radial velocity. Their size pulses between two random curves and a few carry lights.", c, DefaultView, 3f);
 
-        var vortex = CreateSystem("Vortex", c + new Float3(0f, 0.3f, 0f), _dotAdditive);
+        ParticleSystemComponent vortex = CreateSystem("Vortex", c + new Float3(0f, 0.3f, 0f), _dotAdditive);
         vortex.Initial.StartLifetime = new MinMaxCurve(4f, 6f);
         vortex.Initial.StartSpeed = new MinMaxCurve(0f);
         vortex.Initial.StartSize = new MinMaxCurve(0.1f, 0.25f);
@@ -459,7 +459,7 @@ public sealed class ParticleShowcaseGame : StationGame
 
         ParticleSystemComponent Make(string name, Float3 center, SimulationSpace space, Color color)
         {
-            var ps = CreateSystem(name, center, _dotAdditive);
+            ParticleSystemComponent ps = CreateSystem(name, center, _dotAdditive);
             ps.SimulationSpace = space;
             ps.Initial.StartLifetime = new MinMaxCurve(1.2f);
             ps.Initial.StartSpeed = new MinMaxCurve(0.2f, 0.6f);
@@ -474,7 +474,7 @@ public sealed class ParticleShowcaseGame : StationGame
             ps.SizeOverLifetime.Enabled = true;
             ps.SizeOverLifetime.Size = new MinMaxCurve(Curve((0f, 1f), (1f, 0f)));
             ps.Renderer.BlendMode = ParticleBlendMode.Additive;
-            var orbit = ps.GameObject.AddComponent<Orbiter>();
+            Orbiter orbit = ps.GameObject.AddComponent<Orbiter>();
             orbit.Center = center + new Float3(0f, 2.5f, 0f);
             return ps;
         }
@@ -499,7 +499,7 @@ public sealed class ParticleShowcaseGame : StationGame
         ground.Transform.Position = c + new Float3(0f, 0.02f, 0f);
         _roots.Add(ground);
 
-        var snow = CreateSystem("Snow", c + new Float3(0f, 9f, 0f), _dotAlpha);
+        ParticleSystemComponent snow = CreateSystem("Snow", c + new Float3(0f, 9f, 0f), _dotAlpha);
         snow.MaxParticles = 5000;
         snow.Prewarm = true;
         snow.CullingMode = ParticleCullingMode.PauseAndCatchUp;
@@ -533,7 +533,7 @@ public sealed class ParticleShowcaseGame : StationGame
     {
         AddStation("Debris", "Mesh particles with full 3D rotation, lit by the scene. A burst every loop, tumbling and bouncing on the physics floor.", c, DefaultView, 3f);
 
-        var debris = CreateSystem("Debris", c + new Float3(0f, 0.5f, 0f), _solid);
+        ParticleSystemComponent debris = CreateSystem("Debris", c + new Float3(0f, 0.5f, 0f), _solid);
         debris.Duration = 3f;
         debris.SimulationSpace = SimulationSpace.World;
         debris.Initial.StartLifetime = new MinMaxCurve(5f, 6f);
@@ -589,7 +589,7 @@ public sealed class ParticleShowcaseGame : StationGame
         Mesh sphere = Mesh.CreateSphere(0.8f, 10, 14);
         for (int i = 0; i < shapes.Length; i++)
         {
-            var ps = CreateSystem($"Shape {shapes[i].type}", c + new Float3((i - (shapes.Length - 1) * 0.5f) * 2.3f, 2f, 0f), _dotAdditive);
+            ParticleSystemComponent ps = CreateSystem($"Shape {shapes[i].type}", c + new Float3((i - (shapes.Length - 1) * 0.5f) * 2.3f, 2f, 0f), _dotAdditive);
             ps.Initial.StartLifetime = new MinMaxCurve(1.2f);
             ps.Initial.StartSpeed = new MinMaxCurve(0.08f);
             ps.Initial.StartSize = new MinMaxCurve(0.09f);
@@ -620,7 +620,7 @@ public sealed class ParticleShowcaseGame : StationGame
 
         ParticleSystemComponent Make(string name, float x)
         {
-            var ps = CreateSystem(name, c + new Float3(x, 1f, 0f), _flipbook);
+            ParticleSystemComponent ps = CreateSystem(name, c + new Float3(x, 1f, 0f), _flipbook);
             ps.Initial.StartLifetime = new MinMaxCurve(3f);
             ps.Initial.StartSpeed = new MinMaxCurve(0.5f);
             ps.Initial.StartSize = new MinMaxCurve(1.2f);
@@ -636,17 +636,17 @@ public sealed class ParticleShowcaseGame : StationGame
 
         Make("Stepped", -4f);
 
-        var blended = Make("Blended", 0f);
+        ParticleSystemComponent blended = Make("Blended", 0f);
         blended.TextureSheet.FrameBlending = true;
 
-        var rows = Make("Rows", 4f);
+        ParticleSystemComponent rows = Make("Rows", 4f);
         rows.TextureSheet.Animation = TextureSheetAnimation.SingleRow;
         rows.TextureSheet.RandomRow = true;
         rows.TextureSheet.TimeMode = TextureSheetTimeMode.FPS;
         rows.TextureSheet.FPS = 6f;
         rows.Renderer.FlipU = 0.5f;
 
-        var ripples = CreateSystem("Ripples", c + new Float3(0f, 0.03f, 3f), _ring);
+        ParticleSystemComponent ripples = CreateSystem("Ripples", c + new Float3(0f, 0.03f, 3f), _ring);
         ripples.Initial.StartLifetime = new MinMaxCurve(2f);
         ripples.Initial.StartSpeed = new MinMaxCurve(0f);
         ripples.Initial.StartSize = new MinMaxCurve(2.5f);
@@ -667,7 +667,7 @@ public sealed class ParticleShowcaseGame : StationGame
     {
         var go = new GameObject(name);
         go.Transform.Position = position;
-        var ps = go.AddComponent<ParticleSystemComponent>();
+        ParticleSystemComponent ps = go.AddComponent<ParticleSystemComponent>();
         ps.Renderer.Material = material;
         ps.Initial.StartColor = new MinMaxGradient(Color.White);
 

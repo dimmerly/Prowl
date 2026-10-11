@@ -69,43 +69,43 @@ public static class EditorSceneManager
         var scene = new Scene();
         scene.Name = "Untitled Scene";
 
-        var defaultMat = AssetDatabase.Get<Material>(BuiltInAssets.GuidFor(DefaultMaterial.Standard));
-        var cubeMesh = AssetDatabase.Get<Mesh>(BuiltInAssets.GuidForMesh(DefaultModel.Cube));
-        var planeMesh = AssetDatabase.Get<Mesh>(BuiltInAssets.GuidForMesh(DefaultModel.Plane));
+        Material? defaultMat = AssetDatabase.Get<Material>(BuiltInAssets.GuidFor(DefaultMaterial.Standard));
+        Mesh? cubeMesh = AssetDatabase.Get<Mesh>(BuiltInAssets.GuidForMesh(DefaultModel.Cube));
+        Mesh? planeMesh = AssetDatabase.Get<Mesh>(BuiltInAssets.GuidForMesh(DefaultModel.Plane));
 
         var camGo = new GameObject("Main Camera");
         camGo.Tag = "Main Camera";
         camGo.Transform.Position = new Float3(0, 5, -15);
         camGo.Transform.LocalEulerAngles = new Float3(15, 0, 0);
-        var cam = camGo.AddComponent<Camera>();
+        Camera cam = camGo.AddComponent<Camera>();
         cam.Depth = -1;
         cam.HDR = true;
         scene.Add(camGo);
 
         var lightGo = new GameObject("Directional Light");
         lightGo.Transform.LocalEulerAngles = new Float3(45, 225, 0);
-        var light = lightGo.AddComponent<DirectionalLight>();
+        DirectionalLight light = lightGo.AddComponent<DirectionalLight>();
         light.Intensity = 1f;
         scene.Add(lightGo);
 
         var floorGo = new GameObject("Floor");
         floorGo.Transform.Position = new Float3(0, 0, 0);
         floorGo.Transform.LocalScale = new Float3(1, 1, 1);
-        var floorRenderer = floorGo.AddComponent<MeshRenderer>();
+        MeshRenderer floorRenderer = floorGo.AddComponent<MeshRenderer>();
         floorRenderer.Mesh = planeMesh;
         floorRenderer.Material = defaultMat;
         scene.Add(floorGo);
 
         var cube1 = new GameObject("Cube");
         cube1.Transform.Position = new Float3(0, 0.5f, 0);
-        var cube1Renderer = cube1.AddComponent<MeshRenderer>();
+        MeshRenderer cube1Renderer = cube1.AddComponent<MeshRenderer>();
         cube1Renderer.Mesh = cubeMesh;
         cube1Renderer.Material = defaultMat;
         scene.Add(cube1);
 
         var cube2 = new GameObject("Cube (1)");
         cube2.Transform.Position = new Float3(2, 0.5f, 1);
-        var cube2Renderer = cube2.AddComponent<MeshRenderer>();
+        MeshRenderer cube2Renderer = cube2.AddComponent<MeshRenderer>();
         cube2Renderer.Mesh = cubeMesh;
         cube2Renderer.Material = defaultMat;
         scene.Add(cube2);
@@ -150,8 +150,8 @@ public static class EditorSceneManager
             string text = File.ReadAllText(absolutePath);
             var echo = EchoObject.ReadFromString(text);
 
-            var ctx = ImportHelper.CreateTrackingContext(out _);
-            var scene = Serializer.Deserialize<Scene>(echo, ctx);
+            SerializationContext ctx = ImportHelper.CreateTrackingContext(out _);
+            Scene? scene = Serializer.Deserialize<Scene>(echo, ctx);
 
             if (scene == null)
             {
@@ -211,7 +211,7 @@ public static class EditorSceneManager
         // Try to restore last scene
         if (EditorRegistries.SettingsEntries.Count > 0)
         {
-            var general = EditorRegistries.GetSettings<GeneralSettings>();
+            GeneralSettings general = EditorRegistries.GetSettings<GeneralSettings>();
             if (!string.IsNullOrEmpty(general.LastScenePath))
             {
                 if (OpenScene(general.LastScenePath))
@@ -267,7 +267,7 @@ public static class EditorSceneManager
             if (Scene.Current.StaticGeometry.NeedsRebuild(Scene.Current))
                 Scene.Current.UpdateStaticGeometry();
 
-            var echo = Serializer.Serialize(typeof(object), Scene.Current);
+            EchoObject echo = Serializer.Serialize(typeof(object), Scene.Current);
             if (echo == null)
             {
                 Debug.LogError("Failed to serialize scene.");
@@ -302,7 +302,7 @@ public static class EditorSceneManager
         if (EditorRegistries.SettingsEntries.Count == 0) return;
         try
         {
-            var general = EditorRegistries.GetSettings<GeneralSettings>();
+            GeneralSettings general = EditorRegistries.GetSettings<GeneralSettings>();
             general.LastScenePath = path;
             EditorRegistries.SaveSettings();
         }

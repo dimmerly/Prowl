@@ -134,17 +134,17 @@ public sealed class AssemblyDefinition
     public static AssemblyDefinition FromEcho(EchoObject echo)
     {
         var def = new AssemblyDefinition();
-        if (echo.TryGet("name", out var n) && !string.IsNullOrWhiteSpace(n.StringValue))
+        if (echo.TryGet("name", out EchoObject? n) && !string.IsNullOrWhiteSpace(n.StringValue))
             def.Name = n.StringValue;
         ReadStringList(echo, "references", def.References);
         ReadStringList(echo, "includePlatforms", def.IncludePlatforms);
         ReadStringList(echo, "excludePlatforms", def.ExcludePlatforms);
-        if (echo.TryGet("allowUnsafeCode", out var au)) def.AllowUnsafeCode = au.BoolValue;
-        if (echo.TryGet("autoReferenced", out var ar)) def.AutoReferenced = ar.BoolValue;
-        if (echo.TryGet("overrideReferences", out var or)) def.OverrideReferences = or.BoolValue;
+        if (echo.TryGet("allowUnsafeCode", out EchoObject? au)) def.AllowUnsafeCode = au.BoolValue;
+        if (echo.TryGet("autoReferenced", out EchoObject? ar)) def.AutoReferenced = ar.BoolValue;
+        if (echo.TryGet("overrideReferences", out EchoObject? or)) def.OverrideReferences = or.BoolValue;
         ReadStringList(echo, "precompiledReferences", def.PrecompiledReferences);
         ReadStringList(echo, "defineConstraints", def.DefineConstraints);
-        if (echo.TryGet("noEngineReferences", out var ne)) def.NoEngineReferences = ne.BoolValue;
+        if (echo.TryGet("noEngineReferences", out EchoObject? ne)) def.NoEngineReferences = ne.BoolValue;
         return def;
     }
 
@@ -171,8 +171,8 @@ public sealed class AssemblyDefinition
     private static void ReadStringList(EchoObject echo, string key, List<string> into)
     {
         into.Clear();
-        if (echo.TryGet(key, out var tag) && tag.TagType == EchoType.List)
-            foreach (var item in tag.List)
+        if (echo.TryGet(key, out EchoObject? tag) && tag.TagType == EchoType.List)
+            foreach (EchoObject item in tag.List)
                 if (!string.IsNullOrWhiteSpace(item.StringValue))
                     into.Add(item.StringValue);
     }
@@ -241,7 +241,7 @@ public static class AssemblyDefinitionDatabase
 
         AsmDefFile? best = null;
         int bestLen = -1;
-        foreach (var asm in asmdefs)
+        foreach (AsmDefFile asm in asmdefs)
         {
             if (IsWithin(scriptDir, asm.Directory) && asm.Directory.Length > bestLen)
             {

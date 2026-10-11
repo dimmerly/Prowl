@@ -12,6 +12,7 @@ using Prowl.Echo;
 using Prowl.Editor.GUI.SceneView;
 using Prowl.Editor.Projects;
 using Prowl.Runtime;
+using Prowl.Runtime.Resources;
 
 namespace Prowl.Editor.Navigation;
 
@@ -112,7 +113,7 @@ public sealed class NavMeshBakeService
     {
         try
         {
-            var db = EditorAssetBackend.Instance;
+            EditorAssetBackend? db = EditorAssetBackend.Instance;
             string fileRel = BakePath(surface);
             string fileAbs = Path.Combine(Project.Current!.AssetsPath, fileRel);
             string? dirAbs = Path.GetDirectoryName(fileAbs);
@@ -146,7 +147,7 @@ public sealed class NavMeshBakeService
     /// also references (a duplicated surface) is never overwritten: the bake gets a file of its own.</summary>
     internal static string BakePath(NavMeshSurface surface)
     {
-        var db = EditorAssetBackend.Instance;
+        EditorAssetBackend? db = EditorAssetBackend.Instance;
         HashSet<Guid> othersAssets = OtherSurfaceAssets(surface);
 
         Guid assignedGuid = surface.NavMeshData is { } assignedData ? assignedData.AssetID : Guid.Empty;
@@ -166,7 +167,7 @@ public sealed class NavMeshBakeService
     private static HashSet<Guid> OtherSurfaceAssets(NavMeshSurface surface)
     {
         HashSet<Guid> assets = [];
-        var scene = surface.GameObject.Scene;
+        Scene? scene = surface.GameObject.Scene;
         if (scene.IsNotValid()) return assets;
 
         foreach (GameObject go in scene.AllObjects)
@@ -180,7 +181,7 @@ public sealed class NavMeshBakeService
     // case sensitively and Sanitize folds path separators.
     private static (string Folder, string Name) DefaultBakeName(NavMeshSurface surface)
     {
-        var scene = surface.GameObject.Scene;
+        Scene? scene = surface.GameObject.Scene;
         string sceneRel = scene.IsValid() && scene!.Source is { } source ? source.AssetPath : "";
         string sceneDir = string.IsNullOrEmpty(sceneRel) ? "" : (Path.GetDirectoryName(sceneRel) ?? "").Replace('\\', '/');
         string sceneName = string.IsNullOrEmpty(sceneRel) ? "Scene" : Path.GetFileNameWithoutExtension(sceneRel);

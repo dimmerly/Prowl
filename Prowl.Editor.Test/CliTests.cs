@@ -3,6 +3,7 @@
 
 using System.Net;
 using System.Net.Http.Json;
+using System.Net.Sockets;
 using System.Reflection;
 using System.Text.Json;
 using System.Text.Json.Nodes;
@@ -10,6 +11,7 @@ using System.Text.Json.Nodes;
 using Prowl.Cli;
 using Prowl.Editor.Core;
 using Prowl.Editor.GUI.SceneView;
+using Prowl.Editor.Projects.Scripting;
 using Prowl.Editor.Theming;
 using Prowl.Runtime;
 using Prowl.Runtime.Resources;
@@ -44,8 +46,8 @@ public class CliTests : EditorTestHarness
     {
         EditorSettings.Instance = new EditorSettings();
         CliCommands.Clear();
-        foreach (var type in new[] { typeof(CliCommands), typeof(CliEditorCommands), typeof(CliTests) })
-            foreach (var method in type.GetMethods(BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic))
+        foreach (Type? type in new[] { typeof(CliCommands), typeof(CliEditorCommands), typeof(CliTests) })
+            foreach (MethodInfo method in type.GetMethods(BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic))
                 CliCommands.Scan(method);
     }
 
@@ -112,11 +114,11 @@ public class CliTests : EditorTestHarness
     {
         Assert.Equal(ulong.MaxValue, Eval("ulong.MaxValue").Result!.GetValue<ulong>());
 
-        var items = Eval("Enumerable.Range(0, 5000)").Result!.AsArray();
+        JsonArray items = Eval("Enumerable.Range(0, 5000)").Result!.AsArray();
         Assert.Equal(CliCommands.MaxResultItems + 1, items.Count);
         Assert.Contains("truncated", items[^1]!.GetValue<string>());
 
-        var lone = Eval("\"a\\uD800b\"");
+        CliRunResponse lone = Eval("\"a\\uD800b\"");
         Assert.True(lone.Ok, lone.Error);
         Assert.Equal("a�b", lone.Result!.GetValue<string>());
     }
@@ -125,12 +127,12 @@ public class CliTests : EditorTestHarness
     public void ConcurrentCommandsOnlyCaptureTheirOwnLogs()
     {
         static string Code(string tag) => $"for (int i = 0; i < 5; i++) {{ Debug.Log(\"{tag}\" + i); await Task.Delay(10); }} return 1;";
-        var a = Task.Run(() => Eval(Code("A")));
-        var b = Task.Run(() => Eval(Code("B")));
+        Task<CliRunResponse> a = Task.Run(() => Eval(Code("A")));
+        Task<CliRunResponse> b = Task.Run(() => Eval(Code("B")));
 
-        foreach (var (task, tag) in new[] { (a, "A"), (b, "B") })
+        foreach ((Task<CliRunResponse>? task, string? tag) in new[] { (a, "A"), (b, "B") })
         {
-            var response = task.Result;
+            CliRunResponse response = task.Result;
             Assert.True(response.Ok, response.Error);
             Assert.Equal(5, response.Logs.Count);
             Assert.All(response.Logs, l => Assert.StartsWith(tag, l.Message));
@@ -140,11 +142,11 @@ public class CliTests : EditorTestHarness
     [Fact]
     public void EvalAwaitingAcrossSessionRestartsStillFinishes()
     {
-        var previous = SynchronizationContext.Current;
+        SynchronizationContext? previous = SynchronizationContext.Current;
         MainThreadContext.Install();
         try
         {
-            var run = Task.Run(() => CliServer.Execute(new CliRunRequest { Command = "eval", Positional = ["await Task.Delay(50); await Task.Yield(); return 7;"], TimeoutSeconds = 30 }));
+            Task<CliRunResponse> run = Task.Run(() => CliServer.Execute(new CliRunRequest { Command = "eval", Positional = ["await Task.Delay(50); await Task.Yield(); return 7;"], TimeoutSeconds = 30 }));
 
             var clock = System.Diagnostics.Stopwatch.StartNew();
             while (!run.IsCompleted && clock.Elapsed < TimeSpan.FromSeconds(40))
@@ -173,7 +175,7 @@ public class CliTests : EditorTestHarness
 
         using var tcp = new System.Net.Sockets.TcpClient();
         await tcp.ConnectAsync(IPAddress.Loopback, CliServer.Port);
-        var stream = tcp.GetStream();
+        NetworkStream stream = tcp.GetStream();
         byte[] head = System.Text.Encoding.ASCII.GetBytes($"POST /run HTTP/1.1\r\nHost: 127.0.0.1:{CliServer.Port}\r\nContent-Length: 10000000\r\n\r\n");
         await stream.WriteAsync(head);
 
@@ -219,7 +221,7 @@ public class CliTests : EditorTestHarness
     [Fact]
     public void AThrowingCommandReportsTheException()
     {
-        var response = Run("test_throw");
+        CliRunResponse response = Run("test_throw");
         Assert.False(response.Ok);
         Assert.Contains("boom", response.Error);
         Assert.Contains(nameof(Throw), response.Error);
@@ -243,7 +245,7 @@ public class CliTests : EditorTestHarness
     [Fact]
     public void EvalOfAVoidCallReturnsNothingAndCapturesItsLog()
     {
-        var response = Eval("Debug.Log(\"from eval\")");
+        CliRunResponse response = Eval("Debug.Log(\"from eval\")");
         Assert.True(response.Ok, response.Error);
         Assert.Null(response.Result);
         Assert.Contains(response.Logs, l => l.Message == "from eval" && l.Severity == "Normal");
@@ -252,7 +254,7 @@ public class CliTests : EditorTestHarness
     [Fact]
     public void EvalCompileErrorsPointAtTheSnippetLine()
     {
-        var response = Eval("var a = 1;\nreturn missingThing;");
+        CliRunResponse response = Eval("var a = 1;\nreturn missingThing;");
         Assert.False(response.Ok);
         Assert.Contains("(2,", response.Error);
         Assert.Contains("CS0103", response.Error);
@@ -261,7 +263,7 @@ public class CliTests : EditorTestHarness
     [Fact]
     public void ResultsKeepTheShapeOfAnonymousObjectsAndCollections()
     {
-        var result = Eval("new { name = \"a\", items = new[] { 1, 2 }, map = new Dictionary<string, float> { [\"k\"] = 0.5f } }").Result!;
+        JsonNode result = Eval("new { name = \"a\", items = new[] { 1, 2 }, map = new Dictionary<string, float> { [\"k\"] = 0.5f } }").Result!;
         Assert.Equal("a", result["name"]!.GetValue<string>());
         Assert.Equal(2, result["items"]![1]!.GetValue<long>());
         Assert.Equal(0.5f, result["map"]!["k"]!.GetValue<float>());
@@ -272,7 +274,7 @@ public class CliTests : EditorTestHarness
     {
         CliServer.Start(Project.RootPath, Project.LibraryPath);
         string lockPath = Path.Combine(Project.LibraryPath, CliProtocol.LockFileName);
-        var lockFile = JsonSerializer.Deserialize<CliLockFile>(File.ReadAllText(lockPath), CliProtocol.Json)!;
+        CliLockFile lockFile = JsonSerializer.Deserialize<CliLockFile>(File.ReadAllText(lockPath), CliProtocol.Json)!;
         Assert.Equal(CliServer.Port, lockFile.Port);
         Assert.Equal(Environment.ProcessId, lockFile.ProcessId);
 
@@ -280,17 +282,17 @@ public class CliTests : EditorTestHarness
         Assert.Equal(HttpStatusCode.Unauthorized, (await client.GetAsync(CliProtocol.CommandsPath)).StatusCode);
 
         client.DefaultRequestHeaders.Add(CliProtocol.TokenHeader, lockFile.Token);
-        var commands = await client.GetFromJsonAsync<List<CliCommandInfo>>(CliProtocol.CommandsPath, CliProtocol.Json);
-        var add = commands!.Single(c => c.Name == "test_add");
+        List<CliCommandInfo>? commands = await client.GetFromJsonAsync<List<CliCommandInfo>>(CliProtocol.CommandsPath, CliProtocol.Json);
+        CliCommandInfo add = commands!.Single(c => c.Name == "test_add");
         Assert.Equal(["a", "b"], add.Args.Select(a => a.Name));
         Assert.False(add.Args[1].Required);
 
-        var chunked = await client.PostAsJsonAsync(CliProtocol.RunPath, new CliRunRequest { Command = "status" }, CliProtocol.Json);
+        HttpResponseMessage chunked = await client.PostAsJsonAsync(CliProtocol.RunPath, new CliRunRequest { Command = "status" }, CliProtocol.Json);
         Assert.Equal(HttpStatusCode.LengthRequired, chunked.StatusCode);
 
         string json = JsonSerializer.Serialize(new CliRunRequest { Command = "eval", Positional = ["40 + 2"] }, CliProtocol.Json);
-        var post = await client.PostAsync(CliProtocol.RunPath, new StringContent(json, System.Text.Encoding.UTF8, "application/json"));
-        var response = await post.Content.ReadFromJsonAsync<CliRunResponse>(CliProtocol.Json);
+        HttpResponseMessage post = await client.PostAsync(CliProtocol.RunPath, new StringContent(json, System.Text.Encoding.UTF8, "application/json"));
+        CliRunResponse? response = await post.Content.ReadFromJsonAsync<CliRunResponse>(CliProtocol.Json);
         Assert.True(response!.Ok, response.Error);
         Assert.Equal(42, response.Result!.GetValue<long>());
 
@@ -301,7 +303,7 @@ public class CliTests : EditorTestHarness
     [Fact]
     public async Task ServerStartedOnTheMainThreadKeepsAnsweringAfterTheSessionRestarts()
     {
-        var previous = SynchronizationContext.Current;
+        SynchronizationContext? previous = SynchronizationContext.Current;
         MainThreadContext.Install();
         try
         {
@@ -365,8 +367,8 @@ public class CliEditorCommandTests : EditorTestHarness
     {
         EditorSettings.Instance = new EditorSettings();
         CliCommands.Clear();
-        foreach (var type in new[] { typeof(CliCommands), typeof(CliEditorCommands) })
-            foreach (var method in type.GetMethods(BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic))
+        foreach (Type? type in new[] { typeof(CliCommands), typeof(CliEditorCommands) })
+            foreach (MethodInfo method in type.GetMethods(BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic))
                 CliCommands.Scan(method);
 
         Undo.Clear();
@@ -385,14 +387,14 @@ public class CliEditorCommandTests : EditorTestHarness
 
     private static JsonNode? Ok(string command, params string[] argv)
     {
-        var response = CliServer.Execute(new CliRunRequest { Command = command, Argv = [.. argv] });
+        CliRunResponse response = CliServer.Execute(new CliRunRequest { Command = command, Argv = [.. argv] });
         Assert.True(response.Ok, $"{command} failed: {response.Error}");
         return response.Result == null ? null : JsonNode.Parse(response.Result.ToJsonString());
     }
 
     private static string Fails(string command, params string[] argv)
     {
-        var response = CliServer.Execute(new CliRunRequest { Command = command, Argv = [.. argv] });
+        CliRunResponse response = CliServer.Execute(new CliRunRequest { Command = command, Argv = [.. argv] });
         Assert.False(response.Ok, $"{command} should have failed");
         return response.Error!;
     }
@@ -401,10 +403,10 @@ public class CliEditorCommandTests : EditorTestHarness
     public void GoCreatesUnderAParentAtALocalPositionAndUndoRemovesIt()
     {
         Ok("go", "create", "--name", "Root");
-        var child = Ok("go", "create", "--name", "Gun", "--parent", "/Root", "--position", "[1, 2, 3]", "--components", "CliProbe")!;
+        JsonNode child = Ok("go", "create", "--name", "Gun", "--parent", "/Root", "--position", "[1, 2, 3]", "--components", "CliProbe")!;
 
         Assert.Equal("/Root/Gun", child["path"]!.GetValue<string>());
-        var gun = _scene.AllObjects.Single(g => g.Name == "Gun");
+        GameObject gun = _scene.AllObjects.Single(g => g.Name == "Gun");
         Assert.Equal(new Float3(1, 2, 3), gun.Transform.LocalPosition);
         Assert.NotNull(gun.GetComponent<CliProbe>());
 
@@ -419,7 +421,7 @@ public class CliEditorCommandTests : EditorTestHarness
     {
         Ok("go", "create", "--name", "A");
         Ok("go", "create", "--name", "A");
-        var probe = Ok("go", "create", "--name", "P", "--parent", "/A[1]", "--components", "CliProbe")!;
+        JsonNode probe = Ok("go", "create", "--name", "P", "--parent", "/A[1]", "--components", "CliProbe")!;
 
         Assert.Contains("A[0] to A[1]", Fails("get", "/A"));
         Assert.Equal("/A[1]/P", Ok("get", "/A[1]/P")!["path"]!.GetValue<string>());
@@ -434,7 +436,7 @@ public class CliEditorCommandTests : EditorTestHarness
     {
         Ok("go", "create", "--name", "Other");
         Ok("go", "create", "--name", "P", "--components", "CliProbe");
-        var probe = _scene.AllObjects.Single(g => g.Name == "P").GetComponent<CliProbe>()!;
+        CliProbe probe = _scene.AllObjects.Single(g => g.Name == "P").GetComponent<CliProbe>()!;
         int validatedBefore = probe.Validated;
 
         Ok("set", "/P:CliProbe", "--values", """{"Count": 5, "Speed": 2, "Label": "hello", "Offset": [1, 2, 3], "Numbers[1]": 9, "Settings.Radius": 2.5, "Target": "/Other"}""");
@@ -461,7 +463,7 @@ public class CliEditorCommandTests : EditorTestHarness
     {
         Ok("go", "create", "--name", "Other");
         Ok("go", "create", "--name", "P", "--components", "CliProbe");
-        var probe = _scene.AllObjects.Single(g => g.Name == "P").GetComponent<CliProbe>()!;
+        CliProbe probe = _scene.AllObjects.Single(g => g.Name == "P").GetComponent<CliProbe>()!;
         probe.Shapes.Add(new CliProbeBox());
 
         Ok("set", "/P:CliProbe", "--values", """{"Targets": ["/Other", "/P"], "Mode": "Fast", "Shapes[0].Depth": 4}""");
@@ -476,7 +478,7 @@ public class CliEditorCommandTests : EditorTestHarness
     public void SetRejectsUnknownFieldsBeforeWritingAnything()
     {
         Ok("go", "create", "--name", "P", "--components", "CliProbe");
-        var probe = _scene.AllObjects.Single(g => g.Name == "P").GetComponent<CliProbe>()!;
+        CliProbe probe = _scene.AllObjects.Single(g => g.Name == "P").GetComponent<CliProbe>()!;
 
         Assert.Contains("no field 'Nope'", Fails("set", "/P:CliProbe", "--values", """{"Count": 5, "Nope": 1}"""));
         Assert.Equal(0, probe.Count);
@@ -486,10 +488,10 @@ public class CliEditorCommandTests : EditorTestHarness
     public void ComponentAddSetsValuesInOneUndoStepAndRemoveIsUndoable()
     {
         Ok("go", "create", "--name", "P");
-        var added = Ok("component", "add", "/P", "--type", "CliProbe", "--values", """{"Count": 7}""")!;
+        JsonNode added = Ok("component", "add", "/P", "--type", "CliProbe", "--values", """{"Count": 7}""")!;
         Assert.Equal(7, added["fields"]!["Count"]!.GetValue<long>());
 
-        var go = _scene.AllObjects.Single(g => g.Name == "P");
+        GameObject go = _scene.AllObjects.Single(g => g.Name == "P");
         Ok("component", "remove", "/P:CliProbe");
         Assert.Null(go.GetComponent<CliProbe>());
 
@@ -531,7 +533,7 @@ public class CliEditorCommandTests : EditorTestHarness
         Ok("go", "create", "--name", "Root");
         Ok("go", "create", "--name", "Gun", "--parent", "/Root", "--components", "CliProbe");
 
-        var tree = Ok("tree")!.AsArray();
+        JsonArray tree = Ok("tree")!.AsArray();
         Assert.True(tree.Count == 1, tree.ToJsonString());
         Assert.Equal("Gun", tree.Single()!["children"]![0]!["name"]!.GetValue<string>());
         Assert.Equal(1, Ok("tree", "--depth", "0")!.AsArray().Single()!["childCount"]!.GetValue<long>());
@@ -545,7 +547,7 @@ public class CliEditorCommandTests : EditorTestHarness
         Debug.Log("cli first");
         Debug.LogError("cli second");
 
-        var result = Ok("logs", "--since", seq.ToString())!;
+        JsonNode result = Ok("logs", "--since", seq.ToString())!;
         Assert.Equal(["cli first", "cli second"], result["logs"]!.AsArray().Select(l => l!["message"]!.GetValue<string>()));
         Assert.Single(Ok("logs", "--since", seq.ToString(), "--level", "error")!["logs"]!.AsArray());
         Assert.Empty(Ok("logs", "--since", result["nextSeq"]!.ToJsonString())!["logs"]!.AsArray());
@@ -557,8 +559,8 @@ public class CliEditorCommandTests : EditorTestHarness
         Ok("go", "create", "--name", "P", "--components", "CliProbe");
         Application.IsPlaying = true;
 
-        var first = CliServer.Execute(new CliRunRequest { Command = "set", Argv = ["/P:CliProbe", "Count", "1"] });
-        var second = CliServer.Execute(new CliRunRequest { Command = "set", Argv = ["/P:CliProbe", "Count", "2"] });
+        CliRunResponse first = CliServer.Execute(new CliRunRequest { Command = "set", Argv = ["/P:CliProbe", "Count", "1"] });
+        CliRunResponse second = CliServer.Execute(new CliRunRequest { Command = "set", Argv = ["/P:CliProbe", "Count", "2"] });
         Assert.Contains(first.Logs, l => l.Message.Contains("lost when play stops"));
         Assert.DoesNotContain(second.Logs, l => l.Message.Contains("lost when play stops"));
         Assert.Equal(2, _scene.AllObjects.Single(g => g.Name == "P").GetComponent<CliProbe>()!.Count);
@@ -566,7 +568,7 @@ public class CliEditorCommandTests : EditorTestHarness
         Application.IsPlaying = false;
         CliServer.Execute(new CliRunRequest { Command = "set", Argv = ["/P:CliProbe", "Count", "3"] });
         Application.IsPlaying = true;
-        var nextSession = CliServer.Execute(new CliRunRequest { Command = "set", Argv = ["/P:CliProbe", "Count", "4"] });
+        CliRunResponse nextSession = CliServer.Execute(new CliRunRequest { Command = "set", Argv = ["/P:CliProbe", "Count", "4"] });
         Assert.Contains(nextSession.Logs, l => l.Message.Contains("lost when play stops"));
     }
 
@@ -584,7 +586,7 @@ public class CliEditorCommandTests : EditorTestHarness
         Ok("go", "create", "--name", "OnlyInTheOldScene");
         EditorSceneManager.IsDirty = false;
 
-        var created = Ok("scene", "--action", "new")!;
+        JsonNode created = Ok("scene", "--action", "new")!;
 
         Assert.DoesNotContain(created["roots"]!.AsArray(), r => r!.GetValue<string>() == "OnlyInTheOldScene");
         Assert.DoesNotContain(Scene.Current.AllObjects, g => g.Name == "OnlyInTheOldScene");
@@ -601,8 +603,8 @@ public class CliAssetCommandTests : EditorTestHarness
         EditorSettings.Instance = new EditorSettings();
         EditorRegistries.Initialize();
         CliCommands.Clear();
-        foreach (var type in new[] { typeof(CliCommands), typeof(CliEditorCommands) })
-            foreach (var method in type.GetMethods(BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic))
+        foreach (Type? type in new[] { typeof(CliCommands), typeof(CliEditorCommands) })
+            foreach (MethodInfo method in type.GetMethods(BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic))
                 CliCommands.Scan(method);
 
         Undo.Clear();
@@ -620,14 +622,14 @@ public class CliAssetCommandTests : EditorTestHarness
 
     private static JsonNode? Ok(string command, params string[] argv)
     {
-        var response = CliServer.Execute(new CliRunRequest { Command = command, Argv = [.. argv] });
+        CliRunResponse response = CliServer.Execute(new CliRunRequest { Command = command, Argv = [.. argv] });
         Assert.True(response.Ok, $"{command} failed: {response.Error}");
         return response.Result == null ? null : JsonNode.Parse(response.Result.ToJsonString());
     }
 
     private static string Fails(string command, params string[] argv)
     {
-        var response = CliServer.Execute(new CliRunRequest { Command = command, Argv = [.. argv] });
+        CliRunResponse response = CliServer.Execute(new CliRunRequest { Command = command, Argv = [.. argv] });
         Assert.False(response.Ok, $"{command} should have failed");
         return response.Error!;
     }
@@ -637,14 +639,14 @@ public class CliAssetCommandTests : EditorTestHarness
     {
         Assert.Contains(Ok("asset", "types")!.AsArray(), t => t!["type"]!.GetValue<string>() == "AvatarMask");
 
-        var created = Ok("asset", "create", "--path", "Masks/Upper", "--type", "AvatarMask")!;
+        JsonNode created = Ok("asset", "create", "--path", "Masks/Upper", "--type", "AvatarMask")!;
         Assert.Equal("Masks/Upper.mask", created["path"]!.GetValue<string>());
         Assert.Contains("already exists", Fails("asset", "create", "--path", "Masks/Upper.mask", "--type", "AvatarMask"));
 
         Assert.Equal("Masks/Upper.mask", Ok("asset", "find", "--type", "AvatarMask")!["results"]![0]!["path"]!.GetValue<string>());
 
         Ok("set", "Masks/Upper.mask", "--values", """{"DefaultWeight": 0.5, "Bones": [{"Bone": "Spine", "Weight": 1, "IncludeChildren": true}]}""");
-        var mask = AssetDatabase.Load<AvatarMask>(Assets.PathToGuid("Masks/Upper.mask"))!;
+        AvatarMask mask = AssetDatabase.Load<AvatarMask>(Assets.PathToGuid("Masks/Upper.mask"))!;
         Assert.Equal(0.5f, mask.DefaultWeight);
         Assert.Equal("Spine", mask.Bones.Single().Bone);
         Assert.Contains("Spine", File.ReadAllText(AssetAbsolutePath("Masks/Upper.mask")));
@@ -660,7 +662,7 @@ public class CliAssetCommandTests : EditorTestHarness
     [Fact]
     public void ScriptsAreWrittenFromATemplate()
     {
-        var result = Ok("script", "Scripts/Gun")!;
+        JsonNode result = Ok("script", "Scripts/Gun")!;
         Assert.Equal("Scripts/Gun.cs", result["path"]!.GetValue<string>());
         Assert.Contains("class Gun", File.ReadAllText(AssetAbsolutePath("Scripts/Gun.cs")));
         Assert.Contains("already exists", Fails("script", "Scripts/Gun.cs"));
@@ -672,10 +674,10 @@ public class CliAssetCommandTests : EditorTestHarness
     public void PrefabsAreCreatedAndTheirOverridesListedAndReverted()
     {
         Ok("go", "create", "--name", "Probe", "--components", "CliProbe");
-        var made = Ok("prefab", "create", "/Probe", "--path", "Prefabs/Probe")!;
+        JsonNode made = Ok("prefab", "create", "/Probe", "--path", "Prefabs/Probe")!;
         Assert.Equal("Prefabs/Probe.prefab", made["prefab"]!["path"]!.GetValue<string>());
 
-        var instance = _scene.AllObjects.Single(g => g.Name == "Probe");
+        GameObject instance = _scene.AllObjects.Single(g => g.Name == "Probe");
         Assert.True(instance.IsPrefabInstance);
 
         Ok("set", "/Probe:CliProbe", "Count", "4");
@@ -692,10 +694,10 @@ public class CliAssetCommandTests : EditorTestHarness
         Ok("prefab", "create", "/Probe", "--path", "Prefabs/Probe");
         Ok("component", "add", "/Probe", "--type", "CliProbeExtra", "--values", """{"Level": 3}""");
 
-        var listed = Ok("prefab", "overrides", "/Probe")!;
+        JsonNode listed = Ok("prefab", "overrides", "/Probe")!;
         Assert.Contains(listed["additions"]!.AsArray(), a => a!["component"]!.GetValue<string>() == "CliProbeExtra");
 
-        var applied = Ok("prefab", "apply", "/Probe")!;
+        JsonNode applied = Ok("prefab", "apply", "/Probe")!;
         Assert.Single(applied["appliedAdditions"]!.AsArray());
         Assert.Contains("CliProbeExtra", File.ReadAllText(AssetAbsolutePath("Prefabs/Probe.prefab")));
         Assert.Empty(Ok("prefab", "overrides", "/Probe")!["additions"]!.AsArray());
@@ -705,7 +707,7 @@ public class CliAssetCommandTests : EditorTestHarness
     public void ImportSettingsMergeNestedKeysIntoTheMetaFile()
     {
         Ok("asset", "create", "--path", "Masks/M", "--type", "AvatarMask");
-        var result = Ok("importer", "Masks/M.mask", "--values", """{"clips.Fire.loop": true, "scale": 2}""")!;
+        JsonNode result = Ok("importer", "Masks/M.mask", "--values", """{"clips.Fire.loop": true, "scale": 2}""")!;
 
         Assert.True(result["settings"]!["clips"]!["Fire"]!["loop"]!.GetValue<bool>());
         string meta = File.ReadAllText(AssetAbsolutePath("Masks/M.mask") + ".meta");
@@ -721,8 +723,8 @@ public class CliGraphCommandTests : EditorTestHarness
         EditorSettings.Instance = new EditorSettings();
         EditorRegistries.Initialize();
         CliCommands.Clear();
-        foreach (var type in new[] { typeof(CliCommands), typeof(CliEditorCommands) })
-            foreach (var method in type.GetMethods(BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic))
+        foreach (Type? type in new[] { typeof(CliCommands), typeof(CliEditorCommands) })
+            foreach (MethodInfo method in type.GetMethods(BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic))
                 CliCommands.Scan(method);
         Undo.Clear();
         var scene = new Scene();
@@ -741,7 +743,7 @@ public class CliGraphCommandTests : EditorTestHarness
 
     private static JsonNode Ok(string command, params string[] argv)
     {
-        var response = Run(command, argv);
+        CliRunResponse response = Run(command, argv);
         Assert.True(response.Ok, $"{command} failed: {response.Error}");
         return JsonNode.Parse(response.Result!.ToJsonString())!;
     }
@@ -767,17 +769,17 @@ public class CliGraphCommandTests : EditorTestHarness
         Assert.Contains(Ok("graph", "--action", "types", "--filter", "stateMachine").AsArray(), t => t!["id"]!.GetValue<string>() == "motion.stateMachine");
         Ok("asset", "create", "--path", "Anim/Player", "--type", "AnimationGraph");
 
-        var described = Ok("graph", "Anim/Player.animgraph", "--action", "edit", "--ops", Machine)["graph"]!;
-        var machine = described["nodes"]!.AsArray().Single(n => n!["type"]!.GetValue<string>() == "motion.stateMachine")!;
+        JsonNode described = Ok("graph", "Anim/Player.animgraph", "--action", "edit", "--ops", Machine)["graph"]!;
+        JsonNode machine = described["nodes"]!.AsArray().Single(n => n!["type"]!.GetValue<string>() == "motion.stateMachine")!;
         Assert.Equal(machine["id"]!.GetValue<string>(), described["root"]!.GetValue<string>());
 
-        var states = machine["states"]!.AsArray();
+        JsonArray states = machine["states"]!.AsArray();
         Assert.Equal(["Idle", "Run"], states.Select(s => s!["name"]!.GetValue<string>()));
         Assert.True(states[0]!["default"]!.GetValue<bool>());
         Assert.Equal(0.3f, states[0]!["transitions"]![0]!["duration"]!.GetValue<float>());
 
         string runOutput = states[1]!["output"]!.GetValue<string>();
-        var output = described["nodes"]!.AsArray().Single(n => n!["id"]!.GetValue<string>() == runOutput)!;
+        JsonNode output = described["nodes"]!.AsArray().Single(n => n!["id"]!.GetValue<string>() == runOutput)!;
         Assert.Contains(output["inputs"]!.AsArray(), i => i!["name"]!.GetValue<string>() == "Enter" && i["from"] != null);
 
         Assert.Contains("Speed", File.ReadAllText(AssetAbsolutePath("Anim/Player.animgraph")));
@@ -791,7 +793,7 @@ public class CliGraphCommandTests : EditorTestHarness
         for (int i = 0; i < examples.Count; i++)
         {
             Ok("asset", "create", "--path", $"Anim/Example{i}", "--type", "AnimationGraph");
-            var described = Ok("graph", $"Anim/Example{i}.animgraph", "--action", "edit", "--ops", examples[i])["graph"]!;
+            JsonNode described = Ok("graph", $"Anim/Example{i}.animgraph", "--action", "edit", "--ops", examples[i])["graph"]!;
             Assert.False(string.IsNullOrEmpty(described["root"]?.GetValue<string>()), $"Example {i} has no root.");
         }
     }
@@ -800,7 +802,7 @@ public class CliGraphCommandTests : EditorTestHarness
     public void ABadOpChangesNothing()
     {
         Ok("asset", "create", "--path", "Anim/G", "--type", "AnimationGraph");
-        var response = Run("graph", "Anim/G.animgraph", "--action", "edit", "--ops", """[{"op": "add", "type": "motion.clip"}, {"op": "connect", "from": "nope", "to": "x"}]""");
+        CliRunResponse response = Run("graph", "Anim/G.animgraph", "--action", "edit", "--ops", """[{"op": "add", "type": "motion.clip"}, {"op": "connect", "from": "nope", "to": "x"}]""");
         Assert.False(response.Ok);
         Assert.Contains("no node 'x'", response.Error);
         Assert.Empty(Ok("graph", "Anim/G.animgraph")["nodes"]!.AsArray());
@@ -826,7 +828,7 @@ public class CliApiCommandTests : EditorTestHarness
     {
         EditorSettings.Instance = new EditorSettings();
         CliCommands.Clear();
-        foreach (var method in typeof(CliEditorCommands).GetMethods(BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic))
+        foreach (MethodInfo method in typeof(CliEditorCommands).GetMethods(BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic))
             CliCommands.Scan(method);
     }
 
@@ -839,7 +841,7 @@ public class CliApiCommandTests : EditorTestHarness
 
     private static JsonNode Ok(params string[] argv)
     {
-        var response = CliServer.Execute(new CliRunRequest { Command = "api", Argv = [.. argv] });
+        CliRunResponse response = CliServer.Execute(new CliRunRequest { Command = "api", Argv = [.. argv] });
         Assert.True(response.Ok, response.Error);
         return JsonNode.Parse(response.Result!.ToJsonString())!;
     }
@@ -847,7 +849,7 @@ public class CliApiCommandTests : EditorTestHarness
     [Fact]
     public void SearchFindsMembersWithTheirSignatureAndSummary()
     {
-        var hit = Ok("--search", "LogOnce")["members"]!.AsArray().First(m => m!["member"]!.GetValue<string>().Contains("LogOnce("))!;
+        JsonNode hit = Ok("--search", "LogOnce")["members"]!.AsArray().First(m => m!["member"]!.GetValue<string>().Contains("LogOnce("))!;
         Assert.Equal("public static void LogOnce(string id, string message)", hit["member"]!.GetValue<string>());
         Assert.Contains("first time", hit["summary"]!.GetValue<string>());
     }
@@ -855,12 +857,12 @@ public class CliApiCommandTests : EditorTestHarness
     [Fact]
     public void ATypeListsItsMembersAndAMemberItsParameterDocs()
     {
-        var type = Ok("--type", "AssetRef");
+        JsonNode type = Ok("--type", "AssetRef");
         Assert.Equal("Prowl.Runtime.AssetRef<T>", type["name"]!.GetValue<string>());
         Assert.Contains("asset", type["summary"]!.GetValue<string>());
         Assert.Contains(type["members"]!.AsArray(), m => m!["signature"]!.GetValue<string>() == "public T Load()");
 
-        var member = Ok("--type", "Prowl.Runtime.Debug", "--member", "EnsureMainThread")["members"]![0]!;
+        JsonNode member = Ok("--type", "Prowl.Runtime.Debug", "--member", "EnsureMainThread")["members"]![0]!;
         Assert.Contains(member["parameters"]!.AsArray(), p => p!.GetValue<string>().StartsWith("member: Defaults to the calling member"));
         Assert.Contains("main thread", member["returns"]!.GetValue<string>());
     }
@@ -868,7 +870,7 @@ public class CliApiCommandTests : EditorTestHarness
     [Fact]
     public void AShortNameSharedWithALibraryPrefersTheEngineType()
     {
-        var camera = Ok("--type", "Camera");
+        JsonNode camera = Ok("--type", "Camera");
         Assert.Equal("Prowl.Runtime.Camera", camera["name"]!.GetValue<string>());
         Assert.NotEmpty(camera["alsoNamed"]!.AsArray());
     }
@@ -876,11 +878,11 @@ public class CliApiCommandTests : EditorTestHarness
     [Fact]
     public void UserScriptsAndInheritedMembersAreIncluded()
     {
-        var probe = Ok("--type", "CliProbe");
+        JsonNode probe = Ok("--type", "CliProbe");
         Assert.Contains(probe["members"]!.AsArray(), m => m!["signature"]!.GetValue<string>() == "public float Speed");
         Assert.Contains(probe["members"]!.AsArray(), m => m!["signature"]!.GetValue<string>() == "public override void OnValidate()");
 
-        var inherited = Ok("--type", "CliProbe", "--member", "GetComponent", "--inherited");
+        JsonNode inherited = Ok("--type", "CliProbe", "--member", "GetComponent", "--inherited");
         Assert.Equal("Component", inherited["members"]![0]!["declaredOn"]!.GetValue<string>());
     }
 }
@@ -943,7 +945,7 @@ public class AgentFilesTests : EditorTestHarness
     public void ACurrentFileIsNotRewritten()
     {
         AgentFiles.Write(Project.RootPath, Project.LibraryPath);
-        var written = File.GetLastWriteTimeUtc(ClaudeMd);
+        DateTime written = File.GetLastWriteTimeUtc(ClaudeMd);
         File.SetLastWriteTimeUtc(ClaudeMd, written.AddDays(-1));
 
         AgentFiles.Write(Project.RootPath, Project.LibraryPath);
@@ -957,7 +959,7 @@ public class AgentSkillExampleTests : EditorTestHarness
     /// <summary>The body of every fenced block of this language in the embedded agent guides.</summary>
     public static IEnumerable<string> SkillBlocks(string language)
     {
-        var assembly = typeof(AgentFiles).Assembly;
+        Assembly assembly = typeof(AgentFiles).Assembly;
         foreach (string name in assembly.GetManifestResourceNames().Where(n => n.EndsWith(".md", StringComparison.Ordinal)))
         {
             using var reader = new StreamReader(assembly.GetManifestResourceStream(name)!);
@@ -975,7 +977,7 @@ public class AgentSkillExampleTests : EditorTestHarness
             WriteScript($"SkillExample{examples++}.cs", code);
 
         Assert.True(examples >= 4, $"Expected the skill examples, found {examples}.");
-        var result = Prowl.Editor.Projects.Scripting.ScriptCompiler.CompileAll(Project);
+        ScriptCompiler.CompileResult result = Prowl.Editor.Projects.Scripting.ScriptCompiler.CompileAll(Project);
         Assert.True(result.Success, result.Errors);
         Assert.DoesNotContain(result.Diagnostics, d => d.Severity == "Warning");
     }
@@ -989,7 +991,7 @@ public class AgentSkillExampleTests : EditorTestHarness
         Assert.True(recipes.Count >= 3, $"Expected the eval recipes, found {recipes.Count}.");
         foreach (string recipe in recipes)
         {
-            var error = Record.Exception(() => CliEval.Compile(recipe, assemblies));
+            Exception? error = Record.Exception(() => CliEval.Compile(recipe, assemblies));
             Assert.True(error == null, $"{recipe}\n{error?.Message}");
         }
     }

@@ -29,7 +29,7 @@ public class NavMeshComponentTests : RuntimeTestBase
             (Scene scene, NavMeshSurface first) = CreateBakedFloorScene();
             GameObject secondGo = CreateGameObject("SecondSurface");
             scene.Add(secondGo);
-            var second = secondGo.AddComponent<NavMeshSurface>();
+            NavMeshSurface second = secondGo.AddComponent<NavMeshSurface>();
             ApplyFastBakeSettings(second);
             Assert.True(second.BuildNavMesh());
 
@@ -66,7 +66,7 @@ public class NavMeshComponentTests : RuntimeTestBase
 
         GameObject secondGo = CreateGameObject("SecondSurface");
         scene.Add(secondGo);
-        var second = secondGo.AddComponent<NavMeshSurface>();
+        NavMeshSurface second = secondGo.AddComponent<NavMeshSurface>();
         ApplyFastBakeSettings(second);
         second.AgentTypeId = first.AgentTypeId;
 
@@ -115,7 +115,7 @@ public class NavMeshComponentTests : RuntimeTestBase
             (Scene scene, NavMeshSurface first) = CreateBakedFloorScene();
             GameObject secondGo = CreateGameObject("SecondSurface");
             scene.Add(secondGo);
-            var second = secondGo.AddComponent<NavMeshSurface>();
+            NavMeshSurface second = secondGo.AddComponent<NavMeshSurface>();
             ApplyFastBakeSettings(second);
             Assert.True(second.BuildNavMesh());
             Assert.Null(second.Instance);
@@ -167,14 +167,14 @@ public class NavMeshComponentTests : RuntimeTestBase
 
             GameObject smallGo = CreateGameObject("SmallSurface");
             scene.Add(smallGo);
-            var small = smallGo.AddComponent<NavMeshSurface>();
+            NavMeshSurface small = smallGo.AddComponent<NavMeshSurface>();
             ApplyFastBakeSettings(small);
             small.AgentTypeId = 0;
             Assert.True(small.BuildNavMesh());
 
             GameObject largeGo = CreateGameObject("LargeSurface");
             scene.Add(largeGo);
-            var large = largeGo.AddComponent<NavMeshSurface>();
+            NavMeshSurface large = largeGo.AddComponent<NavMeshSurface>();
             ApplyFastBakeSettings(large);
             large.AgentTypeId = 7;
             // The large type's bake legitimately produces nothing walkable in this corridor.
@@ -267,7 +267,7 @@ public class NavMeshComponentTests : RuntimeTestBase
         GameObject agentGo = CreateGameObject("Agent");
         scene.Add(agentGo);
         agentGo.Transform.Position = new Float3(-8, 0, -8);
-        var agent = agentGo.AddComponent<NavMeshAgent>();
+        NavMeshAgent agent = agentGo.AddComponent<NavMeshAgent>();
         agent.Speed = 10f;
         agent.Acceleration = 100f;
 
@@ -296,14 +296,14 @@ public class NavMeshComponentTests : RuntimeTestBase
         GameObject agentGo = CreateGameObject("Agent");
         scene.Add(agentGo);
         agentGo.Transform.Position = new Float3(-5, 0, -5);
-        var agent = agentGo.AddComponent<NavMeshAgent>();
+        NavMeshAgent agent = agentGo.AddComponent<NavMeshAgent>();
         Tick(scene, 2);
         Assert.False(agent.IsOnNavMesh);
 
         // Surface bakes afterwards (the runtime-rebake ordering).
         GameObject surfaceGo = CreateGameObject("NavMeshSurface");
         scene.Add(surfaceGo);
-        var surface = surfaceGo.AddComponent<NavMeshSurface>();
+        NavMeshSurface surface = surfaceGo.AddComponent<NavMeshSurface>();
         ApplyFastBakeSettings(surface);
         Assert.True(surface.BuildNavMesh());
 
@@ -322,7 +322,7 @@ public class NavMeshComponentTests : RuntimeTestBase
         GameObject agentGo = CreateGameObject("Agent");
         scene.Add(agentGo);
         agentGo.Transform.Position = new Float3(-8, 0, -8);
-        var agent = agentGo.AddComponent<NavMeshAgent>();
+        NavMeshAgent agent = agentGo.AddComponent<NavMeshAgent>();
         agent.Speed = 10f;
         agent.Acceleration = 100f;
 
@@ -362,7 +362,7 @@ public class NavMeshComponentTests : RuntimeTestBase
         GameObject agentGo = CreateGameObject("Agent");
         scene.Add(agentGo);
         agentGo.Transform.Position = new Float3(-8, 0, -8);
-        var agent = agentGo.AddComponent<NavMeshAgent>();
+        NavMeshAgent agent = agentGo.AddComponent<NavMeshAgent>();
         agent.Speed = 10f;
         agent.Acceleration = 100f;
 
@@ -390,7 +390,7 @@ public class NavMeshComponentTests : RuntimeTestBase
         GameObject agentGo = CreateGameObject("Agent");
         scene.Add(agentGo);
         agentGo.Transform.Position = new Float3(-8, 0, -8);
-        var agent = agentGo.AddComponent<NavMeshAgent>();
+        NavMeshAgent agent = agentGo.AddComponent<NavMeshAgent>();
         agent.Speed = 10f;
         agent.Acceleration = 100f;
 
@@ -417,7 +417,7 @@ public class NavMeshComponentTests : RuntimeTestBase
         GameObject agentGo = CreateGameObject("Agent");
         scene.Add(agentGo);
         agentGo.Transform.Position = new Float3(-6, 0, -6);
-        var agent = agentGo.AddComponent<NavMeshAgent>();
+        NavMeshAgent agent = agentGo.AddComponent<NavMeshAgent>();
         agent.Speed = 12f;
         agent.Acceleration = 100f;
 
@@ -439,7 +439,7 @@ public class NavMeshComponentTests : RuntimeTestBase
         GameObject agentGo = CreateGameObject("Agent");
         scene.Add(agentGo);
         agentGo.Transform.Position = new Float3(-8, 0, -8);
-        var agent = agentGo.AddComponent<NavMeshAgent>();
+        NavMeshAgent agent = agentGo.AddComponent<NavMeshAgent>();
         Tick(scene, 2);
 
         Assert.False(agent.HasPath);
@@ -457,7 +457,7 @@ public class NavMeshComponentTests : RuntimeTestBase
         GameObject agentGo = CreateGameObject("Agent");
         scene.Add(agentGo);
         agentGo.Transform.Position = new Float3(-8, 0, -8);
-        var agent = agentGo.AddComponent<NavMeshAgent>();
+        NavMeshAgent agent = agentGo.AddComponent<NavMeshAgent>();
         Tick(scene, 2);
 
         object? before = agent.NativeAgent;
@@ -477,7 +477,7 @@ public class NavMeshComponentTests : RuntimeTestBase
         GameObject agentGo = CreateGameObject("Agent");
         scene.Add(agentGo);
         agentGo.Transform.Position = new Float3(-8, 0, -8);
-        var agent = agentGo.AddComponent<NavMeshAgent>();
+        NavMeshAgent agent = agentGo.AddComponent<NavMeshAgent>();
         agent.Speed = 10f;
         agent.Acceleration = 100f;
 
@@ -506,7 +506,7 @@ public class NavMeshComponentTests : RuntimeTestBase
         GameObject agentGo = CreateGameObject("Agent");
         scene.Add(agentGo);
         agentGo.Transform.Position = new Float3(-8, 0, -8);
-        var agent = agentGo.AddComponent<NavMeshAgent>();
+        NavMeshAgent agent = agentGo.AddComponent<NavMeshAgent>();
         Tick(scene, 2);
 
         Assert.True(agent.Warp(new Float3(5, 0, 5)));
@@ -525,7 +525,7 @@ public class NavMeshComponentTests : RuntimeTestBase
         GameObject agentGo = CreateGameObject("Agent");
         scene.Add(agentGo);
         agentGo.Transform.Position = new Float3(-8, 0, -8);
-        var agent = agentGo.AddComponent<NavMeshAgent>();
+        NavMeshAgent agent = agentGo.AddComponent<NavMeshAgent>();
         agent.Speed = 6f;
         Tick(scene, 2);
         object? native = agent.NativeAgent;
@@ -647,7 +647,7 @@ public class NavMeshComponentTests : RuntimeTestBase
         // has to enter it and cannot route around.
         GameObject volumeGo = CreateGameObject("JumpStrip");
         scene.Add(volumeGo);
-        var volume = volumeGo.AddComponent<NavMeshModifierVolume>();
+        NavMeshModifierVolume volume = volumeGo.AddComponent<NavMeshModifierVolume>();
         volume.Size = new Float3(4, 4, 40);
         volume.Area = NavMeshAreas.Jump;
 
@@ -657,7 +657,7 @@ public class NavMeshComponentTests : RuntimeTestBase
         GameObject agentGo = CreateGameObject("Agent");
         scene.Add(agentGo);
         agentGo.Transform.Position = new Float3(-8, 0, 0);
-        var agent = agentGo.AddComponent<NavMeshAgent>();
+        NavMeshAgent agent = agentGo.AddComponent<NavMeshAgent>();
         Tick(scene, 2);
         Assert.True(agent.IsOnNavMesh);
         Assert.True(agent.SetDestination(new Float3(8, 0, 0)));
@@ -710,7 +710,7 @@ public class NavMeshComponentTests : RuntimeTestBase
         GameObject agentGo = CreateGameObject("Agent");
         scene.Add(agentGo);
         agentGo.Transform.Position = new Float3(-8, 0, 0);
-        var agent = agentGo.AddComponent<NavMeshAgent>();
+        NavMeshAgent agent = agentGo.AddComponent<NavMeshAgent>();
         Tick(scene, 2);
         Assert.True(agent.IsOnNavMesh);
         Assert.True(agent.SetDestination(new Float3(8, 0, 0)));
@@ -749,7 +749,7 @@ public class NavMeshComponentTests : RuntimeTestBase
 
         GameObject agentGo = CreateGameObject("Agent");
         scene.Add(agentGo);
-        var agent = agentGo.AddComponent<NavMeshAgent>();
+        NavMeshAgent agent = agentGo.AddComponent<NavMeshAgent>();
         Tick(scene, 2);
         Assert.True(agent.IsOnNavMesh);
 
@@ -779,7 +779,7 @@ public class NavMeshComponentTests : RuntimeTestBase
 
         GameObject agentGo = CreateGameObject("Agent");
         scene.Add(agentGo);
-        var agent = agentGo.AddComponent<NavMeshAgent>();
+        NavMeshAgent agent = agentGo.AddComponent<NavMeshAgent>();
         Tick(scene, 2);
         Assert.True(agent.IsOnNavMesh);
 
@@ -801,42 +801,42 @@ public class NavMeshComponentTests : RuntimeTestBase
     [Fact]
     public void Components_LoadValuesSavedUnderTheOldFieldNames()
     {
-        var surface = FromOldScene<NavMeshSurface>(("AgentTypeId", new NavMeshAgentTypeId(7)), ("DefaultArea", new NavMeshArea(NavMeshAreas.Jump)),
+        NavMeshSurface surface = FromOldScene<NavMeshSurface>(("AgentTypeId", new NavMeshAgentTypeId(7)), ("DefaultArea", new NavMeshArea(NavMeshAreas.Jump)),
             ("Size", new Float3(3, 4, 5)), ("CollectObjects", NavMeshCollectObjects.Volume));
         Assert.Equal(7, surface.AgentTypeId.Value);
         Assert.Equal(NavMeshAreas.Jump, surface.DefaultArea.Index);
         Assert.Equal(new Float3(3, 4, 5), surface.Size);
         Assert.Equal(NavMeshCollectObjects.Volume, surface.CollectObjects);
 
-        var volume = FromOldScene<NavMeshModifierVolume>(("Center", new Float3(1, 2, 3)), ("Area", new NavMeshArea(NavMeshAreas.Jump)),
+        NavMeshModifierVolume volume = FromOldScene<NavMeshModifierVolume>(("Center", new Float3(1, 2, 3)), ("Area", new NavMeshArea(NavMeshAreas.Jump)),
             ("AgentTypes", NavMeshAgentTypeSet.Of(3)));
         Assert.Equal(new Float3(1, 2, 3), volume.Center);
         Assert.Equal(NavMeshAreas.Jump, volume.Area.Index);
         Assert.False(volume.AgentTypes.AffectsAll);
         Assert.True(volume.AffectsAgentType(3));
 
-        var modifier = FromOldScene<NavMeshModifier>(("IgnoreFromBuild", true), ("OverrideArea", true),
+        NavMeshModifier modifier = FromOldScene<NavMeshModifier>(("IgnoreFromBuild", true), ("OverrideArea", true),
             ("Area", new NavMeshArea(NavMeshAreas.Jump)), ("ApplyToChildren", false));
         Assert.True(modifier.IgnoreFromBuild);
         Assert.True(modifier.OverrideArea);
         Assert.Equal(NavMeshAreas.Jump, modifier.Area.Index);
         Assert.False(modifier.ApplyToChildren);
 
-        var agent = FromOldScene<NavMeshAgent>(("Speed", 9f), ("AreaMask", NavMeshAreaMask.FromMask(5)), ("StoppingDistance", 1.5f),
+        NavMeshAgent agent = FromOldScene<NavMeshAgent>(("Speed", 9f), ("AreaMask", NavMeshAreaMask.FromMask(5)), ("StoppingDistance", 1.5f),
             ("ObstacleAvoidanceQuality", ObstacleAvoidanceType.HighQualityObstacleAvoidance));
         Assert.Equal(9f, agent.Speed);
         Assert.Equal(NavMeshAreaMask.FromMask(5), agent.AreaMask);
         Assert.Equal(1.5f, agent.StoppingDistance);
         Assert.Equal(ObstacleAvoidanceType.HighQualityObstacleAvoidance, agent.ObstacleAvoidanceQuality);
 
-        var obstacle = FromOldScene<NavMeshObstacle>(("Shape", NavMeshObstacleShape.Cylinder),
+        NavMeshObstacle obstacle = FromOldScene<NavMeshObstacle>(("Shape", NavMeshObstacleShape.Cylinder),
             ("Size", new Float3(2, 3, 4)), ("Radius", 1.25f), ("Carve", false));
         Assert.Equal(NavMeshObstacleShape.Cylinder, obstacle.Shape);
         Assert.Equal(new Float3(2, 3, 4), obstacle.Size);
         Assert.Equal(1.25f, obstacle.Radius);
         Assert.False(obstacle.Carve);
 
-        var link = FromOldScene<NavMeshLink>(("StartPoint", new Float3(1, 0, 2)), ("Width", 3f),
+        NavMeshLink link = FromOldScene<NavMeshLink>(("StartPoint", new Float3(1, 0, 2)), ("Width", 3f),
             ("Area", new NavMeshArea(NavMeshAreas.Jump)), ("Bidirectional", false), ("Activated", false));
         Assert.Equal(new Float3(1, 0, 2), link.StartPoint);
         Assert.Equal(3f, link.Width);
@@ -860,7 +860,7 @@ public class NavMeshComponentTests : RuntimeTestBase
 
         GameObject agentGo = CreateGameObject("Agent");
         scene.Add(agentGo);
-        var agent = agentGo.AddComponent<NavMeshAgent>();
+        NavMeshAgent agent = agentGo.AddComponent<NavMeshAgent>();
         Tick(scene, 2);
         Assert.True(agent.IsOnNavMesh);
 
@@ -915,7 +915,7 @@ public class NavMeshComponentTests : RuntimeTestBase
         Scene scene = CreateScene(enable: true);
         GameObject surfaceGo = CreateGameObject("NavMeshSurface");
         scene.Add(surfaceGo);
-        var surface = surfaceGo.AddComponent<NavMeshSurface>();
+        NavMeshSurface surface = surfaceGo.AddComponent<NavMeshSurface>();
         ApplyFastBakeSettings(surface);
 
         // 30x30 floor from (0,0,0) to (30,0,30): 2x2 tiles at tileWorldSize 16.
@@ -1011,7 +1011,7 @@ public class NavMeshComponentTests : RuntimeTestBase
         Scene scene = CreateScene(enable: true);
         GameObject surfaceGo = CreateGameObject("NavMeshSurface");
         scene.Add(surfaceGo);
-        var surface = surfaceGo.AddComponent<NavMeshSurface>();
+        NavMeshSurface surface = surfaceGo.AddComponent<NavMeshSurface>();
         ApplyFastBakeSettings(surface);
 
         // Spawn cavern: a 10x10 floor in the corner of a declared 100x100 world.
@@ -1050,7 +1050,7 @@ public class NavMeshComponentTests : RuntimeTestBase
         GameObject agentGo = CreateGameObject("Agent");
         scene.Add(agentGo);
         agentGo.Transform.Position = new Float3(-8, 0, -8);
-        var agent = agentGo.AddComponent<NavMeshAgent>();
+        NavMeshAgent agent = agentGo.AddComponent<NavMeshAgent>();
         agent.Speed = 10f;
         agent.Acceleration = 100f;
 
@@ -1085,7 +1085,7 @@ public class NavMeshComponentTests : RuntimeTestBase
         GameObject agentGo = CreateGameObject("Agent");
         scene.Add(agentGo);
         agentGo.Transform.Position = new Float3(-8, 0, 0); // facing +Z by default
-        var agent = agentGo.AddComponent<NavMeshAgent>();
+        NavMeshAgent agent = agentGo.AddComponent<NavMeshAgent>();
         agent.Speed = 3f;
         agent.Acceleration = 100f;
         agent.AngularSpeed = 360f;
@@ -1113,7 +1113,7 @@ public class NavMeshComponentTests : RuntimeTestBase
         GameObject agentGo = CreateGameObject("Agent");
         scene.Add(agentGo);
         agentGo.Transform.Position = new Float3(-8, 0, -8);
-        var agent = agentGo.AddComponent<NavMeshAgent>();
+        NavMeshAgent agent = agentGo.AddComponent<NavMeshAgent>();
         agent.Speed = 6f;
         agent.Acceleration = 50f;
         agent.AutoBraking = true;
@@ -1150,7 +1150,7 @@ public class NavMeshComponentTests : RuntimeTestBase
         GameObject agentGo = CreateGameObject("Agent");
         scene.Add(agentGo);
         agentGo.Transform.Position = new Float3(-8, 0, -8);
-        var agent = agentGo.AddComponent<NavMeshAgent>();
+        NavMeshAgent agent = agentGo.AddComponent<NavMeshAgent>();
         agent.Speed = 8f;
         agent.Acceleration = 100f;
 
@@ -1212,14 +1212,14 @@ public class NavMeshComponentTests : RuntimeTestBase
 
         GameObject surfaceGo = CreateGameObject("NavMeshSurface");
         scene.Add(surfaceGo);
-        var surface = surfaceGo.AddComponent<NavMeshSurface>();
+        NavMeshSurface surface = surfaceGo.AddComponent<NavMeshSurface>();
         ApplyFastBakeSettings(surface);
         Assert.True(surface.BuildNavMesh());
 
         GameObject agentGo = CreateGameObject("Agent");
         scene.Add(agentGo);
         agentGo.Transform.Position = new Float3(2, 0, 1.5f);
-        var agent = agentGo.AddComponent<NavMeshAgent>();
+        NavMeshAgent agent = agentGo.AddComponent<NavMeshAgent>();
         agent.Speed = 4f;
         agent.Acceleration = 50f;
         agent.CollisionQueryRange = 2f;  // corridor-scale, not radius x 12 = 6

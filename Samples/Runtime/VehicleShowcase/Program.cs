@@ -281,7 +281,7 @@ public sealed partial class VehicleShowcaseGame : StationGame
 
     private static void AddBox(GameObject body, Float3 size, Float3 center)
     {
-        var box = body.AddComponent<BoxCollider>();
+        BoxCollider box = body.AddComponent<BoxCollider>();
         box.Size = size;
         box.Center = center;
     }

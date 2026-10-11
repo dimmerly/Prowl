@@ -2,8 +2,12 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Reflection;
+using System.Text.Json.Nodes;
 
+using Prowl.Echo;
 using Prowl.Editor.Core;
+using Prowl.Editor.Importers;
 using Prowl.Editor.Inspector;
 using Prowl.Editor.Projects;
 using Prowl.Editor.Theming;
@@ -12,6 +16,7 @@ using Prowl.PaperUI;
 using Prowl.PaperUI.LayoutEngine;
 using Prowl.Rosetta;
 using Prowl.Runtime;
+using Prowl.Runtime.Resources;
 
 using Color = System.Drawing.Color;
 namespace Prowl.Editor.GUI.Panels;
@@ -34,7 +39,7 @@ public class InspectorPanel : DockPanel
         // Only GameObjects round-trip here arbitrary objects (assets, etc.) would need
         // their own addressing scheme and currently aren't stable enough to restore.
         var arr = new System.Text.Json.Nodes.JsonArray();
-        foreach (var go in Selection.GetSelected<GameObject>())
+        foreach (GameObject go in Selection.GetSelected<GameObject>())
             arr.Add(go.Identifier.ToString());
         if (arr.Count == 0) return false;
         state["selection"] = arr;
@@ -45,15 +50,15 @@ public class InspectorPanel : DockPanel
     {
         if (state["selection"] is not System.Text.Json.Nodes.JsonArray arr) return;
 
-        var scene = Runtime.Resources.Scene.Current;
+        Scene scene = Runtime.Resources.Scene.Current;
         if (scene == null) return;
 
         bool first = true;
-        foreach (var node in arr)
+        foreach (JsonNode? node in arr)
         {
             string? guidStr = node?.GetValue<string>();
-            if (!Guid.TryParse(guidStr, out var guid)) continue;
-            var go = scene.FindObjectByIdentifier<GameObject>(guid);
+            if (!Guid.TryParse(guidStr, out Guid guid)) continue;
+            GameObject? go = scene.FindObjectByIdentifier<GameObject>(guid);
             if (go == null) continue;
 
             if (first) { Selection.Select(go); first = false; }
@@ -222,7 +227,7 @@ public class InspectorPanel : DockPanel
 
     public override void OnGUI(Paper paper, float width, float height)
     {
-        var font = EditorTheme.DefaultFont;
+        Scribe.FontFile? font = EditorTheme.DefaultFont;
         if (font == null) return;
 
         if (!_subscribed)
@@ -426,7 +431,7 @@ public class InspectorPanel : DockPanel
             return;
         }
 
-        var db = EditorAssetBackend.Instance;
+        EditorAssetBackend? db = EditorAssetBackend.Instance;
         if (db == null) return;
 
         // Sub-asset: show read-only view with Extract button
@@ -436,15 +441,15 @@ public class InspectorPanel : DockPanel
             return;
         }
 
-        var entry = db.GetEntry(item.RelativePath);
+        AssetEntry? entry = db.GetEntry(item.RelativePath);
 
         // Check for custom asset editor
         if (entry?.MainAssetType != null)
         {
-            var assetEditor = EditorRegistries.GetAssetEditor(entry);
+            AssetImporterEditor? assetEditor = EditorRegistries.GetAssetEditor(entry);
             if (assetEditor != null)
             {
-                var asset = Runtime.AssetDatabase.Get(item.Guid != Guid.Empty ? item.Guid : entry.Guid);
+                Asset? asset = Runtime.AssetDatabase.Get(item.Guid != Guid.Empty ? item.Guid : entry.Guid);
 
                 // Remembered so moving off this asset can still reach its editor to apply or revert.
                 _openEditor = assetEditor;
@@ -479,7 +484,7 @@ public class InspectorPanel : DockPanel
                 Origami.Label(paper, "insp_maintype", $"{Loc.Get("inspector.type")}: {entry.MainAssetType.Name}").Show();
 
             // Last modified
-            var lastMod = new DateTime(entry.LastModifiedTicks, DateTimeKind.Utc).ToLocalTime();
+            DateTime lastMod = new DateTime(entry.LastModifiedTicks, DateTimeKind.Utc).ToLocalTime();
             Origami.Label(paper, "insp_lastmod", $"{Loc.Get("inspector.modified")}: {lastMod:yyyy-MM-dd HH:mm:ss}").Show();
 
             // Dependencies
@@ -489,19 +494,19 @@ public class InspectorPanel : DockPanel
                 Origami.Header(paper, "insp_h_deps", $"{Loc.Get("inspector.dependencies")} ({entry.Dependencies.Length})").Show();
                 for (int i = 0; i < entry.Dependencies.Length && i < 20; i++)
                 {
-                    var depGuid = entry.Dependencies[i];
+                    Guid depGuid = entry.Dependencies[i];
                     DrawAssetLink(paper, font, $"insp_dep_{i}", depGuid, db);
                 }
             }
 
             // Dependents (who references this asset)
-            var dependents = db.Dependencies.GetDependents(entry.Guid);
+            IReadOnlySet<Guid> dependents = db.Dependencies.GetDependents(entry.Guid);
             if (dependents.Count > 0)
             {
                 Origami.Separator(paper, "insp_sep_refs").Show();
                 Origami.Header(paper, "insp_h_refs", $"{Loc.Get("inspector.used_by")} ({dependents.Count})").Show();
                 int count = 0;
-                foreach (var depGuid in dependents)
+                foreach (Guid depGuid in dependents)
                 {
                     if (count >= 20) break;
                     DrawAssetLink(paper, font, $"insp_ref_{count}", depGuid, db);
@@ -518,21 +523,21 @@ public class InspectorPanel : DockPanel
 
             if (File.Exists(metaPath))
             {
-                var meta = MetaFile.Read(metaPath);
-                var importer = EditorRegistries.CreateImporterByName(entry.ImporterType);
+                MetaFileData meta = MetaFile.Read(metaPath);
+                AssetImporter? importer = EditorRegistries.CreateImporterByName(entry.ImporterType);
 
                 if (importer != null)
                 {
                     // Ensure settings exist (use defaults if missing)
-                    var settings = meta.Settings ?? importer.DefaultSettings();
+                    EchoObject? settings = meta.Settings ?? importer.DefaultSettings();
                     if (settings != null && settings.TagType == Echo.EchoType.Compound)
                     {
                         Origami.Header(paper, "insp_h_settings", $"{EditorIcons.Gear}  {Loc.Get("inspector.import_settings")}").Underline().Show();
 
-                        foreach (var kvp in settings.Tags.ToList())
+                        foreach (KeyValuePair<string, EchoObject> kvp in settings.Tags.ToList())
                         {
                             string key = kvp.Key;
-                            var val = kvp.Value;
+                            EchoObject val = kvp.Value;
 
                             switch (val.TagType)
                             {
@@ -594,7 +599,7 @@ public class InspectorPanel : DockPanel
         string absPath = Path.Combine(Project.Current.AssetsPath, item.RelativePath);
         if (!Directory.Exists(absPath)) return;
 
-        var counts = GetFolderCounts(item.RelativePath, absPath);
+        (int Files, int Folders)? counts = GetFolderCounts(item.RelativePath, absPath);
         if (counts == null) return;
 
         Origami.Label(paper, "insp_folder_files", $"{Loc.Get("inspector.files")}: {counts.Value.Files}").Show();
@@ -615,14 +620,14 @@ public class InspectorPanel : DockPanel
             _folderCountsVersion = version;
         }
 
-        if (_folderCounts.TryGetValue(relativePath, out var cached)) return cached;
+        if (_folderCounts.TryGetValue(relativePath, out (int Files, int Folders) cached)) return cached;
 
         try
         {
             int files = Directory.GetFiles(absPath, "*", SearchOption.AllDirectories)
                 .Count(f => !f.EndsWith(".meta"));
             int folders = Directory.GetDirectories(absPath, "*", SearchOption.AllDirectories).Length;
-            var counts = (files, folders);
+            (int files, int folders) counts = (files, folders);
             _folderCounts[relativePath] = counts;
             return counts;
         }
@@ -634,10 +639,10 @@ public class InspectorPanel : DockPanel
         // Find the parent entry
         AssetEntry? parentEntry = null;
         SubAssetEntry? subEntry = null;
-        foreach (var e in db.GetAllEntries())
+        foreach (AssetEntry e in db.GetAllEntries())
         {
             if (e.SubAssets == null) continue;
-            var match = e.SubAssets.FirstOrDefault(s => s.Guid == item.Guid);
+            SubAssetEntry? match = e.SubAssets.FirstOrDefault(s => s.Guid == item.Guid);
             if (match != null)
             {
                 parentEntry = e;
@@ -680,10 +685,10 @@ public class InspectorPanel : DockPanel
         // A sub-asset uses the SAME custom editor as a main asset of its type, just wrapped in a read-only
         // scope so Origami widgets are disabled. Editors that draw non-Origami interactive elements gate them
         // on Origami.IsReadOnly themselves (e.g. TextureAssetEditor's Save button).
-        var asset = Runtime.AssetDatabase.Get(item.Guid);
+        Asset? asset = Runtime.AssetDatabase.Get(item.Guid);
         if (asset != null)
         {
-            var subEditor = parentEntry != null ? EditorRegistries.GetAssetEditor(asset.GetType()) : null;
+            AssetImporterEditor? subEditor = parentEntry != null ? EditorRegistries.GetAssetEditor(asset.GetType()) : null;
             if (subEditor != null)
             {
                 Origami.BeginReadOnly();
@@ -694,8 +699,8 @@ public class InspectorPanel : DockPanel
             {
                 // Generic read-only property grid for types without a custom editor.
                 Origami.Header(paper, "insp_sub_h_props", Loc.Get("inspector.properties_readonly")).Show();
-                var fields = GUI.PropertyGridUtils.GetSerializableFields(asset.GetType());
-                foreach (var field in fields)
+                FieldInfo[] fields = GUI.PropertyGridUtils.GetSerializableFields(asset.GetType());
+                foreach (FieldInfo field in fields)
                 {
                     object? val = field.GetValue(asset);
                     string label = GUI.PropertyGridUtils.NicifyName(field.Name);
@@ -714,13 +719,13 @@ public class InspectorPanel : DockPanel
         }
 
         // Dependents (who references this sub-asset directly, e.g. a UIImage pointing at this Sprite)
-        var subDependents = db.Dependencies.GetDependents(item.Guid);
+        IReadOnlySet<Guid> subDependents = db.Dependencies.GetDependents(item.Guid);
         if (subDependents.Count > 0)
         {
             Origami.Separator(paper, "insp_sub_sep_refs").Show();
             Origami.Header(paper, "insp_sub_h_refs", $"{Loc.Get("inspector.used_by")} ({subDependents.Count})").Show();
             int refCount = 0;
-            foreach (var depGuid in subDependents)
+            foreach (Guid depGuid in subDependents)
             {
                 if (refCount >= 20) break;
                 DrawAssetLink(paper, font, $"insp_sub_ref_{refCount}", depGuid, db);
@@ -738,7 +743,7 @@ public class InspectorPanel : DockPanel
     {
         if (obj is not Asset asset || parentEntry == null || Project.Current == null) return;
 
-        var db = EditorAssetBackend.Instance;
+        EditorAssetBackend? db = EditorAssetBackend.Instance;
         if (db == null) return;
 
         // Determine target path same folder as parent, with sub-asset name
@@ -759,7 +764,7 @@ public class InspectorPanel : DockPanel
         asset.Load();
         try
         {
-            var echo = Echo.Serializer.Serialize(typeof(object), asset);
+            EchoObject echo = Echo.Serializer.Serialize(typeof(object), asset);
 
             if (echo != null)
             {
@@ -794,7 +799,7 @@ public class InspectorPanel : DockPanel
 
         if (Origami.IsReadOnly || !_unsavedAssets.Contains(guid)) return;
 
-        var db = EditorAssetBackend.Instance;
+        EditorAssetBackend? db = EditorAssetBackend.Instance;
         if (db == null) return;
 
         // Edits live on the cached instance until they are written, so leaving the asset selected
@@ -846,7 +851,7 @@ public class InspectorPanel : DockPanel
             LogSeverity.Success => EditorIcons.CircleCheck,
             _ => EditorIcons.CircleInfo
         };
-        var textColor = log.Severity switch
+        Color textColor = log.Severity switch
         {
             LogSeverity.Warning => EditorTheme.Amber400,
             LogSeverity.Error or LogSeverity.Exception => EditorTheme.Red400,
@@ -884,10 +889,10 @@ public class InspectorPanel : DockPanel
 
             for (int i = 0; i < log.StackTrace.StackFrames.Length; i++)
             {
-                var frame = log.StackTrace.StackFrames[i];
+                DebugStackFrame frame = log.StackTrace.StackFrames[i];
                 string frameText = frame.ToString();
 
-                var frameBg = i % 2 == 0
+                Color frameBg = i % 2 == 0
                     ? System.Drawing.Color.FromArgb(8, 255, 255, 255)
                     : System.Drawing.Color.Transparent;
 
@@ -928,8 +933,8 @@ public class InspectorPanel : DockPanel
 
         if (isBuiltIn)
         {
-            var entries = Runtime.BuiltInAssets.Entries;
-            displayName = entries.TryGetValue(guid, out var bi) ? bi.Name : guid.ToString()[..8];
+            IReadOnlyDictionary<Guid, BuiltInAssets.BuiltInEntry> entries = Runtime.BuiltInAssets.Entries;
+            displayName = entries.TryGetValue(guid, out BuiltInAssets.BuiltInEntry bi) ? bi.Name : guid.ToString()[..8];
             icon = EditorIcons.Star;
         }
         else if (path != null)

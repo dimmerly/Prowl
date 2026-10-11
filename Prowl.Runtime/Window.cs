@@ -2,6 +2,7 @@
 // Licensed under the MIT License. See the LICENSE file in the project root for details.
 
 using System;
+using System.IO;
 using System.Runtime.InteropServices;
 
 using Silk.NET.Input;
@@ -88,8 +89,8 @@ public static class Window
                     return scale;
             }
 
-            var fb = InternalWindow.FramebufferSize;
-            var win = InternalWindow.Size;
+            Vector2D<int> fb = InternalWindow.FramebufferSize;
+            Vector2D<int> win = InternalWindow.Size;
             return win.X > 0 ? (float)fb.X / win.X : 1f;
         }
     }
@@ -384,7 +385,7 @@ public static class Window
                 n => n.EndsWith(".prowl-icon.rgba", StringComparison.Ordinal));
             if (name == null) return;
 
-            using var stream = asm!.GetManifestResourceStream(name);
+            using Stream? stream = asm!.GetManifestResourceStream(name);
             if (stream == null) return;
             using var br = new System.IO.BinaryReader(stream);
 

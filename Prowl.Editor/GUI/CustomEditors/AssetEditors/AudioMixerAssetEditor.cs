@@ -70,7 +70,7 @@ public class AudioMixerAssetEditor : AssetImporterEditor
     protected override bool ApplyState(AssetEntry entry, EngineObject? asset)
     {
         if (asset is not AudioMixer mixer || mixer.IsNotValid()) return false;
-        var db = EditorAssetBackend.Instance;
+        EditorAssetBackend? db = EditorAssetBackend.Instance;
         return db != null && db.SerializeForSave(mixer) is { } serialized && db.SaveAsset(entry.Guid, serialized);
     }
 
@@ -162,7 +162,7 @@ public class AudioMixerAssetEditor : AssetImporterEditor
 
     private void DrawToolbar(Paper paper, string id, AudioMixer mixer)
     {
-        var m = Origami.Current.Metrics;
+        OrigamiMetrics m = Origami.Current.Metrics;
 
         using (paper.Row($"{id}_toolbar").Height(28)
             .Margin(0, 0, m.Spacing, m.Spacing).Enter())
@@ -210,7 +210,7 @@ public class AudioMixerAssetEditor : AssetImporterEditor
     /// </remarks>
     private void DrawSnapshots(Paper paper, string id, AudioMixer mixer)
     {
-        var m = Origami.Current.Metrics;
+        OrigamiMetrics m = Origami.Current.Metrics;
         AudioMixerSnapshot selected = mixer.FindSnapshot(_snapshot);
 
         using (paper.Row($"{id}_snaps").Height(26)
@@ -306,7 +306,7 @@ public class AudioMixerAssetEditor : AssetImporterEditor
 
     private void DrawConsole(Paper paper, string id, AudioMixer mixer, List<Strip> strips)
     {
-        var m = Origami.Current.Metrics;
+        OrigamiMetrics m = Origami.Current.Metrics;
 
         // Scrolls sideways rather than wrapping, because a desk is a row: strips only mean anything
         // next to each other.
@@ -325,7 +325,7 @@ public class AudioMixerAssetEditor : AssetImporterEditor
     private void DrawStrip(Paper paper, string id, AudioMixer mixer, Strip strip, int index)
     {
         AudioMixerGroup group = strip.Group;
-        var m = Origami.Current.Metrics;
+        OrigamiMetrics m = Origami.Current.Metrics;
 
         string stripId = $"{id}_s{index}";
         bool selected = group.Identity == _selected;
@@ -483,7 +483,7 @@ public class AudioMixerAssetEditor : AssetImporterEditor
             _selected = group.Identity;
         }
 
-        var m = Origami.Current.Metrics;
+        OrigamiMetrics m = Origami.Current.Metrics;
         bool master = ReferenceEquals(group, mixer.Master);
         AudioMixerGroup captured = group;
 

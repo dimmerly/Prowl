@@ -152,7 +152,7 @@ public sealed class CinematicEffects : ImageEffect
             _mat.SetTexture("_LUTTex", LUTTexture);
             _mat.SetFloat("_LUTContribution", LUTContribution);
             // Derive LUT size from texture dimensions (e.g. 256x16 → size=16)
-            var tex = LUTTexture;
+            Texture2D tex = LUTTexture;
             float lutSize = tex.Height;
             _mat.SetFloat("_LUTSize", lutSize);
         }
@@ -189,7 +189,7 @@ public sealed class CinematicEffects : ImageEffect
             _mat.SetFloat("_GodRayThreshold", GodRayThreshold);
 
             // Project the sun direction into screen space
-            var camera = context.Camera;
+            Camera camera = context.Camera;
             Float3 sunDir = GetSunDirection(camera);
             Float4x4 vp = camera.ViewMatrix * camera.ProjectionMatrix;
             Float3 sunWorld = camera.Transform.Position - sunDir * 10000f;
@@ -203,7 +203,7 @@ public sealed class CinematicEffects : ImageEffect
 
         // Blit through temp RT to avoid reading and writing the same texture
         var temp = RenderTexture.GetTemporaryRT(context.Width, context.Height, false, [context.SceneColor.MainTexture.ImageFormat]);
-        using var cmd = Graphics.GetCommandBuffer("Cinematic");
+        using CommandBuffer cmd = Graphics.GetCommandBuffer("Cinematic");
         cmd.Blit(context.SceneColor, temp, _mat, 0);
         cmd.Blit(temp, context.SceneColor, null, 0);
         Graphics.Submit(cmd);
@@ -218,12 +218,12 @@ public sealed class CinematicEffects : ImageEffect
 
     private static Float3 GetSunDirection(Camera camera)
     {
-        var scene = Resources.Scene.Current;
+        Scene scene = Resources.Scene.Current;
         if (scene != null)
         {
-            foreach (var go in scene.ActiveObjects)
+            foreach (GameObject go in scene.ActiveObjects)
             {
-                var light = go.GetComponent<DirectionalLight>();
+                DirectionalLight? light = go.GetComponent<DirectionalLight>();
                 if (light != null && light.EnabledInHierarchy)
                     return light.GetLightDirection();
             }

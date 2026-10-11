@@ -50,7 +50,7 @@ public class ProjectSettingsPanel : DockPanel
 
         if (beforeJson == afterJson) return;
 
-        var capturedEntry = entry;
+        EditorRegistries.SettingsEntry capturedEntry = entry;
         Undo.RegisterCoalescableAction($"Modify {entry.Name}",
             undo: () => ApplyJsonToEntry(capturedEntry, beforeJson),
             redo: () => ApplyJsonToEntry(capturedEntry, afterJson));
@@ -74,10 +74,10 @@ public class ProjectSettingsPanel : DockPanel
 
     public override void OnGUI(Paper paper, float width, float height)
     {
-        var font = EditorTheme.DefaultFont;
+        Scribe.FontFile? font = EditorTheme.DefaultFont;
         if (font == null) return;
 
-        var entries = EditorRegistries.SettingsEntries;
+        IReadOnlyList<EditorRegistries.SettingsEntry> entries = EditorRegistries.SettingsEntries;
         if (entries.Count == 0)
         {
             paper.Box("ps_empty").Size(width, height)
@@ -94,7 +94,7 @@ public class ProjectSettingsPanel : DockPanel
         var cats = new List<(string id, string label, string icon)>();
         for (int i = 0; i < entries.Count; i++)
         {
-            var e = entries[i];
+            EditorRegistries.SettingsEntry e = entries[i];
             if (e.Instance == null || !e.Instance.DrawInProjectSettingsPanel) continue;
             string icon = string.IsNullOrEmpty(e.Icon) ? EditorIcons.Gear : e.Icon;
             cats.Add((i.ToString(), e.Name, icon));
@@ -108,7 +108,7 @@ public class ProjectSettingsPanel : DockPanel
 
             // TODO: Port to using Echo to serialize to match how Project Settings serialize
             float contentW = width - side - 1;
-            var currentEntry = entries[_selectedIndex];
+            EditorRegistries.SettingsEntry currentEntry = entries[_selectedIndex];
             string? beforeJson = null;
             if (!Application.IsPlaying)
             {

@@ -22,22 +22,22 @@ public class LightProbeGroup : Component
     /// <summary>Probe world positions (local positions transformed by this object's matrix).</summary>
     public IEnumerable<Float3> GetWorldPositions()
     {
-        var m = Transform.LocalToWorldMatrix;
-        foreach (var p in ProbePositions)
+        Float4x4 m = Transform.LocalToWorldMatrix;
+        foreach (Float3 p in ProbePositions)
             yield return Float4x4.TransformPoint(p, m);
     }
 
     public override void DrawGizmos()
     {
-        var m = Transform.LocalToWorldMatrix;
-        foreach (var p in ProbePositions)
+        Float4x4 m = Transform.LocalToWorldMatrix;
+        foreach (Float3 p in ProbePositions)
             Debug.DrawWireSphere(Float4x4.TransformPoint(p, m), 0.1f, new Color(1f, 0.82f, 0.2f, 0.7f), 6);
     }
 
     public override void DrawGizmosSelected()
     {
-        var m = Transform.LocalToWorldMatrix;
-        foreach (var p in ProbePositions)
+        Float4x4 m = Transform.LocalToWorldMatrix;
+        foreach (Float3 p in ProbePositions)
             Debug.DrawWireSphere(Float4x4.TransformPoint(p, m), 0.12f, new Color(1f, 0.95f, 0.4f, 1f), 8);
     }
 

@@ -604,7 +604,7 @@ public class Transform : ISerializationCallbackReceiver
     public IEnumerable<Transform> GetChildren()
     {
         if (GameObject == null) yield break;
-        foreach (var child in GameObject.Children)
+        foreach (GameObject child in GameObject.Children)
             yield return child.Transform;
     }
 
@@ -624,7 +624,7 @@ public class Transform : ISerializationCallbackReceiver
     /// <summary>Index of this transform within its parent's children list, or -1 at the root.</summary>
     public int GetSiblingIndex()
     {
-        var p = Parent;
+        Transform p = Parent;
         if (p == null || p.GameObject == null) return -1;
         return p.GameObject.Children.IndexOf(GameObject);
     }
@@ -636,9 +636,9 @@ public class Transform : ISerializationCallbackReceiver
     public void SetSiblingIndex(int index)
     {
         AssertOwner();
-        var p = Parent;
+        Transform p = Parent;
         if (p == null || p.GameObject == null) return;
-        var siblings = p.GameObject.Children;
+        List<GameObject> siblings = p.GameObject.Children;
         int current = siblings.IndexOf(GameObject);
         if (current < 0) return;
         index = System.Math.Clamp(index, 0, siblings.Count - 1);
@@ -654,7 +654,7 @@ public class Transform : ISerializationCallbackReceiver
     /// <summary>Move this transform to the last position in its parent's child list.</summary>
     public void SetAsLastSibling()
     {
-        var p = Parent;
+        Transform p = Parent;
         if (p == null || p.GameObject == null) return;
         SetSiblingIndex(p.GameObject.Children.Count - 1);
     }
@@ -667,8 +667,8 @@ public class Transform : ISerializationCallbackReceiver
     {
         if (GameObject == null) return;
         // Copy because SetParent mutates the Children list.
-        var snapshot = GameObject.Children.ToArray();
-        foreach (var child in snapshot)
+        GameObject[] snapshot = GameObject.Children.ToArray();
+        foreach (GameObject child in snapshot)
             child.SetParent(null, worldPositionStays);
     }
 

@@ -52,7 +52,7 @@ public unsafe class GraphicsTexture : IDisposable
         _esUploadType = EsUploadType(format, PixelType);
         Handle = 0;
 
-        using var cmd = Graphics.GetCommandBuffer("GraphicsTexture.Create");
+        using CommandBuffer cmd = Graphics.GetCommandBuffer("GraphicsTexture.Create");
         cmd.EncodeCreateTexture(this);
         Graphics.Submit(cmd);
     }
@@ -349,7 +349,7 @@ public unsafe class GraphicsTexture : IDisposable
             return;
         IsDisposed = true;
 
-        using var cmd = Graphics.GetCommandBuffer("GraphicsTexture.Dispose");
+        using CommandBuffer cmd = Graphics.GetCommandBuffer("GraphicsTexture.Dispose");
         cmd.EncodeDisposeTexture(this);
         Graphics.Submit(cmd);
     }

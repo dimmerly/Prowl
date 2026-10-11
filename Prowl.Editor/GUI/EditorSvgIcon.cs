@@ -52,7 +52,7 @@ public sealed class EditorSvgIcon : IOrigamiIcon
         if (string.IsNullOrEmpty(_pathData)) return;
 
         // Tint the whole shape to the requested colour (icons are drawn in the host's colour).
-        var element = GetElement();
+        SvgElement element = GetElement();
         element.fillType = SvgElement.ColorType.specific;
         element.fill = Color32.FromArgb(color.A, color.R, color.G, color.B);
 

@@ -38,11 +38,11 @@ public abstract class CoreTests(Gravity gravity) : ControllerTestBase(gravity)
     [Fact]
     public void AControllerStartingInsideGeometry_PushesItselfOutAndCanMove()
     {
-        var scene = World();
+        Scene scene = World();
         Box(scene, new Float3(0, -0.5f, 0), new Float3(20, 1, 20));
 
         // Sunk a little way into the floor, which is where a slope plus rounding leaves it.
-        var cc = Place(scene, new Float3(0, -0.05f, 0));
+        Walker cc = Place(scene, new Float3(0, -0.05f, 0));
 
         var before = new List<ShapeCastHit>();
         Assert.True(cc.Controller.OverlapNow(before) > 0, "the controller was expected to start inside the floor");
@@ -64,10 +64,10 @@ public abstract class CoreTests(Gravity gravity) : ControllerTestBase(gravity)
     [Fact]
     public void WalkingIntoAWallReportsTheWallItHit()
     {
-        var scene = World();
+        Scene scene = World();
         GameObject wall = Box(scene, new Float3(2, 0, 0), new Float3(1, 4, 8));
 
-        var cc = Place(scene, new Float3(0, 0, 0));
+        Walker cc = Place(scene, new Float3(0, 0, 0));
         CharacterController.CollisionFlags flags = cc.Move(new Float3(3, 0, 0));
 
         Assert.True(flags.HasFlag(CharacterController.CollisionFlags.Sides));
@@ -88,10 +88,10 @@ public abstract class CoreTests(Gravity gravity) : ControllerTestBase(gravity)
     [Fact]
     public void StandingOnTheGroundReportsBelowAndTheSurfaceUnderIt()
     {
-        var scene = World();
+        Scene scene = World();
         Box(scene, new Float3(0, -0.5f, 0), new Float3(20, 1, 20));
 
-        var cc = Place(scene, new Float3(0, 0, 0));
+        Walker cc = Place(scene, new Float3(0, 0, 0));
         CharacterController.CollisionFlags flags = cc.Move(new Float3(0, -0.01f, 0));
 
         Assert.True(cc.Grounded);
@@ -114,10 +114,10 @@ public abstract class CoreTests(Gravity gravity) : ControllerTestBase(gravity)
     [Fact]
     public void TeleportingIntoTheFloorLeavesTheControllerOutsideIt()
     {
-        var scene = World();
+        Scene scene = World();
         Box(scene, new Float3(0, -0.5f, 0), new Float3(20, 1, 20));
 
-        var cc = Place(scene, new Float3(0, 10, 0));
+        Walker cc = Place(scene, new Float3(0, 10, 0));
         cc.Teleport(new Float3(5, -0.05f, 5));
 
         var overlaps = new List<ShapeCastHit>();
@@ -131,10 +131,10 @@ public abstract class CoreTests(Gravity gravity) : ControllerTestBase(gravity)
     [Fact]
     public void BlockedMovementReportsTheDistanceActuallyTravelled()
     {
-        var scene = World();
+        Scene scene = World();
         Box(scene, new Float3(2, 0, 0), new Float3(1, 4, 8));
 
-        var cc = Place(scene, new Float3(0, 0, 0));
+        Walker cc = Place(scene, new Float3(0, 0, 0));
         cc.Move(new Float3(10, 0, 0));
 
         Assert.True(cc.Position.X < 2.0f, "the controller went through the wall");
@@ -151,9 +151,9 @@ public abstract class CoreTests(Gravity gravity) : ControllerTestBase(gravity)
     [Fact]
     public void AControllerThatHasBeenWalkingCanWalkBack()
     {
-        var scene = World();
+        Scene scene = World();
         Box(scene, new Float3(0, -0.5f, 0), new Float3(80, 1, 80));
-        var cc = Place(scene, new Float3(0, 0.05f, 0));
+        Walker cc = Place(scene, new Float3(0, 0.05f, 0));
 
         for (int i = 0; i < 200; i++) cc.Move(new Float3(0, -0.033f, 0.06f));
         float turnedAt = cc.Position.Z;
@@ -167,9 +167,9 @@ public abstract class CoreTests(Gravity gravity) : ControllerTestBase(gravity)
     [Fact]
     public void AControllerPlacedExactlyOnTheFloorCanWalk()
     {
-        var scene = World();
+        Scene scene = World();
         Box(scene, new Float3(0, -0.5f, 0), new Float3(40, 1, 40));
-        var cc = Place(scene, Float3.Zero);
+        Walker cc = Place(scene, Float3.Zero);
 
         for (int i = 0; i < 30; i++) cc.Move(new Float3(0.05f, -0.033f, 0));
 

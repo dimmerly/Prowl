@@ -1,6 +1,8 @@
 // This file is part of the Prowl Game Engine
 // Licensed under the MIT License. See the LICENSE file in the project root for details.
 
+using Prowl.Runtime.Resources;
+
 using Xunit;
 
 namespace Prowl.Runtime.Test;
@@ -24,9 +26,9 @@ public class ProwlActionTests : RuntimeTestBase
 
     private CallTarget MakeTarget()
     {
-        var scene = CreateScene(enable: true);
-        var go = CreateGameObject("Target");
-        var comp = go.AddComponent<CallTarget>();
+        Scene scene = CreateScene(enable: true);
+        GameObject go = CreateGameObject("Target");
+        CallTarget comp = go.AddComponent<CallTarget>();
         scene.Add(go);
         return comp;
     }
@@ -56,7 +58,7 @@ public class ProwlActionTests : RuntimeTestBase
     [Fact]
     public void Invoke_CallsTheTargetMethod()
     {
-        var target = MakeTarget();
+        CallTarget target = MakeTarget();
 
         ActionFor(target, nameof(CallTarget.Ping)).Invoke();
 
@@ -66,7 +68,7 @@ public class ProwlActionTests : RuntimeTestBase
     [Fact]
     public void Invoke_PassesTheConfiguredArgument()
     {
-        var target = MakeTarget();
+        CallTarget target = MakeTarget();
 
         ActionFor(target, nameof(CallTarget.PingInt), ProwlActionArgType.Int, intArg: 42).Invoke();
 
@@ -79,8 +81,8 @@ public class ProwlActionTests : RuntimeTestBase
     [Fact]
     public void Invoke_OnADestroyedTarget_DoesNotCallIt()
     {
-        var target = MakeTarget();
-        var action = ActionFor(target, nameof(CallTarget.Ping));
+        CallTarget target = MakeTarget();
+        ProwlAction action = ActionFor(target, nameof(CallTarget.Ping));
 
         target.GameObject.Dispose();
 
@@ -94,7 +96,7 @@ public class ProwlActionTests : RuntimeTestBase
     [Fact]
     public void Invoke_OnANullTarget_IsANoOp()
     {
-        var action = ActionFor(null, nameof(CallTarget.Ping));
+        ProwlAction action = ActionFor(null, nameof(CallTarget.Ping));
 
         action.Invoke(); // must not throw
     }
@@ -105,7 +107,7 @@ public class ProwlActionTests : RuntimeTestBase
     [Fact]
     public void Invoke_WhenTheTargetThrows_ReportsTheTargetsOwnException()
     {
-        var target = MakeTarget();
+        CallTarget target = MakeTarget();
         using var log = new LogCapture();
 
         ActionFor(target, nameof(CallTarget.Boom)).Invoke();
@@ -122,7 +124,7 @@ public class ProwlActionTests : RuntimeTestBase
     [Fact]
     public void Invoke_OnADetachedTarget_SaysTheTargetIsDetached()
     {
-        var target = MakeTarget();
+        CallTarget target = MakeTarget();
         var detached = (CallTarget)Prowl.Echo.Serializer.Deserialize<Component>(
             Prowl.Echo.Serializer.Serialize(typeof(Component), target))!;
 
@@ -137,8 +139,8 @@ public class ProwlActionTests : RuntimeTestBase
     [Fact]
     public void Invoke_WhenACallThrows_TheRestStillRun()
     {
-        var target = MakeTarget();
-        var action = ActionFor(target, nameof(CallTarget.Boom));
+        CallTarget target = MakeTarget();
+        ProwlAction action = ActionFor(target, nameof(CallTarget.Boom));
         action.Calls.Add(new ProwlCall { Target = target, Member = nameof(CallTarget.Ping) });
 
         using var log = new LogCapture();

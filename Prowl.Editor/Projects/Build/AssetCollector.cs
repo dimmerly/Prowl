@@ -38,29 +38,29 @@ public static class AssetCollector
         if (dependenciesOnly)
         {
             allAssets = db.Dependencies.GetTransitiveDependencies(sceneGuids);
-            foreach (var sg in sceneGuids)
+            foreach (Guid sg in sceneGuids)
                 allAssets.Add(sg);
         }
         else
         {
             // All assets
-            foreach (var entry in entries)
+            foreach (AssetEntry? entry in entries)
             {
                 allAssets.Add(entry.Guid);
-                foreach (var sub in entry.SubAssets)
+                foreach (SubAssetEntry sub in entry.SubAssets)
                     allAssets.Add(sub.Guid);
             }
         }
 
         // Always include Resources/ folder assets regardless of dependency mode
         var resourceGuids = new List<Guid>();
-        foreach (var entry in entries.OrderBy(e => e.Path, StringComparer.OrdinalIgnoreCase))
+        foreach (AssetEntry? entry in entries.OrderBy(e => e.Path, StringComparer.OrdinalIgnoreCase))
         {
             if (!IsResourcesAsset(entry.Path)) continue;
 
             allAssets.Add(entry.Guid);
             resourceGuids.Add(entry.Guid);
-            foreach (var sub in entry.SubAssets)
+            foreach (SubAssetEntry sub in entry.SubAssets)
                 allAssets.Add(sub.Guid);
 
             EditorAssetBackend.AddResourcePaths(resourcesMap, entry);
@@ -80,10 +80,10 @@ public static class AssetCollector
             previousCount = allAssets.Count;
 
             var newSubAssetGuids = new List<Guid>();
-            foreach (var entry in entries)
+            foreach (AssetEntry? entry in entries)
             {
                 if (!allAssets.Contains(entry.Guid)) continue;
-                foreach (var sub in entry.SubAssets)
+                foreach (SubAssetEntry sub in entry.SubAssets)
                     if (allAssets.Add(sub.Guid))
                         newSubAssetGuids.Add(sub.Guid);
             }
@@ -101,11 +101,11 @@ public static class AssetCollector
         // neither should ship unless something outside Editor/ needs the chain).
         var editorOnlyImporters = new Dictionary<string, bool>(StringComparer.OrdinalIgnoreCase);
         var editorOnly = new HashSet<Guid>();
-        foreach (var entry in entries)
+        foreach (AssetEntry? entry in entries)
         {
             if (!IsEditorOnly(entry, editorOnlyImporters)) continue;
             editorOnly.Add(entry.Guid);
-            foreach (var sub in entry.SubAssets)
+            foreach (SubAssetEntry sub in entry.SubAssets)
                 editorOnly.Add(sub.Guid);
         }
 
@@ -114,10 +114,10 @@ public static class AssetCollector
         do
         {
             grew = false;
-            foreach (var guid in editorOnly)
+            foreach (Guid guid in editorOnly)
             {
                 if (!allAssets.Contains(guid) || neededEditorOnly.Contains(guid)) continue;
-                foreach (var dependent in db.Dependencies.GetDependents(guid))
+                foreach (Guid dependent in db.Dependencies.GetDependents(guid))
                 {
                     if (!allAssets.Contains(dependent)) continue;
                     if (editorOnly.Contains(dependent) && !neededEditorOnly.Contains(dependent)) continue;

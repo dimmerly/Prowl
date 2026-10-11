@@ -522,7 +522,7 @@ public sealed class SourceAssetBackend : AssetBackend
     private bool TakeWaiting(string filePath, Guid assetId, out Asset? asset)
     {
         asset = null;
-        if (!_waiting.TryGetValue(filePath, out var assets) || !assets.Remove(assetId, out asset)) return false;
+        if (!_waiting.TryGetValue(filePath, out Dictionary<Guid, Asset>? assets) || !assets.Remove(assetId, out asset)) return false;
         if (assets.Count == 0) _waiting.Remove(filePath);
         return true;
     }

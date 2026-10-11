@@ -8,8 +8,11 @@ using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
 using Prowl.Runtime.Rendering;
+using Prowl.Runtime.Rendering.Shaders;
 using Prowl.Runtime.Resources;
 using Prowl.Vector;
+
+using Silk.NET.Maths;
 
 namespace Prowl.Runtime;
 
@@ -221,7 +224,7 @@ public sealed class CommandBuffer : IDisposable
     /// at encode time so the caller can mutate the original after this call.</summary>
     public void SetProperties(PropertyState properties)
     {
-        var snapshot = PropertyStatePool.RentSnapshot(properties);
+        PropertyState snapshot = PropertyStatePool.RentSnapshot(properties);
         _rentedSnapshots.Add(snapshot);
         WriteHeader(CommandOpcode.SetProperties);
         Write(PushObject(snapshot));
@@ -232,7 +235,7 @@ public sealed class CommandBuffer : IDisposable
     /// the material between Blit calls without affecting earlier-encoded draws.</summary>
     public void SetMaterialProperties(Material material)
     {
-        var snapshot = PropertyStatePool.RentSnapshot(material._properties);
+        PropertyState snapshot = PropertyStatePool.RentSnapshot(material._properties);
         _rentedSnapshots.Add(snapshot);
 
         Shader shader = material.Shader;
@@ -268,7 +271,7 @@ public sealed class CommandBuffer : IDisposable
     /// can override them. Snapshotted at encode time.</summary>
     public void SetInstanceProperties(PropertyState properties)
     {
-        var snapshot = PropertyStatePool.RentSnapshot(properties);
+        PropertyState snapshot = PropertyStatePool.RentSnapshot(properties);
         _rentedSnapshots.Add(snapshot);
         WriteHeader(CommandOpcode.SetInstanceProperties);
         Write(PushObject(snapshot));
@@ -441,7 +444,7 @@ public sealed class CommandBuffer : IDisposable
         WriteHeader(CommandOpcode.SetUniformMatrixArray);
         Write(InternName(name));
         Write((uint)ms.Length);
-        var r = _store.Park(ms);
+        TransientStore.Ref r = _store.Park(ms);
         Write(in r);
     }
 
@@ -484,7 +487,7 @@ public sealed class CommandBuffer : IDisposable
         WriteHeader(CommandOpcode.UpdateBuffer);
         Write(PushObject(buf));
         Write(dstOffset);
-        var r = _store.Park(data);
+        TransientStore.Ref r = _store.Park(data);
         Write(in r);
     }
 
@@ -496,7 +499,7 @@ public sealed class CommandBuffer : IDisposable
         Write(PushObject(tex.Handle));
         Write(x); Write(y); Write(w); Write(h);
         Write(mip);
-        var r = _store.Park(data);
+        TransientStore.Ref r = _store.Park(data);
         Write(in r);
     }
 
@@ -539,7 +542,7 @@ public sealed class CommandBuffer : IDisposable
         Write(vaoIndex);
         Write((byte)topo);
         Write(index32bit ? (byte)1 : (byte)0);
-        var r = _store.Park(ranges);
+        TransientStore.Ref r = _store.Park(ranges);
         Write(in r);
 
         uint indexCount = 0;
@@ -637,7 +640,7 @@ public sealed class CommandBuffer : IDisposable
         material.SetKeyword("BLENDSHAPES", mesh.HasBlendShapes);
         material.SetKeyword("GPU_INSTANCING", false);
 
-        var pass = material.Shader.GetPass(passIndex);
+        ShaderPass pass = material.Shader.GetPass(passIndex);
         if (!pass.TryGetVariantProgram(material, out GraphicsProgram? variant) || variant == null)
             return;
 
@@ -669,7 +672,7 @@ public sealed class CommandBuffer : IDisposable
         bool index32 = mesh.IndexFormat == IndexFormat.UInt32;
         if (subMeshIndex >= 0 && subMeshIndex < mesh.SubMeshCount)
         {
-            var sub = mesh.GetSubMesh(subMeshIndex);
+            SubMeshDescriptor sub = mesh.GetSubMesh(subMeshIndex);
             DrawIndexed(mesh.VertexArrayObject, sub.Topology, (uint)sub.IndexCount, (uint)sub.IndexStart, 0, index32);
         }
         else
@@ -699,7 +702,7 @@ public sealed class CommandBuffer : IDisposable
             SetRenderTarget(null);
             // Backbuffer size lives on the Window. Callers that need a different
             // viewport must set it explicitly.
-            var fb = Window.InternalWindow.FramebufferSize;
+            Vector2D<int> fb = Window.InternalWindow.FramebufferSize;
             SetViewport(0, 0, (uint)fb.X, (uint)fb.Y);
         }
 
@@ -758,7 +761,7 @@ public sealed class CommandBuffer : IDisposable
         WriteHeader(CommandOpcode.CreateBuffer);
         Write(PushObject(buf));
         Write((byte)(dynamic ? 1 : 0));
-        var r = _store.Park(data);
+        TransientStore.Ref r = _store.Park(data);
         Write(in r);
     }
 
@@ -791,7 +794,7 @@ public sealed class CommandBuffer : IDisposable
         Write(width);
         Write(height);
         Write(border);
-        var r = _store.Park(data);
+        TransientStore.Ref r = _store.Park(data);
         Write(in r);
     }
 
@@ -804,7 +807,7 @@ public sealed class CommandBuffer : IDisposable
         Write(face);
         Write(mip);
         Write(size);
-        var r = _store.Park(data);
+        TransientStore.Ref r = _store.Park(data);
         Write(in r);
     }
 
@@ -816,7 +819,7 @@ public sealed class CommandBuffer : IDisposable
         Write(width);
         Write(height);
         Write(depth);
-        var r = _store.Park(data);
+        TransientStore.Ref r = _store.Park(data);
         Write(in r);
     }
 
@@ -830,7 +833,7 @@ public sealed class CommandBuffer : IDisposable
         Write(PushObject(tex));
         Write(x); Write(y); Write(width); Write(height);
         Write(mip);
-        var r = _store.Park(data);
+        TransientStore.Ref r = _store.Park(data);
         Write(in r);
     }
 
@@ -842,7 +845,7 @@ public sealed class CommandBuffer : IDisposable
         Write(mip);
         Write(x); Write(y); Write(z);
         Write(width); Write(height); Write(depth);
-        var r = _store.Park(data);
+        TransientStore.Ref r = _store.Park(data);
         Write(in r);
     }
 

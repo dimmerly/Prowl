@@ -602,7 +602,7 @@ public static class SDFGenerator
             var triangles = new List<Triangle>(indices.Length / 3);
             for (int s = 0; s < mesh.SubMeshCount; s++)
             {
-                var sub = mesh.GetSubMesh(s);
+                SubMeshDescriptor sub = mesh.GetSubMesh(s);
                 if (sub.Topology != Topology.Triangles) continue;
                 int end = Math.Min(sub.IndexStart + sub.IndexCount, indices.Length);
                 for (int i = sub.IndexStart; i + 2 < end; i += 3)

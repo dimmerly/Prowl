@@ -61,7 +61,7 @@ public sealed class PlayerManifest
 
     public DateTime BuildDateUtc => new(BuildDateUtcTicks, DateTimeKind.Utc);
 
-    public Guid DefaultSceneGuid => Guid.TryParse(DefaultScene, out var guid) ? guid : Guid.Empty;
+    public Guid DefaultSceneGuid => Guid.TryParse(DefaultScene, out Guid guid) ? guid : Guid.Empty;
 
     public void Save(string directory)
     {
@@ -86,7 +86,7 @@ public sealed class PlayerManifest
         try
         {
             var echo = EchoObject.ReadFromYaml(File.ReadAllText(path));
-            var manifest = Serializer.Deserialize<PlayerManifest>(echo) ?? new PlayerManifest();
+            PlayerManifest manifest = Serializer.Deserialize<PlayerManifest>(echo) ?? new PlayerManifest();
 
             // Said loudly, because the symptom otherwise is a game that launches and then ignores its
             // own content.

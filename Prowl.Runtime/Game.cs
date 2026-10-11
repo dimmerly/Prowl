@@ -13,6 +13,8 @@ using Prowl.Runtime.Resources;
 using Prowl.Runtime.UI;
 using Prowl.Vector;
 
+using Silk.NET.Maths;
+
 namespace Prowl.Runtime;
 
 public class EchoLogger : IEchoLogger
@@ -99,8 +101,8 @@ public abstract class Game
 
             // Renderer projection uses framebuffer (physical) pixels;
             // Paper resolution uses window (logical) size.
-            var fbSize = Window.InternalWindow.FramebufferSize;
-            var winSize = Window.InternalWindow.Size;
+            Vector2D<int> fbSize = Window.InternalWindow.FramebufferSize;
+            Vector2D<int> winSize = Window.InternalWindow.Size;
 
             _paperRenderer = new PaperRenderer();
             _paperRenderer.Initialize(fbSize.X, fbSize.Y);
@@ -165,7 +167,7 @@ public abstract class Game
                 // === Start Graphics ===
 
                 {
-                    using var frameStart = Graphics.GetCommandBuffer("Frame Start");
+                    using CommandBuffer frameStart = Graphics.GetCommandBuffer("Frame Start");
                     frameStart.SetRenderTarget(null);
                     frameStart.SetViewport(0, 0, (uint)Window.InternalWindow.FramebufferSize.X, (uint)Window.InternalWindow.FramebufferSize.Y);
                     frameStart.SetRasterState(new RasterizerState());
@@ -182,7 +184,7 @@ public abstract class Game
                 EndRender();
 
                 {
-                    using var preGui = Graphics.GetCommandBuffer("Pre-GUI");
+                    using CommandBuffer preGui = Graphics.GetCommandBuffer("Pre-GUI");
                     preGui.SetRenderTarget(null);
                     preGui.SetViewport(0, 0, (uint)Window.InternalWindow.FramebufferSize.X, (uint)Window.InternalWindow.FramebufferSize.Y);
                     Graphics.Submit(preGui);
@@ -482,7 +484,7 @@ public abstract class Game
     /// </summary>
     protected virtual void PreparePaperFrame()
     {
-        var fbSize = Window.InternalWindow.FramebufferSize;
+        Vector2D<int> fbSize = Window.InternalWindow.FramebufferSize;
         float cs = Math.Max(0.01f, Window.ContentScale);
         // resolution × cs = fbSize, so vertices always span exactly [0, fbSize].
         // Using fbSize (not winSize) handles DPI-unaware Windows where winSize == fbSize
@@ -493,9 +495,9 @@ public abstract class Game
 
     protected virtual Float2 GetPaperMousePosition()
     {
-        var p = Input.MousePosition;
-        var fb = Window.InternalWindow.FramebufferSize;
-        var win = Window.InternalWindow.Size;
+        Int2 p = Input.MousePosition;
+        Vector2D<int> fb = Window.InternalWindow.FramebufferSize;
+        Vector2D<int> win = Window.InternalWindow.Size;
         float cs = Math.Max(0.01f, Window.ContentScale);
         // Mouse is in winSize coords; paper space is [0, fbSize/cs].
         // csFbWin converts winSize → fbSize; dividing by cs then lands in paper space.
