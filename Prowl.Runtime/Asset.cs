@@ -138,6 +138,7 @@ public abstract class Asset : EngineObject
     {
         OnUnload();
         _state = (int)AssetState.Unloaded;
+        Resources.Material.Changed(this);
     }
 
     internal void SetIdentity(Guid assetId, string assetPath)
@@ -148,10 +149,18 @@ public abstract class Asset : EngineObject
 
     internal void SetPath(string assetPath) => _assetPath = assetPath ?? string.Empty;
 
-    internal void SetState(AssetState state) => Volatile.Write(ref _state, (int)state);
+    internal void SetState(AssetState state)
+    {
+        Volatile.Write(ref _state, (int)state);
+        Resources.Material.Changed(this);
+    }
 
     internal bool TrySetState(AssetState from, AssetState to)
-        => Interlocked.CompareExchange(ref _state, (int)to, (int)from) == (int)from;
+    {
+        if (Interlocked.CompareExchange(ref _state, (int)to, (int)from) != (int)from) return false;
+        Resources.Material.Changed(this);
+        return true;
+    }
 
     internal void Fill(Asset staging)
     {
