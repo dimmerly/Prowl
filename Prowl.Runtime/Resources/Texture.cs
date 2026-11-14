@@ -54,23 +54,24 @@ public abstract class Texture : Asset
     /// <summary>Mip levels the texture holds, 1 when it has none.</summary>
     public uint MipCount { get { EnsureLoaded(); return _mipCount; } }
 
-    public FilterMode Filter { get { EnsureLoaded(); return _filter; } set { EnsureLoaded(); _filter = value; Material.Changed(this); } }
-    public WrapMode WrapU { get { EnsureLoaded(); return _wrapU; } set { EnsureLoaded(); _wrapU = value; Material.Changed(this); } }
-    public WrapMode WrapV { get { EnsureLoaded(); return _wrapV; } set { EnsureLoaded(); _wrapV = value; Material.Changed(this); } }
-    public WrapMode WrapW { get { EnsureLoaded(); return _wrapW; } set { EnsureLoaded(); _wrapW = value; Material.Changed(this); } }
+    public FilterMode Filter { get { EnsureLoaded(); return _filter; } set { EnsureLoaded(); if (_filter == value) return; _filter = value; RaiseChanged(); } }
+    public WrapMode WrapU { get { EnsureLoaded(); return _wrapU; } set { EnsureLoaded(); if (_wrapU == value) return; _wrapU = value; RaiseChanged(); } }
+    public WrapMode WrapV { get { EnsureLoaded(); return _wrapV; } set { EnsureLoaded(); if (_wrapV == value) return; _wrapV = value; RaiseChanged(); } }
+    public WrapMode WrapW { get { EnsureLoaded(); return _wrapW; } set { EnsureLoaded(); if (_wrapW == value) return; _wrapW = value; RaiseChanged(); } }
 
     /// <summary>What a <see cref="WrapMode.Border"/> axis returns outside the texture.</summary>
-    public TextureBorderColor BorderColor { get { EnsureLoaded(); return _borderColor; } set { EnsureLoaded(); _borderColor = value; Material.Changed(this); } }
+    public TextureBorderColor BorderColor { get { EnsureLoaded(); return _borderColor; } set { EnsureLoaded(); if (_borderColor == value) return; _borderColor = value; RaiseChanged(); } }
 
     /// <summary>Anisotropic filtering samples, 0 or 1 for none. Ignored by Point filtering.</summary>
-    public uint Anisotropy { get { EnsureLoaded(); return _anisotropy; } set { EnsureLoaded(); _anisotropy = value; Material.Changed(this); } }
+    public uint Anisotropy { get { EnsureLoaded(); return _anisotropy; } set { EnsureLoaded(); if (_anisotropy == value) return; _anisotropy = value; RaiseChanged(); } }
 
     /// <summary>Sets the wrap of every axis.</summary>
     public void SetWrap(WrapMode wrap)
     {
         EnsureLoaded();
+        if (_wrapU == wrap && _wrapV == wrap && _wrapW == wrap) return;
         _wrapU = _wrapV = _wrapW = wrap;
-        Material.Changed(this);
+        RaiseChanged();
     }
 
     private protected TextureFormat FormatUnchecked => _format;
@@ -114,7 +115,7 @@ public abstract class Texture : Asset
         _wrapW = w;
         _anisotropy = anisotropy;
         _borderColor = border;
-        Material.Changed(this);
+        RaiseChanged();
     }
 
     /// <summary>
@@ -185,7 +186,7 @@ public abstract class Texture : Asset
         Graphics.DeferDispose(_displayView);
         Graphics.DeferDispose(_gpu);
         _gpu = texture;
-        Material.Changed(this);
+        RaiseChanged();
         _displayView = null;
         if (texture != null && GraphicsFormats.WithoutSrgb(texture.Format) is Graphite.PixelFormat linear)
             _displayView = Graphics.Device!.ResourceFactory.CreateTextureView(new Graphite.TextureViewDescription(texture, format: linear));
@@ -240,7 +241,7 @@ public abstract class Texture : Asset
     // A runtime texture nothing references still has to free its GPU texture. Database textures are never collected.
     ~Texture()
     {
-        if (!Registered) Dispose();
+        if (!Registered) DisposeUnreferenced();
     }
 
     /// <summary>Bytes per texel of a format, zero for a compressed format.</summary>

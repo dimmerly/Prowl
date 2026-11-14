@@ -87,7 +87,7 @@ public sealed class Material : Asset, ISerializationCallbackReceiver
             _parent = value;
             if (_gpu != null) _gpu.Parent = value.IsValid() ? value.GpuMaterial : null;
             SyncShader();
-            Changed(this);
+            RaiseChanged();
         }
     }
 
@@ -148,7 +148,7 @@ public sealed class Material : Asset, ISerializationCallbackReceiver
         if (shader == _shader) return;
         _shader = shader;
         SyncShader();
-        Changed(this);
+        RaiseChanged();
     }
 
     #region Values
@@ -278,7 +278,7 @@ public sealed class Material : Asset, ISerializationCallbackReceiver
         _overrides.Remove(name);
         _properties.Remove(name);
         _gpu?.ClearOverride(name);
-        _boundTextures.Remove(name);
+        Unbind(name);
         if (_gpu != null && SettingTexture(name) is { } texture)
         {
             _gpu.ClearOverride(texture);
@@ -430,23 +430,31 @@ public sealed class Material : Asset, ISerializationCallbackReceiver
     // The materials drawing with each asset: its textures, its shader, and the materials and shaders up its parent
     // chain. Both sides are held weakly, so neither keeps the other alive.
     private static readonly ConditionalWeakTable<Asset, ConditionalWeakTable<Material, object>> s_watchers = new();
-    private static readonly ConcurrentQueue<Asset> s_changed = new();
     private static readonly object s_watching = new();
+
+    // The watched assets that changed since the last SyncAll, queued from whichever thread changed them
+    private static readonly ConcurrentQueue<Asset> s_changed = new();
+
+    static Material() => Asset.Changed += s_changed.Enqueue;
 
     private void Watch(Asset? asset)
     {
-        if (asset.IsValid()) s_watchers.GetOrCreateValue(asset).TryAdd(this, s_watching);
+        if (asset.IsNotValid()) return;
+        s_watchers.GetOrCreateValue(asset).TryAdd(this, s_watching);
+        asset.Watched = true;
     }
 
-    /// <summary>
-    /// Has the next <see cref="SyncAll"/> bring the materials drawing with an asset up to date. Called by whatever
-    /// changes what a material binds of it: its load state, its Graphite object, a texture's sampler. Any thread.
-    /// </summary>
-    internal static void Changed(Asset asset)
+    private void Unwatch(Asset? asset)
     {
-        if (asset is Material { _gpu: not null } || s_watchers.TryGetValue(asset, out _))
-            s_changed.Enqueue(asset);
+        if (!ReferenceEquals(asset, null) && s_watchers.TryGetValue(asset, out ConditionalWeakTable<Material, object>? watchers))
+            watchers.Remove(this);
     }
+
+    // The materials and shaders last watched for the shader this one draws with, see ResolveShader
+    [NonSerialized, NotHeld, SerializeIgnore, NotContent]
+    private List<Asset>? _chain;
+
+    private static readonly List<Asset> s_chain = [];
 
     [NonSerialized, NotHeld, SerializeIgnore, NotContent]
     private GMaterial? _gpu;
@@ -479,19 +487,60 @@ public sealed class Material : Asset, ISerializationCallbackReceiver
     // A shader not loaded yet starts loading, and the Invalid shader stands in until SyncShader sees it ready
     private GShader? ResolveShader()
     {
-        // Every material up the chain and its shader have a say in which shader this one draws with
+        // Every material up the chain and its shader have a say in which shader this one draws with, as has the Invalid
+        // shader standing in. Each is watched before it is read, so a change from another thread in between is not missed.
+        Shader invalid = Shader.GetDefault(DefaultShader.Invalid);
+        s_chain.Clear();
         for (Material? m = this; m.IsValid(); m = m._parent)
         {
-            if (m != this) Watch(m);
-            Watch(m._shader);
+            if (m != this) s_chain.Add(m);
+            if (m._shader.IsValid()) s_chain.Add(m._shader);
         }
+        if (invalid.IsValid()) s_chain.Add(invalid);
+        foreach (Asset asset in s_chain) Watch(asset);
+
+        // Not one of the chain when no material up it sets a shader, and Lit stands in
         Shader? shader = Shader;
-        Watch(shader);
+        if (shader.IsValid() && !s_chain.Contains(shader))
+        {
+            Watch(shader);
+            s_chain.Add(shader);
+        }
+
+        _chain ??= [];
+        if (!_chain.SequenceEqual(s_chain))
+        {
+            foreach (Asset asset in _chain)
+                if (!s_chain.Contains(asset)) Unwatch(asset);
+            _chain.Clear();
+            _chain.AddRange(s_chain);
+        }
+        s_chain.Clear();
+
         if (shader.IsValid() && shader.GpuIfLoaded is { } gpu) return gpu;
         if (shader.IsValid() && shader.State == AssetState.Unloaded) _ = shader.LoadAsync();
-        Shader invalid = Shader.GetDefault(DefaultShader.Invalid);
-        Watch(invalid);
         return invalid.IsValid() ? invalid.GpuShader : null;
+    }
+
+    // Stops watching a texture no property binds any more
+    private void Release(Texture? texture)
+    {
+        if (ReferenceEquals(texture, null)) return;
+        foreach ((Texture? source, _, _) in _boundTextures.Values)
+            if (ReferenceEquals(source, texture)) return;
+        Unwatch(texture);
+    }
+
+    private void Unbind(string name)
+    {
+        if (_boundTextures.Remove(name, out (Texture? Source, GTexture? Texture, Graphite.SamplerDescription Sampler) bound))
+            Release(bound.Source);
+    }
+
+    private void UnbindAll()
+    {
+        foreach ((Texture? source, _, _) in _boundTextures.Values) Unwatch(source);
+        _boundTextures.Clear();
     }
 
     private void SyncShader()
@@ -500,7 +549,7 @@ public sealed class Material : Asset, ISerializationCallbackReceiver
         GShader? shader = ResolveShader();
         if (shader == null || shader == _gpu.Shader) return;
         _gpu.Shader = shader;
-        _boundTextures.Clear();
+        UnbindAll();
         PushAll();
     }
 
@@ -544,7 +593,10 @@ public sealed class Material : Asset, ISerializationCallbackReceiver
         else if (p._textures.TryGetValue(name, out Texture2D? t2)) PushTexture(name, t2);
         else if (p._textures3D.TryGetValue(name, out Texture3D? t3)) PushTexture(name, t3);
         else if (p._texturesCube.TryGetValue(name, out Cubemap? tc)) PushTexture(name, tc);
-        else _boundTextures.Remove(name); // a texture set to none is no longer one to keep in sync
+        // Overridden with no texture left to give is a texture set to none
+        else if (_overrides.Contains(name) && _gpu.Shader.Properties[_gpu.Shader.FindProperty(name)].Type >= MaterialPropertyType.Texture2D)
+            PushTexture(name, null);
+        else Unbind(name);
     }
 
     private static readonly string[] s_textureSettings = ["_ST", "_Channel", "_UVSet", "_Rotation"];
@@ -582,31 +634,43 @@ public sealed class Material : Asset, ISerializationCallbackReceiver
     {
         if (_gpu!.Shader.FindProperty(name) < 0) return;
         if (texture.IsValid() && BuiltInAssets.IsPlaceholderTexture(texture.AssetID)) texture = null;
+        if (texture.IsNotValid()) texture = null;
         // Watched before it is read, so a load finishing on another thread in between is not missed
         Watch(texture);
         if (texture.IsValid() && texture.State == AssetState.Unloaded) _ = texture.LoadAsync();
         GTexture? gpu = texture.IsValid() ? texture.GpuIfLoaded : null;
         Graphite.SamplerDescription sampler = texture.IsValid() ? texture.SamplerUnchecked : Graphite.SamplerDescription.Linear;
         _gpu!.SetTexture(name, gpu, sampler);
+        Texture? previous = _boundTextures.TryGetValue(name, out (Texture? Source, GTexture? Texture, Graphite.SamplerDescription Sampler) was) ? was.Source : null;
         _boundTextures[name] = (texture, gpu, sampler);
+        if (!ReferenceEquals(previous, texture)) Release(previous);
     }
 
-    private static readonly List<(string Name, Texture Texture)> s_stale = [];
+    private static readonly List<(string Name, Texture? Texture)> s_stale = [];
 
-    // Gives again every texture whose Graphite texture or sampler changed, such as one that finished loading
+    // Gives again every texture that is no longer what was bound: another set in its place, its Graphite texture or
+    // sampler changed, as when it finished loading, or it was destroyed and none is left to bind
     private void SyncTextures()
     {
         foreach (KeyValuePair<string, (Texture? Source, GTexture? Texture, Graphite.SamplerDescription Sampler)> bound in _boundTextures)
         {
-            Texture? texture = bound.Value.Source;
-            if (texture.IsNotValid()) continue;
+            // Read from the properties rather than what was bound, so a texture swapped past Push is found too
+            Texture? texture = _properties.GetTexture(bound.Key);
+            if (texture.IsNotValid()) texture = _properties.GetTexture3D(bound.Key);
+            if (texture.IsNotValid()) texture = _properties.GetTextureCube(bound.Key);
+            if (texture.IsValid() && BuiltInAssets.IsPlaceholderTexture(texture.AssetID)) texture = null;
+            if (texture.IsNotValid())
+            {
+                if (!ReferenceEquals(bound.Value.Source, null) || bound.Value.Texture != null) s_stale.Add((bound.Key, null));
+                continue;
+            }
             if (texture.State == AssetState.Unloaded && bound.Value.Texture == null)
                 _ = texture.LoadAsync();
             GTexture? gpu = texture.GpuIfLoaded;
-            if (gpu != bound.Value.Texture || (gpu != null && !texture.SamplerUnchecked.Equals(bound.Value.Sampler)))
+            if (!ReferenceEquals(texture, bound.Value.Source) || gpu != bound.Value.Texture || (gpu != null && !texture.SamplerUnchecked.Equals(bound.Value.Sampler)))
                 s_stale.Add((bound.Key, texture));
         }
-        foreach ((string name, Texture texture) in s_stale) PushTexture(name, texture);
+        foreach ((string name, Texture? texture) in s_stale) PushTexture(name, texture);
         s_stale.Clear();
     }
 
@@ -617,18 +681,26 @@ public sealed class Material : Asset, ISerializationCallbackReceiver
         SyncTextures();
     }
 
+    private static readonly HashSet<Asset> s_changedOnce = [];
+    private static readonly HashSet<Material> s_dirty = [];
+
     /// <summary>
-    /// Brings the Graphite materials drawing with an asset that <see cref="Changed"/> since the last call up to date
-    /// with their shader and textures. Nothing changed, nothing done. Main thread, once a frame.
+    /// Brings the Graphite materials drawing with an asset that changed since the last call up to date with their
+    /// shader and textures, each once however many of its assets changed, or however often. Nothing changed, nothing
+    /// done. Main thread, once a frame.
     /// </summary>
     internal static void SyncAll()
     {
-        while (s_changed.TryDequeue(out Asset? asset))
-        {
-            if (asset is Material material) material.Sync();
-            if (!s_watchers.TryGetValue(asset, out ConditionalWeakTable<Material, object>? watchers)) continue;
-            foreach (KeyValuePair<Material, object> watcher in watchers) watcher.Key.Sync();
-        }
+        if (s_changed.IsEmpty) return;
+        while (s_changed.TryDequeue(out Asset? asset)) s_changedOnce.Add(asset);
+        foreach (Asset asset in s_changedOnce)
+            if (s_watchers.TryGetValue(asset, out ConditionalWeakTable<Material, object>? watchers))
+                foreach (KeyValuePair<Material, object> watcher in watchers) s_dirty.Add(watcher.Key);
+        s_changedOnce.Clear();
+
+        // A sync that starts a load queues that asset again, for the next call
+        try { foreach (Material material in s_dirty) material.Sync(); }
+        finally { s_dirty.Clear(); }
     }
 
     #endregion
@@ -649,7 +721,7 @@ public sealed class Material : Asset, ISerializationCallbackReceiver
     {
         base.TakeContent(staging);
         if (_gpu == null) return;
-        _boundTextures.Clear();
+        UnbindAll();
         SyncShader();
         PushAll();
     }
@@ -676,6 +748,6 @@ public sealed class Material : Asset, ISerializationCallbackReceiver
     // A runtime material nothing references still frees its Graphite material. Database materials are never collected.
     ~Material()
     {
-        if (!Registered) Dispose();
+        if (!Registered) DisposeUnreferenced();
     }
 }

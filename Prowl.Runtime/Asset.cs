@@ -41,6 +41,28 @@ public abstract class Asset : EngineObject
     private int _state;
     private int _contentVersion;
 
+    /// <summary>
+    /// Raised when what others hold of an asset may have changed: its load state, or whatever a subclass reports through
+    /// <see cref="RaiseChanged"/>, such as a texture's GPU texture. Only for an asset someone marked
+    /// <see cref="Watched"/>. Any thread, so a listener queues the asset for its own.
+    /// </summary>
+    internal static event Action<Asset>? Changed;
+
+    /// <summary>Set by a listener of <see cref="Changed"/> to hear of this asset. The rest raise nothing.</summary>
+    internal volatile bool Watched;
+
+    private protected void RaiseChanged()
+    {
+        if (Watched) Changed?.Invoke(this);
+    }
+
+    /// <summary>Disposes from a finalizer. Nothing references the asset by then, so no listener is told.</summary>
+    private protected void DisposeUnreferenced()
+    {
+        Watched = false;
+        Dispose();
+    }
+
     // Database bookkeeping, owned by AssetDatabase.
     internal bool Registered;
     internal int LoadCount;
@@ -138,7 +160,7 @@ public abstract class Asset : EngineObject
     {
         OnUnload();
         _state = (int)AssetState.Unloaded;
-        Resources.Material.Changed(this);
+        RaiseChanged();
     }
 
     internal void SetIdentity(Guid assetId, string assetPath)
@@ -152,13 +174,13 @@ public abstract class Asset : EngineObject
     internal void SetState(AssetState state)
     {
         Volatile.Write(ref _state, (int)state);
-        Resources.Material.Changed(this);
+        RaiseChanged();
     }
 
     internal bool TrySetState(AssetState from, AssetState to)
     {
         if (Interlocked.CompareExchange(ref _state, (int)to, (int)from) != (int)from) return false;
-        Resources.Material.Changed(this);
+        RaiseChanged();
         return true;
     }
 

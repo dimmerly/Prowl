@@ -104,7 +104,7 @@ public sealed class Shader : Asset, ISerializable
             _error = e.Message;
             Debug.LogError($"Shader '{(_sourcePath.Length > 0 ? _sourcePath : Name)}' failed to parse: {e.Message}");
         }
-        Material.Changed(this);
+        RaiseChanged();
     }
 
     private static readonly System.Text.RegularExpressions.Regex s_include = new(@"^[ \t]*#include[ \t]+""([^""]+)""[ \t]*\r?$", System.Text.RegularExpressions.RegexOptions.Multiline);
@@ -246,9 +246,5 @@ public sealed class Shader : Asset, ISerializable
         SetSource(value.Get("Source")?.StringValue ?? "", value.Get("SourcePath")?.StringValue ?? "");
     }
 
-    protected override void OnUnload()
-    {
-        _gpu = null;
-        Material.Changed(this);
-    }
+    protected override void OnUnload() => _gpu = null;
 }
