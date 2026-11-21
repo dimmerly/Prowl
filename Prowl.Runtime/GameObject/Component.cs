@@ -401,6 +401,7 @@ public abstract class Component : EngineObject, ISerializationCallbackReceiver
         if (!ReferenceEquals(_joinedWorld, null)) Leave(_joinedWorld);
         _joinedWorld = world;
         JoinWorld(world);
+        GameSystemRegistry.Joined(world, this);
     }
 
     internal void Leave(SceneInstance world)
@@ -408,6 +409,7 @@ public abstract class Component : EngineObject, ISerializationCallbackReceiver
         if (!ReferenceEquals(_joinedWorld, world)) return;
         _joinedWorld = null;
         LeaveWorld(world);
+        GameSystemRegistry.Left(world, this);
     }
 
     /// <summary>

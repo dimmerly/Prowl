@@ -907,7 +907,7 @@ internal sealed class AnimationGraphProbe : IGraphProbe
         SceneInstance? scene = EditorSceneManager.EditedWorld;
         if (scene.IsNotValid()) return;
 
-        foreach (Animator animator in scene.Animation.Animators)
+        foreach (Animator animator in GameSystemRegistry.Get<AnimationSystem>().ComponentsIn(scene!))
             if (animator.Graph.IsValid() && animator.Graph.AssetID == assetGuid && animator.GraphInstance != null)
             {
                 _candidates.Add(animator);

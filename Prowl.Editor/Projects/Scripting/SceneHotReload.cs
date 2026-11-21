@@ -73,6 +73,9 @@ public static class SceneHotReload
 
         Summarize(report);
 
+        // Once, before any world migrates and even with none alive, so systems of replaced types are let go.
+        GameSystemRegistry.EnsureCurrent();
+
         // Re-derive per-frame membership, registries and lookups from the new types.
         foreach (SceneInstance world in worlds)
             if (!world.IsDisposed) world.OnHotReload();

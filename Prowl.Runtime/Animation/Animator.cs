@@ -86,24 +86,13 @@ public class Animator : Component
 
     public SampledEventsBuffer? Events => _graph?.Events;
 
-    // The world this animator is registered with, kept so it leaves even during teardown, when it no longer reads as in one.
-    private SceneInstance? _registeredIn;
-
     public override void OnEnable()
     {
         Rebind();
         _autoPlayPending = PlayAutomatically;
-        if (!IsInWorld) return;
-        _registeredIn = Scene;
-        _registeredIn.Animation.Register(this);
     }
 
-    public override void OnDisable()
-    {
-        if (!ReferenceEquals(_registeredIn, null)) _registeredIn.Animation.Unregister(this);
-        _registeredIn = null;
-        Rebind();
-    }
+    public override void OnDisable() => Rebind();
 
     /// <summary>Binds the bones again. Call after the hierarchy under the animator changes.</summary>
     public void Rebind()

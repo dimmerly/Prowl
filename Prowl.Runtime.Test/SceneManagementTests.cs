@@ -479,15 +479,15 @@ public class SceneManagementTests : RuntimeTestBase
         SceneInstance world = CreateScene(enable: true);
         SceneSection level = world.CreateSection("Level");
         Animator animator = world.Create(level, "Character").AddComponent<Animator>();
-        Assert.Contains(animator, world.Animation.Animators);
+        Assert.Contains(animator, world.GetAll<Animator>());
 
         level.Unload();
         SceneInstance.ProcessPendingLoad();
-        Assert.DoesNotContain(animator, world.Animation.Animators);
+        Assert.DoesNotContain(animator, world.GetAll<Animator>());
 
         Animator destroyed = world.Create("Other").AddComponent<Animator>();
         destroyed.GameObject.Dispose();
-        Assert.DoesNotContain(destroyed, world.Animation.Animators);
+        Assert.DoesNotContain(destroyed, world.GetAll<Animator>());
     }
 
     private sealed class GizmoCounter : Component

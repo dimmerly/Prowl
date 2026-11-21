@@ -765,14 +765,9 @@ public class SceneInstance : EngineObject, ISerializable
 
     [SerializeIgnore, NotHeld]
     private readonly NavMeshWorld _navigation = new();
-    [NotHeld]
-    private readonly SceneAnimation _animation = new();
 
     /// <summary>This scene's navigation state (registered navmeshes, queries, crowd).</summary>
     public NavMeshWorld Navigation { get { EnsureLive(); return _navigation; } }
-
-    /// <summary>Every animator in the scene, advanced once per frame in its own phase.</summary>
-    public SceneAnimation Animation { get { EnsureLive(); return _animation; } }
 
     // Rebuilds lazily, so it can still list removed components.
     [SerializeIgnore, NotHeld]
@@ -813,6 +808,23 @@ public class SceneInstance : EngineObject, ISerializable
     [SerializeIgnore, NotHeld]
     internal readonly LayoutUtility.Cache LayoutCache = new();
 
+    /// <summary>Runs every <see cref="GameSystem"/> listener of <paramref name="stage"/> for this scene.</summary>
+    private void Signal(SceneStage stage) => GameSystemRegistry.Signal(this, stage);
+
+    // The components each GameSystem iterates in this world, by system slot. Kept by GameSystemRegistry, and
+    // skipped by the hot reload walk: a reload empties them and the rejoining components fill them again.
+    [SerializeIgnore, NotHeld, Prowl.Ember.ReloadIgnore]
+    internal GameSystemRegistry.ComponentSet?[]? SystemSets;
+    [SerializeIgnore, Prowl.Ember.ReloadIgnore]
+    internal int SystemSetsBuild;
+
+    // Each GameSystem's state for this world, by system slot. Kept by GameSystemRegistry across a reload that
+    // left the systems as they were, and dropped when they rebuild.
+    [SerializeIgnore, NotHeld, Prowl.Ember.ReloadIgnore]
+    internal object?[]? SystemStates;
+    [SerializeIgnore, Prowl.Ember.ReloadIgnore]
+    internal int SystemStatesBuild;
+
     private void ClearRegistries()
     {
         Canvases.Clear();
@@ -845,6 +857,9 @@ public class SceneInstance : EngineObject, ISerializable
         foreach (GameObject go in _allObj)
             if (!ReferenceEquals(go, null) && !go.IsDisposed)
                 go.OnHotReload();
+
+        // Migrated, so game systems rebuilt by this reload can now hear of this world.
+        GameSystemRegistry.SceneReloaded(this);
 
         // Re-registering from the live scene rather than from what was registered before is what lets a
         // component whose new type gained its first per-frame callback start dispatching at all.
@@ -1380,6 +1395,7 @@ public class SceneInstance : EngineObject, ISerializable
         _activeSection = new SceneSection(this, "Untitled", persistent: false);
         _sections.Add(_activeSection);
         lock (s_live) s_live.Add(new WeakReference<SceneInstance>(this));
+        GameSystemRegistry.SceneCreated(this);
     }
 
     /// <summary>Wakes this world: it runs, and its components get OnEnable. A world made by Open stays dormant until this is called.</summary>
@@ -1713,7 +1729,7 @@ public class SceneInstance : EngineObject, ISerializable
         _physics.Detach();
         // Waits out in flight queries.
         _navigation.Clear();
-        _animation.Clear();
+        GameSystemRegistry.SceneDestroyed(this);
 
         // Clear any remaining references
         _allObj.Clear();
@@ -1759,16 +1775,9 @@ public class SceneInstance : EngineObject, ISerializable
         // Rigidbodies that moved get their Transform written before gameplay code reads it.
         Physics.WriteTransforms();
 
+        Signal(SceneStage.BeforeUpdate);
         _dispatcher.RunUpdate();
-
-        // Animation sits between the two so gameplay code reaching in to override a bone in
-        // LateUpdate finds the pose already written. An animator that blows up must not take the
-        // frame with it, and the manager reports each one rather than rethrowing.
-        // Animation is gameplay, so an edit world shows the pose it was left in.
-        if (IsPlaying)
-            using (FrameStats.Animation.Scope())
-                _animation.Update(Time.DeltaTime);
-
+        Signal(SceneStage.AfterUpdate);
         _dispatcher.RunLateUpdate();
 
         Flush();
@@ -1788,6 +1797,7 @@ public class SceneInstance : EngineObject, ISerializable
         // Update, so drive Start here too (RunStart is idempotent - it only starts un-started ones).
         _dispatcher.RunStart();
 
+        Signal(SceneStage.BeforeFixedUpdate);
         _dispatcher.RunFixedUpdate();
 
         Physics.TrackCollisions(_dispatcher.CollisionListeners > 0);
@@ -1798,6 +1808,8 @@ public class SceneInstance : EngineObject, ISerializable
             // A solver that blows up does so every frame, so report it once rather than per frame.
             catch (Exception ex) { Debug.LogErrorOnce("Physics.StepThrew", $"[Physics] Step threw and was skipped this frame: {ex.Message}\n{ex.StackTrace}"); }
         }
+
+        Signal(SceneStage.AfterFixedUpdate);
 
         Flush();
     }
