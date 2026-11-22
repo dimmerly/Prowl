@@ -647,9 +647,12 @@ public class SceneViewPanel : DockPanel
                 new Float2(width, height));
 
             // Scene view keyboard shortcuts (only when hovered and not right-click flying)
+            // A tool that used this frame's key (Modeling's E to extrude, Ctrl+D to duplicate faces) keeps it to itself,
+            // and while Modeling the object shortcuts would delete or copy the very mesh being edited.
             if (isHovered && !_handles.KeysUsed && !ShortcutManager.IsRebinding && !Input.GetMouseButton(1))
             {
-                if (ShortcutManager.IsPressed("Scene/Delete"))
+                if (SceneTools.EditMode != SceneEditMode.Object) { }
+                else if (ShortcutManager.IsPressed("Scene/Delete"))
                 {
                     // Shared with HierarchyPanel so the viewport enforces the same prefab
                     // structural-child protection and undo registration as the Hierarchy's Delete.

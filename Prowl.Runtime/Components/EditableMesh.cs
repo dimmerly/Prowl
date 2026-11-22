@@ -23,6 +23,9 @@ namespace Prowl.Runtime;
 /// <see cref="GeometryData"/> operators and <see cref="SetGeometry"/> takes the result back.
 /// <para>Each face picks one of <see cref="Materials"/> by index. A slot that is empty, or an index past the list,
 /// draws with <see cref="PrototypeMaterial"/>, an orange checker sized to one square per world unit for blocking out.</para>
+/// <para>Each face also carries a <see cref="FaceTexture"/>: how its material is laid on it, Hammer style. Texture
+/// coordinates are projected from world positions, so faces of different meshes line up where they meet. In the
+/// editor they stay fixed to the world while the object moves; while the game plays they ride along with it.</para>
 /// <para>For collision, add a <see cref="MeshCollider"/> with no mesh assigned: it builds from this mesh and is rebuilt
 /// whenever the polygons change.</para>
 /// </summary>
@@ -37,6 +40,9 @@ public class EditableMesh : Component, IRenderSync, IMaterialRenderer
     [SerializeField, HideInInspector] private List<int> _faceSizes = [];
     // The material slot of each face.
     [SerializeField, HideInInspector] private List<int> _faceMaterials = [];
+    // Each face's texture mapping, FaceTexture.Stride floats per face. Missing in older data, which reads as the
+    // default mapping.
+    [SerializeField, HideInInspector] private List<float> _faceTextures = [];
     [SerializeField] private List<Material> _materials = [];
     [SerializeField] private ShadowCasting _shadowCasting = ShadowCasting.On;
 
@@ -51,6 +57,12 @@ public class EditableMesh : Component, IRenderSync, IMaterialRenderer
     [System.NonSerialized, NotHeld] private readonly RenderableState _renderable = new();
     [System.NonSerialized, NotHeld] private GMaterial[] _gpuMaterials = [];
     [System.NonSerialized, NotHeld] private readonly List<Material?> _resolved = [];
+    // What texture coordinates are worked out from, kept from the last build so moving the object only redoes them.
+    [SerializeIgnore] private Float3[] _uvPositions = [];
+    [SerializeIgnore] private int[] _uvVertexFaces = [];
+    [SerializeIgnore] private Float3[] _uvFaceNormals = [];
+    [SerializeIgnore] private FaceTexture[] _uvFaceTextures = [];
+    [SerializeIgnore] private uint _uvTransformVersion;
 
     [HeldStatic] private static Material? s_prototype;
 
@@ -183,23 +195,43 @@ public class EditableMesh : Component, IRenderSync, IMaterialRenderer
 
     /// <summary>A copy of the stored polygons, cheap to keep and to turn back into geometry, for an editor that
     /// re-runs an operation from the state before it.</summary>
-    public readonly record struct Polygons(Float3[] Points, int[] FaceIndices, int[] FaceSizes, int[] FaceMaterials);
+    public readonly record struct Polygons(Float3[] Points, int[] FaceIndices, int[] FaceSizes, int[] FaceMaterials, float[] FaceTextures);
 
     /// <summary>Copies the polygons as they are now.</summary>
-    public Polygons CopyPolygons() => new([.. _points], [.. _faceIndices], [.. _faceSizes], [.. _faceMaterials]);
+    public Polygons CopyPolygons() => new([.. _points], [.. _faceIndices], [.. _faceSizes], [.. _faceMaterials], [.. _faceTextures]);
 
-    /// <summary>The polygons as editable geometry, with each face's slot in <see cref="GeometryData.Face.Material"/>. A new object every call.</summary>
-    public GeometryData ToGeometry() => ToGeometry(_points, _faceIndices, _faceSizes, _faceMaterials);
+    /// <summary>The polygons as editable geometry, with each face's slot in <see cref="GeometryData.Face.Material"/>
+    /// and its mapping readable with <see cref="GetFaceTexture"/>. A new object every call.</summary>
+    public GeometryData ToGeometry() => ToGeometry(_points, _faceIndices, _faceSizes, _faceMaterials, _faceTextures);
 
     /// <summary><paramref name="polygons"/> as editable geometry, faces in the same order as they were stored.</summary>
     public static GeometryData ToGeometry(Polygons polygons)
-        => ToGeometry(polygons.Points, polygons.FaceIndices, polygons.FaceSizes, polygons.FaceMaterials);
+        => ToGeometry(polygons.Points, polygons.FaceIndices, polygons.FaceSizes, polygons.FaceMaterials, polygons.FaceTextures ?? []);
 
-    private static GeometryData ToGeometry(IReadOnlyList<Float3> points, IReadOnlyList<int> faceIndices, IReadOnlyList<int> faceSizes, IReadOnlyList<int> faceMaterials)
+    /// <summary>Face attribute holding a <see cref="FaceTexture"/> as <see cref="FaceTexture.Stride"/> floats.</summary>
+    public const string TextureAttribute = "FaceTexture";
+
+    /// <summary>How <paramref name="face"/> lays its material: the default mapping when it carries none.</summary>
+    public static FaceTexture GetFaceTexture(GeometryData.Face face)
+        => face.TryGetAttribute(TextureAttribute, out var value) && value is GeometryData.FloatAttributeValue f
+            ? FaceTexture.Read(f.Data) : FaceTexture.Default;
+
+    /// <summary>Sets how <paramref name="face"/> lays its material.</summary>
+    public static void SetFaceTexture(GeometryData.Face face, FaceTexture texture)
+    {
+        var data = new float[FaceTexture.Stride];
+        texture.Write(data);
+        face.SetAttribute(TextureAttribute, new GeometryData.FloatAttributeValue(data));
+    }
+
+    private static GeometryData ToGeometry(IReadOnlyList<Float3> points, IReadOnlyList<int> faceIndices, IReadOnlyList<int> faceSizes,
+        IReadOnlyList<int> faceMaterials, IReadOnlyList<float> faceTextures)
     {
         var geometry = new GeometryData();
-        // Declared so ToRenderMesh splits by slot, and so operators carry it onto the faces they make.
+        // Declared so ToRenderMesh splits by slot, and so operators carry them onto the faces they make. A face made
+        // with nothing to copy from gets zeros, which read as the default mapping.
         geometry.AddFaceAttribute(GeometryData.MaterialAttribute, GeometryData.AttributeBaseType.Int, 1);
+        geometry.AddFaceAttribute(TextureAttribute, GeometryData.AttributeBaseType.Float, FaceTexture.Stride);
         var verts = new GeometryData.Vertex[points.Count];
         for (int i = 0; i < points.Count; i++) verts[i] = geometry.AddVertex(points[i]);
 
@@ -221,6 +253,13 @@ public class EditableMesh : Component, IRenderSync, IMaterialRenderer
                 {
                     int slot = f < faceMaterials.Count ? faceMaterials[f] : 0;
                     if (slot != 0) face.Material = slot;
+                    int t = f * FaceTexture.Stride;
+                    if (t + FaceTexture.Stride <= faceTextures.Count)
+                    {
+                        var data = new float[FaceTexture.Stride];
+                        for (int k = 0; k < data.Length; k++) data[k] = faceTextures[t + k];
+                        face.SetAttribute(TextureAttribute, new GeometryData.FloatAttributeValue(data));
+                    }
                 }
             }
             at += size;
@@ -235,7 +274,9 @@ public class EditableMesh : Component, IRenderSync, IMaterialRenderer
         _faceIndices.Clear();
         _faceSizes.Clear();
         _faceMaterials.Clear();
+        _faceTextures.Clear();
 
+        var texture = new float[FaceTexture.Stride];
         var indexOf = new Dictionary<GeometryData.Vertex, int>();
         foreach (GeometryData.Face face in geometry.Faces)
         {
@@ -252,6 +293,8 @@ public class EditableMesh : Component, IRenderSync, IMaterialRenderer
             }
             _faceSizes.Add(verts.Count);
             _faceMaterials.Add(Math.Max(0, face.Material));
+            GetFaceTexture(face).Write(texture);
+            _faceTextures.AddRange(texture);
         }
         MarkChanged();
     }
@@ -312,15 +355,23 @@ public class EditableMesh : Component, IRenderSync, IMaterialRenderer
         if (_faceSizes.Count == 0) return;
 
         // Flat shaded: every face is sharp unless flagged smooth, so faces get their own corners.
-        Prowl.Vector.Geometry.RenderMesh built = ToGeometry().ToRenderMesh();
+        GeometryData geometry = ToGeometry();
+        Prowl.Vector.Geometry.RenderMesh built = geometry.ToRenderMesh();
         if (built.Indices.Length == 0) return;
 
-        var uvs = new Float2[built.Positions.Length];
-        for (int i = 0; i < uvs.Length; i++) uvs[i] = BoxProject(built.Positions[i], built.Normals[i]);
+        _uvPositions = built.Positions;
+        _uvVertexFaces = built.VertexFaces;
+        _uvFaceNormals = new Float3[geometry.Faces.Count];
+        _uvFaceTextures = new FaceTexture[geometry.Faces.Count];
+        for (int f = 0; f < geometry.Faces.Count; f++)
+        {
+            _uvFaceNormals[f] = geometry.Faces[f].Normal();
+            _uvFaceTextures[f] = GetFaceTexture(geometry.Faces[f]);
+        }
 
         _mesh.Vertices = built.Positions;
         _mesh.Normals = built.Normals;
-        _mesh.UV = uvs;
+        _mesh.UV = ComputeUVs(built.Normals);
         _mesh.Indices = built.Indices;
 
         // One submesh per slot in use, in rising slot order.
@@ -336,13 +387,46 @@ public class EditableMesh : Component, IRenderSync, IMaterialRenderer
         _mesh.RecalculateTangents();
     }
 
-    // Projected along the normal's dominant axis, at half a texture tile per world unit: the default checker has two
-    // squares a tile, so that is one square per unit and blocks read against the grid.
-    private static Float2 BoxProject(Float3 p, Float3 n)
+    // Every render vertex's texture coordinates, from its face's mapping and where it is in the world now.
+    private Float2[] ComputeUVs(Float3[] vertexNormals)
     {
-        float ax = MathF.Abs(n.X), ay = MathF.Abs(n.Y), az = MathF.Abs(n.Z);
-        Float2 uv = ax >= ay && ax >= az ? new Float2(p.Z, p.Y) : ay >= az ? new Float2(p.X, p.Z) : new Float2(p.X, p.Y);
-        return uv * 0.5f;
+        Float4x4 l2w = Transform.LocalToWorldMatrix;
+        _uvTransformVersion = Transform.WorldVersion;
+        var frames = new (Float3 U, Float3 V)[_uvFaceNormals.Length];
+        for (int f = 0; f < frames.Length; f++)
+            frames[f] = _uvFaceTextures[f].Axes(WorldNormal(_uvFaceNormals[f], l2w));
+
+        var uvs = new Float2[_uvPositions.Length];
+        for (int i = 0; i < uvs.Length; i++)
+        {
+            Float3 world = Float4x4.TransformPoint(_uvPositions[i], l2w);
+            int f = i < _uvVertexFaces.Length ? _uvVertexFaces[i] : -1;
+            if ((uint)f < (uint)frames.Length)
+            {
+                uvs[i] = _uvFaceTextures[f].Map(world, frames[f].U, frames[f].V);
+                continue;
+            }
+            // A vertex that smooth faces share has no one face: the default mapping on its own normal.
+            (Float3 u, Float3 v) = FaceTexture.Default.Axes(WorldNormal(vertexNormals[i], l2w));
+            uvs[i] = FaceTexture.Default.Map(world, u, v);
+        }
+        return uvs;
+    }
+
+    private static Float3 WorldNormal(Float3 local, Float4x4 l2w)
+    {
+        Float3 n = Float4x4.TransformNormal(local, l2w);
+        return Float3.LengthSquared(n) > 1e-12f ? Float3.Normalize(n) : Float3.UnitY;
+    }
+
+    // In the editor the texture stays fixed to the world while the object moves, as level editors lay it; while the
+    // game plays it rides along, so a moving platform does not have its texture swim across it.
+    private void RefreshUVsIfMoved()
+    {
+        if (_dirty || _mesh.IsNotValid() || _uvPositions.Length == 0) return;
+        if (_uvTransformVersion == Transform.WorldVersion || GameObject.Scene is { IsPlaying: true }) return;
+        _mesh.UV = ComputeUVs(_mesh.Normals);
+        _mesh.RecalculateTangents();
     }
 
     /// <summary>The material a slot draws with: its own, or the prototype material when it has none.</summary>
@@ -356,6 +440,7 @@ public class EditableMesh : Component, IRenderSync, IMaterialRenderer
 
     bool IRenderSync.Sync(RenderWorld world)
     {
+        RefreshUVsIfMoved();
         Mesh? mesh = BuiltMesh;
         if (mesh.IsNotValid() || _subMeshSlots.Length == 0)
         {

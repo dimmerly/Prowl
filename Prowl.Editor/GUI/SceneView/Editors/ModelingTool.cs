@@ -44,7 +44,7 @@ public enum ModelingSubTool
 /// make (an undo) rebuilds it.</para>
 /// </summary>
 [GlobalSceneTool]
-public sealed class ModelingTool : SceneTool
+public sealed partial class ModelingTool : SceneTool
 {
     public override string Name => "Modeling";
     public override string Icon => EditorIcons.Cube;
@@ -53,6 +53,9 @@ public sealed class ModelingTool : SceneTool
 
     /// <summary>The active sub tool, kept across mode switches.</summary>
     public static ModelingSubTool SubTool { get; set; } = ModelingSubTool.Face;
+
+    /// <summary>The shape Block draws.</summary>
+    public static ModelingPrimitive Primitive { get; set; } = ModelingPrimitive.Box;
 
     private const string MoveHandleId = "modeling_move";
     private const float VertexPickPixels = 10f;
@@ -101,6 +104,7 @@ public sealed class ModelingTool : SceneTool
         ClearSelection();
         _dragging = false;
         _drag = null;
+        _press = null;
         _blockPhase = 0;
         TransformHandles.Forget(MoveHandleId);
     }
@@ -123,7 +127,12 @@ public sealed class ModelingTool : SceneTool
         SyncTarget(toolCtx);
 
         bool modeling = SceneTools.EditMode == SceneEditMode.Modeling;
-        if (!ctx.Ctrl && !ctx.Alt && ctx.GetKeyDown(KeyCode.B)) { Enter(ModelingSubTool.Block); return; }
+        // B bevels the selected edges while Modeling them, and otherwise starts drawing blocks.
+        if (!ctx.Ctrl && !ctx.Alt && ctx.GetKeyDown(KeyCode.B))
+        {
+            if (modeling && SubTool == ModelingSubTool.Edge && _edges.Count > 0 && HasMesh) { Bevel(); ctx.UseKeys(); }
+            else { Enter(ModelingSubTool.Block); return; }
+        }
         if (ctx.GetKeyDown(KeyCode.Tab))
         {
             if (modeling) Exit();
@@ -147,7 +156,8 @@ public sealed class ModelingTool : SceneTool
             else if (ctx.GetKeyDown(KeyCode.Number3)) SetSubTool(ModelingSubTool.Edge);
             else if (ctx.GetKeyDown(KeyCode.Number4)) SetSubTool(ModelingSubTool.Face);
         }
-        if (ctx.Ctrl && ctx.GetKeyDown(KeyCode.A)) SelectAll();
+        if (ctx.Ctrl && !ctx.Alt && ctx.GetKeyDown(KeyCode.A)) SelectAll();
+        if (ctx.Alt && !ctx.Ctrl && ctx.GetKeyDown(KeyCode.Z)) XRay = !XRay;
 
         if (SubTool == ModelingSubTool.Block)
         {
@@ -156,28 +166,62 @@ public sealed class ModelingTool : SceneTool
             return;
         }
 
-        if (_target.IsValid() && _geo != null)
+        if (HasMesh)
         {
-            if (ctx.GetKeyDown(KeyCode.Delete) || ctx.GetKeyDown(KeyCode.Backspace)) DeleteSelected();
+            OperationKeys(ctx);
 
-            bool handleHot = TransformElements(ctx);
-            if (!handleHot && !_dragging) Hover(ctx);
+            bool handleHot = TransformElements(toolCtx);
+            if (!handleHot && !_dragging && _press == null) Hover(ctx);
             else { _hoverVert = null; _hoverEdge = null; _hoverFace = null; }
 
+            // A press on an element selects it when released where it went down, or starts a box select when dragged.
             ControlID element = ControlId("element");
             float distance = ElementDistance(ctx, out float depth);
             ctx.AddControl(element, distance, depth);
-            if (ctx.ViewportHovered && ctx.TryBeginDrag(element)) ClickElement(ctx);
+            if (ctx.ViewportHovered && ctx.TryBeginDrag(element)) BeginPress(ctx, element, onElement: true);
         }
 
-        // Absorbs every other click so it never falls through to object picking, which would leave the mesh.
+        // Absorbs every other click so it never falls through to object picking, which would leave the mesh. A drag
+        // from it is a box select.
         ControlID background = ControlId("background");
         ctx.AddControl(background, HandleContext.BodyDistance);
         // Mouse buttons are global, so a press only counts here while the cursor is on the viewport itself and not on
         // the bar, the tool strip or any other panel.
-        if (ctx.ViewportHovered && ctx.TryBeginDrag(background)) ClickBackground(toolCtx);
+        if (ctx.ViewportHovered && ctx.TryBeginDrag(background)) BeginPress(ctx, background, onElement: false);
 
+        UpdatePress(toolCtx);
         DrawMesh(ctx);
+    }
+
+    private bool HasMesh => _target.IsValid() && _geo != null;
+
+    /// <summary>The single-key operations, each claiming its key so the scene view's own use of it stands down.</summary>
+    private void OperationKeys(HandleContext ctx)
+    {
+        if (ctx.GetKeyDown(KeyCode.Delete) || ctx.GetKeyDown(KeyCode.Backspace)) { DeleteSelected(); ctx.UseKeys(); return; }
+
+        if (ctx.Ctrl && !ctx.Alt)
+        {
+            if (ctx.GetKeyDown(KeyCode.D)) { DuplicateSelected(); ctx.UseKeys(); }
+            else if (ctx.GetKeyDown(KeyCode.Equal) || ctx.GetKeyDown(KeyCode.KeypadAdd)) { GrowSelection(); ctx.UseKeys(); }
+            else if (ctx.GetKeyDown(KeyCode.Minus) || ctx.GetKeyDown(KeyCode.KeypadSubtract)) { ShrinkSelection(); ctx.UseKeys(); }
+            return;
+        }
+
+        if (ctx.GetKeyDown(KeyCode.L)) { SelectLoop(ring: ctx.Alt); ctx.UseKeys(); return; }
+        if (ctx.Alt || ctx.Shift) return;
+
+        // E and I only take the key from the Rotate and other tools while there is something for them to work on.
+        switch (SubTool)
+        {
+            case ModelingSubTool.Face when _faces.Count > 0:
+                if (ctx.GetKeyDown(KeyCode.E)) { Extrude(); ctx.UseKeys(); }
+                else if (ctx.GetKeyDown(KeyCode.I)) { Inset(); ctx.UseKeys(); }
+                break;
+            case ModelingSubTool.Vertex when _verts.Count > 1:
+                if (ctx.GetKeyDown(KeyCode.M)) { MergeVertices(); ctx.UseKeys(); }
+                break;
+        }
     }
 
     /// <summary>Follows the GameObject selection, and rebuilds the geometry when the mesh changed under the tool.</summary>
@@ -216,10 +260,15 @@ public sealed class ModelingTool : SceneTool
     {
         public Float3 Pivot;
         public Quaternion Frame;
+        // The gizmo's own totals: the move is the cursor's, before any snapping.
         public Float3 Position;
         public Quaternion Rotation;
         public Float3 Scale = Float3.One;
         public readonly Dictionary<Vertex, Float3> Start = [];
+        // The corner of the moving points' bounds, in the handle's frame, that a snapped move puts on the grid.
+        public Float3 SnapReference;
+        // The vertex the move snapped onto this frame, to draw it.
+        public Float3? SnappedTo;
     }
 
     private ElementDrag? _drag;
@@ -228,8 +277,9 @@ public sealed class ModelingTool : SceneTool
     /// The scene view's own transform tool (Move, Rotate, Scale or Universal, from the tool strip and its shortcuts),
     /// applied to the selected elements around their centre, in the Local or Global frame the scene bar sets.
     /// </summary>
-    private bool TransformElements(HandleContext ctx)
+    private bool TransformElements(SceneToolContext toolCtx)
     {
+        HandleContext ctx = toolCtx.Handles;
         HashSet<Vertex> verts = SelectedVertices();
         if (verts.Count == 0 || _target.IsNotValid() || _geo == null)
         {
@@ -259,8 +309,19 @@ public sealed class ModelingTool : SceneTool
         Float3 pivot = position;
         Quaternion frame = rotation;
 
+        // Moves snap to the grid here rather than in the gizmo, so the grid is absolute rather than steps from where the
+        // drag began. Turning and scaling snap in the gizmo, each by its own scene bar toggle; Ctrl inverts both.
+        bool gridSnap = SceneTools.GridSnapping(ctx.Ctrl);
+        bool gizmoSnap = SceneTools.Transform switch
+        {
+            TransformTool.Rotate => SceneTools.RotationSnapping(ctx.Ctrl),
+            TransformTool.Scale => gridSnap,
+            TransformTool.Universal => SceneTools.RotationSnapping(ctx.Ctrl),
+            _ => false,
+        };
+        var snap = new HandleSnap(gizmoSnap, SceneTools.MoveSnap, SceneTools.RotateSnap, SceneTools.ScaleSnap);
         bool changed = TransformHandles.TransformHandle(ctx, MoveHandleId, SceneTools.GizmoMode,
-            ref position, ref rotation, ref scale, out bool hot);
+            ref position, ref rotation, ref scale, snap, out bool hot);
 
         if (changed)
         {
@@ -275,11 +336,31 @@ public sealed class ModelingTool : SceneTool
                 }
                 _drag = new ElementDrag { Pivot = pivot, Frame = frame };
                 foreach (Vertex v in verts) _drag.Start[v] = Float4x4.TransformPoint(v.Point, l2w);
+                _drag.SnapReference = BoundsMin(_drag.Start.Values, frame);
             }
 
             _drag.Position = position;
             _drag.Rotation = rotation;
             _drag.Scale = scale;
+
+            // Only a plain move snaps here: a turn or a scale snaps in the gizmo.
+            Float3 moved = position;
+            _drag.SnappedTo = null;
+            bool plainMove = scale == Float3.One && MathF.Abs(Quaternion.Dot(rotation, _drag.Frame)) > 0.999999f;
+            if (plainMove)
+            {
+                Float3 movement = position - _drag.Pivot;
+                if (ctx.GetKey(KeyCode.V) && SnapToVertex(toolCtx, movement) is { } toVertex)
+                {
+                    moved = _drag.Pivot + toVertex.Movement;
+                    _drag.SnappedTo = toVertex.Target;
+                }
+                else if (gridSnap)
+                {
+                    Float3 reference = _drag.Frame * _drag.SnapReference;
+                    moved = _drag.Pivot + SceneViewPanel.SnapToGrid(reference, movement, SceneTools.MoveSnap, _drag.Frame) - reference;
+                }
+            }
 
             // Scale in the handle's frame at the start, then the rotation since, then the move.
             Quaternion inverseFrame = Quaternion.Inverse(_drag.Frame);
@@ -288,14 +369,72 @@ public sealed class ModelingTool : SceneTool
             foreach ((Vertex v, Float3 start) in _drag.Start)
             {
                 Float3 inFrame = inverseFrame * (start - _drag.Pivot) * scale;
-                v.Point = Float4x4.TransformPoint(position + turned * (_drag.Frame * inFrame), w2l);
+                v.Point = Float4x4.TransformPoint(moved + turned * (_drag.Frame * inFrame), w2l);
             }
             Commit();
         }
 
+        if (_drag?.SnappedTo is Float3 snappedTo) Draw.Dot(snappedTo, HoverColor, 11f, HandleCap.Circle);
         if (_drag != null && !ctx.PrimaryHeld) _drag = null;
         _dragging = _drag != null;
         return hot || _dragging;
+    }
+
+    // The lowest corner of the points' bounds along the frame's axes, as a point in the frame.
+    private static Float3 BoundsMin(IEnumerable<Float3> points, Quaternion frame)
+    {
+        Quaternion inverse = Quaternion.Inverse(frame);
+        var min = new Float3(float.MaxValue, float.MaxValue, float.MaxValue);
+        foreach (Float3 p in points)
+        {
+            Float3 q = inverse * p;
+            min = new Float3(MathF.Min(min.X, q.X), MathF.Min(min.Y, q.Y), MathF.Min(min.Z, q.Z));
+        }
+        return min;
+    }
+
+    /// <summary>
+    /// While V is held, a move snaps onto the vertex under the cursor, of this mesh or any other editable mesh: the
+    /// moving point nearest it lands on it exactly. Returns the move that does that and where it lands.
+    /// </summary>
+    private (Float3 Movement, Float3 Target)? SnapToVertex(SceneToolContext toolCtx, Float3 movement)
+    {
+        HandleContext ctx = toolCtx.Handles;
+        if (_drag == null || _target.IsNotValid() || _geo == null) return null;
+
+        Float3? best = null;
+        float bestDistance = float.MaxValue;
+        void Consider(Float3 world)
+        {
+            float d = ctx.DistanceToPoint(world, VertexPickPixels);
+            if (d < bestDistance) { bestDistance = d; best = world; }
+        }
+
+        Float4x4 l2w = _target.Transform.LocalToWorldMatrix;
+        foreach (Vertex v in _geo.Vertices)
+            if (!_drag.Start.ContainsKey(v)) Consider(Float4x4.TransformPoint(v.Point, l2w));
+        foreach (GameObject go in toolCtx.Scene.Objects)
+        {
+            if (!go.EnabledInHierarchy || go.HideFlags.HasFlag(HideFlags.Hide)) continue;
+            EditableMesh? other = go.GetComponent<EditableMesh>();
+            if (other.IsNotValid() || ReferenceEquals(other, _target) || !other.EnabledInHierarchy) continue;
+            Float4x4 o2w = other.Transform.LocalToWorldMatrix;
+            foreach ((Float3 a, Float3 b) in other.PolygonEdges)
+            {
+                Consider(Float4x4.TransformPoint(a, o2w));
+                Consider(Float4x4.TransformPoint(b, o2w));
+            }
+        }
+        if (best is not Float3 target) return null;
+
+        Float3 nearest = default;
+        float nearestDistance = float.MaxValue;
+        foreach (Float3 start in _drag.Start.Values)
+        {
+            float d = Float3.LengthSquared(start + movement - target);
+            if (d < nearestDistance) { nearestDistance = d; nearest = start; }
+        }
+        return (target - nearest, target);
     }
 
     private void Hover(HandleContext ctx)
@@ -313,7 +452,7 @@ public sealed class ModelingTool : SceneTool
                 float best = float.MaxValue;
                 foreach (Vertex v in _geo.Vertices)
                 {
-                    if (!IsVisible(v, l2w, eye)) continue;
+                    if (!XRay && !IsVisible(v, l2w, eye)) continue;
                     float d = ctx.DistanceToPoint(Float4x4.TransformPoint(v.Point, l2w), VertexPickPixels);
                     if (d < best) { best = d; _hoverVert = v; }
                 }
@@ -324,7 +463,7 @@ public sealed class ModelingTool : SceneTool
                 float best = float.MaxValue;
                 foreach (Edge e in _geo.Edges)
                 {
-                    if (!IsVisible(e, l2w, eye)) continue;
+                    if (!XRay && !IsVisible(e, l2w, eye)) continue;
                     float d = ScreenDistanceToSegment(ctx, Float4x4.TransformPoint(e.Vert1.Point, l2w), Float4x4.TransformPoint(e.Vert2.Point, l2w));
                     if (d < EdgePickPixels && d < best) { best = d; _hoverEdge = e; }
                 }
@@ -364,11 +503,11 @@ public sealed class ModelingTool : SceneTool
         return float.MaxValue;
     }
 
-    private void ClickElement(HandleContext ctx)
+    private void ClickElement(HandleContext ctx, Vertex? vert, Edge? edge, Face? face)
     {
-        if (_hoverVert != null) Pick(_verts, _hoverVert, ctx);
-        else if (_hoverEdge != null) Pick(_edges, _hoverEdge, ctx);
-        else if (_hoverFace != null) Pick(_faces, _hoverFace, ctx);
+        if (vert != null && _geo!.Contains(vert)) Pick(_verts, vert, ctx);
+        else if (edge != null && _geo!.Contains(edge)) Pick(_edges, edge, ctx);
+        else if (face != null && _geo!.Contains(face)) Pick(_faces, face, ctx);
     }
 
     // Shift adds, Ctrl toggles, a plain click replaces.
@@ -403,31 +542,34 @@ public sealed class ModelingTool : SceneTool
         HandleContext ctx = toolCtx.Handles;
         ControlID control = ControlId("block");
         ctx.AddControl(control, HandleContext.BodyDistance);
-        float step = SceneTools.MoveSnap;
+        // The scene bar's grid snap, inverted while Ctrl is held. Unsnapped, the smallest block is a hundredth of a unit.
+        bool snap = SceneTools.GridSnapping(ctx.Ctrl);
+        float step = snap ? SceneTools.MoveSnap : 0.01f;
 
         switch (_blockPhase)
         {
             case 0:
                 if (ctx.ViewportHovered && ctx.TryBeginDrag(control) && GroundPoint(toolCtx, ctx.MouseRay, out Float3 start))
                 {
-                    _blockStart = _blockEnd = Snap(start, step);
+                    _blockStart = _blockEnd = snap ? Snap(start, step) : start;
                     _blockPhase = 1;
                 }
                 break;
 
             case 1:
-                if (RayPlane(ctx.MouseRay, _blockStart.Y, out Float3 end)) _blockEnd = Snap(end, step);
+                if (RayPlane(ctx.MouseRay, _blockStart.Y, out Float3 end)) _blockEnd = snap ? Snap(end, step) : end;
                 if (!ctx.PrimaryHeld)
                 {
                     ctx.TryEndDrag(control);
                     bool hasArea = MathF.Abs(_blockEnd.X - _blockStart.X) >= step * 0.5f && MathF.Abs(_blockEnd.Z - _blockStart.Z) >= step * 0.5f;
                     _blockPhase = hasArea ? 2 : 0;
-                    _blockHeight = step;
+                    _blockHeight = snap ? step : SceneTools.MoveSnap;
                 }
                 break;
 
             case 2:
-                _blockHeight = MathF.Max(step, MathF.Round(HeightUnderCursor(ctx) / step) * step);
+                float height = HeightUnderCursor(ctx);
+                _blockHeight = MathF.Max(step, snap ? MathF.Round(height / step) * step : height);
                 if (ctx.ViewportHovered && ctx.TryBeginDrag(control))
                 {
                     CreateBlock();
@@ -463,21 +605,32 @@ public sealed class ModelingTool : SceneTool
         var size = new Float3(max.X - min.X, _blockHeight, max.Z - min.Z);
         var basePoint = new Float3((min.X + max.X) * 0.5f, min.Y, (min.Z + max.Z) * 0.5f);
 
-        GameObject go = HierarchyPanel.CreateGameObject("Block", null, select: true, beginRename: false);
+        ModelingPrimitive kind = Primitive;
+        // Steps about a fifth of a unit high, and an arch a quarter as thick as it is wide or high.
+        var settings = new PrimitiveSettings(
+            Steps: Math.Clamp((int)MathF.Round(size.Y / 0.2f), 1, 64),
+            Sides: kind == ModelingPrimitive.Arch ? 8 : 12,
+            Thickness: MathF.Max(0.01f, MathF.Min(size.X * 0.5f, size.Y) * 0.25f));
+
+        GameObject go = HierarchyPanel.CreateGameObject(kind == ModelingPrimitive.Box ? "Block" : kind.ToString(), null, select: true, beginRename: false);
         go.Transform.Position = basePoint;
         go.IsStatic = true; // level geometry: bakes into lightmaps and navigation
         EditableMesh mesh = go.AddComponent<EditableMesh>();
-        mesh.SetGeometry(GeometryGenerator.Box(size, new Float3(0, size.Y * 0.5f, 0)));
+        mesh.SetGeometry(ModelingPrimitives.Build(kind, size, settings));
         go.AddComponent<MeshCollider>(); // builds from the editable mesh and follows its edits
 
         _lastBlock = mesh;
+        _lastBlockKind = kind;
+        _lastBlockSettings = settings;
         _lastBlockSize = size;
         _lastBlockFlipped = false;
         _lastBlockVersion = mesh.Version;
     }
 
-    // The block placed last and its size, which the bar can still change until the block is edited any other way.
+    // The block placed last, its shape and size, which the bar can still change until the block is edited any other way.
     private EditableMesh? _lastBlock;
+    private ModelingPrimitive _lastBlockKind;
+    private PrimitiveSettings _lastBlockSettings = new();
     private Float3 _lastBlockSize;
     private bool _lastBlockFlipped;
     private int _lastBlockVersion;
@@ -488,12 +641,42 @@ public sealed class ModelingTool : SceneTool
     // on the point it was drawn from.
     private void DrawBlockSize(Paper paper, string id)
     {
-        BarHint(paper, $"{id}_l", "Block size");
+        BarHint(paper, $"{id}_l", _lastBlockKind == ModelingPrimitive.Box ? "Block size" : $"{_lastBlockKind} size");
         SizeField(paper, $"{id}_w", "W", EditorTheme.Red400, _lastBlockSize.X, v => ResizeLastBlock(new Float3(v, _lastBlockSize.Y, _lastBlockSize.Z)));
         SizeField(paper, $"{id}_h", "H", EditorTheme.Green400, _lastBlockSize.Y, v => ResizeLastBlock(new Float3(_lastBlockSize.X, v, _lastBlockSize.Z)));
         SizeField(paper, $"{id}_d", "D", EditorTheme.Blue400, _lastBlockSize.Z, v => ResizeLastBlock(new Float3(_lastBlockSize.X, _lastBlockSize.Y, v)));
-        BarButton(paper, $"{id}_flip", EditorIcons.ArrowsRotate_I, "Flip", "Turn the block inside out, into a room you can stand in",
-            _lastBlockFlipped, () => RebuildLastBlock(_lastBlockSize, !_lastBlockFlipped));
+
+        PrimitiveSettings settings = _lastBlockSettings;
+        switch (_lastBlockKind)
+        {
+            case ModelingPrimitive.Stairs:
+                CountField(paper, $"{id}_steps", "Steps", settings.Steps, 1, 64, v => RebuildLastBlock(_lastBlockSize, _lastBlockFlipped, settings with { Steps = v }));
+                break;
+            case ModelingPrimitive.Cylinder:
+                CountField(paper, $"{id}_sides", "Sides", settings.Sides, 3, 64, v => RebuildLastBlock(_lastBlockSize, _lastBlockFlipped, settings with { Sides = v }));
+                break;
+            case ModelingPrimitive.Arch:
+                CountField(paper, $"{id}_sides", "Sides", settings.Sides, 1, 64, v => RebuildLastBlock(_lastBlockSize, _lastBlockFlipped, settings with { Sides = v }));
+                BarHint(paper, $"{id}_tl", "Thickness");
+                using (paper.Row($"{id}_t").Width(64).Height(BarItem - 4).Margin(2, 2, UnitValue.StretchOne, UnitValue.StretchOne).Enter())
+                    Origami.NumericField<float>(paper, $"{id}_tv", settings.Thickness,
+                        v => RebuildLastBlock(_lastBlockSize, _lastBlockFlipped, settings with { Thickness = MathF.Max(0.001f, v) }))
+                        .Min(0.001f).Format("0.###").Show();
+                break;
+        }
+        if (ModelingPrimitives.Turns(_lastBlockKind))
+            BarIcon(paper, $"{id}_turn", EditorIcons.RotateRight_I, "Turn a quarter around, keeping the footprint", false, true,
+                () => RebuildLastBlock(new Float3(_lastBlockSize.Z, _lastBlockSize.Y, _lastBlockSize.X), _lastBlockFlipped, settings with { Turns = (settings.Turns + 1) % 4 }));
+        BarButton(paper, $"{id}_flip", EditorIcons.ArrowsRotate_I, "Flip", "Turn the shape inside out, into a room you can stand in",
+            _lastBlockFlipped, () => RebuildLastBlock(_lastBlockSize, !_lastBlockFlipped, settings));
+    }
+
+    private static void CountField(Paper paper, string id, string label, int value, int min, int max, Action<int> set)
+    {
+        BarHint(paper, $"{id}_l", label);
+        using (paper.Row(id).Width(52).Height(BarItem - 4).Margin(2, 2, UnitValue.StretchOne, UnitValue.StretchOne).Enter())
+            Origami.NumericField<float>(paper, $"{id}_v", value, v => set(Math.Clamp((int)MathF.Round(v), min, max)))
+                .Min(min).Max(max).Format("0").Show();
     }
 
     private static void SizeField(Paper paper, string id, string label, System.Drawing.Color color, float value, Action<float> set)
@@ -502,18 +685,19 @@ public sealed class ModelingTool : SceneTool
             Origami.NumericField<float>(paper, $"{id}_v", value, set).Prefix(label, color).Min(0.01f).Format("0.###").Show();
     }
 
-    private void ResizeLastBlock(Float3 size) => RebuildLastBlock(size, _lastBlockFlipped);
+    private void ResizeLastBlock(Float3 size) => RebuildLastBlock(size, _lastBlockFlipped, _lastBlockSettings);
 
-    private void RebuildLastBlock(Float3 size, bool flipped)
+    private void RebuildLastBlock(Float3 size, bool flipped, PrimitiveSettings settings)
     {
         if (!LastBlockEditable()) return;
         EditableMesh mesh = _lastBlock!;
-        Undo.RecordObject(mesh, flipped != _lastBlockFlipped ? "Flip Block" : "Resize Block");
-        GeometryData box = GeometryGenerator.Box(size, new Float3(0, size.Y * 0.5f, 0));
-        if (flipped) GeometryOperators.FlipFaces(box, box.Faces.ToList());
-        mesh.SetGeometry(box);
+        Undo.RecordObject(mesh, flipped != _lastBlockFlipped ? "Flip Block" : settings != _lastBlockSettings ? "Change Block" : "Resize Block");
+        GeometryData shape = ModelingPrimitives.Build(_lastBlockKind, size, settings);
+        if (flipped) GeometryOperators.FlipFaces(shape, shape.Faces.ToList());
+        mesh.SetGeometry(shape);
         _lastBlockSize = size;
         _lastBlockFlipped = flipped;
+        _lastBlockSettings = settings;
         _lastBlockVersion = mesh.Version;
     }
 
@@ -750,6 +934,39 @@ public sealed class ModelingTool : SceneTool
         }
     }
 
+    private void Extrude()
+    {
+        if (_faces.Count > 0) RunAdjustable("Extrude Faces", ExtrudeApply, new AdjustParam("Distance", SceneTools.MoveSnap, -1000f, 1000f));
+    }
+
+    private void Inset()
+    {
+        if (_faces.Count > 0) RunAdjustable("Inset Faces", InsetApply, new AdjustParam("Inset", 0.25f, 0.01f, 0.99f));
+    }
+
+    private void Bevel()
+    {
+        if (_edges.Count > 0)
+            RunAdjustable("Bevel Edges", BevelApply,
+                new AdjustParam("Width", SceneTools.MoveSnap * 0.25f, 0.001f, 1000f),
+                new AdjustParam("Segments", 1, 1, 16, whole: true),
+                new AdjustParam("Profile", 0.5f, 0f, 1f));
+    }
+
+    private void MergeVertices()
+    {
+        if (_verts.Count < 2) return;
+        Float3 c = Float3.Zero;
+        foreach (Vertex v in _verts) c += v.Point;
+        c /= _verts.Count;
+        RunOp("Merge Vertices", g =>
+        {
+            GeometryOperators.MergeVertices(g, _verts.ToList(), c);
+            _verts.Clear();
+            if (g.Vertices.OrderBy(v => Float3.LengthSquared(v.Point - c)).FirstOrDefault() is Vertex merged) _verts.Add(merged);
+        });
+    }
+
     private void DeleteSelected()
     {
         switch (SubTool)
@@ -875,32 +1092,19 @@ public sealed class ModelingTool : SceneTool
     internal List<(string Glyph, string Label, string Tooltip, bool Enabled, Action Run)> Actions()
     {
         bool any = SelectionCount > 0;
-        float step = SceneTools.MoveSnap;
         var actions = new List<(string Glyph, string Label, string Tooltip, bool Enabled, Action Run)>();
         switch (SubTool)
         {
             case ModelingSubTool.Vertex:
-                actions.Add((EditorIcons.Compress, "Merge", "Merge the selected vertices at their centre", _verts.Count > 1, () =>
-                {
-                    Float3 c = Float3.Zero;
-                    foreach (Vertex v in _verts) c += v.Point;
-                    c /= _verts.Count;
-                    RunOp("Merge Vertices", g =>
-                    {
-                        GeometryOperators.MergeVertices(g, _verts.ToList(), c);
-                        _verts.Clear();
-                        if (g.Vertices.OrderBy(v => Float3.LengthSquared(v.Point - c)).FirstOrDefault() is Vertex merged) _verts.Add(merged);
-                    });
-                }));
+                actions.Add((EditorIcons.Compress, "Merge", "Merge the selected vertices at their centre (M)", _verts.Count > 1, MergeVertices));
+                actions.Add((EditorIcons.Repeat, "Loop", "Select the edge loops through neighbouring selected vertices (L, Alt+L for rings)", _verts.Count > 1, () => SelectLoop(ring: false)));
                 actions.Add((EditorIcons.Trash, "Delete", "Delete the selected vertices and their faces (Del)", any, DeleteSelected));
                 break;
 
             case ModelingSubTool.Edge:
-                actions.Add((EditorIcons.BezierCurve, "Bevel", "Bevel the selected edges; adjust the width in the bar after", any,
-                    () => RunAdjustable("Bevel Edges", BevelApply,
-                        new AdjustParam("Width", step * 0.25f, 0.001f, 1000f),
-                        new AdjustParam("Segments", 1, 1, 16, whole: true),
-                        new AdjustParam("Profile", 0.5f, 0f, 1f))));
+                actions.Add((EditorIcons.BezierCurve, "Bevel", "Bevel the selected edges; adjust the width in the bar after (B)", any, Bevel));
+                actions.Add((EditorIcons.Repeat, "Loop", "Select the edge loop through each selected edge (L)", any, () => SelectLoop(ring: false)));
+                actions.Add((EditorIcons.GripLines, "Ring", "Select the edge ring across each selected edge (Alt+L)", any, () => SelectLoop(ring: true)));
                 actions.Add((EditorIcons.Scissors, "Split", "Add a vertex in the middle of each selected edge", any, () =>
                     RunOp("Split Edges", g =>
                     {
@@ -913,10 +1117,11 @@ public sealed class ModelingTool : SceneTool
                 break;
 
             case ModelingSubTool.Face:
-                actions.Add((EditorIcons.ArrowUpFromBracket, "Extrude", "Pull the selected faces out; adjust the distance in the bar after, or Shift-drag the handle", any,
-                    () => RunAdjustable("Extrude Faces", ExtrudeApply, new AdjustParam("Distance", step, -1000f, 1000f))));
-                actions.Add((EditorIcons.Compress, "Inset", "Make a smaller face inside each selected face; adjust the amount in the bar after, or scale it with the Scale tool", any,
-                    () => RunAdjustable("Inset Faces", InsetApply, new AdjustParam("Inset", 0.25f, 0.01f, 0.99f))));
+                actions.Add((EditorIcons.ArrowUpFromBracket, "Extrude", "Pull the selected faces out; adjust the distance in the bar after, or Shift-drag the handle (E)", any, Extrude));
+                actions.Add((EditorIcons.Compress, "Inset", "Make a smaller face inside each selected face; adjust the amount in the bar after, or scale it with the Scale tool (I)", any, Inset));
+                actions.Add((EditorIcons.Copy, "Duplicate", "Copy the selected faces in place and select the copy, to move it away (Ctrl+D)", any, DuplicateSelected));
+                actions.Add((EditorIcons.Repeat, "Loop", "Select the loop of faces running through two neighbouring selected faces (L)", _faces.Count > 1, () => SelectLoop(ring: false)));
+                actions.Add((EditorIcons.Swatchbook, "Same Material", "Select every face on the same material as a selected face", any, SelectSameMaterial));
                 actions.Add((EditorIcons.ArrowsRotate, "Flip", "Turn the selected faces the other way. Select all (Ctrl+A) and flip to make a room", any, FlipFaces));
                 actions.Add((EditorIcons.Clone, "Two-Sided", "Add a back face behind each selected face so it shows from both sides", any, MakeDoubleSided));
                 actions.Add((EditorIcons.Trash, "Delete", "Delete the selected faces (Del)", any, DeleteSelected));
@@ -965,6 +1170,14 @@ public sealed class ModelingTool : SceneTool
         BarIcon(paper, $"{id}_vert", EditorIcons.CircleDot_I, "Vertex (2)", SubTool == ModelingSubTool.Vertex, hasMesh, () => SetSubTool(ModelingSubTool.Vertex));
         BarIcon(paper, $"{id}_edge", EditorIcons.Slash_I, "Edge (3)", SubTool == ModelingSubTool.Edge, hasMesh, () => SetSubTool(ModelingSubTool.Edge));
         BarIcon(paper, $"{id}_face", EditorIcons.Square_I, "Face (4)", SubTool == ModelingSubTool.Face, hasMesh, () => SetSubTool(ModelingSubTool.Face));
+        BarIcon(paper, $"{id}_xray", EditorIcons.Glasses_I, "X-ray: pick and box select hidden and back elements too (Alt+Z)", XRay, true, () => XRay = !XRay);
+
+        if (SubTool == ModelingSubTool.Block)
+        {
+            BarDivider(paper, $"{id}_dp");
+            foreach ((ModelingPrimitive kind, OrigamiUI.IOrigamiIcon icon) in PrimitiveIcons)
+                BarIcon(paper, $"{id}_p{kind}", icon, $"Draw a {kind.ToString().ToLowerInvariant()}", Primitive == kind, true, () => Primitive = kind);
+        }
 
         if (SubTool == ModelingSubTool.Block && LastBlockEditable())
         {
@@ -981,14 +1194,26 @@ public sealed class ModelingTool : SceneTool
             return;
         }
 
-        var actions = Actions().Where(a => a.Enabled).ToList();
         BarDivider(paper, $"{id}_d2");
-        if (actions.Count == 0)
-            BarHint(paper, $"{id}_hint", $"Click {(SubTool == ModelingSubTool.Vertex ? "vertices" : SubTool == ModelingSubTool.Edge ? "edges" : "faces")} to select them. Shift adds, Ctrl toggles");
-        for (int i = 0; i < actions.Count; i++)
+        if (SubTool == ModelingSubTool.Face)
+            BarIcon(paper, $"{id}_texmode", EditorIcons.Image_I, "Texture: shift, scale, turn, fit and justify the material on the selected faces",
+                _textureMode, true, () => _textureMode = !_textureMode);
+
+        if (SubTool == ModelingSubTool.Face && _textureMode)
         {
-            var a = actions[i];
-            BarButton(paper, $"{id}_a{i}", a.Glyph, a.Label, a.Tooltip, false, a.Run);
+            if (_faces.Count == 0) BarHint(paper, $"{id}_hint", "Select faces to line up their texture");
+            else DrawTexturePanel(paper, $"{id}_tex");
+        }
+        else
+        {
+            var actions = Actions().Where(a => a.Enabled).ToList();
+            if (actions.Count == 0)
+                BarHint(paper, $"{id}_hint", $"Click {(SubTool == ModelingSubTool.Vertex ? "vertices" : SubTool == ModelingSubTool.Edge ? "edges" : "faces")} to select them, or drag a box. Shift adds, Ctrl toggles");
+            for (int i = 0; i < actions.Count; i++)
+            {
+                var a = actions[i];
+                BarButton(paper, $"{id}_a{i}", a.Glyph, a.Label, a.Tooltip, false, a.Run);
+            }
         }
         if (AdjustValid())
         {
@@ -1009,6 +1234,15 @@ public sealed class ModelingTool : SceneTool
     }
 
     private const float BarItem = 28f;
+
+    private static readonly (ModelingPrimitive Kind, OrigamiUI.IOrigamiIcon Icon)[] PrimitiveIcons =
+    [
+        (ModelingPrimitive.Box, EditorIcons.Cube_I),
+        (ModelingPrimitive.Stairs, EditorIcons.Stairs_I),
+        (ModelingPrimitive.Ramp, EditorIcons.ChartArea_I),
+        (ModelingPrimitive.Cylinder, EditorIcons.Database_I),
+        (ModelingPrimitive.Arch, EditorIcons.Archway_I),
+    ];
 
     private static void BarButton(Paper paper, string id, OrigamiUI.IOrigamiIcon icon, string label, string tooltip, bool active, Action onClick)
     {
@@ -1113,7 +1347,7 @@ public sealed class ModelingTool : SceneTool
         {
             Color32 color = _edges.Contains(e) ? SelectedColor
                 : e == _hoverEdge ? HoverColor
-                : IsVisible(e, l2w, eye) ? WireColor : HiddenWireColor;
+                : XRay || IsVisible(e, l2w, eye) ? WireColor : HiddenWireColor;
             float thickness = color.Equals(WireColor) || color.Equals(HiddenWireColor) ? 1.5f : 3f;
             Draw.Line(Float4x4.TransformPoint(e.Vert1.Point, l2w), Float4x4.TransformPoint(e.Vert2.Point, l2w), color, thickness);
         }
@@ -1122,7 +1356,7 @@ public sealed class ModelingTool : SceneTool
         foreach (Vertex v in _geo.Vertices)
         {
             bool selected = _verts.Contains(v);
-            if (!selected && v != _hoverVert && !IsVisible(v, l2w, eye)) continue;
+            if (!selected && v != _hoverVert && !XRay && !IsVisible(v, l2w, eye)) continue;
             Color32 color = selected ? SelectedColor : v == _hoverVert ? HoverColor : WireColor;
             Draw.Dot(Float4x4.TransformPoint(v.Point, l2w), color, selected || v == _hoverVert ? 9f : 6f);
         }
@@ -1185,8 +1419,8 @@ public sealed class ModelingTool : SceneTool
             List<Vertex> verts = f.NeighborVertices();
             if (verts.Count < 3) continue;
             // Back faces are skipped: a double-sided face picks the side you see, and the walls of a flipped room
-            // pick through the near side from outside.
-            if (Float3.Dot(Float4x4.TransformNormal(f.Normal(), l2w), worldRay.Direction) >= 0f) continue;
+            // pick through the near side from outside. X-ray picks them too, to reach a face from behind.
+            if (!XRay && Float3.Dot(Float4x4.TransformNormal(f.Normal(), l2w), worldRay.Direction) >= 0f) continue;
             Float3 a = Float4x4.TransformPoint(verts[0].Point, l2w);
             for (int i = 1; i + 1 < verts.Count; i++)
             {

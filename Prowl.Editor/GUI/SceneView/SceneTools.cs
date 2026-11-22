@@ -56,7 +56,8 @@ public static class SceneTools
     private static TransformTool _current = TransformTool.Translate;
     private static PivotMode _pivot = PivotMode.Center;
     private static PivotOrientation _orientation = PivotOrientation.Local;
-    private static bool _gridSnap;
+    // On until the user turns it off: blocking out levels lives on the grid.
+    private static bool _gridSnap = true;
     private static bool _rotationSnap;
 
     /// <summary>Fires whenever any tool state changes, so panels can rebuild cached gizmo state.</summary>
@@ -95,6 +96,12 @@ public static class SceneTools
         get => _gridSnap;
         set => Set(ref _gridSnap, value);
     }
+
+    /// <summary>Whether a move snaps to the grid right now: <see cref="GridSnap"/>, inverted while Ctrl is held.</summary>
+    public static bool GridSnapping(bool ctrl) => _gridSnap != ctrl;
+
+    /// <summary>Whether a rotation snaps right now: <see cref="RotationSnap"/>, inverted while Ctrl is held.</summary>
+    public static bool RotationSnapping(bool ctrl) => _rotationSnap != ctrl;
 
     /// <summary>Sticky snapping of rotation to <see cref="RotateSnap"/>. Holding Ctrl inverts it.</summary>
     public static bool RotationSnap

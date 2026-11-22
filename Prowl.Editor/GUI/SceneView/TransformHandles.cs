@@ -52,6 +52,15 @@ public static class TransformHandles
                                        ref Float3 position, ref Quaternion rotation, ref Float3 scale, out bool hot)
         => DoTransform(ctx, id, mode, ref position, ref rotation, ref scale, out hot);
 
+    /// <summary>
+    /// <see cref="TransformHandle(HandleContext, string, Gizmo.TransformGizmoMode, ref Float3, ref Quaternion, ref Float3, out bool)"/>
+    /// with the gizmo's own snapping set by the caller instead of following Ctrl. A caller that snaps moves to the
+    /// grid itself leaves <see cref="HandleSnap.Snapping"/> off for moves and reads the raw drag from <paramref name="position"/>.
+    /// </summary>
+    public static bool TransformHandle(HandleContext ctx, string id, Gizmo.TransformGizmoMode mode,
+                                       ref Float3 position, ref Quaternion rotation, ref Float3 scale, HandleSnap snap, out bool hot)
+        => DoTransform(ctx, id, mode, ref position, ref rotation, ref scale, out hot, snap);
+
     /// <summary>Draw every handle driven this frame, then clear the pending set. Call from <c>DrawOverlay</c>.</summary>
     public static void Draw(Canvas canvas)
     {
@@ -67,7 +76,7 @@ public static class TransformHandles
     }
 
     private static bool DoTransform(HandleContext ctx, string id, Gizmo.TransformGizmoMode mode,
-                                    ref Float3 position, ref Quaternion rotation, ref Float3 scale, out bool hot)
+                                    ref Float3 position, ref Quaternion rotation, ref Float3 scale, out bool hot, HandleSnap? snap = null)
     {
         hot = false;
         Camera camera = ctx.Camera;
@@ -93,7 +102,14 @@ public static class TransformHandles
 
         ControlID control = ctx.GetControlID(id);
 
-        g.Snapping = ctx.Ctrl;
+        if (snap is { } s)
+        {
+            g.Snapping = s.Snapping;
+            g.SnapDistance = s.Distance;
+            g.SnapAngle = s.Angle;
+            g.SnapScale = s.Scale;
+        }
+        else g.Snapping = ctx.Ctrl;
         g.IsShiftDown = ctx.Shift;
         // The grab decision comes from arbitration, never from the gizmo's own hover.
         g.IsMouseDown = ctx.TryBeginDrag(control);
@@ -122,3 +138,6 @@ public static class TransformHandles
         return changed;
     }
 }
+
+/// <summary>The gizmo's own snapping for one handle: whether it snaps, and its steps for moving, turning and scaling.</summary>
+public readonly record struct HandleSnap(bool Snapping, float Distance, float Angle, float Scale);

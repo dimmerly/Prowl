@@ -109,6 +109,9 @@ public sealed class HandleContext
     /// <summary>A tool acted on a key this frame, so the viewport's own shortcuts stand down.</summary>
     public bool KeysUsed { get; private set; }
 
+    /// <summary>Marks this frame's key as used by a tool that read it some other way, such as with a modifier held.</summary>
+    public void UseKeys() => KeysUsed = true;
+
     /// <summary>A shortcut for this view, marked as used when it fires.</summary>
     public bool IsPressed(string shortcut)
     {
