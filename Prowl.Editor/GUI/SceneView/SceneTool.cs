@@ -81,8 +81,8 @@ public abstract class SceneTool
     /// <see cref="OverridesViewManipulator"/> is set.</summary>
     public virtual void OnViewManipulatorGUI(SceneToolContext ctx, Paper paper, string id, Rect rect) { }
 
-    /// <summary>Contents of the tool's floating settings panel. Drawing nothing hides the panel.</summary>
-    public virtual void OnSettingsGUI(SceneToolContext ctx, Paper paper, string id) { }
+    /// <summary>Floating UI inside the viewport. Elements should be self directed and place themselves.</summary>
+    public virtual void OnSceneOverlayGUI(SceneToolContext ctx, Paper paper, string id, Float2 viewportSize) { }
 
     /// <summary>Whether the tool shows a bar along the bottom of the viewport this frame.</summary>
     public virtual bool ShowsViewportBar(SceneToolContext ctx) => false;
