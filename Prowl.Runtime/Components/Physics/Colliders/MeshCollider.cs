@@ -158,11 +158,23 @@ public sealed class MeshCollider : Collider
         return resolved;
     }
 
+    // The editable mesh collision comes from, when nothing else supplies the mesh.
+    private EditableMesh? FollowedEditableMesh()
+    {
+        if (mesh.IsValid() || GetComponent<MeshRenderer>().IsValid()) return null;
+        EditableMesh? em = GetComponent<EditableMesh>();
+        return em.IsValid() ? em : null;
+    }
+
     private Mesh? SourceMesh()
     {
         if (mesh.IsValid()) return mesh;
         MeshRenderer? mr = GetComponent<MeshRenderer>();
-        return mr.IsValid() ? mr.Mesh : null;
+        if (mr.IsValid()) return mr.Mesh;
+        // An editable mesh's render mesh is built at runtime and changes with every edit, so it is looked up each time
+        // rather than stored in the serialized field. The editable mesh rebuilds this collider when its polygons change.
+        EditableMesh? em = GetComponent<EditableMesh>();
+        return em.IsValid() ? em.BuiltMesh : null;
     }
 
     // A reimported mesh is the same object with new triangles, so the shapes are built again.
@@ -202,8 +214,8 @@ public sealed class MeshCollider : Collider
             MeshRenderer? mr = GetComponent<MeshRenderer>();
             if (mr.IsValid())
                 mesh = mr.Mesh;
-            else
-                Debug.LogWarning("MeshCollider could not find a MeshRenderer to get the mesh from.");
+            else if (GetComponent<EditableMesh>().IsNotValid())
+                Debug.LogWarning("MeshCollider could not find a MeshRenderer or EditableMesh to get the mesh from.");
         }
 
         AssetDatabase.Reloaded += OnAssetReloaded;
@@ -212,12 +224,7 @@ public sealed class MeshCollider : Collider
 
     public override void DrawGizmosSelected()
     {
-        Mesh? m = mesh;
-        if (m.IsNotValid())
-        {
-            MeshRenderer? mr = GetComponent<MeshRenderer>();
-            if (mr.IsValid()) m = mr.Mesh;
-        }
+        Mesh? m = SourceMesh();
         if (m.IsNotValid()) return;
 
         Float4x4 matrix = Float4x4.CreateTRS(Transform.Position, Transform.Rotation * Quaternion.FromEuler(Rotation), Transform.LossyScale);
@@ -226,6 +233,12 @@ public sealed class MeshCollider : Collider
         if (convex)
         {
             DrawConvexHullGizmo(m);
+        }
+        else if (FollowedEditableMesh() is { } editable)
+        {
+            // Polygon edges rather than triangles: the same collision surface, without a diagonal across every quad.
+            foreach ((Float3 a, Float3 b) in editable.PolygonEdges)
+                Debug.DrawLine(a + Center, b + Center, Color.Green);
         }
         else
         {

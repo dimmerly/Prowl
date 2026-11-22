@@ -84,6 +84,15 @@ public abstract class SceneTool
     /// <summary>Contents of the tool's floating settings panel. Drawing nothing hides the panel.</summary>
     public virtual void OnSettingsGUI(SceneToolContext ctx, Paper paper, string id) { }
 
+    /// <summary>Whether the tool shows a bar along the bottom of the viewport this frame.</summary>
+    public virtual bool ShowsViewportBar(SceneToolContext ctx) => false;
+
+    /// <summary>
+    /// Contents of the tool's viewport bar: a row centred along the bottom of the viewport, styled like the tool
+    /// strip. For actions on what the tool is editing. Only called while <see cref="ShowsViewportBar"/> is true.
+    /// </summary>
+    public virtual void OnViewportBarGUI(SceneToolContext ctx, Paper paper, string id) { }
+
     /// <summary>
     /// Handle an asset dropped into the viewport while this tool is active. Return true to consume
     /// the drop; returning false falls through to the registered <see cref="ISceneDropHandler"/>.

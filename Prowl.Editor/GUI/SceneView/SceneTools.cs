@@ -17,6 +17,13 @@ public enum TransformTool
     Universal,
 }
 
+/// <summary>What clicking in the scene view edits: whole GameObjects, or the polygons of an <see cref="Prowl.Runtime.EditableMesh"/>.</summary>
+public enum SceneEditMode
+{
+    Object,
+    Modeling,
+}
+
 /// <summary>Where a multi-object manipulation pivots.</summary>
 public enum PivotMode
 {
@@ -52,6 +59,15 @@ public static class SceneTools
 
     /// <summary>Fires whenever any tool state changes, so panels can rebuild cached gizmo state.</summary>
     public static event Action? Changed;
+
+    private static SceneEditMode _editMode = SceneEditMode.Object;
+
+    /// <summary>The scene view's edit mode. An inspector switches it, as the EditableMesh inspector enters Modeling.</summary>
+    public static SceneEditMode EditMode
+    {
+        get => _editMode;
+        set => Set(ref _editMode, value);
+    }
 
     public static TransformTool Transform
     {

@@ -165,7 +165,8 @@ public sealed class SceneDrawList
             switch (cmd.Kind)
             {
                 case Kind.Line:
-                    _draw.LineSegment(cmd.A, cmd.B, stroke);
+                    if (ClipSegment(cmd.A, cmd.B, out Float3 a, out Float3 b))
+                        _draw.LineSegment(a, b, stroke);
                     break;
 
                 case Kind.Arrow:
@@ -207,9 +208,71 @@ public sealed class SceneDrawList
     private void DrawPoly(in Command cmd, in Stroke3D stroke, bool filled)
     {
         List<Float3> span = _points.GetRange(cmd.PointStart, cmd.PointCount);
-        if (filled) _draw.Polygon(span, stroke);
-        else if (cmd.Closed) _draw.Polyline(Close(span), stroke);
-        else _draw.Polyline(span, stroke);
+        if (filled)
+        {
+            List<Float3> clipped = ClipPolygon(span);
+            if (clipped.Count >= 3) _draw.Polygon(clipped, stroke);
+            return;
+        }
+
+        // Outlines go segment by segment, so a stretch behind the camera is cut rather than joining up wrongly.
+        List<Float3> line = cmd.Closed ? Close(span) : span;
+        if (!NeedsClipping(line))
+        {
+            _draw.Polyline(line, stroke);
+            return;
+        }
+        for (int i = 0; i + 1 < line.Count; i++)
+            if (ClipSegment(line[i], line[i + 1], out Float3 a, out Float3 b))
+                _draw.LineSegment(a, b, stroke);
+    }
+
+    // ================================================================
+    //  Near-plane clipping
+    // ================================================================
+    //  The gizmo drawer projects each point on its own and drops any behind the camera, which turns a face
+    //  reaching past the camera into a wrong triangle and makes such an edge vanish. Lines and polygons are cut
+    //  at a plane just in front of the camera instead, in world space, before they are projected. Orthographic
+    //  views have no "behind", so nothing is cut there.
+
+    private const float NearDepth = 0.01f;
+
+    private bool ClipsDepth => !_ctx.Camera.IsOrthographic;
+
+    private bool NeedsClipping(List<Float3> points)
+    {
+        if (!ClipsDepth) return false;
+        foreach (Float3 p in points)
+            if (_ctx.DepthOf(p) < NearDepth) return true;
+        return false;
+    }
+
+    private bool ClipSegment(Float3 a, Float3 b, out Float3 outA, out Float3 outB)
+    {
+        outA = a;
+        outB = b;
+        if (!ClipsDepth) return true;
+        float da = _ctx.DepthOf(a) - NearDepth, db = _ctx.DepthOf(b) - NearDepth;
+        if (da < 0 && db < 0) return false;
+        if (da >= 0 && db >= 0) return true;
+        Float3 cut = a + (b - a) * (da / (da - db));
+        if (da < 0) outA = cut; else outB = cut;
+        return true;
+    }
+
+    // Sutherland-Hodgman against the near plane: the part of the polygon in front of the camera.
+    private List<Float3> ClipPolygon(List<Float3> points)
+    {
+        if (!NeedsClipping(points)) return points;
+        var result = new List<Float3>(points.Count + 2);
+        for (int i = 0; i < points.Count; i++)
+        {
+            Float3 a = points[i], b = points[(i + 1) % points.Count];
+            float da = _ctx.DepthOf(a) - NearDepth, db = _ctx.DepthOf(b) - NearDepth;
+            if (da >= 0) result.Add(a);
+            if ((da >= 0) != (db >= 0)) result.Add(a + (b - a) * (da / (da - db)));
+        }
+        return result;
     }
 
     private static List<Float3> Close(List<Float3> pts)

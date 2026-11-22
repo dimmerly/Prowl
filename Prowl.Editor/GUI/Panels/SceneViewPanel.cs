@@ -389,6 +389,39 @@ public class SceneViewPanel : DockPanel
         }
     }
 
+    // Each tool bar's width from its last layout, to centre it; a new bar starts from a guess for one frame.
+    private readonly Dictionary<Type, float> _toolBarWidths = [];
+
+    // Bars for live tools that show one, centred along the bottom of the viewport and styled like the tool strip.
+    private void DrawToolBars(Paper paper, float width, float height)
+    {
+        const float barHeight = 36f, bottom = 12f;
+        foreach (SceneTool tool in SceneToolManager.Live)
+        {
+            _toolContext.CurrentTool = tool;
+            if (!tool.ShowsViewportBar(_toolContext)) continue;
+
+            Type type = tool.GetType();
+            float barWidth = _toolBarWidths.TryGetValue(type, out float known) ? known : 200f;
+            using (paper.Row($"sv_toolbar_{type.Name}")
+                .PositionType(PositionType.SelfDirected)
+                .Position(MathF.Max(12f, (width - barWidth) * 0.5f), height - barHeight - bottom)
+                .Width(UnitValue.Auto).Height(barHeight)
+                .Padding(4, 4, 4, 4).Gap(2)
+                .Rounded(Origami.Current.Metrics.ContainerRounding)
+                .BackgroundColor(EditorTheme.Glass)
+                .BorderColor(EditorTheme.BorderSoft).BorderWidth(1)
+                .OnPostLayout((_, rect) => _toolBarWidths[type] = (float)rect.Size.X)
+                // A hit target of its own, so a click on a gap, divider or label stays on the bar instead of falling
+                // through to the viewport and changing the selection.
+                .OnClick(_ => { })
+                .Enter())
+            {
+                tool.OnViewportBarGUI(_toolContext, paper, $"sv_toolbar_{type.Name}");
+            }
+        }
+    }
+
     private void DrawDefaultToolbar(Paper paper)
     {
         bool isTranslate = SceneTools.Transform == TransformTool.Translate;
@@ -689,6 +722,9 @@ public class SceneViewPanel : DockPanel
             // Floating transform-tools panel (top-left)
             DrawTransformTools(paper);
 
+            // Live tools' bars, centred along the bottom
+            DrawToolBars(paper, width, height);
+
             // Speed indicator (shows briefly when scroll changes fly speed)
             DrawSpeedIndicator(paper, font, width, height);
 
@@ -726,6 +762,13 @@ public class SceneViewPanel : DockPanel
             if (meshRenderer.IsValid() && meshRenderer.EnabledInHierarchy && meshRenderer.Raycast(ray, out float dist))
             {
                 if (dist < bestDist) { bestDist = dist; bestHit = go; }
+            }
+
+            EditableMesh? editable = go.GetComponent<EditableMesh>();
+            if (editable.IsValid() && editable.EnabledInHierarchy && editable.Raycast(ray, out float editDist) && editDist < bestDist)
+            {
+                bestDist = editDist;
+                bestHit = go;
             }
         }
 
@@ -943,6 +986,14 @@ public class SceneViewPanel : DockPanel
             return true;
         }
 
+        EditableMesh? em = go.GetComponent<EditableMesh>();
+        if (em.IsValid() && em.EnabledInHierarchy && em.BuiltMesh is { } built)
+        {
+            AABB b = built.bounds;
+            anchor = Float4x4.TransformPoint((b.Min + b.Max) * 0.5f, go.Transform.LocalToWorldMatrix);
+            return true;
+        }
+
         SkinnedMeshRenderer? smr = go.GetComponent<SkinnedMeshRenderer>();
         if (smr.IsValid() && smr.EnabledInHierarchy && smr.SharedMesh.IsValid())
         {
@@ -1070,6 +1121,13 @@ public class SceneViewPanel : DockPanel
             {
                 bestDist = dist;
                 best = ray.Origin + ray.Direction * dist;
+            }
+
+            EditableMesh? editable = go.GetComponent<EditableMesh>();
+            if (editable.IsValid() && editable.EnabledInHierarchy && editable.Raycast(ray, out float editDist) && editDist < bestDist)
+            {
+                bestDist = editDist;
+                best = ray.Origin + ray.Direction * editDist;
             }
         }
 
@@ -1251,6 +1309,10 @@ public class SceneViewPanel : DockPanel
         MeshRenderer? mr = go.GetComponent<MeshRenderer>();
         if (mr.IsValid() && mr.Mesh.IsValid())
             ExpandBounds(mr.Mesh.bounds, go.Transform.LocalToWorldMatrix, ref min, ref max, ref found);
+
+        EditableMesh? em = go.GetComponent<EditableMesh>();
+        if (em.IsValid() && em.BuiltMesh is { } built)
+            ExpandBounds(built.bounds, go.Transform.LocalToWorldMatrix, ref min, ref max, ref found);
 
         // Check SkinnedMeshRenderer
         SkinnedMeshRenderer? smr = go.GetComponent<SkinnedMeshRenderer>();

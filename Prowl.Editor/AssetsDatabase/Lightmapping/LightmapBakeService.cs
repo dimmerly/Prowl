@@ -126,6 +126,7 @@ public sealed class LightmapBakeService
             object renderer;
             if (go.GetComponent<MeshRenderer>() is { } mr) { mesh = mr.Mesh; mats = mr.Materials; renderer = mr; }
             else if (go.GetComponent<SkinnedMeshRenderer>() is { } smr) { mesh = smr.SharedMesh; mats = smr.Materials; renderer = smr; }
+            else if (go.GetComponent<EditableMesh>() is { } em && em.EnabledInHierarchy) { mesh = em.LightmapMesh; mats = em.SubMeshMaterials; renderer = em; }
             else continue;
 
             if (!TryBuildBakeMesh(bake, mesh, mats, $"r{meshKey++}", ref matCounter, out BakeMesh? bm, out bool hasLightmapUV))

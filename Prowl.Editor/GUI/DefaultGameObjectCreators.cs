@@ -45,6 +45,19 @@ internal static class DefaultGameObjectCreators
     [MenuItem("GameObject/3D Object/Cube", priority: 10, Icon = EditorIcons.Cube, Separator = true)]
     static void CreateCube() => CreatePrimitive("Cube", DefaultModel.Cube);
 
+    // A block of level geometry, opened straight into Modeling's face mode so it can be shaped at once.
+    [MenuItem("GameObject/3D Object/Editable Mesh", priority: 11, Icon = EditorIcons.Shapes)]
+    static void CreateEditableMesh()
+    {
+        GameObject go = HierarchyPanel.CreateGameObject("Block", MenuContext.ActiveGameObject);
+        go.IsStatic = true;
+        EditableMesh mesh = go.AddComponent<EditableMesh>();
+        mesh.SetGeometry(Prowl.Vector.Geometry.GeometryGenerator.Box(new Prowl.Vector.Float3(2, 2, 2), new Prowl.Vector.Float3(0, 1, 0)));
+        go.AddComponent<MeshCollider>();
+        SceneView.SceneTools.EditMode = SceneView.SceneEditMode.Modeling;
+        SceneView.Editors.ModelingTool.Select(SceneView.Editors.ModelingSubTool.Face);
+    }
+
     [MenuItem("GameObject/3D Object/Sphere", priority: 11, Icon = EditorIcons.CircleDot)]
     static void CreateSphere() => CreatePrimitive("Sphere", DefaultModel.Sphere);
 
