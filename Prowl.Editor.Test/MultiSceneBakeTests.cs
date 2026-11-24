@@ -62,6 +62,60 @@ public class MultiSceneBakeTests : EditorTestHarness
         Assert.False(service.IsBaking, "The bake did not finish.");
     }
 
+    // A box whose UVs tile three times, as texture UVs often do, so they can't be its lightmap layout
+    private const string TiledBox = """
+        v -0.5 -0.5 -0.5
+        v 0.5 -0.5 -0.5
+        v 0.5 0.5 -0.5
+        v -0.5 0.5 -0.5
+        v -0.5 -0.5 0.5
+        v 0.5 -0.5 0.5
+        v 0.5 0.5 0.5
+        v -0.5 0.5 0.5
+        vt 0 0
+        vt 3 0
+        vt 3 3
+        vt 0 3
+        f 1/1 4/4 3/3 2/2
+        f 5/1 6/2 7/3 8/4
+        f 1/1 2/2 6/3 5/4
+        f 4/1 8/4 7/3 3/2
+        f 1/1 5/2 8/3 4/4
+        f 2/1 3/2 7/3 6/4
+        """;
+
+    [Fact]
+    public void AStaticModelWithoutLightmapUVs_IsUnwrappedThroughItsImportSettings_AndBaked()
+    {
+        File.WriteAllText(AssetAbsolutePath("Box.obj"), TiledBox);
+        EditorAssetBackend db = EditorAssetBackend.Instance!;
+        AssetEntry entry = db.GetEntry(db.ImportFile("Box.obj"))!;
+        Guid meshGuid = entry.SubAssets.First(s => s.TypeName.StartsWith(typeof(Mesh).FullName!)).Guid;
+        Mesh mesh = AssetDatabase.Get<Mesh>(meshGuid)!;
+        Assert.False(mesh.HasUV2);
+
+        var world = new Scene(SceneMode.Edit);
+        GameObject box = world.Create("Box");
+        box.IsStatic = true;
+        MeshRenderer renderer = box.AddComponent<MeshRenderer>();
+        renderer.Mesh = mesh;
+        renderer.Material = AssetDatabase.Get<Material>(BuiltInAssets.GuidFor(DefaultMaterial.Standard));
+        DirectionalLight sun = world.Create("Sun").AddComponent<DirectionalLight>();
+        sun.BakeMode = LightBakeMode.Baked;
+        OpenScene open = EditorSceneManager.Open(AssetDatabase.Get<SceneAsset>(CreateSceneAsset(world, "Box.scene"))!, force: true);
+        Scene.ProcessPendingLoad();
+
+        var service = new LightmapBakeService();
+        Assert.True(service.Start(EditorSceneManager.EditWorld, Quick()));
+        BakeToEnd(service);
+
+        // The setting is the model's own, so the UVs stay with it after the bake
+        Assert.True(MetaFile.Read(MetaFile.GetMetaPath(AssetAbsolutePath("Box.obj"))).Settings!["generateLightmapUVs"].BoolValue);
+        Assert.True(AssetDatabase.Get<Mesh>(meshGuid)!.HasUV2);
+        GameObject baked = open.Section!.Roots.Single(r => r.Name == "Box");
+        Assert.NotNull(open.Section.Lighting.PlacementFor(baked.Identifier));
+    }
+
     [Fact]
     public void OneBake_GivesEachLoadedSceneItsOwnPagesPlacementsAndProbes_AndSavesNothing()
     {

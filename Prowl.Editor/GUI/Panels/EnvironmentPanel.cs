@@ -352,6 +352,7 @@ public class EnvironmentPanel : DockPanel
         EditorGUI.SettingsToggle(paper, $"{id}_cull", Loc.Get("env.backface_cull"), s.DoBackfaceCull, v => { if (!baking) { Record(); s.DoBackfaceCull = v; } });
         EditorGUI.SettingsToggle(paper, $"{id}_dir", Loc.Get("env.directional"), s.Directional, v => { if (!baking) { Record(); s.Directional = v; } });
         EditorGUI.SettingsToggle(paper, $"{id}_seams", Loc.Get("env.stitch_seams"), s.StitchSeams, v => { if (!baking) { Record(); s.StitchSeams = v; } });
+        EditorGUI.SettingsToggle(paper, $"{id}_unwrap", Loc.Get("env.generate_lightmap_uvs"), s.GenerateMissingLightmapUVs, v => { if (!baking) { Record(); s.GenerateMissingLightmapUVs = v; } });
 
         EditorGUI.SectionHeader(paper, $"{id}_h_env", Loc.Get("panel.environment"));
         EditorGUI.SettingsToggle(paper, $"{id}_sky", Loc.Get("env.bake_sky_gi"), s.BakeSkyLighting, v => { if (!baking) { Record(); s.BakeSkyLighting = v; } });

@@ -48,7 +48,7 @@ public sealed class LightmapBakeService
     /// <summary>The editor's bake, polled every editor frame.</summary>
     public static LightmapBakeService Instance { get; } = new();
 
-    private enum Phase { Preparing, Tracing, Probes, Composing, Applying, Overlay }
+    private enum Phase { Unwrapping, Preparing, Tracing, Probes, Composing, Applying, Overlay }
 
     // One loaded scene's share of a bake: its charts, its pages and its probes.
     private sealed class SceneBake(OpenScene scene, SceneSection section)
@@ -100,6 +100,9 @@ public sealed class LightmapBakeService
         public required LightmapBakeSettings Settings;
         public LightmapOverlay Overlay;   // None for a bake
         public readonly List<SceneBake> Scenes = [];
+        public readonly Dictionary<SceneSection, SceneBake> BySection = new(ReferenceEqualityComparer.Instance);
+        public readonly List<(Guid Guid, string Path)> Unwraps = [];   // model files to give lightmap UVs before gathering
+        public int Unwrapped;
         public readonly LightmapperInput Input = new();
         public readonly List<MeshSource> Meshes = [];
         public readonly List<MapSource> MapSources = [];
@@ -206,21 +209,54 @@ public sealed class LightmapBakeService
             return Refuse($"Save '{untitled.Name}' before baking, so its lightmaps have a folder next to its file.");
 
         var job = new Job { World = world, Settings = settings, Overlay = overlay };
-        var bySection = new Dictionary<SceneSection, SceneBake>(ReferenceEqualityComparer.Instance);
         foreach (OpenScene open in baked)
         {
             var share = new SceneBake(open, open.Section!);
             job.Scenes.Add(share);
-            bySection[share.Section] = share;
+            job.BySection[share.Section] = share;
         }
+
+        PrepareCsgModels(world, job.BySection);
+
+        // A bake gives every static model without lightmap UVs some first, one a frame, then gathers. An overlay shows
+        // what's there and changes no asset.
+        if (overlay == LightmapOverlay.None && settings.GenerateMissingLightmapUVs)
+            FindModelsToUnwrap(job);
+
+        // A bake or a new overlay replaces whatever overlay is on show
+        ClearOverlay();
+        _clock.Restart();
+        Remaining = null;
+        Progress = 0f;
+
+        if (job.Unwraps.Count > 0)
+        {
+            job.Phase = Phase.Unwrapping;
+            _job = job;
+            Status = $"Generating lightmap UVs 0/{job.Unwraps.Count}";
+            return true;
+        }
+        if (Gather(job) is { } reason)
+        {
+            _clock.Stop();
+            return Refuse(reason);
+        }
+        return true;
+    }
+
+    // Reads every loaded scene into the job and starts preparing it on a worker. Returns why it can't, or null.
+    private string? Gather(Job job)
+    {
+        Scene world = job.World;
+        LightmapBakeSettings settings = job.Settings;
+        LightmapOverlay overlay = job.Overlay;
+        Dictionary<SceneSection, SceneBake> bySection = job.BySection;
 
         LightmapperInput input = job.Input;
         input.Bounces = settings.Bounces;
         input.Cull = settings.DoBackfaceCull;
         input.IgnoreAlbedo = settings.IgnoreAlbedo;
         input.Sky = settings.BakeSkyLighting ? SkyTable(world) : null;
-
-        PrepareCsgModels(world, bySection);
 
         // Static renderers of every loaded scene. Each one that casts shadows goes into the traced scene, each one drawn
         // with lightmap UVs gets a chart in its own scene's pages.
@@ -270,13 +306,13 @@ public sealed class LightmapBakeService
             anyTraced |= tracedTriangles && source.Occludes;
         }
         if (noLightmapUVs.Count > 0)
-            Runtime.Debug.LogWarning($"[Lightmap] {noLightmapUVs.Count} static renderer(s) have no lightmap UVs, so they only cast shadows and bounce light: "
+            Runtime.Debug.LogWarning($"[Lightmap] {noLightmapUVs.Count} static renderer(s) have no usable lightmap UVs, so they only cast shadows and bounce light, lit by probes instead: "
                 + string.Join(", ", noLightmapUVs.Take(10)) + (noLightmapUVs.Count > 10 ? ", ..." : "") + ". Turn on Generate Lightmap UVs in their model's import settings.");
 
         if (!anyChart)
-            return Refuse("Nothing to bake: no Static renderers with lightmap UVs. Mark the level geometry Static in the Inspector.");
+            return "Nothing to bake: no Static renderers with lightmap UVs. Mark the level geometry Static in the Inspector.";
         if (!anyTraced)
-            return Refuse("Nothing to bake: every static renderer has shadow casting off, so there is no geometry to trace.");
+            return "Nothing to bake: every static renderer has shadow casting off, so there is no geometry to trace.";
 
         foreach (GameObject go in world.Objects)
         {
@@ -296,9 +332,6 @@ public sealed class LightmapBakeService
         if (!ComputeShader.IsSupported && overlay == LightmapOverlay.None)
             Runtime.Debug.LogWarning("[Lightmap] There is no graphics device to trace on, so this bake comes out black.");
 
-        // A bake or a new overlay replaces whatever overlay is on show
-        ClearOverlay();
-
         CancellationToken token = job.Cancel.Token;
         job.Prepare = Task.Run(() => PrepareScene(job, token), token);
         job.Compile = GpuLightmapper.CompileAsync();
@@ -306,10 +339,91 @@ public sealed class LightmapBakeService
         job.PreviewWanted = overlay == LightmapOverlay.None && LivePreview && ComputeShader.IsSupported;
 
         _job = job;
-        _clock.Restart();
-        Remaining = null;
-        Progress = 0f;
         Status = "Preparing scene";
+        return null;
+    }
+
+    // ---- generating missing lightmap UVs ----
+
+    private static readonly string[] s_unwrappingImporters = [nameof(EditorModelImporter), nameof(PMeshImporter)];
+
+    // Every model file behind a static, lightmapped renderer whose mesh has no lightmap UVs, once each. A mesh with no
+    // file, or one whose importer can't unwrap, is logged and falls back to its first UVs, or to probes.
+    private static void FindModelsToUnwrap(Job job)
+    {
+        EditorAssetBackend? db = EditorAssetBackend.Instance;
+        if (db == null) return;
+        var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        var cannot = new List<string>();
+        foreach (GameObject go in job.World.Objects)
+        {
+            if (!go.IsStatic || !go.EnabledInHierarchy || go.Section is not { } section || !job.BySection.ContainsKey(section)) continue;
+            Mesh? mesh;
+            ShadowCasting casting;
+            if (go.GetComponent<MeshRenderer>() is { } mr) { mesh = mr.Mesh; casting = mr.ShadowCasting; }
+            else if (go.GetComponent<SkinnedMeshRenderer>() is { } smr) { mesh = smr.SharedMesh; casting = smr.ShadowCasting; }
+            else continue;
+            if (mesh.IsNotValid() || mesh.VertexCount == 0 || mesh.HasUV2 || casting == ShadowCasting.ShadowsOnly) continue;
+            if (go.GetComponent<CSGModel>().IsValid()) continue;   // CSG unwraps itself
+
+            string? asset = mesh.AssetPath;
+            string file = string.IsNullOrEmpty(asset) ? "" : asset.Split('#')[0];
+            AssetEntry? entry = file.Length > 0 ? db.GetEntry(file) : null;
+            if (entry == null || !s_unwrappingImporters.Contains(entry.ImporterType))
+            {
+                cannot.Add(go.Name);
+                continue;
+            }
+            if (seen.Add(entry.Path)) job.Unwraps.Add((entry.Guid, entry.Path));
+        }
+        if (cannot.Count > 0)
+            Runtime.Debug.LogWarning($"[Lightmap] Can't generate lightmap UVs for {cannot.Count} static renderer(s) whose mesh has no model file, so they bake "
+                + "on their first UVs where those fit in 0 to 1, else get no lightmap: " + string.Join(", ", cannot.Take(10)) + (cannot.Count > 10 ? ", ..." : "") + ".");
+    }
+
+    // Turns on Generate Lightmap UVs for the next model and reimports it, one a frame so the editor keeps drawing
+    private void PollUnwrapping(Job job)
+    {
+        EditorAssetBackend? db = EditorAssetBackend.Instance;
+        if (db != null && job.Unwrapped < job.Unwraps.Count)
+        {
+            (Guid guid, string path) = job.Unwraps[job.Unwrapped++];
+            try
+            {
+                if (EnableLightmapUVs(path))
+                {
+                    db.Reimport(guid);
+                    Runtime.Debug.Log($"[Lightmap] Turned on Generate Lightmap UVs for '{path}' and reimported it.");
+                }
+                else Runtime.Debug.LogWarning($"[Lightmap] '{path}' has no .meta to turn on Generate Lightmap UVs in, so it bakes on its first UVs or not at all.");
+            }
+            catch (Exception e)
+            {
+                Runtime.Debug.LogWarning($"[Lightmap] Generating lightmap UVs for '{path}' failed, so it bakes on its first UVs or not at all: {e.Message}");
+            }
+            Status = $"Generating lightmap UVs {job.Unwrapped}/{job.Unwraps.Count}";
+            return;
+        }
+
+        if (Gather(job) is { } reason)
+        {
+            Runtime.Debug.LogWarning($"[Lightmap] {reason}");
+            FailureReason = reason;
+            Cleanup();
+            Status = "Failed";
+        }
+    }
+
+    // Sets the model's own import setting, so the UVs are kept with it and drawn with it, not only baked with
+    private static bool EnableLightmapUVs(string relativePath)
+    {
+        if (Project.Current == null) return false;
+        string metaPath = MetaFile.GetMetaPath(Path.Combine(Project.Current.AssetsPath, relativePath));
+        if (!File.Exists(metaPath)) return false;
+        MetaFileData meta = MetaFile.Read(metaPath);
+        meta.Settings ??= EchoObject.NewCompound();
+        meta.Settings["generateLightmapUVs"] = new EchoObject(true);
+        MetaFile.Write(metaPath, meta);
         return true;
     }
 
@@ -325,6 +439,7 @@ public sealed class LightmapBakeService
         {
             switch (job.Phase)
             {
+                case Phase.Unwrapping: PollUnwrapping(job); break;
                 case Phase.Preparing: PollPreparing(job); break;
                 case Phase.Tracing: PollTracing(job); break;
                 case Phase.Probes: PollProbes(job); break;

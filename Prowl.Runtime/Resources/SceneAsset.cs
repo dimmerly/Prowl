@@ -308,6 +308,10 @@ public sealed class LightmapBakeSettings
     // Make the light agree on both sides of a UV seam, so a surface split over charts shows no line.
     public bool StitchSeams = true;
 
+    // A bake turns on Generate Lightmap UVs for every static model without lightmap UVs and reimports it first, so the
+    // UVs are kept with the model. Off, such models bake on their first UVs where those fit in 0 to 1, else get none.
+    public bool GenerateMissingLightmapUVs = true;
+
     // Atlas, texels/unit, dilate, bounces, samples, probe samples, denoise. Backface cull, sky and albedo describe the
     // scene rather than the quality, so presets leave them as they are.
     private static readonly (int Atlas, float Texels, int Dilate, int Bounces, int Samples, int Probes, int Denoise)[] s_presets =

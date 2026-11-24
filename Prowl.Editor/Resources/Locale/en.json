@@ -765,6 +765,7 @@
   "env.live_preview": "Live Preview",
   "env.directional": "Directional",
   "env.stitch_seams": "Stitch Seams",
+  "env.generate_lightmap_uvs": "Generate Missing Lightmap UVs",
   "env.overlay": "Overlay",
   "env.overlay.none": "None",
   "env.overlay.charts": "Charts",
