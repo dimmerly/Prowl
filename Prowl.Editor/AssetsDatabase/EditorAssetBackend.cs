@@ -2247,6 +2247,14 @@ public class EditorAssetBackend : AssetBackend
                 RegisterFileChange(evt.Path, relativePath, toImport);
                 break;
 
+            // Back on disk since, as when the editor deletes a folder and moves another into its place in one go (a
+            // lightmap rebake does): the folder move raises a single folder rename, so this stale delete is the only
+            // event for the path, and acting on it would mark the asset that now lives there missing.
+            case FileEventType.Deleted when File.Exists(evt.Path):
+                if (!_pathToGuid.ContainsKey(relativePath))
+                    RegisterFileChange(evt.Path, relativePath, toImport);
+                break;
+
             case FileEventType.Deleted:
                 {
                     if (_pathToGuid.TryGetValue(relativePath, out Guid guid))

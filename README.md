@@ -1,4 +1,4 @@
-﻿<img src="https://i.imgur.com/qoJ4RTS.png" width="100%" alt="Prowl logo image">
+<img src="https://i.imgur.com/qoJ4RTS.png" width="100%" alt="Prowl logo image">
 
 ![Github top languages](https://img.shields.io/github/languages/top/ProwlEngine/Prowl)
 [![GitHub version](https://img.shields.io/github/v/release/ProwlEngine/Prowl?include_prereleases&style=flat-square)](https://github.com/ProwlEngine/Prowl/releases)
@@ -114,7 +114,8 @@ Prowl is currently in **1.0 Preview 5**, which brings a new Vulkan renderer, ani
         - Hard, Tent & Contact Hardening shadow filters
     - Decals (Albedo, Normal & Mask)
     - Reflection Probes (Baked & Realtime) with box projection and a Sky Probe
-    - UV-Unwrapping via [Prowl.Unwrapper](https://github.com/ProwlEngine/Anthology), Progressive Lightmapper via [Prowl.Photonic](https://github.com/ProwlEngine/Anthology)
+    - UV-Unwrapping via [Prowl.Unwrapper](https://github.com/ProwlEngine/Anthology)
+    - Progressive GPU Lightmapper
     - Baked Light Probes
     - Skies: Procedural Atmosphere, Gradient, Cubemap, Panorama & Six Sided
     - Volumetric Clouds & Volumetric Fog
@@ -481,7 +482,6 @@ Check our [Contributing guide](https://github.com/ProwlEngine/Prowl/blob/main/CO
 - [Prowl.Rosetta](https://github.com/ProwlEngine/Anthology) - For Editor Localisation
 - [Prowl.Vector](https://github.com/ProwlEngine/Anthology) - 64-bit Math Library
 - [Prowl.Unwrapper](https://github.com/ProwlEngine/Anthology) - UV Unwrapper
-- [Prowl.Photonic](https://github.com/ProwlEngine/Anthology) - Progressive Lightmapper
 - [Prowl.Clay](https://github.com/ProwlEngine/Anthology) - Model Importing (GLTF, GLB, OBJ, FBX)
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>

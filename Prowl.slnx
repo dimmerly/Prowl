@@ -28,7 +28,6 @@
     <Project Path="../Anthology/Origami/Graphite/Prowl.Origami.Graphite.csproj" />
     <Project Path="../Anthology/Origami/Origami/Origami.csproj" />
     <Project Path="../Anthology/Paper/Paper/Paper.csproj" />
-    <Project Path="../Anthology/Photonic/Photonic/Photonic.csproj" />
     <Project Path="../Anthology/Prism/Prism/Prowl.Prism.csproj" />
     <Project Path="../Anthology/Quill/Quill/Quill.csproj" />
     <Project Path="../Anthology/Quire/Quire/Quire.csproj" />

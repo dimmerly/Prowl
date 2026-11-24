@@ -19,11 +19,15 @@ public enum DebugViewMode
     Lighting,
     ShadowCascades,
     LightmapDensity,
+    /// <summary>The baked light alone on a white surface, directional lightmaps turned by the normal.</summary>
+    BakedLighting,
+    /// <summary>Lightmap texels as stored, neither exposed nor turned: what a bake wrote, and the bake's overlays.</summary>
+    LightmapTexels,
 }
 
 public static class DebugViews
 {
-    private static readonly string[] s_values = ["OFF", "UNLIT", "ALBEDO", "NORMALS", "ROUGHNESS", "METALLIC", "AO", "EMISSION", "LIGHTING", "CASCADES", "LIGHTMAP_DENSITY"];
+    private static readonly string[] s_values = ["OFF", "UNLIT", "ALBEDO", "NORMALS", "ROUGHNESS", "METALLIC", "AO", "EMISSION", "LIGHTING", "CASCADES", "LIGHTMAP_DENSITY", "BAKED", "LIGHTMAP"];
     private static readonly GlobalKeyword[]?[] s_keywords = new GlobalKeyword[]?[s_values.Length];
 
     /// <summary>The view keywords that show a mode, null for the lit scene.</summary>

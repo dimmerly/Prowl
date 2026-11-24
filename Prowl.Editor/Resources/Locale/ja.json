@@ -482,7 +482,6 @@
   "env.indirect_samples": "間接サンプル",
   "env.probe_samples": "プローブサンプル",
   "env.backface_cull": "背面カリング",
-  "env.sparse_stride": "スパース間隔",
   "env.bake_sky_gi": "空 / アンビエントをGIとしてベイク",
   "env.advanced": "詳細",
   "env.ignore_albedo": "アルベドを無視 (デバッグ)",

@@ -482,7 +482,6 @@
   "env.indirect_samples": "Amostras indiretas",
   "env.probe_samples": "Amostras de sonda",
   "env.backface_cull": "Descarte de faces traseiras",
-  "env.sparse_stride": "Passo esparso",
   "env.bake_sky_gi": "Fazer bake do ceu / ambiente como GI",
   "env.advanced": "Avancado",
   "env.ignore_albedo": "Ignorar albedo (depuracao)",

@@ -482,7 +482,6 @@
   "env.indirect_samples": "Probki posrednie",
   "env.probe_samples": "Probki sond",
   "env.backface_cull": "Usuwanie tylnych scian",
-  "env.sparse_stride": "Krok probkowania rzadkiego",
   "env.bake_sky_gi": "Wypiecz niebo / otoczenie jako GI",
   "env.advanced": "Zaawansowane",
   "env.ignore_albedo": "Ignoruj albedo (debug)",

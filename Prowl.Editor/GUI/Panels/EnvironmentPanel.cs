@@ -38,7 +38,7 @@ public class EnvironmentPanel : DockPanel
     public override string Title => Loc.Get("panel.environment");
     public override string Icon => EditorIcons.Sun;
 
-    private readonly LightmapBakeService _bake = new();
+    private static LightmapBakeService _bake => LightmapBakeService.Instance;
     private string _cat = "sky";
 
     // label holds a localization key, resolved via Loc.Get at render (see the Sidebar call).
@@ -54,8 +54,6 @@ public class EnvironmentPanel : DockPanel
     {
         Scribe.FontFile? font = EditorTheme.DefaultFont;
         if (font == null) return;
-
-        _bake.Poll();
 
         Scene scene = EditorSceneManager.EditedWorld;
         if (scene.IsNotValid())
@@ -311,6 +309,9 @@ public class EnvironmentPanel : DockPanel
     private static void SmallButton(Paper paper, string id, string label, Action onClick)
         => Origami.Button(paper, id, label, onClick).Small().Show();
 
+    private static string[] PresetNames =>
+        [.. Enum.GetValues<LightmapPreset>().Select(p => Loc.Get($"env.preset.{p.ToString().ToLowerInvariant()}"))];
+
     private void DrawLightmappingSection(Paper paper, string id, Scribe.FontFile font, Scene scene)
     {
         // IsBaking alone doesn't say WHICH scene it's for - only one bake can run at a time, so
@@ -321,7 +322,15 @@ public class EnvironmentPanel : DockPanel
         SceneSection section = scene.ActiveSection;
         void Record() => Undo.RecordObject(() => section.IsLoaded ? section.LightmapBake : null, ActiveSceneOwner, "Lightmap Settings");
 
-        EditorGUI.SectionHeader(paper, $"{id}_h_res", Loc.Get("game.resolution"), first: true);
+        // A preset sets everything below at once, so there is always a known-good setup to go back to. Shows Custom
+        // once anything was changed by hand.
+        EditorGUI.SectionHeader(paper, $"{id}_h_preset", Loc.Get("env.preset"), first: true);
+        EditorGUI.SettingsRow(paper, $"{id}_preset", Loc.Get("env.preset"), () =>
+            Origami.Dropdown(paper, $"{id}_preset_v", s.MatchingPreset() is { } match ? (int)match : -1,
+                    v => { if (!baking) { Record(); s.ApplyPreset((LightmapPreset)v); } }, PresetNames)
+                .Placeholder(Loc.Get("env.preset_custom")).Show());
+
+        EditorGUI.SectionHeader(paper, $"{id}_h_res", Loc.Get("game.resolution"));
 
         EditorGUI.SettingsRow(paper, $"{id}_size", Loc.Get("env.atlas_size"), () =>
             Origami.IntSlider(paper, $"{id}_size_v", s.AtlasSize, v => { if (!baking) { Record(); s.AtlasSize = v; } }, 256, 4096).Show());
@@ -335,21 +344,37 @@ public class EnvironmentPanel : DockPanel
         EditorGUI.SettingsRow(paper, $"{id}_bnc", Loc.Get("env.bounces"), () =>
             Origami.IntSlider(paper, $"{id}_bnc_v", s.Bounces, v => { if (!baking) { Record(); s.Bounces = v; } }, 0, 8).Show());
         EditorGUI.SettingsRow(paper, $"{id}_smp", Loc.Get("env.indirect_samples"), () =>
-            Origami.IntSlider(paper, $"{id}_smp_v", s.Samples, v => { if (!baking) { Record(); s.Samples = v; } }, 1, 1024).Show());
+            Origami.IntSlider(paper, $"{id}_smp_v", s.Samples, v => { if (!baking) { Record(); s.Samples = v; } }, 1, 4096).Show());
+        EditorGUI.SettingsRow(paper, $"{id}_dn", Loc.Get("env.denoise"), () =>
+            Origami.IntSlider(paper, $"{id}_dn_v", s.DenoisePasses, v => { if (!baking) { Record(); s.DenoisePasses = v; } }, 0, 6).Show());
         EditorGUI.SettingsRow(paper, $"{id}_psmp", Loc.Get("env.probe_samples"), () =>
             Origami.IntSlider(paper, $"{id}_psmp_v", s.ProbeSamples, v => { if (!baking) { Record(); s.ProbeSamples = v; } }, 16, 2048).Show());
         EditorGUI.SettingsToggle(paper, $"{id}_cull", Loc.Get("env.backface_cull"), s.DoBackfaceCull, v => { if (!baking) { Record(); s.DoBackfaceCull = v; } });
-        EditorGUI.SettingsRow(paper, $"{id}_spr", Loc.Get("env.sparse_stride"), () =>
-            Origami.IntSlider(paper, $"{id}_spr_v", s.SparseStride, v => { if (!baking) { Record(); s.SparseStride = v; } }, 1, 16).Show());
+        EditorGUI.SettingsToggle(paper, $"{id}_dir", Loc.Get("env.directional"), s.Directional, v => { if (!baking) { Record(); s.Directional = v; } });
+        EditorGUI.SettingsToggle(paper, $"{id}_seams", Loc.Get("env.stitch_seams"), s.StitchSeams, v => { if (!baking) { Record(); s.StitchSeams = v; } });
 
         EditorGUI.SectionHeader(paper, $"{id}_h_env", Loc.Get("panel.environment"));
         EditorGUI.SettingsToggle(paper, $"{id}_sky", Loc.Get("env.bake_sky_gi"), s.BakeSkyLighting, v => { if (!baking) { Record(); s.BakeSkyLighting = v; } });
 
         EditorGUI.SectionHeader(paper, $"{id}_h_adv", Loc.Get("env.advanced"));
         EditorGUI.SettingsToggle(paper, $"{id}_alb", Loc.Get("env.ignore_albedo"), s.IgnoreAlbedo, v => { if (!baking) { Record(); s.IgnoreAlbedo = v; } });
+        // Editor wide, not a scene setting: whether the scene shows the bake while it runs
+        EditorGUI.SettingsToggle(paper, $"{id}_live", Loc.Get("env.live_preview"), _bake.LivePreview, v => _bake.LivePreview = v);
+
+        // What a bake would make, drawn on the pages in the Lightmap Texels view instead of light
+        EditorGUI.SettingsRow(paper, $"{id}_overlay", Loc.Get("env.overlay"), () =>
+            Origami.Dropdown(paper, $"{id}_overlay_v", (int)_bake.Overlay, v =>
+            {
+                if (baking) return;
+                if (!_bake.ShowOverlay(scene, s, (LightmapOverlay)v) && _bake.FailureReason is { } reason)
+                    Toasts.Warning(Loc.Get("env.overlay"), reason);
+            }, OverlayNames).Show());
 
         DrawBakeCard(paper, id, font, scene, s, baking);
     }
+
+    private static readonly string[] OverlayNames =
+        [.. Enum.GetValues<LightmapOverlay>().Select(o => Loc.Get($"env.overlay.{o.ToString().ToLowerInvariant()}"))];
 
     private void DrawBakeCard(Paper paper, string id, Scribe.FontFile font, Scene scene,
         LightmapBakeSettings s, bool baking)
@@ -366,7 +391,8 @@ public class EnvironmentPanel : DockPanel
             {
                 Origami.ProgressBar(paper, $"{id}_pb", _bake.Progress).Show();
                 paper.Box($"{id}_status").Height(18)
-                    .Text($"{_bake.Status}  ({_bake.Progress * 100f:F0}%)", font)
+                    .Text($"{_bake.Status}  {_bake.Progress * 100f:F0}%    {FormatDuration(_bake.Elapsed)} elapsed    "
+                        + (_bake.Remaining is { } left ? $"{FormatDuration(left)} left" : "estimating"), font)
                     .TextColor(EditorTheme.Ink300).FontSize(EditorTheme.FontSizeSmall).Alignment(TextAlignment.MiddleLeft);
                 EditorGUI.CtaButton(paper, $"{id}_cancel", $"{EditorIcons.Xmark}  {Loc.Get("common.cancel")}", EditorTheme.Red400, () => _bake.Cancel(), height: 34f);
             }
@@ -397,10 +423,10 @@ public class EnvironmentPanel : DockPanel
                             if (LightmapBakeService.UntitledScene(scene) is { } untitled)
                             {
                                 Toasts.Warning(Loc.Get("env.toast_bake_untitled"), Loc.Get("env.toast_bake_untitled_msg", new { name = untitled.Name }));
-                                EditorApplication.PromptSaveAs(untitled, () => _bake.Start(scene, scene.LightmapBake));
+                                EditorApplication.PromptSaveAs(untitled, () => StartBake(scene));
                                 return;
                             }
-                            _bake.Start(scene, scene.LightmapBake);
+                            StartBake(scene);
                         }, grow: true, height: 34f);
                     if (hasBaked)
                         ChipButton(paper, $"{id}_clear", Loc.Get("console.clear"), () => _bake.Clear(scene));
@@ -408,6 +434,17 @@ public class EnvironmentPanel : DockPanel
             }
         }
     }
+
+    // A bake that refuses says why, rather than leaving the button looking dead with the reason only in the Console.
+    private void StartBake(Scene scene)
+    {
+        if (!_bake.Start(scene, scene.LightmapBake) && _bake.FailureReason is { } reason)
+            Toasts.Warning(Loc.Get("env.generate_lighting"), reason);
+    }
+
+    // 0:42, 12:05, 1:03:20
+    private static string FormatDuration(TimeSpan t)
+        => t.TotalHours >= 1 ? $"{(int)t.TotalHours}:{t.Minutes:00}:{t.Seconds:00}" : $"{(int)t.TotalMinutes}:{t.Seconds:00}";
 
     private static void ChipButton(Paper paper, string id, string label, Action onClick)
         => Origami.Button(paper, id, label, onClick).Height(34).Show();

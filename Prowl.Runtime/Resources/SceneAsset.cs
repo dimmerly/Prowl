@@ -179,11 +179,25 @@ public struct LightmapPlacement
     public Float4 ScaleOffset;
 }
 
+/// <summary>A running bake's pages and placements, shown in place of a scene's baked ones. See <see cref="SceneLighting.Preview"/>.</summary>
+public sealed class LightmapPreview(List<Texture2D> pages, List<Texture2D> directions, Dictionary<Guid, LightmapPlacement> placements)
+{
+    public readonly List<Texture2D> Pages = pages;
+    public readonly List<Texture2D> Directions = directions;   // empty, or one per page
+    public readonly Dictionary<Guid, LightmapPlacement> Placements = placements;
+}
+
 /// <summary>Baked lightmaps + light-probe data for this scene, produced by the editor lightmap bake.</summary>
 public sealed class SceneLighting
 {
-    /// <summary>Baked lightmap atlas pages (RGBM-encoded). A placement below selects one.</summary>
+    /// <summary>Baked lightmap atlas pages, half float (RGBM in older bakes). A placement below selects one.</summary>
     public List<Texture2D> Lightmaps = [];
+
+    /// <summary>
+    /// Direction pages of a directional bake, one per page of <see cref="Lightmaps"/>, or empty for a bake without:
+    /// the dominant incoming direction, so normal maps turn the baked light. See Graphite's LightmapBinding.Direction.
+    /// </summary>
+    public List<Texture2D> Directions = [];
 
     /// <summary>What the decoded RGBM texels of every page are multiplied by to give irradiance over pi, in nits.</summary>
     public float LightmapScale = 1f;
@@ -206,14 +220,48 @@ public sealed class SceneLighting
     public bool HasLightmaps => Lightmaps.Count > 0;
     public bool HasProbes => ProbeSH.Length > 0;
 
-    /// <summary>Where this object's surface was baked, or nothing if it was not.</summary>
+    /// <summary>
+    /// A bake in progress, drawn instead of <see cref="Lightmaps"/> and <see cref="Placements"/> while it is set. Never
+    /// saved: the pages exist only on the GPU, and the bake replaces them with real ones when it finishes.
+    /// </summary>
+    public LightmapPreview? Preview { get; private set; }
+
+    /// <summary>Draws <paramref name="preview"/> instead of the baked pages until <see cref="ClearPreview"/>.</summary>
+    public void SetPreview(LightmapPreview preview)
+    {
+        Preview = preview;
+        MarkChanged();
+    }
+
+    /// <summary>Goes back to drawing the baked pages.</summary>
+    public void ClearPreview()
+    {
+        if (Preview == null) return;
+        Preview = null;
+        MarkChanged();
+    }
+
+    /// <summary>The pages drawn now: the preview's while there is one, else the baked ones.</summary>
+    public IReadOnlyList<Texture2D> DrawnLightmaps => Preview?.Pages ?? (IReadOnlyList<Texture2D>)Lightmaps;
+
+    /// <summary>The direction pages drawn with <see cref="DrawnLightmaps"/>, empty when they have none.</summary>
+    public IReadOnlyList<Texture2D> DrawnDirections => Preview != null ? Preview.Directions : Directions;
+
+    /// <summary>What the drawn pages are multiplied by.</summary>
+    public float DrawnLightmapScale => Preview != null ? 1f : LightmapScale;
+
+    /// <summary>Where this object's surface was baked, or nothing if it was not. The preview's placement while there is one.</summary>
     public LightmapPlacement? PlacementFor(Guid objectIdentifier)
-        => Placements.TryGetValue(objectIdentifier, out LightmapPlacement placement) ? placement : null;
+    {
+        Dictionary<Guid, LightmapPlacement> placements = Preview?.Placements ?? Placements;
+        return placements.TryGetValue(objectIdentifier, out LightmapPlacement placement) ? placement : null;
+    }
 
     /// <summary>Drop every baked lightmap page and placement, leaving the probes alone.</summary>
     public void ClearLightmaps()
     {
         Lightmaps.Clear();
+        Directions.Clear();
         Placements.Clear();
         MarkChanged();
     }
@@ -238,20 +286,76 @@ public sealed class LightmapBakeSettings
     public int DilatePixels = 2;          // edge dilation to stop bilinear bleed at seams
 
     // Quality
-    public int Bounces = 2;
-    public int Samples = 64;              // progressive indirect iterations before finalize
+    public int Bounces = 3;
+    public int Samples = 256;             // paths per texel, one per progressive pass
     public int ProbeSamples = 256;
     public bool DoBackfaceCull = false;   // cull back faces on all bake rays (matches Prowl's backface-culled rendering)
 
-    // Trace one texel per NxN atlas cell and interpolate the rest. 1 traces everything; higher
-    // values converge far faster and cost fine indirect detail. Contacts and corners always trace.
-    public int SparseStride = 1;
+    // Edge-avoiding filter passes over the baked indirect light, 0 for none. Clears the speckle of low sample counts
+    // at the cost of fine indirect detail; direct light and shadows stay sharp.
+    public int DenoisePasses = 4;
 
-    // Feed the scene's ambient colour in as ray-miss (sky) radiance.
+    // Light rays that leave the scene with the scene's ambient, from whichever direction they leave.
     public bool BakeSkyLighting = false;
 
     // Debug: bake every surface as a white Lambertian (isolates light/GI from albedo).
     public bool IgnoreAlbedo = false;
+
+    // A direction page beside each lightmap page, so normal maps turn the baked light. RGBA8, so half again the memory
+    // of the half float light pages.
+    public bool Directional = true;
+
+    // Make the light agree on both sides of a UV seam, so a surface split over charts shows no line.
+    public bool StitchSeams = true;
+
+    // Atlas, texels/unit, dilate, bounces, samples, probe samples, denoise. Backface cull, sky and albedo describe the
+    // scene rather than the quality, so presets leave them as they are.
+    private static readonly (int Atlas, float Texels, int Dilate, int Bounces, int Samples, int Probes, int Denoise)[] s_presets =
+    [
+        (512, 8f, 2, 1, 32, 64, 4),           // Quick Preview: seconds, for checking where light lands
+        (1024, 20f, 2, 3, 256, 256, 4),       // Standard: the defaults
+        (2048, 32f, 3, 4, 1024, 512, 3),      // High Quality
+        (4096, 48f, 4, 6, 4096, 1024, 2),     // Final Bake: slow, for shipping
+    ];
+
+    /// <summary>Sets every quality and resolution setting to <paramref name="preset"/>'s.</summary>
+    public void ApplyPreset(LightmapPreset preset)
+    {
+        var p = s_presets[(int)preset];
+        AtlasSize = p.Atlas;
+        TexelsPerUnit = p.Texels;
+        DilatePixels = p.Dilate;
+        Bounces = p.Bounces;
+        Samples = p.Samples;
+        ProbeSamples = p.Probes;
+        DenoisePasses = p.Denoise;
+    }
+
+    /// <summary>The preset these settings match exactly, or null once any of them was changed by hand.</summary>
+    public LightmapPreset? MatchingPreset()
+    {
+        for (int i = 0; i < s_presets.Length; i++)
+        {
+            var p = s_presets[i];
+            if (AtlasSize == p.Atlas && TexelsPerUnit == p.Texels && DilatePixels == p.Dilate && Bounces == p.Bounces
+                && Samples == p.Samples && ProbeSamples == p.Probes && DenoisePasses == p.Denoise)
+                return (LightmapPreset)i;
+        }
+        return null;
+    }
+}
+
+/// <summary>Starting points for <see cref="LightmapBakeSettings"/>, from a quick preview to a final bake.</summary>
+public enum LightmapPreset
+{
+    /// <summary>Seconds: low resolution, one bounce. For checking where light lands.</summary>
+    QuickPreview,
+    /// <summary>The defaults: a clean, denoised everyday bake.</summary>
+    Standard,
+    /// <summary>Sharper and fuller bounce light, for reviewing a level.</summary>
+    HighQuality,
+    /// <summary>Highest resolution, bounces and samples. Slow, for the bake you ship.</summary>
+    FinalBake,
 }
 
 /// <summary>Where a <see cref="SceneLoad"/> is.</summary>

@@ -482,7 +482,6 @@
   "env.indirect_samples": "Campioni indiretti",
   "env.probe_samples": "Campioni sonda",
   "env.backface_cull": "Culling facce posteriori",
-  "env.sparse_stride": "Passo sparso",
   "env.bake_sky_gi": "Esegui bake di cielo / ambiente come GI",
   "env.advanced": "Avanzate",
   "env.ignore_albedo": "Ignora albedo (debug)",

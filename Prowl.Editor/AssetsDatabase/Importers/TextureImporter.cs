@@ -44,6 +44,12 @@ public class TextureImporter : AssetImporter
     {
         TextureImportSettings s = TextureImportSettings.Read(ctx.Settings, ctx.AbsolutePath);
 
+        if (s.Type == TextureImportType.Lightmap && Aperture.Image.Identify(ctx.AbsolutePath).IsHdr)
+        {
+            ctx.SetMainAsset(ImportHdrLightmap(ctx, s));
+            return true;
+        }
+
         using Aperture.Image image = Aperture.Image.Load(ctx.AbsolutePath, Texture2D.DecodeToUploadLayout);
         int width = image.Width, height = image.Height;
         byte[] pixels = new byte[width * height * 4];
@@ -84,6 +90,30 @@ public class TextureImporter : AssetImporter
             ctx.AddSubAsset(slice.Name, sprite, SpriteBuilder.IdentityOf(spriteSettings, slice));
 
         return true;
+    }
+
+    /// <summary>
+    /// A lightmap baked as linear light (an EXR the lightmapper wrote): kept as half floats, as it was baked, with no
+    /// encoding to undo and no mips, since a page's charts would bleed into each other.
+    /// </summary>
+    private static Texture2D ImportHdrLightmap(ImportContext ctx, TextureImportSettings s)
+    {
+        using Aperture.Image image = Aperture.Image.Load(ctx.AbsolutePath, new Aperture.DecodeOptions
+        {
+            TargetPixelFormat = Aperture.PixelFormat.RgbaF16,
+            FlipVertically = true,   // bottom row first, as every texture
+        });
+        int width = image.Width, height = image.Height;
+        byte[] pixels = new byte[width * height * 8];
+        image.RootFrame.CopyTo(pixels, width * 8);
+
+        var texture = new Texture2D((uint)width, (uint)height, TextureFormat.RGBA16Float, mipmaps: false, srgb: false);
+        texture.SetMipChain([pixels]);
+        texture.Name = ctx.FileName;
+        texture.Filter = s.Filter;
+        texture.WrapU = s.WrapU;
+        texture.WrapV = s.WrapV;
+        return texture;
     }
 
     /// <summary>The per type work on the source pixels: normals from height, a single channel, or an alpha source.</summary>
@@ -338,7 +368,7 @@ public enum TextureImportType
     Cookie = 5,
     /// <summary>One channel such as a height map, a mask or an IES profile, read from red.</summary>
     SingleChannel = 6,
-    /// <summary>Baked lighting written by the lightmapper: RGBM encoded, clamped, never resized or compressed.</summary>
+    /// <summary>Baked lighting written by the lightmapper: half float from an EXR (RGBM from an older bake), clamped, never resized or compressed.</summary>
     Lightmap = 7,
 }
 

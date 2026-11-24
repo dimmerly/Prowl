@@ -7,12 +7,12 @@ namespace Prowl.Runtime.Rendering;
 
 /// <summary>
 /// Order-2 (9-coefficient) RGB spherical harmonics the light-probe representation for ambient
-/// GI on dynamic objects. Layout matches <c>Prowl.Photonic.Sh9Rgb</c> (the editor copies the baked
-/// coefficients straight across). Serialized as plain public fields.
+/// GI on dynamic objects. The editor's GPU lightmapper projects onto the same basis, in the same order.
+/// Serialized as plain public fields.
 /// </summary>
 public struct SphericalHarmonicsL2
 {
-    // Real-SH basis constants (must match Prowl.Photonic.Sh9Rgb).
+    // Real-SH basis constants (must match the lightmapper's Probe kernel).
     private const float K0 = 0.2820947918f;
     private const float K1 = 0.4886025119f;
     private const float K2a = 1.0925484306f;

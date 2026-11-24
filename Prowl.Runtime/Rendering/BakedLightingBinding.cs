@@ -1,6 +1,8 @@
 // This file is part of the Prowl Game Engine
 // Licensed under the MIT License. See the LICENSE file in the project root for details.
 
+using System.Collections.Generic;
+
 using Prowl.Runtime.Resources;
 using Prowl.Vector;
 
@@ -41,12 +43,24 @@ internal static class BakedLightingBinding
     public static GLightmapBinding For(GameObject renderer, ref Cache cache)
     {
         (SceneLighting? lighting, LightmapPlacement? placement) = Resolve(renderer, ref cache);
-        if (lighting == null || placement is not { } p || p.Index < 0 || p.Index >= lighting.Lightmaps.Count)
+        IReadOnlyList<Texture2D>? pages = lighting?.DrawnLightmaps;
+        if (lighting == null || pages == null || placement is not { } p || p.Index < 0 || p.Index >= pages.Count)
             return GLightmapBinding.None;
 
-        Texture2D? lightmap = lighting.Lightmaps[p.Index];
+        Texture2D? lightmap = pages[p.Index];
         if (lightmap.IsNotValid()) return GLightmapBinding.None;
         if (lightmap.State == AssetState.Unloaded) _ = lightmap.LoadAsync();
-        return new GLightmapBinding(lightmap.IsLoaded ? lightmap.GpuIfLoaded : null, p.ScaleOffset, scale: lighting.LightmapScale);
+        // A float page holds the light as baked, an 8 bit one is RGBM from an older bake
+        Graphite.Rendering.LightmapEncoding encoding = lightmap.IsLoaded && lightmap.Format is TextureFormat.RGBA16Float or TextureFormat.RGBA32Float
+            ? Graphite.Rendering.LightmapEncoding.Linear : Graphite.Rendering.LightmapEncoding.RGBM;
+        // A direction page lights the normal map; until it has loaded the page lights without it
+        Graphite.Texture? direction = null;
+        IReadOnlyList<Texture2D> directions = lighting.DrawnDirections;
+        if (p.Index < directions.Count && directions[p.Index] is { } dirPage && dirPage.IsValid())
+        {
+            if (dirPage.State == AssetState.Unloaded) _ = dirPage.LoadAsync();
+            if (dirPage.IsLoaded) direction = dirPage.GpuIfLoaded;
+        }
+        return new GLightmapBinding(lightmap.IsLoaded ? lightmap.GpuIfLoaded : null, p.ScaleOffset, encoding, scale: lighting.DrawnLightmapScale) { Direction = direction };
     }
 }

@@ -1032,8 +1032,16 @@ public class Scene : EngineObject, ISerializable
         }
     }
 
-    /// <summary>Takes the sections' probes again, after a bake changed them.</summary>
-    public void InvalidateProbeVolume() => RebuildProbes(keepPrevious: false, force: true);
+    /// <summary>
+    /// Takes the sections' baked lighting again after a bake or clear changed it: the probes are rebuilt, and every
+    /// renderer re-reads its lightmap. The version moves here rather than waiting on the probe rebuild, which only runs
+    /// when something asks for probes, so a scene without probes would otherwise keep drawing its old lightmap.
+    /// </summary>
+    public void InvalidateProbeVolume()
+    {
+        RebuildProbes(keepPrevious: false, force: true);
+        BakedLightingVersion++;
+    }
 
     // Only an additive load keeps the previous set while a rebuild runs. Everything else drops it at once, so the probes
     // of an unloaded level never light the next one.

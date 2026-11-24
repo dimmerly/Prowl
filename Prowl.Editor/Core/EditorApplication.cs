@@ -2303,6 +2303,9 @@ public class EditorApplication : Game
 
         using (FrameStats.Navigation.Scope())
             Navigation.NavMeshBakeService.Instance.Poll();
+
+        // Here rather than in the Environment panel, so a bake keeps going with the panel closed
+        Lightmapping.LightmapBakeService.Instance.Poll();
     }
 
     public override void BeginRender()

@@ -482,7 +482,6 @@
   "env.indirect_samples": "Muestras indirectas",
   "env.probe_samples": "Muestras de sonda",
   "env.backface_cull": "Descartar caras traseras",
-  "env.sparse_stride": "Paso disperso",
   "env.bake_sky_gi": "Hornear cielo / ambiente como GI",
   "env.advanced": "Avanzado",
   "env.ignore_albedo": "Ignorar albedo (depuracion)",

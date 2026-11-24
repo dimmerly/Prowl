@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Text.RegularExpressions;
+using System.Threading.Tasks;
 
 using Prowl.Echo;
 using Prowl.Graphite;
@@ -40,6 +41,7 @@ public sealed class ComputeShader : Asset
 
     [SerializeIgnore] private ComputeProgram?[] _programs = [];
     [SerializeIgnore] private bool[] _failed = [];
+    [SerializeIgnore] private Task<ComputeDescription>?[] _compiling = [];
     [SerializeIgnore] private PropertySet[] _kernelProperties = [];
     [SerializeIgnore] private Dictionary<string, Action<PropertySet>> _shared = [];
     [SerializeIgnore] private Dictionary<string, ComputeBuffer>[] _kernelBuffers = [];
@@ -86,6 +88,7 @@ public sealed class ComputeShader : Asset
             Graphics.DeferDispose(program);
         _programs = new ComputeProgram?[_kernels.Length];
         _failed = new bool[_kernels.Length];
+        _compiling = new Task<ComputeDescription>?[_kernels.Length];
         _kernelProperties = new PropertySet[_kernels.Length];
         _kernelBuffers = new Dictionary<string, ComputeBuffer>[_kernels.Length];
         for (int i = 0; i < _kernels.Length; i++)
@@ -149,12 +152,15 @@ public sealed class ComputeShader : Asset
         Kernel(kernel);
         if (Graphics.Device == null || _failed[kernel]) return null;
         if (_programs[kernel] != null) return _programs[kernel];
+        string sourceName = $"{Name}/{_kernels[kernel].Name}";
         try
         {
-            ShaderPass pass = new() { State = new PassState(), Source = KernelSource(kernel), SourceName = $"{Name}/{_kernels[kernel].Name}" };
-            new ShaderDefinition { Name = pass.SourceName, Passes = [pass] }.Create(Graphics.Device, Graphics.ShaderCompiler);
-            _programs[kernel] = Graphics.Device.ResourceFactory.CreateComputeProgram(pass.CompileCompute());
-            _programs[kernel]!.Name = pass.SourceName;
+            // A background compile started by CompileAsync is waited for rather than repeated
+            ComputeDescription description = _compiling.Length == _kernels.Length && _compiling[kernel] is { } compiling
+                ? compiling.GetAwaiter().GetResult()
+                : CompileKernel(KernelSource(kernel), sourceName);
+            _programs[kernel] = Graphics.Device.ResourceFactory.CreateComputeProgram(description);
+            _programs[kernel]!.Name = sourceName;
         }
         catch (Exception ex)
         {
@@ -162,6 +168,38 @@ public sealed class ComputeShader : Asset
             Debug.LogError($"Compute kernel '{_kernels[kernel].Name}' of '{Name}' failed to compile: {ex.Message}");
         }
         return _programs[kernel];
+    }
+
+    private static ComputeDescription CompileKernel(string source, string sourceName)
+    {
+        ShaderPass pass = new() { State = new PassState(), Source = source, SourceName = sourceName };
+        new ShaderDefinition { Name = sourceName, Passes = [pass] }.Create(Graphics.Device!, Graphics.ShaderCompiler);
+        return pass.CompileCompute();
+    }
+
+    /// <summary>
+    /// Compiles every kernel not compiled yet on a worker thread, so the first dispatch of each doesn't stall the caller.
+    /// Optional: a dispatch before it finishes waits for it. Compile errors surface on that dispatch as usual.
+    /// </summary>
+    public Task CompileAsync()
+    {
+        EnsureLoaded();
+        if (_programs.Length != _kernels.Length) ResetKernels();
+        if (Graphics.Device == null) return Task.CompletedTask;
+        if (_compiling.Length != _kernels.Length) _compiling = new Task<ComputeDescription>?[_kernels.Length];
+
+        var started = new List<Task>();
+        for (int i = 0; i < _kernels.Length; i++)
+        {
+            if (_programs[i] != null || _failed[i]) continue;
+            if (_compiling[i] is not { } task)
+            {
+                string source = KernelSource(i), sourceName = $"{Name}/{_kernels[i].Name}";
+                _compiling[i] = task = Task.Run(() => CompileKernel(source, sourceName));
+            }
+            started.Add(task);
+        }
+        return Task.WhenAll(started);
     }
 
     // ---------------------------------------------------------------- parameters
@@ -198,21 +236,28 @@ public sealed class ComputeShader : Asset
 
     public void SetTexture(int kernel, string name, RenderTexture texture) => SetTexture(kernel, name, texture.MainTexture);
 
-    /// <summary>Runs <paramref name="kernel"/> over a grid of thread groups, before anything submitted after it.</summary>
-    public void Dispatch(int kernel, int threadGroupsX, int threadGroupsY, int threadGroupsZ)
+    /// <summary>
+    /// Runs <paramref name="kernel"/> over a grid of thread groups, before anything submitted after it. Returns without
+    /// waiting for the GPU; the returned execution id tells when it finished (<see cref="IsComplete"/>), 0 when nothing ran.
+    /// </summary>
+    public ulong Dispatch(int kernel, int threadGroupsX, int threadGroupsY, int threadGroupsZ)
         => Run(kernel, cmd => cmd.Dispatch((uint)Math.Max(threadGroupsX, 1), (uint)Math.Max(threadGroupsY, 1), (uint)Math.Max(threadGroupsZ, 1)));
 
     /// <summary>Runs <paramref name="kernel"/> with its group counts read from <paramref name="arguments"/> at an offset.</summary>
-    public void DispatchIndirect(int kernel, ComputeBuffer arguments, uint argumentsOffset = 0)
+    public ulong DispatchIndirect(int kernel, ComputeBuffer arguments, uint argumentsOffset = 0)
     {
-        if (arguments.Buffer is not { } buffer) return;
-        Run(kernel, cmd => cmd.DispatchIndirect(buffer, argumentsOffset));
+        if (arguments.Buffer is not { } buffer) return 0;
+        return Run(kernel, cmd => cmd.DispatchIndirect(buffer, argumentsOffset));
     }
 
-    private void Run(int kernel, Action<CommandBuffer> dispatch)
+    /// <summary>Whether the GPU has finished the dispatch <paramref name="executionId"/> came from. Never blocks.</summary>
+    public static bool IsComplete(ulong executionId)
+        => executionId == 0 || Graphics.Device == null || Graphics.Device.IsExecutionComplete(executionId);
+
+    private ulong Run(int kernel, Action<CommandBuffer> dispatch)
     {
         ComputeProgram? program = ProgramFor(kernel);
-        if (program == null || Graphics.Device == null) return;
+        if (program == null || Graphics.Device == null) return 0;
 
         PropertySet properties = _kernelProperties[kernel];
         foreach (Action<PropertySet> set in _shared.Values) set(properties);
@@ -222,7 +267,7 @@ public sealed class ComputeShader : Asset
 
         // The renderer's thread records frames on the same device, so it finishes its frame first
         Graphics.Renderer?.WaitForRenderThread();
-        ComputeRun.Execute(program, properties, buffers, dispatch);
+        return ComputeRun.Execute(program, properties, buffers, dispatch);
     }
 
     // ---------------------------------------------------------------- asset
@@ -246,7 +291,7 @@ internal static class ComputeRun
 {
     private static FrameGraph? s_graph;
 
-    public static void Execute(ComputeProgram program, PropertySet properties, List<DeviceBuffer> buffers, Action<CommandBuffer> dispatch)
+    public static ulong Execute(ComputeProgram program, PropertySet properties, List<DeviceBuffer> buffers, Action<CommandBuffer> dispatch)
     {
         lock (typeof(ComputeRun))
         {
@@ -262,7 +307,7 @@ internal static class ComputeRun
                 cmd.SetProperties(properties);
                 dispatch(cmd);
             });
-            graph.Execute();
+            return graph.Execute().Id;
         }
     }
 }

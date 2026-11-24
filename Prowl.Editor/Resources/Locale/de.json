@@ -482,7 +482,6 @@
   "env.indirect_samples": "Indirekte Samples",
   "env.probe_samples": "Sonden-Samples",
   "env.backface_cull": "Rueckseiten-Culling",
-  "env.sparse_stride": "Sparse-Schrittweite",
   "env.bake_sky_gi": "Himmel / Umgebung als GI backen",
   "env.advanced": "Erweitert",
   "env.ignore_albedo": "Albedo ignorieren (Debug)",
