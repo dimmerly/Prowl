@@ -44,6 +44,14 @@ public sealed class CSGObjectTool : SceneTool
 
     public override void OnDeactivated() => _brushes.Clear();
 
+    /// <summary>Brushes moved in Select land their faces on the grid rather than their pivots.</summary>
+    public override IReadOnlyList<Float3>? SnapPoints(IReadOnlyList<GameObject> objects)
+    {
+        if (!CSGEditMode.Is(CSGMode.Select)) return null;
+        List<Float3> points = CSGSelection.WorldPoints(objects);
+        return points.Count > 0 ? points : null;
+    }
+
     public override void OnSceneInput(SceneToolContext ctx)
     {
         // Brushes are picked in Select and in Edit, unless a cut is being placed or a plain brush's points are edited
@@ -106,6 +114,7 @@ public sealed class CSGObjectTool : SceneTool
             else Selection.AddToSelection(target);
         }
         else Selection.Select(target);
+        if (Selection.IsSelected(target)) Selection.Ping(target.Identifier);
     }
 
     // Brushes under the last click, nearest first, and which of them that click took

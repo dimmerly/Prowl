@@ -7,6 +7,7 @@ using System.Linq;
 
 using Prowl.Editor.Core;
 using Prowl.Editor.GUI.Panels;
+using Prowl.Editor.Modeling;
 using Prowl.Runtime;
 using Prowl.Runtime.CSG;
 using Prowl.Runtime.Resources;
@@ -32,12 +33,15 @@ public static class CSGSelection
         {
             any = true;
             CSGModel? model = ModelOf(selected);
-            if (model.IsValid()) return _pinned = model;
+            if (model.IsValid() && IsEdited(model!)) return _pinned = model;
         }
 
-        if (any || _pinned.IsNotValid() || !_pinned!.GameObject.IsInWorld) _pinned = null;
+        if (any || _pinned.IsNotValid() || !IsEdited(_pinned!)) _pinned = null;
         return _pinned;
     }
+
+    // A model asleep under a model or prefab being edited is out of reach, its world is not the one being edited
+    private static bool IsEdited(CSGModel model) => model.GameObject.Scene == EditorSceneManager.EditedWorld;
 
     private static CSGModel? _pinned;
 
@@ -176,6 +180,41 @@ public static class CSGSelection
         if (ReferenceEquals(created.Parent, source.Parent)) created.SiblingIndex = source.SiblingIndex + 1;
     }
 
+    /// <summary>
+    /// Swaps every additive brush and group under a model for subtractive and back, intersecting ones left alone, so a
+    /// model can move between the additive and subtractive workflows.
+    /// </summary>
+    public static void InvertOperations(CSGModel model)
+    {
+        var changed = new List<EngineObject>();
+        var groups = new List<CSGGroup>();
+        CollectGroups(model.GameObject, groups);
+        foreach (CSGBrush brush in BrushesIn(model)) if (brush.Operation != Operation.Intersect) changed.Add(brush);
+        foreach (CSGGroup group in groups) if (group.Operation != Operation.Intersect) changed.Add(group);
+        if (changed.Count == 0) return;
+
+        Undo.RecordObjects(changed, "Invert CSG Brushes");
+        foreach (EngineObject item in changed)
+        {
+            if (item is CSGBrush brush) brush.Operation = Inverted(brush.Operation);
+            else if (item is CSGGroup group) group.Operation = Inverted(group.Operation);
+        }
+        model.SetDirty();
+    }
+
+    private static Operation Inverted(Operation operation) => operation == Operation.Additive ? Operation.Subtractive : Operation.Additive;
+
+    private static void CollectGroups(GameObject parent, List<CSGGroup> result)
+    {
+        foreach (GameObject child in parent.Children)
+        {
+            if (child.GetComponent<CSGModel>().IsValid()) continue;
+            CSGGroup group = child.GetComponent<CSGGroup>();
+            if (group.IsValid()) result.Add(group);
+            CollectGroups(child, result);
+        }
+    }
+
     /// <summary>Every brush under a model, nested models excluded.</summary>
     public static List<CSGBrush> BrushesIn(CSGModel model)
     {
@@ -291,15 +330,24 @@ public static class CSGSelection
         }
     }
 
-    /// <summary>Moves each pivot onto its solid's centre without moving the geometry.</summary>
-    public static void CentrePivot()
+    /// <summary>Moves each selected pivot onto its solid's centre without moving the geometry.</summary>
+    public static void CentrePivot() => CentrePivots(Brushes(), Groups().Where(g => g.GetComponent<CSGBrush>().IsNotValid()).ToList(), "Centre CSG Pivot");
+
+    /// <summary>Moves the pivot of every brush and group in a model onto its solid's centre without moving the geometry.</summary>
+    public static void CentreAllPivots(CSGModel model)
     {
-        List<CSGBrush> brushes = Brushes();
-        List<CSGGroup> groups = Groups().Where(g => g.GetComponent<CSGBrush>().IsNotValid()).ToList();
+        var groups = new List<CSGGroup>();
+        CollectGroups(model.GameObject, groups);
+        CentrePivots(BrushesIn(model), [.. groups.Where(g => g.GetComponent<CSGBrush>().IsNotValid())], "Centre All CSG Pivots");
+    }
+
+    private static void CentrePivots(List<CSGBrush> brushes, List<CSGGroup> groups, string name)
+    {
+        brushes.RemoveAll(b => b.Shape == null);
         if (brushes.Count == 0 && groups.Count == 0) return;
 
-        Record("Centre CSG Pivot", brushes.Select(b => b.GameObject).Concat(groups.Select(g => g.GameObject))
-            .SelectMany(go => go.Children.Prepend(go)));
+        Record(name, brushes.Select(b => b.GameObject).Concat(groups.Select(g => g.GameObject))
+            .SelectMany(go => go.Children.Prepend(go)).Distinct());
 
         foreach (CSGBrush brush in brushes)
             MovePivot(brush, CSGBrushGeometry.Centroid(brush.Shape));
@@ -325,6 +373,74 @@ public static class CSGSelection
         }
 
         MarkDirty();
+    }
+
+    /// <summary>
+    /// Bakes the rotation and/or scale of some objects and everything under them into their brushes' points, every pivot
+    /// staying where it is. Textures keep their density. False, with nothing changed, when anything but brushes has geometry.
+    /// </summary>
+    public static bool ApplyTransform(IEnumerable<GameObject> objects, ModelEditingMode.TransformParts parts)
+    {
+        List<GameObject> nodes = [.. GameObjectClipboard.FilterToRoots(objects).SelectMany(r => r.GetChildrenDeep().Prepend(r))];
+        if (nodes.Count == 0) return false;
+
+        foreach (GameObject go in nodes)
+        {
+            if (!HoldsGeometry(go)) continue;
+            Debug.LogWarning($"Apply Transform: {go.Name} has a mesh or collider that cannot take the transform, nothing was changed.");
+            return false;
+        }
+
+        var positions = nodes.Select(n => n.Transform.Position).ToList();
+        var rotations = nodes.Select(n => n.Transform.Rotation).ToList();
+        var brushes = nodes.Select(n => n.GetComponent<CSGBrush>()).Where(b => b.IsValid()).Select(b => (b, b.Transform.LocalToWorldMatrix)).ToList();
+        Record("Apply CSG Transform", nodes);
+
+        // Parents come before their children, so each child is placed against its parent's final transform
+        for (int i = 0; i < nodes.Count; i++)
+        {
+            Transform t = nodes[i].Transform;
+            if (parts.HasFlag(ModelEditingMode.TransformParts.Rotation)) t.LocalRotation = Quaternion.Identity;
+            else t.Rotation = rotations[i];
+            if (parts.HasFlag(ModelEditingMode.TransformParts.Scale)) t.LocalScale = Float3.One;
+            t.Position = positions[i];
+        }
+
+        var models = new HashSet<CSGModel>();
+        foreach ((CSGBrush brush, Float4x4 before) in brushes)
+        {
+            Bake(brush, brush.Transform.WorldToLocalMatrix * before);
+            CSGModel? model = ModelOf(brush.GameObject);
+            if (model.IsValid()) models.Add(model!);
+        }
+        foreach (CSGModel model in models) model.SetDirty();
+        return true;
+    }
+
+    private static bool HoldsGeometry(GameObject go)
+    {
+        if (go.GetComponent<ModelObject>().IsValid()) return true;
+        if (go.GetComponent<CSGModel>().IsValid()) return false;
+        return go.GetComponents<Component>().Any(c => c is IMaterialRenderer or Collider);
+    }
+
+    private static void Bake(CSGBrush brush, Float4x4 change)
+    {
+        Float4x4 linear = change;
+        linear.c3 = new Float4(0, 0, 0, 1);
+        if (MathF.Abs(Float4x4.Determinant(linear)) < 1e-12f) return;
+
+        // The stretch goes in unrefitted so locked textures keep their density, the turn refitted so they turn with the faces
+        change.Decompose(out _, out Quaternion turn, out _);
+        Float4x4 rigid = Float4x4.CreateFromQuaternion(turn);
+        brush.ControlMesh.TransformPoints(rigid.Invert() * change);
+        brush.ApplyControlMesh();
+
+        CSGSurfaceSelection.KeepTextures(brush, (_, data) => !data.Flags.HasFlag(CSGSurfaceFlags.WorldSpaceTexture), () =>
+        {
+            brush.ControlMesh.TransformPoints(rigid);
+            brush.ApplyControlMesh();
+        });
     }
 
     /// <summary>A brush's solid as a box: its centre in the world and its size along its own axes in world units.</summary>
@@ -499,7 +615,7 @@ public static class CSGSelection
         return roots.Count == 0 ? Float3.Zero : Centre(roots);
     }
 
-    /// <summary>Snaps the pivot of each selected brush and group onto the grid.</summary>
+    /// <summary>Moves each selected brush and group so its bounds land on the world grid.</summary>
     public static void SnapToGrid()
     {
         List<GameObject> roots = Roots();
@@ -508,9 +624,24 @@ public static class CSGSelection
         Record("Snap CSG to Grid", roots);
 
         foreach (GameObject go in roots)
-            go.Transform.Position = CSGSnap.Round(go.Transform.Position);
+            go.Transform.Position += SceneViewPanel.SnapBoundsToGrid(WorldPoints([go]), Float3.Zero, CSGSnap.Grid, Quaternion.Identity, everyAxis: true);
 
         MarkDirty();
+    }
+
+    /// <summary>The points of every brush in the objects and under them, in the world.</summary>
+    public static List<Float3> WorldPoints(IEnumerable<GameObject> objects)
+    {
+        var points = new List<Float3>();
+        foreach (GameObject root in objects)
+            foreach (GameObject go in root.GetChildrenDeep().Prepend(root))
+            {
+                CSGBrush brush = go.GetComponent<CSGBrush>();
+                if (brush.IsNotValid() || brush.Shape == null) continue;
+                Float4x4 toWorld = go.Transform.LocalToWorldMatrix;
+                foreach (GeometryData.Vertex vertex in brush.Shape.Vertices) points.Add(Float4x4.TransformPoint(vertex.Point, toWorld));
+            }
+        return points;
     }
 
     public static void Duplicate()

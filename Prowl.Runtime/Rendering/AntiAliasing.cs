@@ -37,6 +37,20 @@ public sealed class SmaaSettings
     [Range(0.05f, 0.2f)] public float EdgeThreshold = 0.1f;
 }
 
+/// <summary>
+/// Screen space displacement on a deferred camera: surfaces whose material has a height scale are pushed out along
+/// their normals by its height map.
+/// </summary>
+[Serializable]
+public sealed class DisplacementSettings
+{
+    /// <summary>The pixels between the corners of the grid that lifts the surfaces. Smaller follows finer relief and costs more. 0 turns it off.</summary>
+    [Range(0f, 16f)] public int Cell = 2;
+
+    /// <summary>The pixels over which the faces at a hard edge lean toward each other, so they stay joined as they lift.</summary>
+    [Range(0f, 8f)] public int CreaseBlend = 3;
+}
+
 /// <summary>Temporal anti aliasing: jittered frames blended over time.</summary>
 [Serializable]
 public sealed class TaaSettings

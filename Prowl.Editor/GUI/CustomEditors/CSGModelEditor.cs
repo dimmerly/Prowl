@@ -31,6 +31,19 @@ public class CSGModelEditor : CustomEditor
         paper.Box($"{id}_sp2").Height(4);
         Origami.Button(paper, $"{id}_rebuild", Loc.Get("csg.rebuild"), model.Rebuild).Tooltip(Loc.Get("csg.rebuild_tip")).Show();
 
+        paper.Box($"{id}_sp_inv").Height(4);
+        Origami.Button(paper, $"{id}_invert", Loc.Get("csg.invert_brushes"), () => GUI.SceneView.Editors.CSGSelection.InvertOperations(model))
+            .Tooltip(Loc.Get("csg.invert_brushes_tip")).Show();
+
+        paper.Box($"{id}_sp_pivots").Height(4);
+        Origami.Button(paper, $"{id}_pivots", Loc.Get("csg.centre_all_pivots"), () => GUI.SceneView.Editors.CSGSelection.CentreAllPivots(model))
+            .Tooltip(Loc.Get("csg.centre_all_pivots_tip")).Show();
+
+        paper.Box($"{id}_sp_apply").Height(4);
+        Origami.Button(paper, $"{id}_apply", Loc.Get("csg.apply_rotation_scale"), () => GUI.SceneView.Editors.CSGSelection.ApplyTransform([model.GameObject],
+            GUI.SceneView.ModelEditingMode.TransformParts.Rotation | GUI.SceneView.ModelEditingMode.TransformParts.Scale))
+            .Tooltip(Loc.Get("csg.apply_rotation_scale_tip")).Show();
+
         if (!model.GenerateLightmapUVs || !model.LightmapUVsStale) return;
 
         paper.Box($"{id}_sp3").Height(4);

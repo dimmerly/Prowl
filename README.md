@@ -51,11 +51,11 @@ Prowl is currently in **1.0 Preview 5**, which brings a new Vulkan renderer, ani
     - C# Scripting with .NET 11, compiled in process with Roslyn
     - GameObject & Component Architecture
     - **Prowl.Runtime works fully standalone from the Editor** - reference it directly and ship a game with zero Editor dependency
-    - Custom Immediate Mode UI ([Paper](https://github.com/ProwlEngine/Anthology)), Editor built on top of [Origami](https://github.com/ProwlEngine/Anthology)
-    - Vector Graphics & Text Rendering via [Quill](https://github.com/ProwlEngine/Anthology)
+    - Custom Immediate Mode UI ([Paper](Anthology/Paper)), Editor built on top of [Origami](Anthology/Origami)
+    - Vector Graphics & Text Rendering via [Quill](Anthology/Quill)
     - `GameTask` async API (`MainThread`, `WorkerThread`, `NextFrame`, `Delay`, `WaitUntil`) with per session cancellation
     - Roslyn analyzers that catch common scripting mistakes (component constructors, blocking waits, `?.` on engine objects)
-    - Serialization via [Prowl.Echo](https://github.com/ProwlEngine/Anthology)
+    - Serialization via [Prowl.Echo](Anthology/Echo)
     - Tags & Layers System
     - Scenes with `Scene.Environment` (sky, ambient, fog), async load handles, additive sections and persistent objects
     - Prefabs
@@ -66,7 +66,7 @@ Prowl is currently in **1.0 Preview 5**, which brings a new Vulkan renderer, ani
         - Composite bindings (WASD to Float2, D-pad, etc.) for keyboard, mouse, gamepad & XR controllers
     - GameObject-Based UI, including World Space UI
         - `RectTransform`-driven layout, Buttons, Toggles, Sliders, Dropdowns, layout groups, drag & drop event handlers
-    - Math via [Prowl.Vector](https://github.com/ProwlEngine/Anthology)
+    - Math via [Prowl.Vector](Anthology/Vector)
         - SIMD backed vectors, Matrices (`Float4x4`), Quaternions, Transform2D
         - Shapes: AABB, Bounds, Frustum, Cone, Ray, Plane, LineSegment, Rect
         - Mesh editing operators & Quadric mesh simplification
@@ -92,7 +92,7 @@ Prowl is currently in **1.0 Preview 5**, which brings a new Vulkan renderer, ani
     - **Prowl CLI** - drive a running editor from scripts or AI agents, projects ship with agent skills
 
 -   **Graphics Rendering:**
-    - Vulkan via [Prowl.Graphite](https://github.com/ProwlEngine/Anthology) (MoltenVK on macOS)
+    - Vulkan via [Prowl.Graphite](Anthology/Graphite) (MoltenVK on macOS)
     - GPU Driven Renderer: render graph, dedicated render thread, bindless textures, vertex pulling, multi draw indirect
     - Camera relative rendering
     - H-Forward Lighting and cached static shadows
@@ -137,7 +137,7 @@ Prowl is currently in **1.0 Preview 5**, which brings a new Vulkan renderer, ani
         - Local & World Simulation Spaces
 
 -   **Animation:**
-    - `Animator` with Animation Graphs via [Prowl.Motion](https://github.com/ProwlEngine/Anthology), about 90 nodes
+    - `Animator` with Animation Graphs via [Prowl.Motion](Anthology/Motion), about 90 nodes
     - State Machines, Blend Spaces, Layers & Masks, Inertial Blending
     - Humanoid Avatars with Retargeting between rigs
     - IK (Two Bone, Look At, Aim), Foot Grounding, Root Motion & Warping
@@ -154,7 +154,7 @@ Prowl is currently in **1.0 Preview 5**, which brings a new Vulkan renderer, ani
     - Raycasting & Shape Query API
 
 -   **Navigation:**
-    - NavMesh via [Prowl.Recast](https://github.com/ProwlEngine/Anthology)
+    - NavMesh via [Prowl.Recast](Anthology/Recast)
     - NavMesh Surfaces, Agents, Obstacles (carving), Links & Modifiers
     - Area costs, Crowd Steering, background baking & partial rebuilds
 
@@ -180,8 +180,8 @@ Prowl is currently in **1.0 Preview 5**, which brings a new Vulkan renderer, ani
     - Async Loading & Residency Management with a memory budget
     - Runtime Asset Mounting (folders, zips, HTTP) and Runtime Importers for mods & user content
     - Supported Formats:
-        - Models: GLTF, GLB, OBJ, FBX (via [Prowl.Clay](https://github.com/ProwlEngine/Anthology))
-        - Textures: PNG, JPG, BMP, GIF, TGA, TIFF, WEBP, PSD, DDS, EXR, HDR and more (via [Prowl.Aperture](https://github.com/ProwlEngine/Anthology))
+        - Models: GLTF, GLB, OBJ, FBX (via [Prowl.Clay](Anthology/Clay))
+        - Textures: PNG, JPG, BMP, GIF, TGA, TIFF, WEBP, PSD, DDS, EXR, HDR and more (via [Prowl.Aperture](Anthology/Aperture))
         - Audio: WAV, MP3, OGG, FLAC
         - Fonts: TTF, OTF
 
@@ -275,14 +275,35 @@ Check our [Contributing guide](https://github.com/ProwlEngine/Prowl/blob/main/CO
                 </a>
             </td>
             <td align="center">
+                <a href="https://github.com/jhm-ciberman">
+                    <img src="https://avatars.githubusercontent.com/u/7988351?v=4" width="100;" alt="jhm-ciberman"/>
+                    <br />
+                    <sub><b>Javier "Ciberman" Mora</b></sub>
+                </a>
+            </td>
+		</tr>
+		<tr>
+            <td align="center">
+                <a href="https://github.com/paulbartrum">
+                    <img src="https://avatars.githubusercontent.com/u/1572571?v=4" width="100;" alt="paulbartrum"/>
+                    <br />
+                    <sub><b>paulbartrum</b></sub>
+                </a>
+            </td>
+            <td align="center">
                 <a href="https://github.com/xZekro51">
                     <img src="https://avatars.githubusercontent.com/u/28503323?v=4" width="100;" alt="xZekro51"/>
                     <br />
                     <sub><b>Paolo</b></sub>
                 </a>
             </td>
-		</tr>
-		<tr>
+            <td align="center">
+                <a href="https://github.com/mic-code">
+                    <img src="https://avatars.githubusercontent.com/u/26720201?v=4" width="100;" alt="mic-code"/>
+                    <br />
+                    <sub><b>Michael Yuen</b></sub>
+                </a>
+            </td>
             <td align="center">
                 <a href="https://github.com/brmassa">
                     <img src="https://avatars.githubusercontent.com/u/13696218?v=4" width="100;" alt="brmassa"/>
@@ -291,10 +312,10 @@ Check our [Contributing guide](https://github.com/ProwlEngine/Prowl/blob/main/CO
                 </a>
             </td>
             <td align="center">
-                <a href="https://github.com/paulbartrum">
-                    <img src="https://avatars.githubusercontent.com/u/1572571?v=4" width="100;" alt="paulbartrum"/>
+                <a href="https://github.com/Exanite">
+                    <img src="https://avatars.githubusercontent.com/u/42710136?v=4" width="100;" alt="Exanite"/>
                     <br />
-                    <sub><b>paulbartrum</b></sub>
+                    <sub><b>William Chen</b></sub>
                 </a>
             </td>
             <td align="center">
@@ -304,11 +325,20 @@ Check our [Contributing guide](https://github.com/ProwlEngine/Prowl/blob/main/CO
                     <sub><b>Chandler Cox</b></sub>
                 </a>
             </td>
+		</tr>
+		<tr>
             <td align="center">
                 <a href="https://github.com/EJTP">
                     <img src="https://avatars.githubusercontent.com/u/87308197?v=4" width="100;" alt="EJTP"/>
                     <br />
                     <sub><b>EJTP</b></sub>
+                </a>
+            </td>
+            <td align="center">
+                <a href="https://github.com/JothamR">
+                    <img src="https://avatars.githubusercontent.com/u/5410231?v=4" width="100;" alt="JothamR"/>
+                    <br />
+                    <sub><b>Jotham</b></sub>
                 </a>
             </td>
             <td align="center">
@@ -325,8 +355,13 @@ Check our [Contributing guide](https://github.com/ProwlEngine/Prowl/blob/main/CO
                     <sub><b>Isaac Marovitz</b></sub>
                 </a>
             </td>
-		</tr>
-		<tr>
+            <td align="center">
+                <a href="https://github.com/ZedDevStuff">
+                    <img src="https://avatars.githubusercontent.com/u/98429642?v=4" width="100;" alt="ZedDevStuff"/>
+                    <br />
+                    <sub><b>Kouame Benoit Junior Augustin</b></sub>
+                </a>
+            </td>
             <td align="center">
                 <a href="https://github.com/ZeppelinGames">
                     <img src="https://avatars.githubusercontent.com/u/31507417?v=4" width="100;" alt="ZeppelinGames"/>
@@ -334,18 +369,20 @@ Check our [Contributing guide](https://github.com/ProwlEngine/Prowl/blob/main/CO
                     <sub><b>Mark Saba</b></sub>
                 </a>
             </td>
+		</tr>
+		<tr>
+            <td align="center">
+                <a href="https://github.com/MiniMe453">
+                    <img src="https://avatars.githubusercontent.com/u/25212675?v=4" width="100;" alt="MiniMe453"/>
+                    <br />
+                    <sub><b>MiniMe453</b></sub>
+                </a>
+            </td>
             <td align="center">
                 <a href="https://github.com/10xJosh">
                     <img src="https://avatars.githubusercontent.com/u/55113224?v=4" width="100;" alt="10xJosh"/>
                     <br />
                     <sub><b>Josh Davis</b></sub>
-                </a>
-            </td>
-            <td align="center">
-                <a href="https://github.com/ZedDevStuff">
-                    <img src="https://avatars.githubusercontent.com/u/98429642?v=4" width="100;" alt="ZedDevStuff"/>
-                    <br />
-                    <sub><b>Kouame Benoit Junior Augustin</b></sub>
                 </a>
             </td>
             <td align="center">
@@ -360,6 +397,13 @@ Check our [Contributing guide](https://github.com/ProwlEngine/Prowl/blob/main/CO
                     <img src="https://avatars.githubusercontent.com/u/33398353?v=4" width="100;" alt="keithwill"/>
                     <br />
                     <sub><b>Keith Williams</b></sub>
+                </a>
+            </td>
+            <td align="center">
+                <a href="https://github.com/mrunion">
+                    <img src="https://avatars.githubusercontent.com/u/5022458?v=4" width="100;" alt="mrunion"/>
+                    <br />
+                    <sub><b>Matt Runion</b></sub>
                 </a>
             </td>
             <td align="center">
@@ -393,10 +437,10 @@ Check our [Contributing guide](https://github.com/ProwlEngine/Prowl/blob/main/CO
                 </a>
             </td>
             <td align="center">
-                <a href="https://github.com/mrunion">
-                    <img src="https://avatars.githubusercontent.com/u/5022458?v=4" width="100;" alt="mrunion"/>
+                <a href="https://github.com/ctzcs">
+                    <img src="https://avatars.githubusercontent.com/u/47210521?v=4" width="100;" alt="ctzcs"/>
                     <br />
-                    <sub><b>Matt Runion</b></sub>
+                    <sub><b>tianwen</b></sub>
                 </a>
             </td>
             <td align="center">
@@ -430,13 +474,6 @@ Check our [Contributing guide](https://github.com/ProwlEngine/Prowl/blob/main/CO
                 </a>
             </td>
             <td align="center">
-                <a href="https://github.com/JothamR">
-                    <img src="https://avatars.githubusercontent.com/u/5410231?v=4" width="100;" alt="JothamR"/>
-                    <br />
-                    <sub><b>Jotham</b></sub>
-                </a>
-            </td>
-            <td align="center">
                 <a href="https://github.com/draxxris">
                     <img src="https://avatars.githubusercontent.com/u/24984408?v=4" width="100;" alt="draxxris"/>
                     <br />
@@ -451,10 +488,40 @@ Check our [Contributing guide](https://github.com/ProwlEngine/Prowl/blob/main/CO
                 </a>
             </td>
             <td align="center">
+                <a href="https://github.com/mberthaud">
+                    <img src="https://avatars.githubusercontent.com/u/26536123?v=4" width="100;" alt="mberthaud"/>
+                    <br />
+                    <sub><b>Michael Berthaud</b></sub>
+                </a>
+            </td>
+            <td align="center">
                 <a href="https://github.com/japsuu">
                     <img src="https://avatars.githubusercontent.com/u/55388432?v=4" width="100;" alt="japsuu"/>
                     <br />
                     <sub><b>Jasper Honkasalo</b></sub>
+                </a>
+            </td>
+		</tr>
+		<tr>
+            <td align="center">
+                <a href="https://github.com/Fauxgott">
+                    <img src="https://avatars.githubusercontent.com/u/258977954?v=4" width="100;" alt="Fauxgott"/>
+                    <br />
+                    <sub><b>Duel</b></sub>
+                </a>
+            </td>
+            <td align="center">
+                <a href="https://github.com/CodyDream">
+                    <img src="https://avatars.githubusercontent.com/u/153939536?v=4" width="100;" alt="CodyDream"/>
+                    <br />
+                    <sub><b>Cody Dream</b></sub>
+                </a>
+            </td>
+            <td align="center">
+                <a href="https://github.com/BayouBushBaby">
+                    <img src="https://avatars.githubusercontent.com/u/33499280?v=4" width="100;" alt="BayouBushBaby"/>
+                    <br />
+                    <sub><b>BayouBushBaby</b></sub>
                 </a>
             </td>
 		</tr>
