@@ -70,6 +70,13 @@ public readonly record struct LightmapBinding
     /// <summary>What the decoded texels are multiplied by to give irradiance over pi, one over the exposure a bake stored them at.</summary>
     public float Scale { get; }
 
+    /// <summary>
+    /// The direction page of a directional lightmap, null for none: the dominant incoming direction scaled by its share
+    /// of the light as d * 0.5 + 0.5, and in alpha that half Lambert term at the baked normal. Sampled linearly with the
+    /// lightmap's sampler, so it must not be sRGB.
+    /// </summary>
+    public Texture? Direction { get; init; }
+
     public bool Lightmapped { get; }
 }
 
@@ -211,6 +218,7 @@ internal struct ObjectAttributes
     public uint PreviousTransform;
     public const uint NoLightmap = uint.MaxValue;
     public const uint LightmapLoading = uint.MaxValue - 1;
+    public const uint LightmapDirectional = 1u << 31;
 
     public uint LightmapTexture;
     public uint ProbeIndex;
@@ -221,7 +229,7 @@ internal struct ObjectAttributes
     public uint CurrentPositions;
     public uint PreviousPositions;
     public float LightmapScale;
-    private uint _pad;
+    public uint LightmapDirection;   // read only when LightmapSampler has LightmapDirectional set
     public Float4 LightmapScaleOffset;
     public Float4 Color;
     public Float4 Custom0;
@@ -601,15 +609,22 @@ public sealed partial class RenderWorld : IDisposable
     };
 
     // The lightmap's texture slot, or none, or loading, and its sampler slot with the encoding in the high 16 bits
-    private (uint Texture, uint Sampler) LightmapSlots(in LightmapBinding lightmap)
+    private (uint Texture, uint Sampler, uint Direction) LightmapSlots(in LightmapBinding lightmap)
     {
         if (!lightmap.Lightmapped)
-            return (ObjectAttributes.NoLightmap, 0);
+            return (ObjectAttributes.NoLightmap, 0, ObjectAttributes.NoLightmap);
         if (lightmap.Texture is not { IsDisposed: false } texture)
-            return (ObjectAttributes.LightmapLoading, 0);
+            return (ObjectAttributes.LightmapLoading, 0, ObjectAttributes.NoLightmap);
         IMaterialResources resources = Lighting.Resources;
-        uint sampler = resources.SamplerSlot(lightmap.Sampler ?? s_lightmapSampler);
-        return (resources.TextureSlot(texture, MaterialPropertyType.Texture2D, "black"), sampler | ((uint)lightmap.Encoding << 16));
+        uint sampler = resources.SamplerSlot(lightmap.Sampler ?? s_lightmapSampler) | ((uint)lightmap.Encoding << 16);
+        uint direction = ObjectAttributes.NoLightmap;
+        // A direction page still loading lights the object without it rather than not at all
+        if (lightmap.Direction is { IsDisposed: false } directionTexture)
+        {
+            direction = resources.TextureSlot(directionTexture, MaterialPropertyType.Texture2D, "black");
+            sampler |= ObjectAttributes.LightmapDirectional;
+        }
+        return (resources.TextureSlot(texture, MaterialPropertyType.Texture2D, "black"), sampler, direction);
     }
 
     /// <summary>Resolves the slots of lightmaps whose textures were freed, every one when freed is null. Host thread, at extraction.</summary>
@@ -617,7 +632,8 @@ public sealed partial class RenderWorld : IDisposable
     {
         for (int index = 0; index < _count; index++)
         {
-            if (_alive[index] && _lightmap[index].Texture is { } texture && (freed == null || freed.Contains(texture)))
+            if (_alive[index] && (_lightmap[index].Texture is { } texture && (freed == null || freed.Contains(texture))
+                || _lightmap[index].Direction is { } direction && (freed == null || freed.Contains(direction))))
                 MarkDirty(index, Dirt.Attributes);
         }
     }
@@ -1101,7 +1117,7 @@ public sealed partial class RenderWorld : IDisposable
             attributes.Flags = (uint)host._flags[index];
             attributes.ObjectId = host._objectId[index];
             LightmapBinding lightmap = host._lightmap[index];
-            (attributes.LightmapTexture, attributes.LightmapSampler) = host.LightmapSlots(lightmap);
+            (attributes.LightmapTexture, attributes.LightmapSampler, attributes.LightmapDirection) = host.LightmapSlots(lightmap);
             attributes.LightmapScaleOffset = lightmap.Lightmapped ? lightmap.ScaleOffset : new Float4(1, 1, 0, 0);
             attributes.LightmapScale = lightmap.Scale;
             attributes.Color = host._color[index];

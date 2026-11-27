@@ -14,6 +14,7 @@ public static class ImageEncoderRegistry
     private static readonly Dictionary<ImageFormat, IImageEncoder> Encoders = new()
     {
         [ImageFormat.Png] = new PngEncoder(),
+        [ImageFormat.Exr] = new ExrEncoder(),
     };
 
     private static readonly object Gate = new();

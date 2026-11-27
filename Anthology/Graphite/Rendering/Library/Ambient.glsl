@@ -34,6 +34,17 @@ vec3 Graphite_DecodeLightmap(vec4 texel, uint encoding, float scale)
     return (encoding == 1u ? texel.rgb * (texel.a * 8.0) : texel.rgb) * scale;
 }
 
+#define GRAPHITE_LIGHTMAP_DIRECTIONAL 0x80000000u
+
+// A directional lightmap's light turned toward a normal. The direction page holds the dominant incoming direction d,
+// scaled by how much of the light comes from it, as d * 0.5 + 0.5, and in alpha the same half Lambert term at the normal
+// the bake was made for, so the baked normal gets the light as baked and others more or less of it.
+vec3 Graphite_DirectionalLightmap(vec3 light, vec4 direction, vec3 worldNormal)
+{
+    float halfLambert = dot(worldNormal, direction.xyz - 0.5) + 0.5;
+    return light * (halfLambert / max(direction.w, 1e-4));
+}
+
 // Diffuse irradiance over pi for a normal from packed order 2 harmonics
 vec3 Graphite_ShadeSH9(Graphite_ProbeSH sh, vec3 n)
 {
@@ -123,7 +134,13 @@ vec3 Graphite_IndirectDiffuse(vec3 worldNormal, vec2 lightmapUV)
     if (object.lightmapTexture == GRAPHITE_LIGHTMAP_LOADING)
         return Graphite_AmbientLight(worldNormal) * graphite_World.ambientMode.z;
     if (object.lightmapTexture != GRAPHITE_NO_LIGHTMAP)
-        return Graphite_DecodeLightmap(GRAPHITE_SAMPLE_2D(object.lightmapTexture, object.lightmapSampler & 0xFFFFu, lightmapUV), object.lightmapSampler >> 16, object.lightmapScale) * Graphite_Exposure();
+    {
+        uint lightmapSampler = object.lightmapSampler & 0xFFFFu;
+        vec3 light = Graphite_DecodeLightmap(GRAPHITE_SAMPLE_2D(object.lightmapTexture, lightmapSampler, lightmapUV), (object.lightmapSampler >> 16) & 0xFFu, object.lightmapScale);
+        if ((object.lightmapSampler & GRAPHITE_LIGHTMAP_DIRECTIONAL) != 0u)
+            light = Graphite_DirectionalLightmap(light, GRAPHITE_SAMPLE_2D(object.lightmapDirection, lightmapSampler, lightmapUV), worldNormal);
+        return light * Graphite_Exposure();
+    }
     if (object.probeIndex != 0xFFFFFFFFu && graphite_World.counts.z != 0u)
         return Graphite_ShadeSH9(graphite_ObjectProbes[object.probeIndex], worldNormal) * Graphite_Exposure();
     return Graphite_AmbientLight(worldNormal) * graphite_World.ambientMode.z;
@@ -135,7 +152,7 @@ vec3 Graphite_IndirectDiffuse(vec2 lightmapUV, vec3 objectAmbient)
     Graphite_ObjectData object = Graphite_Object();
     vec3 baked = objectAmbient;
     if (object.lightmapTexture < GRAPHITE_LIGHTMAP_LOADING)
-        baked = Graphite_DecodeLightmap(GRAPHITE_SAMPLE_2D(object.lightmapTexture, object.lightmapSampler & 0xFFFFu, lightmapUV), object.lightmapSampler >> 16, object.lightmapScale) * Graphite_Exposure();
+        baked = Graphite_DecodeLightmap(GRAPHITE_SAMPLE_2D(object.lightmapTexture, object.lightmapSampler & 0xFFFFu, lightmapUV), (object.lightmapSampler >> 16) & 0xFFu, object.lightmapScale) * Graphite_Exposure();
     return baked;
 }
 #endif
